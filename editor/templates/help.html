@@ -1,0 +1,462 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="col-lg-10 col-xl-9">
+<div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
+  <h2 class="display-6">Cordet FW Editor - Online Help</h2>
+  <p class="lead">Web-based editor to support the specification of a service-oriented software application</p>
+</div>
+
+<div class="container-fluid bg-grey">
+    <p>
+    The editor provides an environment where the following items can be created, edited and linked with each other:
+    <ul>
+    <li><a href="#SpecItem">Specification Items</a></li>
+    <li><a href="#VerItem">Verification Items</a></li>
+    </ul>
+    The editor explicityl supports the service concept of the 
+    <a href="https://www.pnp-software.com/cordetfw">Cordet Framework</a> but can also be used independently
+    of the framework as a generic requirements capture tool.
+    </p>
+
+    <h3>Editor Access</h3>
+    <p>
+    Access to the editor is for members only. 
+    Prospective users apply for membership by contacting the <a href="mailto:pnp-software@pnp-software.com">administrator</a>.
+    Members are given a user name and an initial password (which they are expected to change after the first log-in) and they
+    are allocated to one or more <i>projects</i>.
+    </p>
+
+    <h3>Target Environment</h3>    
+    <p>
+    The editor is aimed at deployment in a closed environment (e.g. company intranet) where a medium-sized team of trusted
+    users cooperate to define the specification of a set of related applications.
+    </p>
+    
+    <h3>Categories of Users</h3>
+    <p>
+    There are two types of users: the <strong>admin user</strong> and <strong>basic users</strong>.
+    </p><p>
+    The <strong>admin user</strong> is responsible for: 
+    <ul>
+    <li>Creating and managing basic users</li>
+    <li>Creating projects and assigning their owner</li>
+    <li>Assigning basic users to a project</li>
+    <li>Defining the ValSets for the specification items of a project</li>
+    </ul>
+    </p><p>
+    The <strong>basic users</strong> (or just "users" for short) manage the project and the specification items they contain 
+    in accordance with their roles.
+    Within a project, a user has one of two roles:
+    <ul>
+    <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
+    The project owner can: 
+        <ul>
+        <li>Create and edit applications within the project</li>
+        <li>Create new specification items and verification items within the project and its applications</li>
+        <li>Edit and delete the specification items and verification items he created</li>
+        <li>View and copy all specification items and verification items within the project and its applications</li>
+        </ul>
+    <li>The <strong>Project User</strong> is allocated to a project by the admin user.
+    The project user can: 
+        <ul>
+        <li>Create new specification items and verification items within the project and its applications</li>
+        <li>Edit and delete the specification items and verification items he created</li>
+        <li>View and copy all specification items and verification items within the project and its applications</li>
+        </ul>
+    </ul>
+    </p><p>
+    A user can be assigned (either as owner or as plain user) to multiple projects.
+    </p>
+
+    <h3><a name="Projects">Projects</a></h3>
+    <p>
+    Projects are created by the admin user.
+    A project is a container for one or more applications. 
+    The applications are created by the project owner. 
+    In order to support a history mechanism for specification and verification items, projects have a <i>release number</i>.
+    The release number is initialized to zero when the project is created and is incremented by 1 when the project owner makes 
+    a new release of the project.
+    </p>
+
+    <h3><a name="Applications">Applications</a></h3>
+    <p>
+    Applications belong to a project. They are created by the project owner.
+    An application is a container for a subset of the specification items and verification items in a project. 
+    </p><p>
+    In order to support a history mechanism for their specificaton and verification items applications have a <i>release number</i>.
+    The release number has the form 'x.y'. Here, 'x' is the release number of the project to which the application belongs
+    and 'y' is an non-negative integer
+    which identifies the application release within a project release. 
+    The application release number is initialized to zero when the project is created or when a new release of the project
+    is done and  is incremented by 1 when the project owner makes a new release of the application.
+    </p>
+
+    <h3><a name="SpecItem">Specification Items</a></h3>
+    <p>
+    Specification items describe a piece of information which specifies a feature of an application 
+    or of its enclosing project.    
+    A specification item could, for instance, consist of an application requirement, or of the definition
+    of a data item, or of a model used to describe part of an application behaviour.
+    </p><p>
+    Within a project, a specification item is identified by the pair: domain:name. 
+    The domain is used to capture a set of logically related specification items.
+    The name is unique within the domain.
+    </p><p>
+    Some of the attributes of a specification item have a fixed semantics. Others have a semantics which
+    depends on the specification item category.
+    The following <i>categories</i> of specification items are recognized by the editor:
+    <ul>
+    <li><i>Requirement</i>: a requirement specifying an application</li>
+    <li><i>Data Item</i>: a data item used in a project</li>
+    <li><i>Behavioural Model</i>: a model of part of the behaviour of an application</li>
+    <li><i>Service</i>: a service offered or used by applications in a project</li>
+    <li><i>Packet</i>: a packet carrying a comment or a report</li>
+    <li><i>Packet Parameter</i>: a parameter in a packet</li>
+    </ul>
+    </p><p>
+    The attributes of a specification item with fixed semantics are (asterisked attributes are mandatory; the others
+    may be left empty):
+    <ul>
+    <li><i>Domain(*)</i>: the domain to which the specification item belongs</li>
+    <li><i>Name(*)</i>: the name of the specification item (unique within the domain)</li>
+    <li><i>Project(*)</i>: the project to which the specification item belongs </li>
+    <li><i>Application</i>: the application to which the specification item belongs (empty if the specification
+                     item describes a project-level feature)</li>
+    <li><i>Category(*)</i>: the category of the specification item</li>
+    <li><i>Title(*)</i>: a short description of the specification item</li>
+    <li><i>Description</i>: a long description of the specification item</li>
+    <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
+    <li><i>Status(*)</i>: one of the following:
+        <ul>
+        <li><strong>New</strong>: the item has been created in the current release</li>
+        <li><strong>Modified</strong>: the item was created in a previous release and has been modified in the current release</li>
+        <li><strong>Confirmed</strong>: the item was created in a previous release and has not been modified in the current release</li>
+        <li><strong>Obsolete</strong>: the item was created in a previous release and has since been modified</li>
+        <li><strong>Deleted</strong>: the item was created in a previous release and has since been deleted</li>
+        </ul>
+    </li>
+    <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
+                            status of the specification was last updated</li>
+    <li><i>Previous Pointer</i>: the pointer to the previous version of a specification item which has been modified 
+                                 (empty if the specification item has status "New")</li>
+    <li><i>Justification</i>: the rationale for the existence of the specification item or for its value</li>
+    <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
+    <li><i>ValSet</i>: the <a href="#ValSet">ValSet</a? to which the specification item belongs</li> 
+    </ul>
+    </p><p>
+    The attributes with a semantics which depends on the category of a specification item are
+    listed in the table below.
+    Each row in the table represents an attribute and each column defines the meaning of the attributes
+    for a particular category of specification items.
+    
+    <table class="table table-hover table-sm">
+      <thead>
+        <tr class="table-warning">
+          <th>Attribute</th>
+          <th>Requirements</th>
+          <th>Data Items</th>
+          <th>Behavioural Model</th>
+          <th>Services</th>
+          <th>Packets</th>
+          <th>Packet Parameters</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr>
+            <td>Type</td>
+            <td>Requirement type (e.g. standard, adaptation, or constraint requirement)</td>
+            <td>Data item type</td>
+            <td>Model type (state machine or procedure)</td>
+            <td></td>
+            <td>Packet kind report or command)</td>
+            <td>Parameter role (data item, packet parameter, discriminant)</td>
+          </tr>
+          <tr>
+            <td>Sub-Type</td>
+            <td>Verification method</td>
+            <td>Data item kind (parameter, variable, constant, packet parameter) </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Value</td>
+            <td>Requirement text</td>
+            <td>Data item value </td>
+            <td>Json representation of model</td>
+            <td></td>
+            <td></td>
+            <td>Default value of packet parameter</td>
+          </tr>
+          <tr>
+            <td>Parent</td>
+            <td>Parent requirement</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Parent packet (derived packets only)</td>
+            <td>Packet to which packet parameter belongs</td>
+          </tr>
+          <tr>
+            <td>AuxText1</td>
+            <td></td>
+            <td>Data item multiplicity</td>
+            <td>Svg representation of model</td>
+            <td></td>
+            <td>Description of packet parameters</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>AuxText2</td>
+            <td></td>
+            <td>Data item unit</td>
+            <td></td>
+            <td></td>
+            <td>Description of packet destination</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>AuxN1</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Packet parameter order</td>
+          </tr>
+          <tr>
+            <td>AuxN2</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Packet parameter group</td>
+          </tr>
+          <tr>
+            <td>AuxN3</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Packet parameter repetition</td>
+          </tr>
+      </tbody>
+    </table>   
+    
+    In the case of data items, the value can be defined either as a raw numerical value or as an arithmetic expression 
+    which uses the values of one or more data items.
+    </p>
+    
+    
+    <h4><a name="SpecItemType">Specification Item Types</a></h4>
+    <p>
+    Some categories of specification items have a type attribute. 
+    The range of type values is defined by the project owner.
+    A type has the following attributes:
+    <ul>
+    <li><strong>Category(*)</strong>: the category to which the type applies</li>
+    <li><strong>Project(*)</strong>: the project for which the type is defined</li>
+    <li><strong>Name(*)</strong>: the name of the type</li>
+    <li><strong>Description(*)</strong>: description of the type</li>
+    <li><strong>Native</strong>: the native type to which the type is mapped</li>
+    <li><strong>Size</strong>: the size of the type in number of bits</li>
+    <li><strong>Enumerated(*)</strong>: a flag indicating whether the type is enumerated</li>
+    <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
+    <li><i>Status(*)</i>: same as status of a specification item</li>
+    <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
+                            status of the specification item type was last updated</li>
+    <li><i>Previous Pointer</i>: the pointer to the previous version of a specification item type which has been modified 
+                                 (empty if the specification item has status "New")</li>
+    </ul>
+    In the case of enumerated types, the type is defined by defining the (name, values) pair of the enumeration.
+    </p><p>
+    The "native" and "size" attributes support code generation for data item types in that they allow
+    the types defined within the editor to be mapped to native types within an implementation language. 
+    </p>
+    
+    
+    <h4><a name="ValSets">ValSets</a></h4>
+    The editor allows multiple set of values to be assigned to the same specification item.  
+    A set of values for the specification values is called a <i>ValSet</i>.
+    The admin user defines the range of ValSets for each project. 
+    The 'Default' ValSet is pre-defined for all projects. 
+    </p><p>
+    The ValSet attribute of a specification item is used to manage the ValSets: 
+    when the specification item is created, it is allocated to the Default ValSet.
+    The user can then create new instances of the same specification item 
+    belonging to one of the other ValSets defined for the project to which the specification_item belongs. 
+    </p><p>
+    The ValSet is managed as follows:
+    <ul>
+    <li>when a new specification item is created, its ValSet is set to 'Default'</li>
+    <li>When a specification item is edited, its ValSet remains unchanged</li>
+    <li>When a specification item is copied, the ValSet of the newly created copy can be set freely</li>
+    </ul>
+    </p>
+    
+    
+    <h4><a name="SpecificationItemOperations">Specification Item Operations</a></h4>
+    <p>
+    Specification items can be added, edited, copied and deleted.
+    </p><p>
+    When a specification item is <strong>added</strong>:
+    <ul>
+    <li>A new instance of the specification item is created</li>
+    <li>The Status of the specification item is set to 'New'</li>
+    <li>The Updated Time of the specification item is set to the current time</li>
+    <li>The Previous Pointer of the specification item is set to zero</li>
+    <li>All other attributes of the newly-created data item are set by the user through a form</li>
+    </ul>
+    </p><p>
+    The <strong>edit operation</strong> is only possible on specification items with status 'New', 'Modified' or 'Confirmed'.
+    When a specification item of 'Confirmed' status is <i>edited</i>:
+    <ul>
+    <li>The status of the item instance is set to 'Obsolete' and a new instance of the specification item is created</i>
+    <li>The status of the new instance is set to 'Modified', its 'Previous Pointer' is set to point to the old instance
+    and its other attributes are initialized to the same value
+    as those of the old instance</li> 
+    <li>The Updated Time of the new instance is set to the current time</li>
+    <li>Other attributes of the new instance can be updated by the user through a form</li>
+    </ul>
+    </p><p>
+    When, instead, a data item of 'New' or 'Modified' status is edited, then:
+    <ul>
+    <li>Its Status and Previous Pointer are kept unchanged</li>
+    <li>Its other attributes can be modified by the user through a form</li> 
+    <li>The Updated Time of the new instance is set to the current time</li>
+    </ul>
+    </p><p>
+    The <strong>copy operation</strong> is only possible on specification items with status 'New', 'Modified' or 'Confirmed'.
+    When a specification item is <i>copied</i>:
+    <ul>
+    <li>A new specification item instance is created with status 'New'</li>
+    <li>The Previous Pointer of the specification item is set to zero</li>
+    <li>The Updated Time of the specification item is set to the current time</li>
+    <li>The other attributes are initialized to the same value as those of the instance being copied and can be modified by the
+    user through a form</li> 
+    </ul>
+    </p><p>
+    The <strong>delete operation</strong> is only possible on specification items with status 'New', 'Modified' or 'Confirmed'. 
+    When a specification item with status 'Confirmed' or 'Modified' is deleted, its status is changed to 'Deleted'.
+    When a specification item with status 'New' is <i>deleted</i>, the data item instance is deleted from the database.
+    </p><p>
+    When the project or application to which the specification item belongs is <i>released</i>, the status of 'New' and 'Modified' 
+    specification items is changed to 'Confirmed'.
+    </p>
+    
+
+    <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
+    <p>
+    Behavioural models are implemented as state machine or procedure models generated with the 
+    <a href="https://www.pnp-software.com/fwprofile/editor">FW Profile Editor</a>.
+    The FW Profile Editor stores models in a database (the <i>FW Profile Editor Database</i>).
+    Each model has an owner who is identified by its e-mail address.
+    Within the FW Profile Editor, models have a name and can have a domain and a title.
+    Models are defined as json strings and an svg representation which can be used to render them as pictures.
+    </p><p>
+    The Cordet FW Editor has a connection to FW Profile Editor Database and it allows a user to import all the models 
+    corresponding to one or more domains.
+    In response to an import request, the Cordet FW Editor retrieves the FW Profile Models of the selected domains from the FW Profile Editor
+    Database and imports them into a dedicated table (the <i>FwProfileModel</i> table) in the Cordet FW Editor Database. 
+    The import function processes each imported model according to the following rules:
+    <ul>
+    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
+        'CNF', and if the imported entry is identical to the local entry, then nothing is done.</li>
+    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
+        'CNF', and if the imported entry differs from the local entry, then the status of the local entry is changed from 'CNF' to 'OBS' and
+        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
+        and its 'previous' field is set to point to the old entry.</li>
+    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
+        'NEW', then the entry is overwritten with the imported data.</li>
+    <li>In all other cases, 
+        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
+        and its 'previous' field is set to 'None'.</li>
+    </ul>
+    In the second and third case, an error is issued if more than one entry is found with the same domain:name:status combination is found.
+    </p>
+
+    
+    <h3><a name="VerItem">Verification Items</a></h3>
+    <p>
+    Verification items are intended to define a piece of information which is used to verify a specification
+    item. 
+    A verification item could, for instance, consist of a test case which verifies one or more requirements,
+    or of a document which contains information which verifies the implementation of one or more
+    specification items, or of a report of the review of the implementation of one or more specification items.
+    </p><p>
+    Some of the attributes of a verification item have a fixed semantics. Others have a semantics which
+    depends on the verification item category.
+    The following <i>categories</i> of specification items are recognized by the editor:
+    <ul>
+    <li><i>Test Case</i>: a test case which verifies the implementation of some aspects of an application</li>
+    <li><i>Review</i>: a review of the implementation of one or more specification items</li>
+    <li><i>Analysis</i>: an analysis of the implementation of one or more specification items </li>
+    </ul>
+    </p><p>
+    The attributes of a specification item with fixed semantics are (asterisked attributes are mandatory; the others
+    may be left empty):
+    
+    <ul>
+    <li><i>Domain(*)</i>: the domain to which the verification item belongs</li>
+    <li><i>Name(*)</i>: the name of the verification item (unique within the domain)</li>
+    <li><i>Project(*)</i>: the project to which the verification item belongs </li>
+    <li><i>Application</i>: the application to which the verification item belongs (empty if the specification
+                     item verifies a project-level feature)</li>
+    <li><i>Category(*)</i>: the category of the veriication item</li>
+    <li><i>Title(*)</i>: a short description of the verification item</li>
+    <li><i>Description</i>: a long description of the verification item</li>
+    <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
+    <li><i>Status(*)</i>: same as status of a specification item</li>
+    <li><i>Update Time(*)</i>: the time when the verification item was created or when the 
+                            status of the verification item was last updated</li>
+    <li><i>Previous Pointer</i>: the pointer to the previous version of a verification item which has been modified 
+                                 (empty if the specification item has status "New")</li>
+    <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
+    </ul>
+    </p><p>
+    The attributes with a semantics which depends on the category of a verification item are
+    listed in the table below.
+    Each row in the table represents an attribute and each column defines the meaning of the attributes
+    for a particular category of verification items.
+    
+    <table class="table table-hover table-sm">
+      <thead>
+        <tr class="table-warning">
+          <th>Test Case</th>
+          <th>Review</th>
+          <th>Analysis</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr>
+            <td>Pre-Conditions</td>
+            <td>Pre-conditions for executing the test case</td>
+            <td>Pre-conditions for the validity of the review</td>
+            <td>Pre-conditions for the analysis of the review<</td>
+          </tr>
+          <tr>
+            <td>Expected Outcome</td>
+            <td>Expected outcome of test case</td>
+            <td>Expected outcome of review</td>
+            <td>Expected outcome of analysis</td>
+          </tr>
+          <tr>
+            <td>Actual Outcome</td>
+            <td>Actual outcome of test case</td>
+            <td>Actual outcome of review</td>
+            <td>Actual outcome of analysis</td>
+          </tr>
+      </tbody>
+    </table>
+    
+    To each verification item, one or more <strong>verification links</strong> may be attached. A verification link
+    identifies a specification item which is verified by the verification item.
+    A verification link includes a description of the conditions under which the target of the link is verified 
+    by the verification item.
+
+</div>
+{% endblock %}
