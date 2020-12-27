@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 class Release(models.Model):
     release_author = models.ForeignKey(User, on_delete=models.PROTECT)
-    desc = models.TextField()
+    desc = models.TextField(default='')
     updated_at = models.DateTimeField()
     project_version = models.PositiveSmallIntegerField(default="0")
     application_version = models.PositiveSmallIntegerField(default="0")
@@ -36,3 +36,18 @@ class Application(models.Model):
     release = models.ForeignKey(Release, on_delete=models.PROTECT, null=True, default=None)
     def __str__(self):
         return self.name
+    
+class Type(models.Model):    
+    cat = models.CharField(max_length=24, choices=TYPE_CAT, default='DTI')
+    name = models.CharField(max_length=255)
+    domain = models.CharField(max_length=255)
+    desc = models.TextField(default='')
+    project = models.ForeignKey(Project, on_delete=models.PROTECT)
+    native_type = models.TextField(default='')
+    size = models.PositiveSmallIntegerField(null=True, blank=True)
+    enum = models.BooleanField(default=False)
+    owner = models.ForeignKey(User, on_delete=models.PROTECT)
+    previous = models.ForeignKey('self', on_delete=models.SET_DEFAULT, null=True, default=None)
+    status = models.CharField(max_length=20, choices=HISTORY_STATUS, default="NEW")
+    updated_at= models.DateTimeField()    
+    

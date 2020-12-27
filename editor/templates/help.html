@@ -53,16 +53,14 @@
     The project owner can: 
         <ul>
         <li>Create and edit applications within the project</li>
-        <li>Create new specification items and verification items within the project and its applications</li>
-        <li>Edit and delete the specification items and verification items he created</li>
-        <li>View and copy all specification items and verification items within the project and its applications</li>
+        <li>Create new specification items, new types and new verification items in the project </li>
+        <li>Edit, view, copy and delete the specification items, types and verification items </li>
         </ul>
     <li>The <strong>Project User</strong> is allocated to a project by the admin user.
     The project user can: 
         <ul>
-        <li>Create new specification items and verification items within the project and its applications</li>
-        <li>Edit and delete the specification items and verification items he created</li>
-        <li>View and copy all specification items and verification items within the project and its applications</li>
+        <li>Create new specification items, types and verification items within the project and its applications</li>
+        <li>Edit, view, copy and delete specification items, types and verification items in the project</li>
         </ul>
     </ul>
     </p><p>
@@ -127,19 +125,11 @@
     <li><i>Title(*)</i>: a short description of the specification item</li>
     <li><i>Description</i>: a long description of the specification item</li>
     <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
-    <li><i>Status(*)</i>: one of the following:
-        <ul>
-        <li><strong>New</strong>: the item has been created in the current release</li>
-        <li><strong>Modified</strong>: the item was created in a previous release and has been modified in the current release</li>
-        <li><strong>Confirmed</strong>: the item was created in a previous release and has not been modified in the current release</li>
-        <li><strong>Obsolete</strong>: the item was created in a previous release and has since been modified</li>
-        <li><strong>Deleted</strong>: the item was created in a previous release and has since been deleted</li>
-        </ul>
-    </li>
+    <li><i>Status(*)</i>: the <a href="#History">history status</a> of the speecification item</li>
     <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
-                            status of the specification was last updated</li>
+                            history status of the specification was last updated</li>
     <li><i>Previous Pointer</i>: the pointer to the previous version of a specification item which has been modified 
-                                 (empty if the specification item has status "New")</li>
+                                 (empty if the specification item has history status "New")</li>
     <li><i>Justification</i>: the rationale for the existence of the specification item or for its value</li>
     <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
     <li><i>ValSet</i>: the <a href="#ValSet">ValSet</a? to which the specification item belongs</li> 
@@ -260,17 +250,18 @@
     <ul>
     <li><strong>Category(*)</strong>: the category to which the type applies</li>
     <li><strong>Project(*)</strong>: the project for which the type is defined</li>
+    <li><strong>Domain(*)</strong>: the domain within which the type is defined</li>
     <li><strong>Name(*)</strong>: the name of the type</li>
     <li><strong>Description(*)</strong>: description of the type</li>
     <li><strong>Native</strong>: the native type to which the type is mapped</li>
     <li><strong>Size</strong>: the size of the type in number of bits</li>
     <li><strong>Enumerated(*)</strong>: a flag indicating whether the type is enumerated</li>
-    <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
-    <li><i>Status(*)</i>: same as status of a specification item</li>
-    <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
-                            status of the specification item type was last updated</li>
-    <li><i>Previous Pointer</i>: the pointer to the previous version of a specification item type which has been modified 
-                                 (empty if the specification item has status "New")</li>
+    <li><i>Owner(*)</i>: the name of the user who created or last edited the type</li>
+    <li><i>Status(*)</i>: the <a href="#History">history status</a> of the type</li>
+    <li><i>Update Time(*)</i>: the time when the type was created or when the 
+                            status of the type was last updated</li>
+    <li><i>Previous Pointer</i>: the pointer to the previous version of a type which has been modified 
+                                 (empty if the type has status "New")</li>
     </ul>
     In the case of enumerated types, the type is defined by defining the (name, values) pair of the enumeration.
     </p><p>
@@ -299,56 +290,6 @@
     </p>
     
     
-    <h4><a name="SpecificationItemOperations">Specification Item Operations</a></h4>
-    <p>
-    Specification items can be added, edited, copied and deleted.
-    </p><p>
-    When a specification item is <strong>added</strong>:
-    <ul>
-    <li>A new instance of the specification item is created</li>
-    <li>The Status of the specification item is set to 'New'</li>
-    <li>The Updated Time of the specification item is set to the current time</li>
-    <li>The Previous Pointer of the specification item is set to zero</li>
-    <li>All other attributes of the newly-created data item are set by the user through a form</li>
-    </ul>
-    </p><p>
-    The <strong>edit operation</strong> is only possible on specification items with status 'New', 'Modified' or 'Confirmed'.
-    When a specification item of 'Confirmed' status is <i>edited</i>:
-    <ul>
-    <li>The status of the item instance is set to 'Obsolete' and a new instance of the specification item is created</i>
-    <li>The status of the new instance is set to 'Modified', its 'Previous Pointer' is set to point to the old instance
-    and its other attributes are initialized to the same value
-    as those of the old instance</li> 
-    <li>The Updated Time of the new instance is set to the current time</li>
-    <li>Other attributes of the new instance can be updated by the user through a form</li>
-    </ul>
-    </p><p>
-    When, instead, a data item of 'New' or 'Modified' status is edited, then:
-    <ul>
-    <li>Its Status and Previous Pointer are kept unchanged</li>
-    <li>Its other attributes can be modified by the user through a form</li> 
-    <li>The Updated Time of the new instance is set to the current time</li>
-    </ul>
-    </p><p>
-    The <strong>copy operation</strong> is only possible on specification items with status 'New', 'Modified' or 'Confirmed'.
-    When a specification item is <i>copied</i>:
-    <ul>
-    <li>A new specification item instance is created with status 'New'</li>
-    <li>The Previous Pointer of the specification item is set to zero</li>
-    <li>The Updated Time of the specification item is set to the current time</li>
-    <li>The other attributes are initialized to the same value as those of the instance being copied and can be modified by the
-    user through a form</li> 
-    </ul>
-    </p><p>
-    The <strong>delete operation</strong> is only possible on specification items with status 'New', 'Modified' or 'Confirmed'. 
-    When a specification item with status 'Confirmed' or 'Modified' is deleted, its status is changed to 'Deleted'.
-    When a specification item with status 'New' is <i>deleted</i>, the data item instance is deleted from the database.
-    </p><p>
-    When the project or application to which the specification item belongs is <i>released</i>, the status of 'New' and 'Modified' 
-    specification items is changed to 'Confirmed'.
-    </p>
-    
-
     <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
     <p>
     Behavioural models are implemented as state machine or procedure models generated with the 
@@ -409,8 +350,8 @@
     <li><i>Category(*)</i>: the category of the veriication item</li>
     <li><i>Title(*)</i>: a short description of the verification item</li>
     <li><i>Description</i>: a long description of the verification item</li>
-    <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
-    <li><i>Status(*)</i>: same as status of a specification item</li>
+    <li><i>Owner(*)</i>: the name of the user who created or last edited the verification item</li>
+    <li><i>Status(*)</i>: the <a href="#History">history status</a> of the verification item</li>
     <li><i>Update Time(*)</i>: the time when the verification item was created or when the 
                             status of the verification item was last updated</li>
     <li><i>Previous Pointer</i>: the pointer to the previous version of a verification item which has been modified 
@@ -457,6 +398,29 @@
     identifies a specification item which is verified by the verification item.
     A verification link includes a description of the conditions under which the target of the link is verified 
     by the verification item.
+
+    <h3><a name="History">History Mechanism</a></h3>
+    <p>
+    Specification items, types and verification items carry history information through the following attributes:
+    (a) the owner; (b) the status; (c) the previous pointer; and (d) the update time.
+    The status is one of the following:
+        <ul>
+        <li><strong>New</strong>: the item has been created in the current release</li>
+        <li><strong>Modified </strong>: the item was created in a previous release and has been modified in the current release</li>
+        <li><strong>Confirmed</strong>: the item was created in a previous release and has not been modified in the current release</li>
+        <li><strong>Obsolete</strong>: the item was created in a previous release and has since been modified</li>
+        <li><strong>Deleted</strong>: the item was created in a previous release and has since been deleted</li>
+        </ul>
+    The status information evolves according to the logic in the state diagram:
+    
+     <img src="../../docs/images/HistoryStatus.png"> 
+
+
+    <h3><a name="IntRef">Internal References</a></h3>
+    <p>
+    TBD
+    </p>
+
 
 </div>
 {% endblock %}

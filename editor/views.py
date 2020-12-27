@@ -32,7 +32,7 @@ def index(request):
         userHasAccess = ProjectUser.objects.filter(project_id=project.id).filter(user__username__contains=userRequestName).exists()
             
         applications = Application.objects.order_by('name').filter(project_id=project.id)
-        default_val_set_id = DataItemValSet.objects.filter(project_id=project.id).get(name='Default').id
+        default_val_set_id = ValSet.objects.filter(project_id=project.id).get(name='Default').id
         listOfApplications = []
         for application in applications:
             listOfApplications.append(application)
