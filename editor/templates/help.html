@@ -9,16 +9,22 @@
 
 <div class="container-fluid bg-grey">
     <p>
-    The editor provides an environment where the following items can be created, edited and linked with each other:
-    <ul>
-    <li><a href="#SpecItem">Specification Items</a></li>
-    <li><a href="#VerItem">Verification Items</a></li>
-    </ul>
-    The editor explicityl supports the service concept of the 
+    The editor provides an environment where users can specify their service-oriented applications.
+    The editor explicitly supports the service concept of the 
     <a href="https://www.pnp-software.com/cordetfw">Cordet Framework</a> but can also be used independently
     of the framework as a generic requirements capture tool.
+    </p><p>
+    The data managed by the editor are stored in a database held on a server.
+    The processing of the editor data is done by a back-end running on the server.
+    The rendering of the editor data is done by a front-end running on a client machine.
+    </p><p>
+    The Cordet FW Editor lets users create an <strong>instance</strong> of a specification for their applications.
+    The editor enforces a <strong>model</strong> of how this specification instance is built.
+    The model has two parts: a static part which defines the structure of the editor database; 
+    and a dynamic part which defines the behaviour associated to the data held in the database.
+    The editor behaviour is implemented in the back-end component of the editor.
     </p>
-
+    
     <h3>Editor Access</h3>
     <p>
     Access to the editor is for members only. 
@@ -26,95 +32,83 @@
     Members are given a user name and an initial password (which they are expected to change after the first log-in) and they
     are allocated to one or more <i>projects</i>.
     </p>
-
-    <h3>Target Environment</h3>    
-    <p>
-    The editor is aimed at deployment in a closed environment (e.g. company intranet) where a medium-sized team of trusted
-    users cooperate to define the specification of a set of related applications.
-    </p>
     
-    <h3>Categories of Users</h3>
+    <h3>Database Model</h3>
     <p>
-    There are two types of users: the <strong>admin user</strong> and <strong>basic users</strong>.
-    </p><p>
-    The <strong>admin user</strong> is responsible for: 
+    The editor database models the following concepts:
     <ul>
-    <li>Creating and managing basic users</li>
-    <li>Creating projects and assigning their owner</li>
-    <li>Assigning basic users to a project</li>
-    <li>Defining the ValSets for the specification items of a project</li>
+    <li>Users</li>
+    <li>Projects</li>
+    <li>Applications</li>
+    <li>Releases</li>
+    <li>Specification Items</li>
+    <li>ValSets</li>
     </ul>
+    The <strong>users</strong> are the entities interacting with the editor.
+    An admin user is responsible for administration tasks; other users are responsible for populating
+    the database.
+    Each user is allocated to a project (but the same user may be allocated to multiple projects).
+    Each user may have different <a href"#UserRoles">roles</a> within a project defining different 
+    levels of access to the project artifacts.
     </p><p>
-    The <strong>basic users</strong> (or just "users" for short) manage the project and the specification items they contain 
-    in accordance with their roles.
-    Within a project, a user has one of two roles:
-    <ul>
-    <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
-    The project owner can: 
-        <ul>
-        <li>Create and edit applications within the project</li>
-        <li>Create new specification items, new types and new verification items in the project </li>
-        <li>Edit, view, copy and delete the specification items, types and verification items </li>
-        </ul>
-    <li>The <strong>Project User</strong> is allocated to a project by the admin user.
-    The project user can: 
-        <ul>
-        <li>Create new specification items, types and verification items within the project and its applications</li>
-        <li>Edit, view, copy and delete specification items, types and verification items in the project</li>
-        </ul>
-    </ul>
+    A <strong>project</strong> is the top-level container for a specification created by the editor users.
+    It consists of a set of <strong>applications</strong>.
+    Each specification item belongs either to a project (in which case it is common to all applications
+    within the project) or it belongs to an application within a project.
     </p><p>
-    A user can be assigned (either as owner or as plain user) to multiple projects.
-    </p>
-
-    <h3><a name="Projects">Projects</a></h3>
-    <p>
-    Projects are created by the admin user.
-    A project is a container for one or more applications. 
-    The applications are created by the project owner. 
-    In order to support a history mechanism for specification and verification items, projects have a <i>release number</i>.
-    The release number is initialized to zero when the project is created and is incremented by 1 when the project owner makes 
-    a new release of the project.
-    </p>
-
-    <h3><a name="Applications">Applications</a></h3>
-    <p>
-    Applications belong to a project. They are created by the project owner.
-    An application is a container for a subset of the specification items and verification items in a project. 
+    Both projects and applications may have multiple <a href"#Releases"><strong>releases</strong></a>.
+    A project release is identified by a non-negative integer.
+    An application release is identified by a pair "x.y" where 'x' is the release identifier of the
+    project to which the application belongs and 'y' is a non-negative integer.
     </p><p>
-    In order to support a history mechanism for their specificaton and verification items applications have a <i>release number</i>.
-    The release number has the form 'x.y'. Here, 'x' is the release number of the project to which the application belongs
-    and 'y' is an non-negative integer
-    which identifies the application release within a project release. 
-    The application release number is initialized to zero when the project is created or when a new release of the project
-    is done and  is incremented by 1 when the project owner makes a new release of the application.
-    </p>
-
-    <h3><a name="SpecItem">Specification Items</a></h3>
-    <p>
-    Specification items describe a piece of information which specifies a feature of an application 
-    or of its enclosing project.    
+    A <a href="#SpecItem"><strong>specification item</strong></a> is the lowest-level item managed by the editor.
+    Specification items are created, edited and deleted by the users.
     A specification item could, for instance, consist of an application requirement, or of the definition
     of a data item, or of a model used to describe part of an application behaviour.
     </p><p>
-    Within a project, a specification item is identified by the pair: domain:name. 
-    The domain is used to capture a set of logically related specification items.
+    A ValSet is a set of values for the specification items within a project.
+    The "Default" ValSet is pre-defined.
+    A project may have additional ValSet representing alternative values for some of their specification items.
+    Each specification value is assigned to a ValSet.
+    </p><p>
+    To illustrate, let specification item S1 be assigned to the Default ValSet.
+    Suppose that there is a need to maintain a variant of specification item S1. This could, for instance,
+    be due to the fact that the system which is being specified in the editor exists in two slightly
+    dfferent variants, which differ from each other in having two different instances of specification item S1.
+    In such a scenario, a second ValSet can be created to hold the specification items which have different
+    formulations for the alternative variant of the system.
+    
+    <h4><a name="SpecItem">Specification Items</a></h4>
+    <p>
+    Specification items are defined by their attributes and by the behaviour associated to them
+    (i.e. by the way they are handled by the editor).
+    Specification items are divided into <strong>categories</strong>. 
+    Specification items in the same category have the same behaviour associated to them (i.e. they are
+    treated in the same way by the editor).    
+    </p><p>
+    Some specification item attributes (the <strong>core attributes</strong>) have a semantics which is
+    independent of the specification item category.
+    Other specification item attributes have a category-specific semantics.
+    </p><p>
+    Within a project, a specification item is identified by the pair: <strong>domain:name</strong>. 
+    The domain is used to capture a set of logically related specification items and acts as a kind
+    of name space.
     The name is unique within the domain.
     </p><p>
-    Some of the attributes of a specification item have a fixed semantics. Others have a semantics which
-    depends on the specification item category.
-    The following <i>categories</i> of specification items are recognized by the editor:
-    <ul>
-    <li><i>Requirement</i>: a requirement specifying an application</li>
-    <li><i>Data Item</i>: a data item used in a project</li>
-    <li><i>Behavioural Model</i>: a model of part of the behaviour of an application</li>
-    <li><i>Service</i>: a service offered or used by applications in a project</li>
-    <li><i>Packet</i>: a packet carrying a comment or a report</li>
-    <li><i>Packet Parameter</i>: a parameter in a packet</li>
-    </ul>
+    The editor keeps track of the <a href="#History"><strong>history</strong></a> of specification 
+    items by maintaining different copies
+    of the specification item reflecting the temporal evolution of the specification item.
+    The history mechanism is supported by the 
+    <strong>update time</strong> attribute representing the time when the specification time was last updated
+    and by the <strong>previous</strong> attribute which points to the previous version of the specification item. 
     </p><p>
-    The attributes of a specification item with fixed semantics are (asterisked attributes are mandatory; the others
-    may be left empty):
+    Each specification item has an owner, which is the user who last updated the specification item.
+    </p><p>
+    Each specification item has a short description (its <strong>title</strong>) and a long
+    description (its <strong>description</strong>).
+    </p><p>
+    Thus, in summary, the core attributes of specification items are 
+    (asterisked attributes are mandatory; the others may be left empty):
     <ul>
     <li><i>Domain(*)</i>: the domain to which the specification item belongs</li>
     <li><i>Name(*)</i>: the name of the specification item (unique within the domain)</li>
@@ -125,117 +119,187 @@
     <li><i>Title(*)</i>: a short description of the specification item</li>
     <li><i>Description</i>: a long description of the specification item</li>
     <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
-    <li><i>Status(*)</i>: the <a href="#History">history status</a> of the speecification item</li>
+    <li><i>Status(*)</i>: the history status of the speecification item</li>
     <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
                             history status of the specification was last updated</li>
-    <li><i>Previous Pointer</i>: the pointer to the previous version of a specification item which has been modified 
-                                 (empty if the specification item has history status "New")</li>
+    <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
+                                 (empty if the specification item has no history)</li>
     <li><i>Justification</i>: the rationale for the existence of the specification item or for its value</li>
     <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
     <li><i>ValSet</i>: the <a href="#ValSet">ValSet</a? to which the specification item belongs</li> 
     </ul>
     </p><p>
-    The attributes with a semantics which depends on the category of a specification item are
-    listed in the table below.
-    Each row in the table represents an attribute and each column defines the meaning of the attributes
-    for a particular category of specification items.
+    The category-specific attributes of specification items are:
+    <ul>
+    <li>Value</li>
+    <li>Specification Item Link: a link to another specification item</li>
+    <li>Type: a link to a specification item holding type information</li>
+    <li>Kind: sub-type information</li>
+    <li>T1 to T3: attributes holding auxiliary textual information</li>
+    <li>N1 to N3: attributes holding auxiliary numeric (integer) information</li>
+    <li>F1 to F3: attributes holding auxiliary boolean information</li>
+    <li></li>
+    </ul>
+    The category-specific meaning of these attributes is discussed <a href="#SpecItemCat">below</a>.
+    </p>
     
-    <table class="table table-hover table-sm">
-      <thead>
-        <tr class="table-warning">
-          <th>Attribute</th>
-          <th>Requirements</th>
-          <th>Data Items</th>
-          <th>Behavioural Model</th>
-          <th>Services</th>
-          <th>Packets</th>
-          <th>Packet Parameters</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr>
-            <td>Type</td>
-            <td>Requirement type (e.g. standard, adaptation, or constraint requirement)</td>
-            <td>Data item type</td>
-            <td>Model type (state machine or procedure)</td>
-            <td></td>
-            <td>Packet kind report or command)</td>
-            <td>Parameter role (data item, packet parameter, discriminant)</td>
-          </tr>
-          <tr>
-            <td>Sub-Type</td>
-            <td>Verification method</td>
-            <td>Data item kind (parameter, variable, constant, packet parameter) </td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Value</td>
-            <td>Requirement text</td>
-            <td>Data item value </td>
-            <td>Json representation of model</td>
-            <td></td>
-            <td></td>
-            <td>Default value of packet parameter</td>
-          </tr>
-          <tr>
-            <td>Parent</td>
-            <td>Parent requirement</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>Parent packet (derived packets only)</td>
-            <td>Packet to which packet parameter belongs</td>
-          </tr>
-          <tr>
-            <td>AuxText1</td>
-            <td></td>
-            <td>Data item multiplicity</td>
-            <td>Svg representation of model</td>
-            <td></td>
-            <td>Description of packet parameters</td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>AuxText2</td>
-            <td></td>
-            <td>Data item unit</td>
-            <td></td>
-            <td></td>
-            <td>Description of packet destination</td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>AuxN1</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>Packet parameter order</td>
-          </tr>
-          <tr>
-            <td>AuxN2</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>Packet parameter group</td>
-          </tr>
-          <tr>
-            <td>AuxN3</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>Packet parameter repetition</td>
-          </tr>
-      </tbody>
-    </table>   
+    <h3><a name="BehaviouralModel">Behavioural Model</a></h3>
+    <p>
+    The following sub-sections describe various aspects of the editor behavuiour.
+    
+    <h4><a name="UserRoles">User Roles</a></h4>
+    <p>
+    There are two types of users: the <strong>admin user</strong> and <strong>basic users</strong>.
+    </p><p>
+    The <strong>admin user</strong> is responsible for: 
+    <ul>
+    <li>Creating and managing basic users</li>
+    <li>Creating projects and assigning their owner</li>
+    <li>Assigning basic users to a project</li>
+    <li>Defining the ValSets for the specification items of a project</li>
+    </ul>
+    The <strong>basic users</strong> (or just "users" for short) manage the project and the specification items they contain 
+    in accordance with their roles.
+    Within a project, a user has one of two roles:
+    <ul>
+    <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
+    The project owner can: 
+        <ul>
+        <li>Create and edit applications within the project</li>
+        <li>Make a new release of a project or of one of its applications</li>
+        <li>Create new specification items in the project </li>
+        <li>Edit, view, copy and delete the specification items in the project </li>
+        </ul>
+    <li>The <strong>Project User</strong> is allocated to a project by the admin user.
+    The project user can: 
+        <ul>
+        <li>Create new specification items within the project </li>
+        <li>Edit, view, copy and delete specification items in the project</li>
+        </ul>
+    </ul>
+    A user can be assigned (either as owner or as plain user) to multiple projects.
+    </p>
+    
+    
+    <h4><a name="Releases">Release Mechanism</a></h4>
+    <p>
+    The release number of a project is a non-negative integer.
+    The release number of an application has the form "x.y", where 'x' is the release number of the
+    project to which the application belongs and 'y' is a non-negative number. 
+    The release numbers of projects and applications are set according to the rules stated below.:
+    <ul>
+    <li>When a project is created, its release number x if set to zero</li>
+    <li>When an application is created the y component of its release number is set to zero</li>
+    <li>When the project owner makes a new release of a project, its release number is incremented by 1
+    and the y component of the release number of its applications is set to zero</li>
+    <li>When the project owner makes a new release of an applicatioin, 
+    the y component of the release number of the application is incremented by 1</li>
+    <li>
+    </ul>
+    A textual description may be attached to each release.
+    A release of a project or of an application causes the history status of the specification items
+    in the project or application to be updated as described <a href="#History">below</a>. 
+    </p>
+    
+    <h4><a name="History">History Mechanism</a></h4>
+    <p>
+    Specification items carry history information through the following attributes:
+    (a) the owner; (b) the status; (c) the previous pointer; and (d) the update time.
+    The status is one of the following:
+        <ul>
+        <li><strong>New</strong>: the item has been created in the current release</li>
+        <li><strong>Modified </strong>: the item was created in a previous release and has been modified in the current release</li>
+        <li><strong>Confirmed</strong>: the item was created in a previous release and has not been modified in the current release</li>
+        <li><strong>Obsolete</strong>: the item was created in a previous release and has since been modified</li>
+        <li><strong>Deleted</strong>: the item was created in a previous release and has since been deleted</li>
+        </ul>
+    The status information evolves according to the logic in the state diagram:
+    
+    <img src="../../docs/images/HistoryStatus.png"> 
+    
+    <h3><a name="#SpecItemOper">Operations Performed on Specification Items</a></h3>
+    <p>
+    TBD
+    </p>
+    
+    
+    <h3><a name="#SpecItemCat">Specification Item Categories</a></h3>
+    <p>
+    The specification item categories are:
+    <ul>
+    <li>Requirements</li>
+    <li>Data Item Types</li>
+    <li>Enumerated Values</li>
+    <li>Data Items</li>
+    <li>Behavioural Models</li>
+    <li>Packets</li>
+    <li>Packet Parameters</li>
+    <li>Application Commands</li>
+    <li>Application Reports</li>
+    <li>Test Cases</li>
+    <li>Review Items</li>
+    </ul>
+    
+    </p>
+    
+    <h4><a name="DataItems">Data Items</a></h4>
+    <p>
+    TBD
+    </p>
+    
+    
+    <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
+    <p>
+    Behavioural models are implemented as state machine or procedure models generated with the 
+    <a href="https://www.pnp-software.com/fwprofile/editor">FW Profile Editor</a>.
+    The FW Profile Editor stores models in a database (the <i>FW Profile Editor Database</i>).
+    Each model has an owner who is identified by its e-mail address.
+    Within the FW Profile Editor, models have a name and can have a domain and a title.
+    Models are defined as json strings and an svg representation which can be used to render them as pictures.
+    </p><p>
+    The Cordet FW Editor has a connection to FW Profile Editor Database and it allows a user to import all the models 
+    corresponding to one or more domains.
+    In response to an import request, the Cordet FW Editor retrieves the FW Profile Models of the selected domains from the FW Profile Editor
+    Database and imports them into a dedicated table (the <i>FwProfileModel</i> table) in the Cordet FW Editor Database. 
+    The import function processes each imported model according to the following rules:
+    <ul>
+    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
+        'CNF', and if the imported entry is identical to the local entry, then nothing is done.</li>
+    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
+        'CNF', and if the imported entry differs from the local entry, then the status of the local entry is changed from 'CNF' to 'OBS' and
+        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
+        and its 'previous' field is set to point to the old entry.</li>
+    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
+        'NEW', then the entry is overwritten with the imported data.</li>
+    <li>In all other cases, 
+        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
+        and its 'previous' field is set to 'None'.</li>
+    </ul>
+    In the second and third case, an error is issued if more than one entry is found with the same domain:name:status combination is found.
+    </p>
+    
+    
+    
+    
+    
+ 
+    
+
+     
+ 
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
     
     In the case of data items, the value can be defined either as a raw numerical value or as an arithmetic expression 
     which uses the values of one or more data items.
@@ -290,35 +354,6 @@
     </p>
     
     
-    <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
-    <p>
-    Behavioural models are implemented as state machine or procedure models generated with the 
-    <a href="https://www.pnp-software.com/fwprofile/editor">FW Profile Editor</a>.
-    The FW Profile Editor stores models in a database (the <i>FW Profile Editor Database</i>).
-    Each model has an owner who is identified by its e-mail address.
-    Within the FW Profile Editor, models have a name and can have a domain and a title.
-    Models are defined as json strings and an svg representation which can be used to render them as pictures.
-    </p><p>
-    The Cordet FW Editor has a connection to FW Profile Editor Database and it allows a user to import all the models 
-    corresponding to one or more domains.
-    In response to an import request, the Cordet FW Editor retrieves the FW Profile Models of the selected domains from the FW Profile Editor
-    Database and imports them into a dedicated table (the <i>FwProfileModel</i> table) in the Cordet FW Editor Database. 
-    The import function processes each imported model according to the following rules:
-    <ul>
-    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
-        'CNF', and if the imported entry is identical to the local entry, then nothing is done.</li>
-    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
-        'CNF', and if the imported entry differs from the local entry, then the status of the local entry is changed from 'CNF' to 'OBS' and
-        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
-        and its 'previous' field is set to point to the old entry.</li>
-    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
-        'NEW', then the entry is overwritten with the imported data.</li>
-    <li>In all other cases, 
-        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
-        and its 'previous' field is set to 'None'.</li>
-    </ul>
-    In the second and third case, an error is issued if more than one entry is found with the same domain:name:status combination is found.
-    </p>
 
     
     <h3><a name="VerItem">Verification Items</a></h3>
@@ -399,21 +434,6 @@
     A verification link includes a description of the conditions under which the target of the link is verified 
     by the verification item.
 
-    <h3><a name="History">History Mechanism</a></h3>
-    <p>
-    Specification items, types and verification items carry history information through the following attributes:
-    (a) the owner; (b) the status; (c) the previous pointer; and (d) the update time.
-    The status is one of the following:
-        <ul>
-        <li><strong>New</strong>: the item has been created in the current release</li>
-        <li><strong>Modified </strong>: the item was created in a previous release and has been modified in the current release</li>
-        <li><strong>Confirmed</strong>: the item was created in a previous release and has not been modified in the current release</li>
-        <li><strong>Obsolete</strong>: the item was created in a previous release and has since been modified</li>
-        <li><strong>Deleted</strong>: the item was created in a previous release and has since been deleted</li>
-        </ul>
-    The status information evolves according to the logic in the state diagram:
-    
-     <img src="../../docs/images/HistoryStatus.png"> 
 
 
     <h3><a name="IntRef">Internal References</a></h3>
