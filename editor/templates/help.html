@@ -70,13 +70,13 @@
     The "Default" ValSet is pre-defined.
     A project may have additional ValSet representing alternative values for some of their specification items.
     Each specification value is assigned to a ValSet.
-    </p><p>
     To illustrate, let specification item S1 be assigned to the Default ValSet.
     Suppose that there is a need to maintain a variant of specification item S1. This could, for instance,
     be due to the fact that the system which is being specified in the editor exists in two slightly
     dfferent variants, which differ from each other in having two different instances of specification item S1.
     In such a scenario, a second ValSet can be created to hold the specification items which have different
     formulations for the alternative variant of the system.
+    </p>
     
     <h4><a name="SpecItem">Specification Items</a></h4>
     <p>
@@ -104,8 +104,11 @@
     </p><p>
     Each specification item has an owner, which is the user who last updated the specification item.
     </p><p>
-    Each specification item has a short description (its <strong>title</strong>) and a long
-    description (its <strong>description</strong>).
+    Each specification item has a short description (its <strong>title</strong>) and it may have a long
+    description (its <strong>description</strong>). Specification items may have a <strong>value</strong>.
+    </p><p>
+    Some categories of specification items are in a parent-child relationship (e.g. a packet parameter
+    belongs to a packet -- the packet is the "parent" of the packet parameter).      
     </p><p>
     Thus, in summary, the core attributes of specification items are 
     (asterisked attributes are mandatory; the others may be left empty):
@@ -118,6 +121,8 @@
     <li><i>Category(*)</i>: the category of the specification item</li>
     <li><i>Title(*)</i>: a short description of the specification item</li>
     <li><i>Description</i>: a long description of the specification item</li>
+    <li><i>Value</i>: the value of the specification item</li>
+    <li><i>Parent</i>: the higher-level specification item to which this specification item is attached</li>
     <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
     <li><i>Status(*)</i>: the history status of the speecification item</li>
     <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
@@ -128,20 +133,101 @@
     <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
     <li><i>ValSet</i>: the <a href="#ValSet">ValSet</a? to which the specification item belongs</li> 
     </ul>
-    </p><p>
-    The category-specific attributes of specification items are:
-    <ul>
-    <li>Value</li>
-    <li>Specification Item Link: a link to another specification item</li>
-    <li>Type: a link to a specification item holding type information</li>
-    <li>Kind: sub-type information</li>
-    <li>T1 to T3: attributes holding auxiliary textual information</li>
-    <li>N1 to N3: attributes holding auxiliary numeric (integer) information</li>
-    <li>F1 to F3: attributes holding auxiliary boolean information</li>
-    <li></li>
-    </ul>
-    The category-specific meaning of these attributes is discussed <a href="#SpecItemCat">below</a>.
+    The category-specific attributes are discussed <a href="#SpecItemCat">below</a>.
     </p>
+    
+    <h4><a name="SpecItemCat">Specification Item Categories</a></h4>
+    <p>
+    The specification item categories are listed below. 
+    For some categories, category-specific attributes are defined in addition to the core attributes defined
+    <a href="#SpecItems">here</a>.
+    The category-specific attributes are also listed below together with, where applicable, the category-specific
+    meaning of core attributes. 
+    <ul>
+    <li>Requirement: specification of a feature of an application</li>
+        <ul>
+        <li>Value: the normative text of the requirement</li>
+        <li>Kind: the kind of requirement (standard requirement, adaptation requirement, or constraint requirement)</li>
+        <li>Verification Method: the verification method for the requirement</li>
+        </ul>
+    <li>Data Item Type: specification of a data item type </li>
+        <ul>
+        <li>Value: the native type to which the type is mapped</li>
+        <li>Size: the size in number of bits of the type</li>
+        <li>Enumerated: a flag indicating whether the type is enumerated</li>
+        </ul>
+    <li>Enumerated Item: specification of a value of an enumerated type</li>
+        <ul>
+        <li>Parent: the type to which the enumerated item belongs</li>
+        <li>Value: the value of the enumerated item</li>
+        <li>Title: the name of the enumerated item</li>
+        </ul>
+    <li>Data Item: specification of a data item</li>
+        <ul>
+        <li>Value: the value of the data item (possibly expressed as an arithmetic expression
+                   of other data items)</li>
+        <li>Kind: the kind of data item (a constant, a global variable, a parameter, a packet parameter)</li>
+        <li>Multiplicity: the multiplicity of the data item</li>
+        </ul>
+    <li>Behavioural Model: a FW Profile model describing an aspect of an application behaviour</li>
+        <ul>
+        <li>Value: the json representation of the model</li>
+        <li>Kind: the kind of model (a state machine or a procedure)</li>
+        <li>Description: the svg representation of the model</li>
+        </ul>
+    <li>Service: specification of a service in a project</li>
+        <ul>
+        <li>Value: the service identifier</li>
+        </ul>
+    <li>Packet: specification of a packet implementing a command or report in a service</li>
+        <ul>
+        <li>Service: the service to which the packet belongs</li>
+        <li>Value: the sub-service identifier</li>
+        <li>Parameters: a description of the parameters</li>
+        <li>Destination: a description of the packet destination</li>
+        <li>Discriminant: a pointer to the packet parameter acting as discriminant (only for packets
+                          with derived packets)</li>
+        <li>Parent: a pointer to the parent packet (only for packets with a discriminant)</li>
+        </ul>
+    <li>Packet Parameter: specification of a parameter in a packet</li>
+        <ul>
+        <li>Parent: a pointer to the packet to which the packet parameter belongs</li>
+        <li>Parameter: a pointer to the data item acting as parameters</li>
+        <li>Role: the role of the packet parameter (discriminant, housekeeping parameter, or packet parameter)</li>
+        <li>Order: the position of the parameter within the packet</li>
+        <li>Group: the parameter group size</li>
+        <li>Repetition: the repetition number for the parameter</li>
+        </ul>
+    <li>Packet Behaviour: specification of the behaviour of a packet within an application</li>
+        <ul>
+        <li>Parent: a pointer to the packet </li>
+        <li>Role: the role played by the application for the service implemented by the packet
+                  (service provider or service user)</li>
+        <li>Acceptance Check: the acceptance check (for incoming commands or reports) </li>
+        <li>Enable Check: the enable check (for out-going commands or reports)</li>
+        <li>Repeat Check: the enable check (for out-going commands or reports)</li>
+        <li>Update Action: the update action (for out-going commands or reports)</li>
+        <li>Start Action: the start action (for incoming commands)</li>
+        <li>Progress Action: the progress action (for incoming commands)</li>
+        <li>Termination Action: the termination action (for incoming commands)</li>
+        <li>Abort Action: the abort action (for incoming commands)</li>
+        </ul>
+    <li>Verification Item: a piece of information which verifies other specification items (e.g. a test case
+                           or an analysis of a requirement)</li>
+        <ul>
+        <li>Value: the description of the verification activity (e.g. the steps of the test case or
+                   the description of the analysis or review activity) </li>
+        <li>Pre-Conditions: the pre-conditions for the verification activity</li>
+        <li>Post-Conditions: the post-conditions for the verification activity</li>
+        <li>Outcome: the outcome of the verification activity</li>
+        <li>Verification Status: the verification status (open or closed)</li>
+        <li>Verified Items: the specification items verified by the verification item</li>
+        </ul>
+    </ul>
+    For some categories, category-specific attributes are defined in addition to the core attributes defined
+    <a href="#SpecItems">here</a>.
+    </p>
+    
     
     <h3><a name="BehaviouralModel">Behavioural Model</a></h3>
     <p>
@@ -222,30 +308,31 @@
     TBD
     </p>
     
-    
-    <h3><a name="#SpecItemCat">Specification Item Categories</a></h3>
-    <p>
-    The specification item categories are:
+    <h4><a name="ValSets">ValSets</a></h4>
+    The editor allows multiple set of values to be assigned to the same specification item.  
+    A set of values for the specification values is called a <i>ValSet</i>.
+    The admin user defines the range of ValSets for each project. 
+    The 'Default' ValSet is pre-defined for all projects. 
+    </p><p>
+    The ValSet attribute of a specification item is used to manage the ValSets: 
+    when the specification item is created, it is allocated to the Default ValSet.
+    The user can then create new instances of the same specification item 
+    belonging to one of the other ValSets defined for the project to which the specification_item belongs. 
+    </p><p>
+    The ValSet is managed as follows:
     <ul>
-    <li>Requirements</li>
-    <li>Data Item Types</li>
-    <li>Enumerated Values</li>
-    <li>Data Items</li>
-    <li>Behavioural Models</li>
-    <li>Packets</li>
-    <li>Packet Parameters</li>
-    <li>Application Commands</li>
-    <li>Application Reports</li>
-    <li>Test Cases</li>
-    <li>Review Items</li>
+    <li>when a new specification item is created, its ValSet is set to 'Default'</li>
+    <li>When a specification item is edited, its ValSet remains unchanged</li>
+    <li>When a specification item is copied, the ValSet of the newly created copy can be set freely</li>
     </ul>
-    
     </p>
     
-    <h4><a name="DataItems">Data Items</a></h4>
+
+    <h4><a name="IntRef">Internal References</a></h4>
     <p>
     TBD
-    </p>
+    </p>    
+    
     
     
     <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
@@ -301,145 +388,10 @@
 
 
     
-    In the case of data items, the value can be defined either as a raw numerical value or as an arithmetic expression 
-    which uses the values of one or more data items.
-    </p>
-    
-    
-    <h4><a name="SpecItemType">Specification Item Types</a></h4>
-    <p>
-    Some categories of specification items have a type attribute. 
-    The range of type values is defined by the project owner.
-    A type has the following attributes:
-    <ul>
-    <li><strong>Category(*)</strong>: the category to which the type applies</li>
-    <li><strong>Project(*)</strong>: the project for which the type is defined</li>
-    <li><strong>Domain(*)</strong>: the domain within which the type is defined</li>
-    <li><strong>Name(*)</strong>: the name of the type</li>
-    <li><strong>Description(*)</strong>: description of the type</li>
-    <li><strong>Native</strong>: the native type to which the type is mapped</li>
-    <li><strong>Size</strong>: the size of the type in number of bits</li>
-    <li><strong>Enumerated(*)</strong>: a flag indicating whether the type is enumerated</li>
-    <li><i>Owner(*)</i>: the name of the user who created or last edited the type</li>
-    <li><i>Status(*)</i>: the <a href="#History">history status</a> of the type</li>
-    <li><i>Update Time(*)</i>: the time when the type was created or when the 
-                            status of the type was last updated</li>
-    <li><i>Previous Pointer</i>: the pointer to the previous version of a type which has been modified 
-                                 (empty if the type has status "New")</li>
-    </ul>
-    In the case of enumerated types, the type is defined by defining the (name, values) pair of the enumeration.
-    </p><p>
-    The "native" and "size" attributes support code generation for data item types in that they allow
-    the types defined within the editor to be mapped to native types within an implementation language. 
-    </p>
-    
-    
-    <h4><a name="ValSets">ValSets</a></h4>
-    The editor allows multiple set of values to be assigned to the same specification item.  
-    A set of values for the specification values is called a <i>ValSet</i>.
-    The admin user defines the range of ValSets for each project. 
-    The 'Default' ValSet is pre-defined for all projects. 
-    </p><p>
-    The ValSet attribute of a specification item is used to manage the ValSets: 
-    when the specification item is created, it is allocated to the Default ValSet.
-    The user can then create new instances of the same specification item 
-    belonging to one of the other ValSets defined for the project to which the specification_item belongs. 
-    </p><p>
-    The ValSet is managed as follows:
-    <ul>
-    <li>when a new specification item is created, its ValSet is set to 'Default'</li>
-    <li>When a specification item is edited, its ValSet remains unchanged</li>
-    <li>When a specification item is copied, the ValSet of the newly created copy can be set freely</li>
-    </ul>
-    </p>
+
     
     
 
-    
-    <h3><a name="VerItem">Verification Items</a></h3>
-    <p>
-    Verification items are intended to define a piece of information which is used to verify a specification
-    item. 
-    A verification item could, for instance, consist of a test case which verifies one or more requirements,
-    or of a document which contains information which verifies the implementation of one or more
-    specification items, or of a report of the review of the implementation of one or more specification items.
-    </p><p>
-    Some of the attributes of a verification item have a fixed semantics. Others have a semantics which
-    depends on the verification item category.
-    The following <i>categories</i> of specification items are recognized by the editor:
-    <ul>
-    <li><i>Test Case</i>: a test case which verifies the implementation of some aspects of an application</li>
-    <li><i>Review</i>: a review of the implementation of one or more specification items</li>
-    <li><i>Analysis</i>: an analysis of the implementation of one or more specification items </li>
-    </ul>
-    </p><p>
-    The attributes of a specification item with fixed semantics are (asterisked attributes are mandatory; the others
-    may be left empty):
-    
-    <ul>
-    <li><i>Domain(*)</i>: the domain to which the verification item belongs</li>
-    <li><i>Name(*)</i>: the name of the verification item (unique within the domain)</li>
-    <li><i>Project(*)</i>: the project to which the verification item belongs </li>
-    <li><i>Application</i>: the application to which the verification item belongs (empty if the specification
-                     item verifies a project-level feature)</li>
-    <li><i>Category(*)</i>: the category of the veriication item</li>
-    <li><i>Title(*)</i>: a short description of the verification item</li>
-    <li><i>Description</i>: a long description of the verification item</li>
-    <li><i>Owner(*)</i>: the name of the user who created or last edited the verification item</li>
-    <li><i>Status(*)</i>: the <a href="#History">history status</a> of the verification item</li>
-    <li><i>Update Time(*)</i>: the time when the verification item was created or when the 
-                            status of the verification item was last updated</li>
-    <li><i>Previous Pointer</i>: the pointer to the previous version of a verification item which has been modified 
-                                 (empty if the specification item has status "New")</li>
-    <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
-    </ul>
-    </p><p>
-    The attributes with a semantics which depends on the category of a verification item are
-    listed in the table below.
-    Each row in the table represents an attribute and each column defines the meaning of the attributes
-    for a particular category of verification items.
-    
-    <table class="table table-hover table-sm">
-      <thead>
-        <tr class="table-warning">
-          <th>Test Case</th>
-          <th>Review</th>
-          <th>Analysis</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr>
-            <td>Pre-Conditions</td>
-            <td>Pre-conditions for executing the test case</td>
-            <td>Pre-conditions for the validity of the review</td>
-            <td>Pre-conditions for the analysis of the review<</td>
-          </tr>
-          <tr>
-            <td>Expected Outcome</td>
-            <td>Expected outcome of test case</td>
-            <td>Expected outcome of review</td>
-            <td>Expected outcome of analysis</td>
-          </tr>
-          <tr>
-            <td>Actual Outcome</td>
-            <td>Actual outcome of test case</td>
-            <td>Actual outcome of review</td>
-            <td>Actual outcome of analysis</td>
-          </tr>
-      </tbody>
-    </table>
-    
-    To each verification item, one or more <strong>verification links</strong> may be attached. A verification link
-    identifies a specification item which is verified by the verification item.
-    A verification link includes a description of the conditions under which the target of the link is verified 
-    by the verification item.
-
-
-
-    <h3><a name="IntRef">Internal References</a></h3>
-    <p>
-    TBD
-    </p>
 
 
 </div>
