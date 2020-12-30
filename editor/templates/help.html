@@ -104,6 +104,11 @@
     </p><p>
     Each specification item has an owner, which is the user who last updated the specification item.
     </p><p>
+    Some categories of specification item may play different roles or may have different kinds.
+    This is captured by the 'Kind' attribute.
+    </p><p>
+    Some specification item may have size-related information attached to them.
+    </p><p>
     Each specification item has a short description (its <strong>title</strong>) and it may have a long
     description (its <strong>description</strong>). Specification items may have a <strong>value</strong>.
     </p><p>
@@ -125,6 +130,8 @@
     <li><i>Parent</i>: the higher-level specification item to which this specification item is attached</li>
     <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
     <li><i>Status(*)</i>: the history status of the speecification item</li>
+    <li><i>Kind</i>: the kind of the specification item within its category</li>
+    <li><i>Size</i>: a size-like attribute of a specification item</li>
     <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
                             history status of the specification was last updated</li>
     <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
@@ -154,7 +161,7 @@
         <ul>
         <li>Value: the native type to which the type is mapped</li>
         <li>Size: the size in number of bits of the type</li>
-        <li>Enumerated: a flag indicating whether the type is enumerated</li>
+        <li>Kind: the kind of data item type (either enumerated or non-enumerated</li>
         </ul>
     <li>Enumerated Item: specification of a value of an enumerated type</li>
         <ul>
@@ -167,7 +174,7 @@
         <li>Value: the value of the data item (possibly expressed as an arithmetic expression
                    of other data items)</li>
         <li>Kind: the kind of data item (a constant, a global variable, a parameter, a packet parameter)</li>
-        <li>Multiplicity: the multiplicity of the data item</li>
+        <li>Size: the multiplicity of the data item</li>
         </ul>
     <li>Behavioural Model: a FW Profile model describing an aspect of an application behaviour</li>
         <ul>
@@ -193,7 +200,7 @@
         <ul>
         <li>Parent: a pointer to the packet to which the packet parameter belongs</li>
         <li>Parameter: a pointer to the data item acting as parameters</li>
-        <li>Role: the role of the packet parameter (discriminant, housekeeping parameter, or packet parameter)</li>
+        <li>Kind: the role of the packet parameter (discriminant, housekeeping parameter, or packet parameter)</li>
         <li>Order: the position of the parameter within the packet</li>
         <li>Group: the parameter group size</li>
         <li>Repetition: the repetition number for the parameter</li>
@@ -201,7 +208,7 @@
     <li>Packet Behaviour: specification of the behaviour of a packet within an application</li>
         <ul>
         <li>Parent: a pointer to the packet </li>
-        <li>Role: the role played by the application for the service implemented by the packet
+        <li>Kind: the role played by the application for the service implemented by the packet
                   (service provider or service user)</li>
         <li>Acceptance Check: the acceptance check (for incoming commands or reports) </li>
         <li>Enable Check: the enable check (for out-going commands or reports)</li>
@@ -217,9 +224,10 @@
         <ul>
         <li>Value: the description of the verification activity (e.g. the steps of the test case or
                    the description of the analysis or review activity) </li>
+        <li>Kind: the kind of verification item (test case, review item, or analysis item)</li>
         <li>Pre-Conditions: the pre-conditions for the verification activity</li>
         <li>Post-Conditions: the post-conditions for the verification activity</li>
-        <li>Outcome: the outcome of the verification activity</li>
+        <li>Close-Out: the outcome of the verification activity</li>
         <li>Verification Status: the verification status (open or closed)</li>
         <li>Verified Items: the specification items verified by the verification item</li>
         </ul>
