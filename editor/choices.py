@@ -1,9 +1,3 @@
-# The role of a user attached to a project (currently not used)
-PROJECT_ROLE = (
-    ("R1","Role 1"),
-    ("R2","Role 2"),
-)
-
 # The status of an item with a history
 HISTORY_STATUS = (
     ("DEL","Deleted"),
@@ -48,36 +42,36 @@ DIT_KIND = (
 )
 
 # The kind of a behavioural model
-MODEL_KIND = {
+MODEL_KIND = (
     ("SM","State Machine"),
     ("PR","Procedure"),
-}
+)
 
 # The kind of a packet
-PCKT_KIND = {
+PCKT_KIND = (
     ("REP","Report"),
     ("CMD","Command"),
-}
+)
 
 # The role of a parameter in a packet
-PCKT_PAR_KIND = {
+PCKT_PAR_KIND = (
     ("DISC","Discriminant"),
     ("HK","Housekeeping Parameter"),
     ("PCK","Packet Parameter"),
-}
+)
 
 # The role played by an application for a packet
-PCKT_APP_KIND = {
+PCKT_APP_KIND = (
     ("PROV","Service Provider"),
     ("USER","Service User"),
-}
+)
 
 # The kind of a verification item
-VER_ITEM_KIND = {
+VER_ITEM_KIND = (
     ("TST","Test Case"),
     ("REV","Review Item"),
     ("ANA","Analysis Item"),
-}
+)
 
 # The verification method of a requirement
 REQ_VER_METHOD = (
@@ -87,8 +81,8 @@ REQ_VER_METHOD = (
 )
 
 # The verification status of a verification item
-VER_STATUS = {
+VER_STATUS = (
     ("OPEN","Verification Still Open"),
     ("CLOSED","Verification Closed"),
-}
+)
 

@@ -1,0 +1,5 @@
+/editor/__pycache__/**
+/python-app-venv/
+/static/
+*~
+*.pyc
