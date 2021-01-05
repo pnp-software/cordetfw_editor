@@ -1,5 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
-from CordetFwEditor.models import ProjectUser
+from editor.models import ProjectUser
 
 
 def is_project_owner(user, project):

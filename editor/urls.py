@@ -15,8 +15,8 @@ urlpatterns = [
     path('<int:project_id>/make_project_release', views.make_project_release, name='make_project_release'),
  
     path('<int:project_id>/add_application', views.add_application, name='add_application'),
-    path('<int:project_id>/<int:application_id>/edit_application', views.edit_application, name='edit_application'),
-    path('<int:project_id>/<int:application_id>/make_application_release', views.make_application_release, name='make_application_release'),
+    path('<int:application_id>/edit_application', views.edit_application, name='edit_application'),
+    path('<int:application_id>/make_application_release', views.make_application_release, name='make_application_release'),
     
     
     

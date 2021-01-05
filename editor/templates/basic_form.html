@@ -1,0 +1,12 @@
+{% extends "base_generic.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="col-lg-10 col-xl-9">
+<div class="jumbotron jumbotron-fluid bg-transparent mt-n3 mb-n5">
+  <h2>{{ title }}</h2>
+</div>
+
+{% crispy form %}
+
+</div>
+{% endblock %}

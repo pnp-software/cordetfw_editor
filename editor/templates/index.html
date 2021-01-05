@@ -44,7 +44,7 @@
               {% if request.user == item.project.owner %}
               <a class="btn btn-outline-dark btn-sm" href="{% url 'add_application' item.project.id %}" title="Add Application">A</a>
               <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'make_project_release' item.project.id %}?domainSelected=All_Domains" title="Make Release">Rel</a>
+                    href="{% url 'make_project_release' item.project.id %}" title="Make Release">Rel</a>
               </form>
               {% else %}
               <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">A</a>
@@ -52,16 +52,19 @@
               {% endif %}
               {% if item.user_has_access or request.user == item.project.owner %}
               <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_data_items' item.project.id item.default_val_set_id 'All_Domains' %}" 
+                    href="{% url 'list_project_items' 'DataItem' item.project.id item.default_val_set_id 'AllDomains' %}" 
                     title="Manage Data Pool">Dp</a>
               <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_data_types' item.project.id %}?domainSelected=All_Domains" title="Manage Data Types">Typ</a>
+                    href="{% url 'list_project_items' 'DataItemType' item.project.id item.default_val_set_id 'AllDomains' %}" 
+                    title="Manage Data Types">Typ</a>
               <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_services' item.project.id %}" title="Manage Services">Serv</a>
+                    href="{% url 'list_project_items' 'Service' item.project.id item.default_val_set_id 'AllDomains' %}" 
+                    title="Manage Services">Serv</a>
               <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_packets' item.project.id%}?service_sel=All_Services" title="List Packets">Pckt</a>
+                    href="{% url 'list_project_items' 'Packet' item.project.id item.default_val_set_id 'AllDomains' %}" 
+                    title="List Packets">Pckt</a>
               <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'export_project' item.project.id%}" title="Export Project">Ex</a>
+                    href="{% url 'export_project' item.project.id %}" title="Export Project">Ex</a>
               {% else %}
               <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Dp</a>
               <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Typ</a>
@@ -79,20 +82,23 @@
               <div class="btn-group">
                 {% if request.user == item.project.owner %}
                 <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'edit_application' item.project.id application.id%}" title="Edit Application">E</a>
+                    href="{% url 'edit_application' application.id%}" title="Edit Application">E</a>
                 <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'make_application_release' item.project.id application.id %}" title="Make Release">Rel</a>
+                    href="{% url 'make_application_release' application.id %}" title="Make Release">Rel</a>
                 {% else %}
                 <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">E</a>
                 <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Rel</a>
                 {%endif %}
                 {% if item.user_has_access or request.user == item.project.owner %}
                 <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_requirements' item.project.id application.id %}?domainSelected=All_Domains" title="Manage Requirements">Req</a>
+                    href="{% url 'list_application_items' 'Requirement' application.id item.default_val_set_id 'AllDomains' %}" 
+                    title="Manage Requirements">Req</a>
                 <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_models' item.project.id application.id %}?domainSelected=All_Domains" title="Manage Behavioural Models">Mod</a>
+                    href="{% url 'list_application_items' 'Model' application.id item.default_val_set_id 'AllDomains' %}" 
+                    title="Manage Behavioural Models">Mod</a>
                 <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_test_cases' item.project.id application.id %}?domainSelected=All_Domains" title="Manage Test Cases">Tst</a>
+                    href="{% url 'list_application_items' 'VerItem' application.id item.default_val_set_id 'AllDomains' %}" 
+                    title="Manage Verification Items>Tst</a>
                 {% else %}
                 <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Req</a>
                 <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Mod</a>

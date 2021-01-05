@@ -12,6 +12,7 @@ SPEC_ITEM_CAT = (
     ("Requirement","An application requirement"),
     ("DataItemType","a data item type"),
     ("EnumItem","An enumerated item"),
+    ("DataItem","a data item"),
     ("Model","A behavioural model for an application feature"),
     ("Service","A cordet service"),
     ("Packet","A packet implementing a service command or report"),

@@ -3,7 +3,6 @@ from django.shortcuts import render
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.forms import formset_factory                                 
-from editor.models import Project, ProjectUser, Application, Release, ValSet
 from django.views import generic
 from django.contrib.auth.models import User
 from django.http import HttpResponse, HttpResponseRedirect
@@ -16,6 +15,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from zipfile import ZipFile 
 from datetime import datetime
 from itertools import chain
+
+from editor.models import Project, ProjectUser, Application, Release, ValSet
+from editor.forms import ApplicationForm, ProjectForm, ValSetForm
+
+from .access import is_project_owner, has_access_to_project, has_access_to_application, \
+                    is_spec_item_owner, can_create_project
+
 import cexprtk
 import logging
 
@@ -28,18 +34,13 @@ def index(request):
     listOfProjects = []
     userRequestName = str(request.user)     
     for project in projects:
-        projectUsers = ProjectUser.objects.filter(project_id=project.id)
         userHasAccess = ProjectUser.objects.filter(project_id=project.id).\
                                         filter(user__username__contains=userRequestName).exists()
          
-        applications = project.applications    
-        #applications = Application.objects.order_by('name').filter(project_id=project.id)
+        applications = project.applications.all().order_by('name')    
         default_val_set_id = ValSet.objects.filter(project_id=project.id).get(name='Default').id
-        listOfApplications = []
-        for application in applications:
-            listOfApplications.append(application)
         listOfProjects.append({'project': project, 
-                               'applications': listOfApplications,
+                               'applications': list(applications),
                                'default_val_set_id': default_val_set_id,
                                'user_has_access': userHasAccess})
 
@@ -87,8 +88,8 @@ def add_application(request, project_id):
     else:   
         form = ApplicationForm()
 
-    context = {'form': form, 'project': project,}
-    return render(request, 'add_application.html', context)    
+    context = {'form': form, 'project': project, 'title': 'Add Application to Project '+project.name, }
+    return render(request, 'basic_form.html', context)    
 
 @login_required         
 def add_project(request):
@@ -121,8 +122,8 @@ def add_project(request):
     else:   
         form = ProjectForm()
 
-    context = {'form': form, }
-    return render(request, 'add_project.html', context)    
+    context = {'form': form, 'title': 'Add New Project', }
+    return render(request, 'basic_form.html', context)    
 
 
 @login_required         
@@ -160,7 +161,7 @@ def edit_project(request, project_id):
             project.desc = form.cleaned_data['description']
             project.owner = form.cleaned_data['owner']
             project.save()
-            redirect_url = '/CordetFwEditor/'
+            redirect_url = '/editor/'
             return redirect(redirect_url)
     else:   
         form = ProjectForm(initial={'name': project.name, 
@@ -169,22 +170,18 @@ def edit_project(request, project_id):
     
     users = User.objects.all().order_by('username').values()
     project_users = list(ProjectUser.objects.filter(project_id=project_id))
-    val_sets = list(DataItemValSet.objects.filter(project_id=project_id))
-    context = {'form': form, 
-               'project': project, 
-               'users': users, 
-               'project_users': project_users,
-               'val_sets': val_sets,}
-    return render(request, 'edit_project.html', context)    
+    val_sets = list(ValSet.objects.filter(project_id=project_id))
+    context = {'form': form, 'title': 'Edit Project '+project.name, }
+    return render(request, 'basic_form.html', context)    
 
 
 @login_required         
-def edit_application(request, project_id, application_id):
-    project = Project.objects.get(id=project_id)
+def edit_application(request, application_id):
+    application = Application.objects.get(id = application_id)
+    project = application.project
     if not is_project_owner(request.user, project):
         return redirect(base_url)
     
-    application = Application.objects.get(id = application_id)
     if request.method == 'POST':    
         form = ApplicationForm(request.POST)
         if form.is_valid():
@@ -196,14 +193,14 @@ def edit_application(request, project_id, application_id):
     else:   
         form = ApplicationForm(initial={'name': application.name, 'description': application.desc})
     
-    context = {'form': form, 'project': project, 'application': application,}
-    return render(request, 'edit_application.html', context)    
+    context = {'form': form, 'title': 'Edit Application '+application.name, }
+    return render(request, 'basic_form.html', context)    
 
 
 @login_required         
 def make_project_release(request, project_id):
     project = Project.objects.get(id=project_id)
-    redirect_url = '/CordetFwEditor/'
+    redirect_url = '/editor/'
     if not is_project_owner(request.user, project):
         return redirect(redirect_url)
     
@@ -222,7 +219,7 @@ def make_project_release(request, project_id):
 
 
 @login_required         
-def make_application_release(request, project_id, application_id):
+def make_application_release(request, application_id):
     application = Application.objects.get(id=application_id)
     redirect_url = '/editor/'
     if not is_project_owner(request.user, application.project):
