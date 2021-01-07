@@ -162,40 +162,40 @@ def get_previous_list(item):
     return items
              
              
-def get_list_of_domains(model, application_id, project_id):
+def get_domains(cat, app_id, project_id):
     """ 
-    Return the list of domains for the specification items in the argument model. If application_id is zero,
-    then the model are filter by project; otherwise they are filter by application.
+    Return the list of domains for the specification items in the argument category. If app_id is zero,
+    then the model are filtered by project; otherwise they are filter by application.
      """             
-    listOfDomains = ['All_Domains']
-    if application_id == 0:
-        for domain in model.objects.filter(project_id=project_id).exclude(status='DEL'). \
+    domains = ['All_Domains']
+    if app_id == 0:
+        for domain in SpecItem.objects.filter(project_id=project_id).exclude(status='DEL'). \
                                         exclude(status='OBS').order_by('domain').values_list('domain').distinct():
-            listOfDomains.append(domain[0])
+            domains.append(domain[0])
     else:
-        for domain in model.objects.filter(application_id=application_id).exclude(status='DEL'). \
+        for domain in SpecItem.objects.filter(app_id=app_id).exclude(status='DEL'). \
                                         exclude(status='OBS').order_by('domain').values_list('domain').distinct():
-            listOfDomains.append(domain[0])
-    return listOfDomains     
+            domains.append(domain[0])
+    return domains     
                        
  
 def do_application_release(request, application, description, is_proj_release = False):
     """ 
     Do an application release by updating the status of the application requirements, models and test cases.
     """
-    requirements = Requirement.objects.filter(application_id=application.id)
+    requirements = Requirement.objects.filter(app_id=application.id)
     for requirement in requirements:
         if (requirement.status == 'NEW') or (requirement.status == 'MOD'):
             requirement.status = 'CNF'
             requirement.save()
 
-    models = FwProfileModel.objects.filter(application_id=application.id)
+    models = FwProfileModel.objects.filter(app_id=application.id)
     for model in models:
         if (model.status == 'NEW') or (model.status == 'MOD'):
             model.status = 'CNF'
             model.save()
 
-    test_cases = TestCase.objects.filter(application_id=application.id)
+    test_cases = TestCase.objects.filter(app_id=application.id)
     for test_case in test_cases:
         if (test_case.status == 'NEW') or (test_case.status == 'MOD'):
             test_case.status = 'CNF'

@@ -18,6 +18,7 @@ from itertools import chain
 
 from editor.models import Project, ProjectUser, Application, Release, ValSet
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm
+from editor.utilities import get_domains
 
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project
@@ -27,6 +28,20 @@ import logging
 
 base_url = '/editor'
 logger = logging.getLogger(__name__)
+
+config_list = {'Requirement':{'name': 'Requirement',
+                              'title': 'List of Requirements',
+                              'cols': {'Name': 'ver_method', 'Label': 'Ver'}
+                             },
+               'DataItemType': {'name': 'Data Item Type',
+                                'title': 'List of Requirements',
+                                'cols': {}
+                               },
+               'DataItem': {'name': 'Data Item',
+                            'title': 'List of Requirements',
+                            'cols': {}
+                           }
+              }
 
 
 def index(request):
@@ -176,8 +191,8 @@ def edit_project(request, project_id):
 
 
 @login_required         
-def edit_application(request, application_id):
-    application = Application.objects.get(id = application_id)
+def edit_application(request, app_id):
+    application = Application.objects.get(id = app_id)
     project = application.project
     if not is_project_owner(request.user, project):
         return redirect(base_url)
@@ -219,8 +234,8 @@ def make_project_release(request, project_id):
 
 
 @login_required         
-def make_application_release(request, application_id):
-    application = Application.objects.get(id=application_id)
+def make_application_release(request, app_id):
+    application = Application.objects.get(id=app_id)
     redirect_url = '/editor/'
     if not is_project_owner(request.user, application.project):
         return redirect(redirect_url)
@@ -236,6 +251,56 @@ def make_application_release(request, application_id):
         
     context = {'form': form, 'releases': get_previous_list(application.release), 'entity_being_released': application}
     return render(request, 'make_release.html', context)   
+
+
+@login_required         
+def list_spec_items(request, cat, project_id, app_id, val_set_id, sel_dom):
+    # If app_id is zero, then the items to be listed as 'project items'; otherwise they are 'application items'
+    project = Project.objects.get(id=project_id)
+    if not has_access_to_project(request.user, project):
+        return redirect(redirect_url)
+    
+    if (app_id == 0):
+        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
+    else:
+        items = SpecItem.objects.filter(app_id=app_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
+        
+    if (sel_dom != "All_Domains"):
+        items = items.filter(domain=sel_dom)
+
+    domains = get_domains(cat, app_id, project_id) 
+    val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
+    context = {'items': items, 'project_id': project_id, 'app_id': app_id, 'domains': domains, 'sel_dom': sel_dom,\
+               'val_set_id':val_set_id, 'val_sets':val_sets, 'config':config_list[cat], 'cat':cat}
+    return render(request, 'list_spec_items.html', context)    
+
+
+@login_required         
+def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+    # TBD
+    redirect_url = '/editor/'
+    return redirect(redirect_url)
+
+
+@login_required         
+def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+    # TBD
+    redirect_url = '/editor/'
+    return redirect(redirect_url)
+
+
+@login_required         
+def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+    # TBD
+    redirect_url = '/editor/'
+    return redirect(redirect_url)
+
+
+@login_required         
+def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
+    # TBD
+    redirect_url = '/editor/'
+    return redirect(redirect_url)
 
 
 @login_required         
