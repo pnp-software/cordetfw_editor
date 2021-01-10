@@ -19,9 +19,9 @@ urlpatterns = [
     path('<int:app_id>/make_application_release', views.make_application_release, name='make_application_release'),
     
     path('<str:cat>/<int:project_id>/<int:app_id>/<int:val_set_id>/<str:sel_dom>/list_spec_items', views.list_spec_items, name='list_spec_items'),
-    path('<str:cat>/<int:project_id>/<int:app_id>/<str:sel_dom>/add_spec_item', views.add_spec_items, name='add_spec_items'),
-    path('<str:cat>/<int:project_id>/<int:app_id>/<int:item_id>/<str:sel_dom>/edit_spec_items', views.edit_spec_items, name='edit_spec_items'),
-    path('<str:cat>/<int:project_id>/<int:app_id>/<int:item_id>/<str:sel_dom>/copy_spec_items', views.copy_spec_items, name='copy_spec_items'),
+    path('<str:cat>/<int:project_id>/<int:app_id>/<str:sel_dom>/add_spec_item', views.add_spec_item, name='add_spec_item'),
+    path('<str:cat>/<int:project_id>/<int:app_id>/<int:item_id>/<str:sel_dom>/edit_spec_item', views.edit_spec_item, name='edit_spec_item'),
+    path('<str:cat>/<int:project_id>/<int:app_id>/<int:item_id>/<str:sel_dom>/copy_spec_item', views.copy_spec_item, name='copy_spec_item'),
     path('<str:cat>/<int:project_id>/<int:app_id>/<int:val_set_id>/<str:sel_dom>/export_spec_items', views.export_spec_items, name='export_spec_items'),
     
 ]

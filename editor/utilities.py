@@ -183,28 +183,16 @@ def do_application_release(request, application, description, is_proj_release = 
     """ 
     Do an application release by updating the status of the application requirements, models and test cases.
     """
-    requirements = Requirement.objects.filter(app_id=application.id)
-    for requirement in requirements:
-        if (requirement.status == 'NEW') or (requirement.status == 'MOD'):
-            requirement.status = 'CNF'
-            requirement.save()
+    spec_items = SpecItem.objects.filter(application_id=application.id)
+    for spec_item in spec_items:
+        if (spec_item.status == 'NEW') or (spec_item.status == 'MOD'):
+            spec_item.status = 'CNF'
+            spec_item.save()
 
-    models = FwProfileModel.objects.filter(app_id=application.id)
-    for model in models:
-        if (model.status == 'NEW') or (model.status == 'MOD'):
-            model.status = 'CNF'
-            model.save()
-
-    test_cases = TestCase.objects.filter(app_id=application.id)
-    for test_case in test_cases:
-        if (test_case.status == 'NEW') or (test_case.status == 'MOD'):
-            test_case.status = 'CNF'
-            test_case.save()
-            
-    if application.release == None:     # Application has just been created
+    if application.release_id == None:     # Application has just been created
         new_application_version = 0
         previous = None
-    elif not is_proj_release:           # Application release is done as part of a project release
+    elif not is_proj_release:           # Application release is not done as part of a project release
         new_application_version =  application.release.application_version+1
         previous = application.release
     else:

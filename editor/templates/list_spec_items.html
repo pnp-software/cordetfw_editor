@@ -72,15 +72,10 @@
               <div class="btn-group">
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'copy_item' cat project.id application.id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
-                {% if request.user == item.owner %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'del_item' cat project.id application.id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'edit_item' cat project.id application.id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
-                {% else %}   
-                <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">D</a>
-                <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">E</a>
-                {% endif %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_item_history' cat project.id application.id item.id sel_dom %}" title="{{config.name}} History">H</a>
               </div> 

@@ -18,7 +18,7 @@ from itertools import chain
 
 from editor.models import Project, ProjectUser, Application, Release, ValSet
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm
-from editor.utilities import get_domains
+from editor.utilities import get_domains, do_application_release, do_project_release
 
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project
@@ -31,14 +31,20 @@ logger = logging.getLogger(__name__)
 
 config_list = {'Requirement':{'name': 'Requirement',
                               'title': 'List of Requirements',
+                              'has_children': False,
+                              'child_cat': '',
                               'cols': {'Name': 'ver_method', 'Label': 'Ver'}
                              },
                'DataItemType': {'name': 'Data Item Type',
                                 'title': 'List of Requirements',
+                                'has_children': True,
+                                'child_cat': 'EnumItem',
                                 'cols': {}
                                },
                'DataItem': {'name': 'Data Item',
                             'title': 'List of Requirements',
+                            'has_children': False,
+                            'child_cat': '',
                             'cols': {}
                            }
               }
@@ -52,13 +58,12 @@ def index(request):
         userHasAccess = ProjectUser.objects.filter(project_id=project.id).\
                                         filter(user__username__contains=userRequestName).exists()
          
-        applications = project.applications.all().order_by('name')    
+        applications = project.applications.all().order_by('name') 
         default_val_set_id = ValSet.objects.filter(project_id=project.id).get(name='Default').id
         listOfProjects.append({'project': project, 
                                'applications': list(applications),
                                'default_val_set_id': default_val_set_id,
                                'user_has_access': userHasAccess})
-
     context = {'list_of_projects': listOfProjects}
     return render(request, 'index.html', context=context)
  
@@ -98,8 +103,7 @@ def add_application(request, project_id):
                                           project = project)
             do_application_release(request, new_application, "Initial Release")
             new_application.save()
-            redirect_url = '/editor/'
-            return redirect(redirect_url)
+            return redirect(base_url)
     else:   
         form = ApplicationForm()
 
@@ -132,8 +136,7 @@ def add_project(request):
             new_project.release = new_release
             new_project.save()
             default_val_set.save()
-            redirect_url = '/editor/'
-            return redirect(redirect_url)
+            return redirect(base_url)
     else:   
         form = ProjectForm()
 
@@ -176,8 +179,7 @@ def edit_project(request, project_id):
             project.desc = form.cleaned_data['description']
             project.owner = form.cleaned_data['owner']
             project.save()
-            redirect_url = '/editor/'
-            return redirect(redirect_url)
+            return redirect(base_url)
     else:   
         form = ProjectForm(initial={'name': project.name, 
                                     'description': project.desc, 
@@ -203,8 +205,7 @@ def edit_application(request, app_id):
             application.name = form.cleaned_data['name']
             application.desc = form.cleaned_data['description']
             application.save()
-            redirect_url = '/editor/'
-            return redirect(redirect_url)
+            return redirect(base_url)
     else:   
         form = ApplicationForm(initial={'name': application.name, 'description': application.desc})
     
@@ -215,9 +216,8 @@ def edit_application(request, app_id):
 @login_required         
 def make_project_release(request, project_id):
     project = Project.objects.get(id=project_id)
-    redirect_url = '/editor/'
     if not is_project_owner(request.user, project):
-        return redirect(redirect_url)
+        return redirect(base_url)
     
     if request.method == 'POST':    
         # Create a form instance and populate it with data from the request (binding):
@@ -225,7 +225,7 @@ def make_project_release(request, project_id):
         if form.is_valid():
             if form.cleaned_data['description'].strip() != '':
                 do_project_release(request, project, form.cleaned_data['description'])
-                return redirect(redirect_url)
+                return redirect(base_url)
     else:   
         form = ReleaseForm()
             
@@ -236,16 +236,15 @@ def make_project_release(request, project_id):
 @login_required         
 def make_application_release(request, app_id):
     application = Application.objects.get(id=app_id)
-    redirect_url = '/editor/'
     if not is_project_owner(request.user, application.project):
-        return redirect(redirect_url)
+        return redirect(base_url)
     
     if request.method == 'POST':    
         form = ReleaseForm(request.POST)
         if form.is_valid():
             if form.cleaned_data['description'].strip() != '':
                 do_application_release(request, application, form.cleaned_data['description'])
-                return redirect(redirect_url)
+                return redirect(base_url)
     else:   
         form = ReleaseForm()
         
@@ -255,10 +254,10 @@ def make_application_release(request, app_id):
 
 @login_required         
 def list_spec_items(request, cat, project_id, app_id, val_set_id, sel_dom):
-    # If app_id is zero, then the items to be listed as 'project items'; otherwise they are 'application items'
+    # If app_id is zero, then the items to be listed are 'project items'; otherwise they are 'application items'
     project = Project.objects.get(id=project_id)
     if not has_access_to_project(request.user, project):
-        return redirect(redirect_url)
+        return redirect(base_url)
     
     if (app_id == 0):
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
@@ -273,6 +272,13 @@ def list_spec_items(request, cat, project_id, app_id, val_set_id, sel_dom):
     context = {'items': items, 'project_id': project_id, 'app_id': app_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set_id':val_set_id, 'val_sets':val_sets, 'config':config_list[cat], 'cat':cat}
     return render(request, 'list_spec_items.html', context)    
+
+
+@login_required         
+def add_spec_item(request, cat, project_id, application_id, sel_dom):
+    # TBD
+    redirect_url = '/editor/'
+    return redirect(redirect_url)
 
 
 @login_required         
