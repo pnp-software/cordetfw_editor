@@ -8,29 +8,31 @@
   <h2 class="display-6">{{ config.title }}</h2>  
     <div class="form-inline">
       <div class="dropdown mr-sm-2 mt-4">
-      <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select ValSet</button>
         <div class="dropdown-menu">
             {% for val_set in val_sets %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project_id app_id val_set.id sel_dom %}">{{ val_set.name }}</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">{{ val_set.name }}</a>
             {% endfor %}
         </div>
       </div>
+      <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select Domain</button>
         <div class="dropdown-menu">
             {% for domain in domains %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project_id app_id val_set_id sel_dom %}">{{ domain }}</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set_id sel_dom %}">{{ domain }}</a>
             {% endfor %}
         </div>
       </div>
       <div class="form-group mr-sm-2 mt-4">
-        <a class="btn btn-outline-secondary" href="{% url 'add_spec_item' cat project_id app_id sel_dom %}">Add {{config.name}}</a>
+        <a class="btn btn-outline-secondary" href="{% url 'add_spec_item' cat project.id application_id sel_dom %}">Add {{config.name}}</a>
       </div>
       <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Export</button>
         <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'export_spec_items' cat project_id app_id %}">Export {{config.name}}s</a>
-            <a class="dropdown-item" href="{% url 'export_requirements' cat project_id app_id %}?export=export_change_log">Export Change Log</a>
+            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set_id sel_dom %}">
+                Export {{config.name}}s</a>
+            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set_id sel_dom %}?export=chg_log">
+                Export Change Log</a>
         </div>
       </div>
     </div>

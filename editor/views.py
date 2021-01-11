@@ -16,10 +16,10 @@ from zipfile import ZipFile
 from datetime import datetime
 from itertools import chain
 
-from editor.models import Project, ProjectUser, Application, Release, ValSet
-from editor.forms import ApplicationForm, ProjectForm, ValSetForm
-from editor.utilities import get_domains, do_application_release, do_project_release
-
+from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
+from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm
+from editor.utilities import get_domains, do_application_release, do_project_release, \
+                             get_previous_list
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project
 
@@ -193,8 +193,8 @@ def edit_project(request, project_id):
 
 
 @login_required         
-def edit_application(request, app_id):
-    application = Application.objects.get(id = app_id)
+def edit_application(request, application_id):
+    application = Application.objects.get(id = application_id)
     project = application.project
     if not is_project_owner(request.user, project):
         return redirect(base_url)
@@ -220,7 +220,6 @@ def make_project_release(request, project_id):
         return redirect(base_url)
     
     if request.method == 'POST':    
-        # Create a form instance and populate it with data from the request (binding):
         form = ReleaseForm(request.POST)
         if form.is_valid():
             if form.cleaned_data['description'].strip() != '':
@@ -234,8 +233,8 @@ def make_project_release(request, project_id):
 
 
 @login_required         
-def make_application_release(request, app_id):
-    application = Application.objects.get(id=app_id)
+def make_application_release(request, application_id):
+    application = Application.objects.get(id=application_id)
     if not is_project_owner(request.user, application.project):
         return redirect(base_url)
     
@@ -253,23 +252,23 @@ def make_application_release(request, app_id):
 
 
 @login_required         
-def list_spec_items(request, cat, project_id, app_id, val_set_id, sel_dom):
-    # If app_id is zero, then the items to be listed are 'project items'; otherwise they are 'application items'
+def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
+    # If application_id is zero, then the items to be listed are 'project items'; otherwise they are 'application items'
     project = Project.objects.get(id=project_id)
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
     
-    if (app_id == 0):
+    if (application_id == 0):
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
     else:
-        items = SpecItem.objects.filter(app_id=app_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
+        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
         
     if (sel_dom != "All_Domains"):
         items = items.filter(domain=sel_dom)
 
-    domains = get_domains(cat, app_id, project_id) 
+    domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
-    context = {'items': items, 'project_id': project_id, 'app_id': app_id, 'domains': domains, 'sel_dom': sel_dom,\
+    context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set_id':val_set_id, 'val_sets':val_sets, 'config':config_list[cat], 'cat':cat}
     return render(request, 'list_spec_items.html', context)    
 

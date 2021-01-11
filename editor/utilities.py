@@ -162,18 +162,18 @@ def get_previous_list(item):
     return items
              
              
-def get_domains(cat, app_id, project_id):
+def get_domains(cat, application_id, project_id):
     """ 
-    Return the list of domains for the specification items in the argument category. If app_id is zero,
+    Return the list of domains for the specification items in the argument category. If application_id is zero,
     then the model are filtered by project; otherwise they are filter by application.
      """             
     domains = ['All_Domains']
-    if app_id == 0:
+    if application_id == 0:
         for domain in SpecItem.objects.filter(project_id=project_id).exclude(status='DEL'). \
                                         exclude(status='OBS').order_by('domain').values_list('domain').distinct():
             domains.append(domain[0])
     else:
-        for domain in SpecItem.objects.filter(app_id=app_id).exclude(status='DEL'). \
+        for domain in SpecItem.objects.filter(application_id=application_id).exclude(status='DEL'). \
                                         exclude(status='OBS').order_by('domain').values_list('domain').distinct():
             domains.append(domain[0])
     return domains     
@@ -214,17 +214,11 @@ def do_project_release(request, project, description):
     """ 
     Do a project release by updating the status of the project data items, data types and applications.
     """
-    data_items = DataItem.objects.filter(project_id=project.id)
-    for data_item in data_items:
-        if (data_item.status == 'NEW') or (data_item.status == 'MOD'):
-            data_item.status = 'CNF'
-            data_item.save()
-
-    data_types = DataType.objects.filter(project_id=project.id)
-    for data_type in data_types:
-        if (data_type.status == 'NEW') or (data_type.status == 'MOD'):
-            data_type.status = 'CNF'
-            data_type.save()
+    spec_items = SpecItem.objects.filter(project_id=project.id). filter(application_id=None)
+    for spec_item in spec_items:
+        if (spec_item.status == 'NEW') or (spec_item.status == 'MOD'):
+            spec_item.status = 'CNF'
+            spec_item.save()
 
     new_release = Release(desc = description,
                           release_author = get_user(request),
