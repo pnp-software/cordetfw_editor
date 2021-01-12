@@ -33,7 +33,17 @@ config_list = {'Requirement':{'name': 'Requirement',
                               'title': 'List of Requirements',
                               'has_children': False,
                               'child_cat': '',
-                              'cols': {'Name': 'ver_method', 'Label': 'Ver'}
+                              'cols': [{'Name': 'ver_method', 'Label': 'Ver'}],
+                              'form_fields': {'domain': {'Label': 'Domain', 'Req': True},
+                                              'name': {'Label': 'Name', 'Req': True},
+                                              'title': {'Label': 'Title', 'Req': False},
+                                              'desc': {'Label': 'Description', 'Req': False},
+                                              'value': {'Label': 'Normative Text', 'Req': True},
+                                              'justification': {'Label': 'Rationale', 'Req': False},
+                                              'remarks': {'Label': 'Remarks', 'Req': False},
+                                              'kind': {'Label': 'Kind', 'Req': True},
+                                              'ver_method': {'Label': 'Ver. Method', 'Req': True}
+                                             }
                              },
                'DataItemType': {'name': 'Data Item Type',
                                 'title': 'List of Requirements',
