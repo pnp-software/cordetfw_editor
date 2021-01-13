@@ -3,14 +3,13 @@ from django.forms import formsets
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from itertools import chain
-from editor.models import Application
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
-from .utilities import get_user_choices
+from .utilities import get_user_choices, get_kind_choices
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
-    
-        
+from editor.models import Application, ValSet, Project, SpecItem
+
 
 class ProjectForm(forms.Form):
     name = forms.CharField()
@@ -100,7 +99,6 @@ class SpecItemForm(forms.Form):
     ver_status = forms.ChoiceField(choices=REQ_VER_METHOD)
    
     def __init__(self, mode, cat, project, application, config, *args, **kwargs):
-        self.mode = kwargs.pop('mode')
         super(SpecItemForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.wrapper_class = 'row'
@@ -114,7 +112,7 @@ class SpecItemForm(forms.Form):
         self.fields['desc_pars'].widget.attrs.update(rows = 1)
         self.fields['desc_dest'].widget.attrs.update(rows = 1)
         self.fields['acceptance_check'].widget.attrs.update(rows = 1)
-        self.fields['enab;e_check'].widget.attrs.update(rows = 1)
+        self.fields['enable_check'].widget.attrs.update(rows = 1)
         self.fields['repeat_check'].widget.attrs.update(rows = 1)
         self.fields['update_action'].widget.attrs.update(rows = 1)
         self.fields['start_action'].widget.attrs.update(rows = 1)
@@ -128,14 +126,30 @@ class SpecItemForm(forms.Form):
         self.fields['val_set'].choices = ValSet.objects.filter(project_id=project.id).\
                                                 order_by('name').values_list('id','name')
         for field in self.fields:
-            import pdb; pdb.set_trace()
-            if field not in config['form_field']:
-                field.widget = forms.HiddenInput()
-                break
-            
+            if field not in config['form_fields']:
+                self.fields[field].widget = forms.HiddenInput()
+                continue
+            self.fields[field].label = config['form_fields'][field]['label']
+            if not config['form_fields'][field]['req']:
+                self.fields[field].required = False            
         self.project = project
         self.application = application
+        self.mode = mode
   
-  
+    def clean(self):
+        """ Verify that the domain:name pair is not duplicated """
+        import pdb; pdb.set_trace()
+        cleaned_data = self.cleaned_data
+        if self.mode == 'copy' or self.mode == 'add':
+            if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
+                        filter(project_id=self.project.id, domain=cleaned_data['domain'], name=cleaned_data['name']).exists():
+                raise forms.ValidationError('Domain:Name pair already exists in this project')
+        if self.mode == 'edit':
+            if (('name' in self.changed_data) or ('domain' in self.changed_data)):
+                if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
+                        filter(project_id=self.project.id, domain=cleaned_data['domain'], name=cleaned_data['name']).exists():
+                    raise forms.ValidationError('Domain:Name pair already exists in this project')
+        return cleaned_data
+ 
   
  

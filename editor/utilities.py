@@ -9,6 +9,8 @@ from django.contrib.auth.models import User
 from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project
+from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
+                     MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 
 EVAL_MAX_REC = 10
 MAX_DESC_LEN = 40
@@ -133,7 +135,6 @@ def render_for_display(s, n):
     return s
 
 
-
 def get_user_choices():
     """ Return a list of pairs (id, user) representing the users in the system """
     users = User.objects.all().order_by('username').values_list('id','username', 'first_name', 'last_name')
@@ -144,7 +145,6 @@ def get_user_choices():
         else:
             user_choices.append((user[0], user[1]))       
     return user_choices
-
 
 
 def get_previous_list(item):
@@ -160,8 +160,27 @@ def get_previous_list(item):
             item = item.previous
             items.append(item)
     return items
-             
-             
+         
+         
+def get_kind_choices(cat):
+    """ Return the range of choices for the 'kind' attribute of a specification of a given category """
+    if cat == 'Requirement':
+        return REQ_KIND
+    elif cat == 'DataItem':
+        return DI_KIND
+    elif cat == 'DataItemType':
+        return DIT_KIND
+    elif cat == 'Model':
+        return MODEL_KIND
+    elif cat == 'Packet':
+        return PCKT_KIND
+    elif cat == 'PacketPar':
+        return PCKT_PAR_KIND
+    elif cat == 'VerItem':
+        return VER_ITEM_KIND
+    messages.error(request, 'Unknown SpecItem category in get_kind_choices(): '+cat)
+    
+            
 def get_domains(cat, application_id, project_id):
     """ 
     Return the list of domains for the specification items in the argument category. If application_id is zero,

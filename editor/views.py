@@ -17,7 +17,7 @@ from datetime import datetime
 from itertools import chain
 
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
-from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm
+from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
@@ -29,20 +29,20 @@ import logging
 base_url = '/editor'
 logger = logging.getLogger(__name__)
 
-config_list = {'Requirement':{'name': 'Requirement',
+configs = {'Requirement':{'name': 'Requirement',
                               'title': 'List of Requirements',
                               'has_children': False,
                               'child_cat': '',
                               'cols': [{'Name': 'ver_method', 'Label': 'Ver'}],
-                              'form_fields': {'domain': {'Label': 'Domain', 'Req': True},
-                                              'name': {'Label': 'Name', 'Req': True},
-                                              'title': {'Label': 'Title', 'Req': False},
-                                              'desc': {'Label': 'Description', 'Req': False},
-                                              'value': {'Label': 'Normative Text', 'Req': True},
-                                              'justification': {'Label': 'Rationale', 'Req': False},
-                                              'remarks': {'Label': 'Remarks', 'Req': False},
-                                              'kind': {'Label': 'Kind', 'Req': True},
-                                              'ver_method': {'Label': 'Ver. Method', 'Req': True}
+                              'form_fields': {'domain': {'label': 'Domain', 'req': True},
+                                              'name': {'label': 'Name', 'req': True},
+                                              'title': {'label': 'Title', 'req': False},
+                                              'desc': {'label': 'Description', 'req': False},
+                                              'value': {'label': 'Normative Text', 'req': True},
+                                              'justification': {'label': 'Rationale', 'req': False},
+                                              'remarks': {'label': 'Remarks', 'req': False},
+                                              'kind': {'label': 'Kind', 'req': True},
+                                              'ver_method': {'label': 'Ver. Method', 'req': True}
                                              }
                              },
                'DataItemType': {'name': 'Data Item Type',
@@ -279,15 +279,33 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
-               'val_set_id':val_set_id, 'val_sets':val_sets, 'config':config_list[cat], 'cat':cat}
+               'val_set_id':val_set_id, 'val_sets':val_sets, 'config':configs[cat], 'cat':cat}
     return render(request, 'list_spec_items.html', context)    
 
 
 @login_required         
 def add_spec_item(request, cat, project_id, application_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
+    project = Project.objects.get(id=project_id)
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+    else:
+        application = None
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+  
+    if request.method == 'POST':   
+        form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
+        if form.is_valid():
+            new_spec_item = SpecItem()
+            default_val_set_id = ValSet.objects.filter(project_id=project.id).get(name='Default').id
+            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/l'+str(application_id)+'/'+str(default_val_set_id)+\
+                            '/'+sel_dom
+            return redirect(base_url)
+    else:   
+        form = SpecItemForm('add', cat, project, application, configs[cat])
+
+    context = {'form': form, 'project': project, 'title': 'Add Requirement to Application '+application.name, }
+    return render(request, 'basic_form.html', context)  
 
 
 @login_required         
