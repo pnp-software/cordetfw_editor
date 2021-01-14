@@ -16,7 +16,9 @@ from zipfile import ZipFile
 from datetime import datetime
 from itertools import chain
 
-from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
+from editor.configs import configs, config_spec_item
+from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
+                          Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list
@@ -28,37 +30,6 @@ import logging
 
 base_url = '/editor'
 logger = logging.getLogger(__name__)
-
-configs = {'Requirement':{'name': 'Requirement',
-                              'title': 'List of Requirements',
-                              'has_children': False,
-                              'child_cat': '',
-                              'cols': [{'Name': 'ver_method', 'Label': 'Ver'}],
-                              'form_fields': {'domain': {'label': 'Domain', 'req': True},
-                                              'name': {'label': 'Name', 'req': True},
-                                              'title': {'label': 'Title', 'req': False},
-                                              'desc': {'label': 'Description', 'req': False},
-                                              'value': {'label': 'Normative Text', 'req': True},
-                                              'justification': {'label': 'Rationale', 'req': False},
-                                              'remarks': {'label': 'Remarks', 'req': False},
-                                              'kind': {'label': 'Kind', 'req': True},
-                                              'ver_method': {'label': 'Ver. Method', 'req': True}
-                                             }
-                             },
-               'DataItemType': {'name': 'Data Item Type',
-                                'title': 'List of Requirements',
-                                'has_children': True,
-                                'child_cat': 'EnumItem',
-                                'cols': {}
-                               },
-               'DataItem': {'name': 'Data Item',
-                            'title': 'List of Requirements',
-                            'has_children': False,
-                            'child_cat': '',
-                            'cols': {}
-                           }
-              }
-
 
 def index(request):
     projects = Project.objects.order_by('name').all()
@@ -297,9 +268,24 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
         if form.is_valid():
             new_spec_item = SpecItem()
-            default_val_set_id = ValSet.objects.filter(project_id=project.id).get(name='Default').id
-            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/l'+str(application_id)+'/'+str(default_val_set_id)+\
-                            '/'+sel_dom
+            config_spec_item(new_spec_item, form.cleaned_data)
+            if cat == 'Requirement':
+                new_req = Requirement()
+                new_req.ver_method = form.cleaned_data['ver_method']
+                new_spec_item.req = new_req
+                new_req.save()
+            default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+            new_spec_item.cat = cat
+            new_spec_item.val_set = default_val_set
+            new_spec_item.updated_at = datetime.now()
+            new_spec_item.owner = get_user(request)
+            new_spec_item.status = 'NEW'
+            new_spec_item.project = project
+            new_spec_item.application = application
+            new_spec_item.save()
+            
+            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/l'+str(application_id)+'/'+str(default_val_set.id)+\
+                           '/'+sel_dom+'/list_spec_items'
             return redirect(base_url)
     else:   
         form = SpecItemForm('add', cat, project, application, configs[cat])

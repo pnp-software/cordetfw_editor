@@ -9,7 +9,7 @@ from .utilities import get_user_choices, get_kind_choices
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
-
+from editor.configs import configs
 
 class ProjectForm(forms.Form):
     name = forms.CharField()
@@ -128,6 +128,7 @@ class SpecItemForm(forms.Form):
         for field in self.fields:
             if field not in config['form_fields']:
                 self.fields[field].widget = forms.HiddenInput()
+                self.fields[field].required = False 
                 continue
             self.fields[field].label = config['form_fields'][field]['label']
             if not config['form_fields'][field]['req']:
@@ -138,7 +139,6 @@ class SpecItemForm(forms.Form):
   
     def clean(self):
         """ Verify that the domain:name pair is not duplicated """
-        import pdb; pdb.set_trace()
         cleaned_data = self.cleaned_data
         if self.mode == 'copy' or self.mode == 'add':
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
