@@ -327,3 +327,10 @@ def export_project(request, project_id):
     # TBD
     redirect_url = '/editor/'
     return redirect(redirect_url)
+
+
+@login_required         
+def list_spec_item_history(request, cat, project_id, application_id, item_id, sel_dom):
+    # TBD
+    redirect_url = '/editor/'
+    return redirect(redirect_url)

@@ -55,7 +55,7 @@
           {% if item.status == 'CNF' or item.status == 'MOD' or item.status == 'NEW' %}
           <tr>
             <td>{{item.domain}}</td>
-            <td>{{req.name}}</td>
+            <td>{{item.name}}</td>
             <td><strong>{{item.title}}</strong> 
                 {% if item.desc != '' %}
                 {{item.desc|filter_refs|linebreaksbr}}
@@ -73,13 +73,13 @@
             <td>
               <div class="btn-group">
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'copy_item' cat project.id application.id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
+                   href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'del_item' cat project.id application.id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
+                   href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'edit_item' cat project.id application.id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
+                   href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_item_history' cat project.id application.id item.id sel_dom %}" title="{{config.name}} History">H</a>
+                   href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
               </div> 
             </td>
           </tr>

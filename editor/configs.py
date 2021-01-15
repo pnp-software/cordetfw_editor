@@ -46,3 +46,5 @@ def config_spec_item(spec_item, dic):
         spec_item.justification = dic['justification']
     if 'remarks' in dic:
         spec_item.remarks = dic['remarks']
+    if 'kind' in dic:
+        spec_item.kind = dic['kind']
