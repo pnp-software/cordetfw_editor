@@ -5,7 +5,7 @@
 {% block content %}
 <div class="col-11">
 <div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
-  <h2 class="display-6">{{ config.title }}</h2>  
+  <h2 class="display-6">{{ config.title_list }}</h2>  
     <div class="form-inline">
       <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select ValSet</button>
@@ -19,7 +19,7 @@
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select Domain</button>
         <div class="dropdown-menu">
             {% for domain in domains %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set_id sel_dom %}">{{ domain }}</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set_id domain %}">{{ domain }}</a>
             {% endfor %}
         </div>
       </div>
@@ -46,6 +46,9 @@
           <th>Description</th>
           <th>Value</th>
           <th>Kind</th>
+          {% if cat == 'Requirement' %}
+          <th>Ver.</th>
+          {% endif %}
           <th>Owner</th>
           <th></th>
         </tr>
@@ -53,8 +56,8 @@
       <tbody>
         {% for item in items %}
           {% if item.status == 'CNF' or item.status == 'MOD' or item.status == 'NEW' %}
-          <tr>
-            <td>{{item.domain}}</td>
+          <trv>
+            <td id='{{item.domain}}:{{item.name}}'>{{item.domain}}</td>
             <td>{{item.name}}</td>
             <td><strong>{{item.title}}</strong> 
                 {% if item.desc != '' %}
@@ -69,6 +72,9 @@
             </td>
             <td>{{item.value}}</td>
             <td>{{item.kind}}</td>
+            {% if cat == 'Requirement' %}
+            <td>{{item.req.ver_method}}</td>
+            {% endif %}
             <td>{{item.owner}}</td>
             <td>
               <div class="btn-group">

@@ -331,6 +331,13 @@ def export_project(request, project_id):
 
 @login_required         
 def list_spec_item_history(request, cat, project_id, application_id, item_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
+    # If application_id is zero, then the items to be listed are 'project items'; otherwise they are 'application items'
+    project = Project.objects.get(id=project_id)
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+    
+    spec_item = SpecItem.objects.get(id=item_id)
+    
+    context = {'item': spec_item, 'items': get_previous_list(spec_item), 'project': project, \
+               'application_id': application_id,  'config':configs[cat], 'cat':cat, 'sel_dom': sel_dom}
+    return render(request, 'list_spec_item_history.html', context)    

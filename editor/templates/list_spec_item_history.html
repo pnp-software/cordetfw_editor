@@ -1,0 +1,59 @@
+{% extends "base_generic.html" %}
+
+{% load ref_filters %}
+
+{% block content %}
+<div class="col-11">
+<div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
+  <h2 class="display-6">{{ config.title_history }} {{ item.domain }}:{{ item.name }} 
+            {% if time.title != '' %}({{ item.title }}{% endif %} )</h2>  
+</div>
+
+    <table class="table table-hover table-sm">
+      <thead>
+        <tr class="table-warning">
+          <th>Domain</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Value</th>
+          <th>Kind</th>
+          {% if cat == 'Requirement' %}
+          <th>Ver.</th>
+          {% endif %}
+          <th>Status</th>
+          <th>Date</th>
+          <th>Owner</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          {% if item.status == 'CNF' or item.status == 'MOD' or item.status == 'NEW' %}
+          <trv>
+            <td id='#{{item.domain}}:{{item.name}}'>{{item.domain}}</td>
+            <td>{{item.name}}</td>
+            <td><strong>{{item.title}}</strong> 
+                {% if item.desc != '' %}
+                {{item.desc|filter_refs|linebreaksbr}}
+                {% endif %}
+                {% if item.justification != '' %}
+                <br><strong>Justification</strong> {{item.justification|filter_refs|linebreaksbr}}
+                {% endif %}
+                {% if item.remarks != '' %}
+                <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
+                {% endif %}
+            </td>
+            <td>{{item.value}}</td>
+            <td>{{item.kind}}</td>
+            {% if cat == 'Requirement' %}
+            <td>{{item.req.ver_method}}</td>
+            {% endif %}
+            <td>{{item.status}}</td>
+            <td>{{item.updated_at|date:'d-m-Y H:i'}}</td>            
+            <td>{{item.owner}}</td>
+          </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+</div>
+{% endblock %}

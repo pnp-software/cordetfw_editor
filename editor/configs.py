@@ -1,7 +1,8 @@
 from editor.models import SpecItem, Requirement
 
 configs = {'Requirement':{'name': 'Requirement',
-                          'title': 'List of Requirements',
+                          'title_list': 'List of Requirements',
+                          'title_history': 'History of Requirement ',
                           'has_children': False,
                           'child_cat': '',
                           'cols': [{'Name': 'ver_method', 'Label': 'Ver'}],
