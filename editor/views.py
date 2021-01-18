@@ -12,11 +12,12 @@ from django.contrib.auth.decorators import login_required
 from django.core.files import File
 from django.forms.models import model_to_dict
 from django.core.exceptions import ObjectDoesNotExist
+from django.forms.models import model_to_dict
 from zipfile import ZipFile 
 from datetime import datetime
 from itertools import chain
 
-from editor.configs import configs, config_spec_item
+from editor.configs import configs, dict_to_spec_item, duplicate_spec_item, save_spec_item
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
@@ -240,9 +241,11 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
         return redirect(base_url)
     
     if (application_id == 0):
-        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
+        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                    exclude(status='DEL').exclude(status='OBS').order_by('domain','name') 
     else:
-        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).order_by('domain','name') 
+        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                    exclude(status='DEL').exclude(status='OBS').order_by('domain','name') 
         
     if (sel_dom != "All_Domains"):
         items = items.filter(domain=sel_dom)
@@ -259,8 +262,10 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     project = Project.objects.get(id=project_id)
     if application_id != 0:
         application = Application.objects.get(id=application_id)
+        title = 'Add '+configs[cat].name+' to Application '+application.name
     else:
         application = None
+        title = 'Add '+configs[cat].name+' to Project '+project.name
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
   
@@ -268,12 +273,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
         if form.is_valid():
             new_spec_item = SpecItem()
-            config_spec_item(new_spec_item, form.cleaned_data)
-            if cat == 'Requirement':
-                new_req = Requirement()
-                new_req.ver_method = form.cleaned_data['ver_method']
-                new_spec_item.req = new_req
-                new_req.save()
+            dict_to_spec_item(form.cleaned_data, new_spec_item)
             default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
             new_spec_item.cat = cat
             new_spec_item.val_set = default_val_set
@@ -282,23 +282,59 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item.status = 'NEW'
             new_spec_item.project = project
             new_spec_item.application = application
+            save_spec_item(new_spec_item)
             new_spec_item.save()
-            
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/l'+str(application_id)+'/'+str(default_val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'
             return redirect(base_url)
     else:   
         form = SpecItemForm('add', cat, project, application, configs[cat])
 
-    context = {'form': form, 'project': project, 'title': 'Add Requirement to Application '+application.name, }
+    context = {'form': form, 'project': project, 'title': title}
     return render(request, 'basic_form.html', context)  
 
 
 @login_required         
 def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
+    project = Project.objects.get(id=project_id)
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+        title = 'Edit '+configs[cat]['name']+' in Application '+application.name
+    else:
+        application = None
+        title = 'Edit '+configs[cat]['name']+' in Project '+project.name
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+  
+    spec_item = SpecItem.objects.get(id=item_id)
+    if request.method == 'POST':   
+        form = SpecItemForm('edit', cat, project, application, configs[cat], request.POST, \
+                            initial=model_to_dict(spec_item))
+        if form.is_valid():
+            if spec_item.status == 'CNF':
+                spec_item.status = 'OBS'
+                old_spec_item = duplicate_spec_item(request, spec_item)
+                edited_spec_item = SpecItem()
+                edited_spec_item.status = 'MOD'
+                edited_spec_item.cat = cat
+                edited_spec_item.val_set = spec_item.val_set
+                edited_spec_item.previous = old_spec_item
+            else:
+                edited_spec_item = spec_item
+            dict_to_spec_item(form.cleaned_data, edited_spec_item)
+            edited_spec_item.updated_at = datetime.now()
+            edited_spec_item.owner = get_user(request)
+            edited_spec_item.project = project
+            edited_spec_item.application = application
+            save_spec_item(edited_spec_item)
+            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
+                           '/'+sel_dom+'/list_spec_items'
+            return redirect(redirect_url)
+    else:   
+        form = SpecItemForm('edit', cat, project, application, configs[cat], initial=model_to_dict(spec_item))
+
+    context = {'form': form, 'project': project, 'title': title}
+    return render(request, 'basic_form.html', context) 
 
 
 @login_required         

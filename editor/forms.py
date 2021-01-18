@@ -143,12 +143,12 @@ class SpecItemForm(forms.Form):
         if self.mode == 'copy' or self.mode == 'add':
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
                         filter(project_id=self.project.id, domain=cleaned_data['domain'], name=cleaned_data['name']).exists():
-                raise forms.ValidationError('Domain:Name pair already exists in this project')
+                raise forms.ValidationError('Add or Copy Error: Domain:Name pair already exists in this project')
         if self.mode == 'edit':
             if (('name' in self.changed_data) or ('domain' in self.changed_data)):
                 if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
                         filter(project_id=self.project.id, domain=cleaned_data['domain'], name=cleaned_data['name']).exists():
-                    raise forms.ValidationError('Domain:Name pair already exists in this project')
+                    raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
         return cleaned_data
  
   

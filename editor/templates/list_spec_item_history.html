@@ -27,7 +27,6 @@
       </thead>
       <tbody>
         {% for item in items %}
-          {% if item.status == 'CNF' or item.status == 'MOD' or item.status == 'NEW' %}
           <trv>
             <td id='#{{item.domain}}:{{item.name}}'>{{item.domain}}</td>
             <td>{{item.name}}</td>
@@ -51,7 +50,6 @@
             <td>{{item.updated_at|date:'d-m-Y H:i'}}</td>            
             <td>{{item.owner}}</td>
           </tr>
-        {% endif %}
         {% endfor %}
       </tbody>
     </table>
