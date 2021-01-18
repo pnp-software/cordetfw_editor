@@ -77,6 +77,25 @@ def duplicate_spec_item(request, spec_item):
     spec_item.save()            # Create new instance holding the old version of the spec_item
     return spec_item            # Return the newly-created instance of spec_item
 
+
+def del_spec_item(request, spec_item):
+    """ Delete the spec_item together with its category-specific items """
+    if spec_item.req != None:
+        spec_item.req.delete()    
+    elif spec_item.packet != None:
+        spec_item.packet.delete()
+    elif spec_item.packet_par != None:
+        spec_item.packet_par.delete()
+    elif spec_item.packet_behaviour != None:
+        spec_item.packet_behaviour.delete() 
+    elif spec_item.ver_item != None:
+        spec_item.ver_item.delete()
+    try:
+        spec_item.delete()
+    except Exception as e:
+        messages.error(request, 'Failure to delete ' + str(spec_item) + \
+                                ', possibly because it is still in use: ' + str(e))
+          
           
 def save_spec_item(spec_item):
     """ Save the spec_item and its associated category-specific model instances """

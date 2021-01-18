@@ -191,13 +191,13 @@
         </ul>
     <li><i>Packet</i>: specification of a packet implementing a command or report in a service</li>
         <ul>
-        <li>Service: the service to which the packet belongs</li>
         <li>Value: the sub-service identifier</li>
         <li>Parameters: a description of the parameters</li>
         <li>Destination: a description of the packet destination</li>
         <li>Discriminant: an enumerated item representing the value of the discriminant for a
-                          a derived packet (only for derived packets)</li>
-        <li>Parent: a pointer to the parent packet (only for derived packets)</li>
+                          derived packet (only for derived packets)</li>
+        <li>Parent: a pointer to the parent packet (for derived packets) or to the service to which
+					the packet belongs (for non-derived packets)</li>
         </ul>
     <li><i>Packet Parameter</i>: specification of a parameter in a packet</li>
         <ul>

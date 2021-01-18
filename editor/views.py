@@ -17,7 +17,8 @@ from zipfile import ZipFile
 from datetime import datetime
 from itertools import chain
 
-from editor.configs import configs, dict_to_spec_item, duplicate_spec_item, save_spec_item
+from editor.configs import configs, dict_to_spec_item, duplicate_spec_item, save_spec_item, \
+                           del_spec_item
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
@@ -346,8 +347,19 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 
 @login_required         
 def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
+    spec_item = SpecItem.objects.get(id=item_id)
+    project = Project.objects.get(id=project_id)
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+
+    if spec_item.status == 'NEW':
+        del_spec_item(request, spec_item)
+    else:
+        spec_item.status = 'DEL'   
+        spec_item.save() 
+    
+    redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
+                           '/'+sel_dom+'/list_spec_items'    
     return redirect(redirect_url)
 
 

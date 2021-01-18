@@ -102,6 +102,8 @@ class SpecItem(models.Model):
     packet_par = models.OneToOneField(PacketPar, on_delete=models.PROTECT, null=True, blank=True, default=None)
     packet_behaviour = models.OneToOneField(PacketBehaviour, on_delete=models.PROTECT, null=True, blank=True, default=None)
     ver_item = models.OneToOneField(VerItem, on_delete=models.PROTECT, null=True, blank=True, default=None)
+    def __str__(self):
+        return self.domain + ':' + self.name
   
 class VerItemToSpecItem(models.Model):
     ver_item = models.ForeignKey(SpecItem, related_name='spec_item_links', on_delete=models.PROTECT) 
