@@ -100,6 +100,9 @@ class SpecItemForm(forms.Form):
    
     def __init__(self, mode, cat, project, application, config, *args, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
+        self.project = project
+        self.application = application
+        self.mode = mode
         self.helper = FormHelper(self)
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
@@ -133,10 +136,11 @@ class SpecItemForm(forms.Form):
             self.fields[field].label = config['form_fields'][field]['label']
             if not config['form_fields'][field]['req']:
                 self.fields[field].required = False            
-        self.project = project
-        self.application = application
-        self.mode = mode
-  
+        if self.mode == 'edit':
+            self.fields['val_set'].disabled = True
+        else:
+            self.fields['val_set'].disabled = False
+          
     def clean(self):
         """ Verify that the domain:name pair is not duplicated """
         cleaned_data = self.cleaned_data

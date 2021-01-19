@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user
-from editor.models import SpecItem, Requirement
+from editor.models import SpecItem, Requirement, ValSet, Packet, PacketBehaviour, PacketPar, VerItem
 
 configs = {'Requirement':{'name': 'Requirement',
                           'title_list': 'List of Requirements',
@@ -15,6 +15,7 @@ configs = {'Requirement':{'name': 'Requirement',
                                           'justification': {'label': 'Rationale', 'req': False, 'model': 'SpecItem'},
                                           'remarks': {'label': 'Remarks', 'req': False, 'model': 'SpecItem'},
                                           'kind': {'label': 'Kind', 'req': True, 'model': 'SpecItem'},
+                                          'val_set': {'label': 'ValSet', 'req': False, 'model': 'SpecItem'},
                                           'ver_method': {'label': 'Ver. Method', 'req': True, 'model': 'Requirement'}
                                           }
                          },
@@ -56,6 +57,8 @@ def dict_to_spec_item(dic, spec_item):
         spec_item.remarks = dic['remarks']
     if 'kind' in dic:
         spec_item.kind = dic['kind']
+    if 'val_set' in dic:
+        spec_item.val_set = ValSet.objects.get(id=dic['val_set'])
     if spec_item.cat == 'Requirement':
         if 'ver_method' in dic:
             if spec_item.req == None:
@@ -78,8 +81,8 @@ def duplicate_spec_item(request, spec_item):
     return spec_item            # Return the newly-created instance of spec_item
 
 
-def del_spec_item(request, spec_item):
-    """ Delete the spec_item together with its category-specific items """
+def remove_spec_item(request, spec_item):
+    """ Delete the spec_item from the database together with its category-specific items """
     if spec_item.req != None:
         spec_item.req.delete()    
     elif spec_item.packet != None:

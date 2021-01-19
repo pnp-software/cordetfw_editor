@@ -18,7 +18,7 @@ from datetime import datetime
 from itertools import chain
 
 from editor.configs import configs, dict_to_spec_item, duplicate_spec_item, save_spec_item, \
-                           del_spec_item
+                           remove_spec_item
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
@@ -263,10 +263,10 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     project = Project.objects.get(id=project_id)
     if application_id != 0:
         application = Application.objects.get(id=application_id)
-        title = 'Add '+configs[cat].name+' to Application '+application.name
+        title = 'Add '+configs[cat]['name']+' to Application '+application.name
     else:
         application = None
-        title = 'Add '+configs[cat].name+' to Project '+project.name
+        title = 'Add '+configs[cat]['name']+' to Project '+project.name
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
   
@@ -274,9 +274,9 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
         if form.is_valid():
             new_spec_item = SpecItem()
+            new_spec_item.cat = cat
             dict_to_spec_item(form.cleaned_data, new_spec_item)
             default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-            new_spec_item.cat = cat
             new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
@@ -287,7 +287,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item.save()
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/l'+str(application_id)+'/'+str(default_val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'
-            return redirect(base_url)
+            return redirect(redirect_url)
     else:   
         form = SpecItemForm('add', cat, project, application, configs[cat])
 
@@ -316,8 +316,8 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                 spec_item.status = 'OBS'
                 old_spec_item = duplicate_spec_item(request, spec_item)
                 edited_spec_item = SpecItem()
-                edited_spec_item.status = 'MOD'
                 edited_spec_item.cat = cat
+                edited_spec_item.status = 'MOD'
                 edited_spec_item.val_set = spec_item.val_set
                 edited_spec_item.previous = old_spec_item
             else:
@@ -340,9 +340,38 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 
 @login_required         
 def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
+    project = Project.objects.get(id=project_id)
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+        title = 'Copy '+configs[cat]['name']+' in Application '+application.name
+    else:
+        application = None
+        title = 'Copy '+configs[cat]['name']+' in Project '+project.name
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+  
+    spec_item = SpecItem.objects.get(id=item_id)
+    if request.method == 'POST':   
+        form = SpecItemForm('edit', cat, project, application, configs[cat], request.POST, \
+                            initial=model_to_dict(spec_item))
+        if form.is_valid():
+            new_spec_item = SpecItem()
+            new_spec_item.cat = cat
+            dict_to_spec_item(form.cleaned_data, new_spec_item)
+            new_spec_item.updated_at = datetime.now()
+            new_spec_item.owner = get_user(request)
+            new_spec_item.project = project
+            new_spec_item.application = application
+            new_spec_item.status = 'NEW'
+            save_spec_item(new_spec_item)
+            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
+                           '/'+sel_dom+'/list_spec_items'
+            return redirect(redirect_url)
+    else:   
+        form = SpecItemForm('copy', cat, project, application, configs[cat], initial=model_to_dict(spec_item))
+
+    context = {'form': form, 'project': project, 'title': title}
+    return render(request, 'basic_form.html', context) 
 
 
 @login_required         
@@ -353,7 +382,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         return redirect(base_url)
 
     if spec_item.status == 'NEW':
-        del_spec_item(request, spec_item)
+        remove_spec_item(request, spec_item)
     else:
         spec_item.status = 'DEL'   
         spec_item.save() 
