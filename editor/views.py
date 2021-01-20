@@ -25,7 +25,7 @@ from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, 
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
-                    is_spec_item_owner, can_create_project
+                    is_spec_item_owner, can_create_project, can_add_val_set
 
 import cexprtk
 import logging
@@ -106,11 +106,11 @@ def add_project(request):
                                   updated_at = datetime.now(),
                                   owner = form.cleaned_data['owner'])
             new_release = Release(desc = "Initial release after project creation",
-                          release_author = get_user(request),
-                          updated_at = datetime.now(),
-                          application_version = 0,
-                          project_version = 0,
-                          previous = None)
+                                  release_author = get_user(request),
+                                  updated_at = datetime.now(),
+                                  application_version = 0,
+                                  project_version = 0,
+                                  previous = None)
             default_val_set = ValSet(desc = 'Default ValSet',
                                      updated_at = datetime.today(),
                                      project = new_project,
@@ -151,9 +151,10 @@ def edit_project(request, project_id):
     del_val_set_id = request.GET.get('del_val_set_id')
     if del_val_set_id != None:     
         try:
-            DataItemValSet.objects.filter(id=del_val_set_id).delete()    
+            ValSet.objects.filter(id=del_val_set_id).delete()    
         except Exception as e:
-            messages.error(request, 'Failure to delete ValSet with id '+str(del_val_set_id)+', possibly because it is still in use: '+repr(e))
+            messages.error(request, 'Failure to delete ValSet with id '+str(del_val_set_id)+\
+                                    ', possibly because it is still in use: '+repr(e))
 
     if request.method == 'POST':    # Bind form to posted data 
         form = ProjectForm(request.POST)
@@ -171,8 +172,9 @@ def edit_project(request, project_id):
     users = User.objects.all().order_by('username').values()
     project_users = list(ProjectUser.objects.filter(project_id=project_id))
     val_sets = list(ValSet.objects.filter(project_id=project_id))
-    context = {'form': form, 'title': 'Edit Project '+project.name, }
-    return render(request, 'basic_form.html', context)    
+    context = {'form': form, 'project': project, 'users': users, \
+                'project_users': project_users, 'val_sets': val_sets}
+    return render(request, 'edit_project.html', context)    
 
 
 @login_required         
@@ -232,6 +234,51 @@ def make_application_release(request, application_id):
         
     context = {'form': form, 'releases': get_previous_list(application.release), 'entity_being_released': application}
     return render(request, 'make_release.html', context)   
+
+
+@login_required         
+def add_val_set(request, project_id):
+    project = Project.objects.get(id=project_id)
+    if not can_add_val_set(request.user):
+        return redirect(base_url)
+    
+    redirect_url = '/editor/'+str(project_id)+'/edit_project'
+    if request.method == 'POST':    
+        form = ValSetForm(request.POST)
+        if form.is_valid():
+            new_val_set = ValSet(name = form.cleaned_data['name'],
+                                 desc = form.cleaned_data['description'],
+                                 project = project,
+                                 updated_at = datetime.now())
+            new_val_set.save()
+            return redirect(redirect_url)
+    else:   
+        form = ValSetForm()
+
+    context = {'form': form, 'project': project, 'title': 'Add ValSet to Project '+project.name}
+    return render(request, 'basic_form.html', context)    
+
+@login_required         
+def edit_val_set(request, project_id, val_set_id):
+    project = Project.objects.get(id=project_id)
+    val_set = ValSet.objects.get(id=val_set_id)
+    if not can_add_val_set(request.user):
+        return redirect(base_url)
+    
+    redirect_url = '/editor/'+str(project_id)+'/edit_project'
+    if request.method == 'POST':    
+        form = ValSetForm(request.POST)
+        if form.is_valid():
+            val_set.name = form.cleaned_data['name']
+            val_set.desc = form.cleaned_data['description']
+            val_set.updated_at = datetime.now()
+            val_set.save()
+            return redirect(redirect_url)
+    else:   
+        form = ValSetForm(initial={'name': val_set.name, 'description': val_set.desc})
+
+    context = {'form': form, 'project': project, 'title': 'Edit ValSet '+val_set.name}
+    return render(request, 'basic_form.html', context)    
 
 
 @login_required         

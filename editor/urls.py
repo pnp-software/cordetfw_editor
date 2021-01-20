@@ -13,6 +13,9 @@ urlpatterns = [
     path('<int:project_id>/edit_project', views.edit_project, name='edit_project'),
     path('<int:project_id>/export_project', views.export_project, name='export_project'),
     path('<int:project_id>/make_project_release', views.make_project_release, name='make_project_release'),
+
+    path('<int:project_id>/add_val_set', views.add_val_set, name='add_val_set'),
+    path('<int:project_id>/<int:val_set_id>/edit_val_set', views.edit_val_set, name='edit_val_set'),
  
     path('<int:project_id>/add_application', views.add_application, name='add_application'),
     path('<int:application_id>/edit_application', views.edit_application, name='edit_application'),
