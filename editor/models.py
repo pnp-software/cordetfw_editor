@@ -57,7 +57,6 @@ class Packet(models.Model):
                                       related_name='der_packets', null=True, blank=True, default=None)
 
 class PacketPar(models.Model):
-    order =  models.SmallIntegerField(default=0)
     group =  models.SmallIntegerField(default=0)
     repetition = models.SmallIntegerField(default=0)
 
@@ -87,6 +86,7 @@ class SpecItem(models.Model):
     title = models.CharField(max_length=255)
     desc = models.TextField(blank=True, default='')
     value = models.TextField(blank=True, default='')
+    dim  = models.IntegerField(blank=True, default=0)
     parent = models.ForeignKey('self', related_name='children', on_delete=models.PROTECT, null=True, blank=True, default=None)
     owner = models.ForeignKey(User, related_name='owned_spec_items', on_delete=models.PROTECT)
     status = models.CharField(max_length=20, choices=HISTORY_STATUS, default='NEW')

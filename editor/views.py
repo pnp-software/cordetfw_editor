@@ -297,7 +297,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
         
     if (sel_dom != "All_Domains"):
         items = items.filter(domain=sel_dom)
-
+    
     domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
@@ -332,7 +332,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item.application = application
             save_spec_item(new_spec_item)
             new_spec_item.save()
-            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/l'+str(application_id)+'/'+str(default_val_set.id)+\
+            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   

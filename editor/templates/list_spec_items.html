@@ -46,17 +46,16 @@
           <th>Description</th>
           <th>Value</th>
           <th>Kind</th>
-          {% if cat == 'Requirement' %}
-          <th>Ver.</th>
-          {% endif %}
+          {% for col in config.cols %}
+          <th>col.label</th>
+          {% endfor %}
           <th>Owner</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         {% for item in items %}
-          {% if item.status == 'CNF' or item.status == 'MOD' or item.status == 'NEW' %}
-          <trv>
+           <trv>
             <td id='{{item.domain}}:{{item.name}}'>{{item.domain}}</td>
             <td>{{item.name}}</td>
             <td><strong>{{item.title}}</strong> 
@@ -72,6 +71,9 @@
             </td>
             <td>{{item.value}}</td>
             <td>{{item.kind}}</td>
+            {% if cat == 'DataItemType' %}
+            <td>{{item.dim}}</td>
+            {% endif %}
             {% if cat == 'Requirement' %}
             <td>{{item.req.ver_method}}</td>
             {% endif %}
@@ -89,7 +91,6 @@
               </div> 
             </td>
           </tr>
-        {% endif %}
         {% endfor %}
       </tbody>
     </table>

@@ -77,6 +77,7 @@ class SpecItemForm(forms.Form):
     title = forms.CharField()
     desc = forms.CharField(widget=forms.Textarea)
     value = forms.CharField(widget=forms.Textarea)
+    dim = forms.IntegerField(min_value=0)
     justification = forms.CharField(widget=forms.Textarea)
     remarks = forms.CharField(widget=forms.Textarea)
     kind = forms.ChoiceField(choices=())
@@ -84,6 +85,7 @@ class SpecItemForm(forms.Form):
     val_set = forms.ChoiceField(choices=())
     desc_pars = forms.CharField(widget=forms.Textarea)
     desc_dest = forms.CharField(widget=forms.Textarea)
+    group = forms.IntegerField(min_value=0)
     repetition = forms.IntegerField(min_value=0)
     acceptance_check = forms.CharField(widget=forms.Textarea)
     enable_check = forms.CharField(widget=forms.Textarea)
@@ -136,10 +138,10 @@ class SpecItemForm(forms.Form):
             self.fields[field].label = config['form_fields'][field]['label']
             if not config['form_fields'][field]['req']:
                 self.fields[field].required = False            
-        if self.mode == 'edit':
-            self.fields['val_set'].disabled = True
-        else:
+        if self.mode == 'copy':
             self.fields['val_set'].disabled = False
+        else:
+            self.fields['val_set'].disabled = True
           
     def clean(self):
         """ Verify that the domain:name pair is not duplicated """

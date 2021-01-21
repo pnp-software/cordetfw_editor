@@ -188,11 +188,11 @@ def get_domains(cat, application_id, project_id):
     """           
     domains = ['All_Domains']
     if application_id == 0:
-       for domain in SpecItem.objects.filter(project_id=project_id).exclude(status='DEL'). \
+       for domain in SpecItem.objects.filter(project_id=project_id).filter(cat=cat).exclude(status='DEL'). \
                                 exclude(status='OBS').order_by('domain').values_list('domain').distinct():
           domains.append(domain[0])
     else:
-       for domain in SpecItem.objects.filter(application_id=application_id).exclude(status='DEL'). \
+       for domain in SpecItem.objects.filter(application_id=application_id).filter(cat=cat).exclude(status='DEL'). \
                                 exclude(status='OBS').order_by('domain').values_list('domain').distinct():
           domains.append(domain[0])
     return domains    

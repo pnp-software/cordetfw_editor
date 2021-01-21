@@ -110,7 +110,7 @@
     Some categories of specification item may play different roles or may have different kinds.
     This is captured by the 'Kind' attribute.
     </p><p>
-    Some specification item may have size-related information attached to them.
+    Some specification item may have an attribute which takes on non-negative integer values (e.g. a size or dimenstion.
     </p><p>
     Each specification item has a short description (its <strong>title</strong>) and it may have a long
     description (its <strong>description</strong>). Specification items may have a <strong>value</strong>.
@@ -134,7 +134,7 @@
     <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
     <li><i>Status(*)</i>: the history status of the speecification item</li>
     <li><i>Kind</i>: the kind of the specification item within its category</li>
-    <li><i>Size</i>: a size-like attribute of a specification item</li>
+    <li><i>Dim</i>: a non-negative attribute of a specification item</li>
     <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
                             history status of the specification was last updated</li>
     <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
@@ -163,7 +163,7 @@
     <li><i>Data Item Type</i>: specification of a data item type </li>
         <ul>
         <li>Value: the native type to which the type is mapped</li>
-        <li>Size: the size in number of bits of the type</li>
+        <li>Dim: the size in number of bits of the type</li>
         <li>Kind: the kind of data item type (either enumerated or non-enumerated</li>
         </ul>
     <li><i>Enumerated Item</i>: specification of a value of an enumerated type</li>
@@ -177,7 +177,7 @@
         <li>Value: the value of the data item (possibly expressed as an arithmetic expression
                    of other data items)</li>
         <li>Kind: the kind of data item (a constant, a global variable, a parameter, a packet parameter)</li>
-        <li>Size: the multiplicity of the data item</li>
+        <li>Dim: the multiplicity of the data item</li>
         </ul>
     <li><i>Behavioural Model</i>: a FW Profile model describing an aspect of an application behaviour</li>
         <ul>
@@ -204,7 +204,7 @@
         <li>Parent: a pointer to the packet to which the packet parameter belongs</li>
         <li>Parameter: a pointer to the data item acting as parameters</li>
         <li>Kind: the role of the packet parameter (discriminant, housekeeping parameter, or packet parameter)</li>
-        <li>Order: the position of the parameter within the packet</li>
+        <li>Dim: the position of the parameter within the packet</li>
         <li>Group: the parameter group size</li>
         <li>Repetition: the repetition number for the parameter</li>
         </ul>

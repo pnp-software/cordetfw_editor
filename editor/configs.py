@@ -20,11 +20,40 @@ configs = {'Requirement':{'name': 'Requirement',
                                           }
                          },
                'DataItemType': {'name': 'Data Item Type',
-                                'title': 'List of Requirements',
-                                'has_children': True,
-                                'child_cat': 'EnumItem',
-                                'cols': {}
-                               },
+                          'title_list': 'List of Data Item Types',
+                          'title_history': 'History of Data Item Type ',
+                          'has_children': True,
+                          'child_cat': 'EnumItem',
+                          'cols': [{'Name': 'dim', 'Label': 'Size'}],
+                          'form_fields': {'domain': {'label': 'Domain', 'req': True, 'model': 'SpecItem'},
+                                          'name': {'label': 'Name', 'req': True, 'model': 'SpecItem'},
+                                          'title': {'label': 'Short Desc.', 'req': True, 'model': 'SpecItem'},
+                                          'desc': {'label': 'Description', 'req': False, 'model': 'SpecItem'},
+                                          'value': {'label': 'Native Type', 'req': False, 'model': 'SpecItem'},
+                                          'dim': {'label': 'Size in Bits', 'req': False, 'model': 'SpecItem'},
+                                          'justification': {'label': 'Rationale', 'req': False, 'model': 'SpecItem'},
+                                          'remarks': {'label': 'Remarks', 'req': False, 'model': 'SpecItem'},
+                                          'kind': {'label': 'Enumerated', 'req': True, 'model': 'SpecItem'},
+                                          'val_set': {'label': 'ValSet', 'req': False, 'model': 'SpecItem'}
+                                          }
+                         },
+               'EnumtemT': {'name': 'Enumerated Item',
+                          'title_list': 'List of Enumerated Items',
+                          'title_history': 'History of Enumerated Item ',
+                          'has_children': False,
+                          'child_cat': '',
+                          'cols': [],
+                          'form_fields': {'domain': {'label': 'Domain', 'req': True, 'model': 'SpecItem'},
+                                          'name': {'label': 'Name', 'req': True, 'model': 'SpecItem'},
+                                          'title': {'label': 'Short Desc.', 'req': True, 'model': 'SpecItem'},
+                                          'desc': {'label': 'Description', 'req': False, 'model': 'SpecItem'},
+                                          'value': {'label': 'Native Type', 'req': True, 'model': 'SpecItem'},
+                                          'parent': {'label': 'Type', 'req': True, 'model': 'SpecItem'},
+                                          'justification': {'label': 'Rationale', 'req': False, 'model': 'SpecItem'},
+                                          'remarks': {'label': 'Remarks', 'req': False, 'model': 'SpecItem'},
+                                          'val_set': {'label': 'ValSet', 'req': False, 'model': 'SpecItem'}
+                                          }
+                         },
                'DataItem': {'name': 'Data Item',
                             'title': 'List of Requirements',
                             'has_children': False,
@@ -57,7 +86,11 @@ def dict_to_spec_item(dic, spec_item):
         spec_item.remarks = dic['remarks']
     if 'kind' in dic:
         spec_item.kind = dic['kind']
-    if 'val_set' in dic:
+    if 'dim' in dic:
+        spec_item.size = dic['dim']
+    if ('parent' in dic) and (dic['parent'] != ''):
+        spec_item.parent = SpecItem.objects.get(id=dic['parent'])
+    if ('val_set' in dic) and (dic['val_set'] != ''):
         spec_item.val_set = ValSet.objects.get(id=dic['val_set'])
     if spec_item.cat == 'Requirement':
         if 'ver_method' in dic:

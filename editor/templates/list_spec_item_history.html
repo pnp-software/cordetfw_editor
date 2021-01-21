@@ -17,6 +17,9 @@
           <th>Description</th>
           <th>Value</th>
           <th>Kind</th>
+          {% if cat == 'DataItemType' %}
+          <th>Size</th>
+          {% endif %}
           {% if cat == 'Requirement' %}
           <th>Ver.</th>
           {% endif %}
@@ -43,6 +46,9 @@
             </td>
             <td>{{item.value}}</td>
             <td>{{item.kind}}</td>
+            {% if cat == 'DataItemType' %}
+            <td>{{item.dim}}</td>
+            {% endif %}
             {% if cat == 'Requirement' %}
             <td>{{item.req.ver_method}}</td>
             {% endif %}
