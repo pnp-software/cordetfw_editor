@@ -283,39 +283,54 @@ def edit_val_set(request, project_id, val_set_id):
 
 @login_required         
 def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
-    # If application_id is zero, then the items to be listed are 'project items'; otherwise they are 'application items'
     project = Project.objects.get(id=project_id)
+    expand_id = request.GET.get('expand_id')
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
     
-    if (application_id == 0):
+    if (application_id == 0):   # Items to be listed are 'project items'
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                     exclude(status='DEL').exclude(status='OBS').order_by('domain','name') 
-    else:
+    else:                       # Items to be listed are 'application items'
         items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                     exclude(status='DEL').exclude(status='OBS').order_by('domain','name') 
         
     if (sel_dom != "All_Domains"):
         items = items.filter(domain=sel_dom)
+        
+    if expand_id != None:   # The item whose id is parent_id must be listed together with its children
+        expand_items = SpecItem.objects.filter(parent_id=expand_id)
+        expand_id = int(expand_id)  # cast is required for comparison to item_id in list_spect_items.html template
+    else:
+        expand_items = None
     
     domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
-               'val_set_id':val_set_id, 'val_sets':val_sets, 'config':configs[cat], 'cat':cat}
+               'val_set_id': val_set_id, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, 'expand_id': expand_id, \
+               'expand_items': expand_items}
     return render(request, 'list_spec_items.html', context)    
 
 
 @login_required         
 def add_spec_item(request, cat, project_id, application_id, sel_dom):
     project = Project.objects.get(id=project_id)
+    parent_id = request.GET.get('parent_id')
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+
     if application_id != 0:
         application = Application.objects.get(id=application_id)
         title = 'Add '+configs[cat]['name']+' to Application '+application.name
     else:
         application = None
         title = 'Add '+configs[cat]['name']+' to Project '+project.name
-    if not has_access_to_project(request.user, project):
-        return redirect(base_url)
+        
+    if parent_id != None:       # Add a spec_item as child to an existing spec_item    
+        parent = SpecItem.objects.get(id=parent_id)
+        title = 'Add '+configs[cat]['name']+' to '+configs[parent.cat]['name']+str(parent)
+    else:
+        parent = None
   
     if request.method == 'POST':   
         form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
@@ -324,6 +339,8 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item.cat = cat
             dict_to_spec_item(form.cleaned_data, new_spec_item)
             default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+            if parent != None:
+                new_spec_item.parent = parent
             new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
@@ -399,7 +416,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
   
     spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
-        form = SpecItemForm('edit', cat, project, application, configs[cat], request.POST, \
+        form = SpecItemForm('copy', cat, project, application, configs[cat], request.POST, \
                             initial=model_to_dict(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem()

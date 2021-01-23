@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user
+from django.contrib import messages
 from editor.models import SpecItem, Requirement, ValSet, Packet, PacketBehaviour, PacketPar, VerItem
 
 configs = {'Requirement':{'name': 'Requirement',
@@ -6,7 +7,7 @@ configs = {'Requirement':{'name': 'Requirement',
                           'title_history': 'History of Requirement ',
                           'has_children': False,
                           'child_cat': '',
-                          'cols': [{'Name': 'ver_method', 'Label': 'Ver'}],
+                          'cols': [{'name': 'ver_method', 'label': 'Ver'}],
                           'form_fields': {'domain': {'label': 'Domain', 'req': True, 'model': 'SpecItem'},
                                           'name': {'label': 'Name', 'req': True, 'model': 'SpecItem'},
                                           'title': {'label': 'Title', 'req': True, 'model': 'SpecItem'},
@@ -23,8 +24,8 @@ configs = {'Requirement':{'name': 'Requirement',
                           'title_list': 'List of Data Item Types',
                           'title_history': 'History of Data Item Type ',
                           'has_children': True,
-                          'child_cat': 'EnumItem',
-                          'cols': [{'Name': 'dim', 'Label': 'Size'}],
+                          'child_desc': {'cat': 'EnumItem', 'name': 'Enumerated Item'},
+                          'cols': [{'name': 'dim', 'label': 'Size'}],
                           'form_fields': {'domain': {'label': 'Domain', 'req': True, 'model': 'SpecItem'},
                                           'name': {'label': 'Name', 'req': True, 'model': 'SpecItem'},
                                           'title': {'label': 'Short Desc.', 'req': True, 'model': 'SpecItem'},
@@ -37,18 +38,16 @@ configs = {'Requirement':{'name': 'Requirement',
                                           'val_set': {'label': 'ValSet', 'req': False, 'model': 'SpecItem'}
                                           }
                          },
-               'EnumtemT': {'name': 'Enumerated Item',
+               'EnumItem': {'name': 'Enumerated Item',
                           'title_list': 'List of Enumerated Items',
                           'title_history': 'History of Enumerated Item ',
                           'has_children': False,
                           'child_cat': '',
                           'cols': [],
-                          'form_fields': {'domain': {'label': 'Domain', 'req': True, 'model': 'SpecItem'},
-                                          'name': {'label': 'Name', 'req': True, 'model': 'SpecItem'},
+                          'form_fields': {'name': {'label': 'Enum Name', 'req': True, 'model': 'SpecItem'},
                                           'title': {'label': 'Short Desc.', 'req': True, 'model': 'SpecItem'},
                                           'desc': {'label': 'Description', 'req': False, 'model': 'SpecItem'},
-                                          'value': {'label': 'Native Type', 'req': True, 'model': 'SpecItem'},
-                                          'parent': {'label': 'Type', 'req': True, 'model': 'SpecItem'},
+                                          'value': {'label': 'Enum Value', 'req': True, 'model': 'SpecItem'},
                                           'justification': {'label': 'Rationale', 'req': False, 'model': 'SpecItem'},
                                           'remarks': {'label': 'Remarks', 'req': False, 'model': 'SpecItem'},
                                           'val_set': {'label': 'ValSet', 'req': False, 'model': 'SpecItem'}
@@ -130,7 +129,7 @@ def remove_spec_item(request, spec_item):
         spec_item.delete()
     except Exception as e:
         messages.error(request, 'Failure to delete ' + str(spec_item) + \
-                                ', possibly because it is still in use: ' + str(e))
+                                ', possibly because it has children attached to it: ' + str(e))
           
           
 def save_spec_item(spec_item):

@@ -113,7 +113,13 @@
     Some specification item may have an attribute which takes on non-negative integer values (e.g. a size or dimenstion.
     </p><p>
     Each specification item has a short description (its <strong>title</strong>) and it may have a long
-    description (its <strong>description</strong>). Specification items may have a <strong>value</strong>.
+    description (its <strong>description</strong>). 
+    The short description cannot exceed a pre-defined length. 
+    Short and long description are intended to be edited together: the short description should be the first
+    sentence of the complete (short+long) description. 
+    The short description is also shown as a tip when hovering over an item in an HTML page.
+    </p><p>
+    Specification items may have a <strong>value</strong>.
     </p><p>
     Some categories of specification items are in a parent-child relationship (e.g. a packet parameter
     belongs to a packet -- the packet is the "parent" of the packet parameter).      
@@ -121,8 +127,10 @@
     Thus, in summary, the core attributes of specification items are 
     (asterisked attributes are mandatory; the others may be left empty):
     <ul>
-    <li><i>Domain(*)</i>: the domain to which the specification item belongs</li>
-    <li><i>Name(*)</i>: the name of the specification item (unique within the domain)</li>
+    <li><i>Domain(*)</i>: the domain to which the specification item belongs (a string consisting 
+						  of alphanumeric characters and underscores)</li>
+    <li><i>Name(*)</i>: the name of the specification item (a string consisting 
+						of alphanumeric characters and underscores)</li>
     <li><i>Project(*)</i>: the project to which the specification item belongs </li>
     <li><i>Application</i>: the application to which the specification item belongs (empty if the specification
                      item describes a project-level feature)</li>
@@ -168,9 +176,11 @@
         </ul>
     <li><i>Enumerated Item</i>: specification of a value of an enumerated type</li>
         <ul>
-        <li>Parent: the type to which the enumerated item belongs</li>
+        <li>Domain: this is fixed and equal to 'enum' (which means that all enumerated names must be
+				    unique within a project)</li>
+        <li>Name: the name of the enumerated item</li>
         <li>Value: the value of the enumerated item</li>
-        <li>Title: the name of the enumerated item</li>
+        <li>Parent: the type to which the enumerated item belongs</li>
         </ul>
     <li><i>Data Item</i>: specification of a data item</li>
         <ul>

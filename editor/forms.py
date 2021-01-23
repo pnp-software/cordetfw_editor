@@ -105,6 +105,7 @@ class SpecItemForm(forms.Form):
         self.project = project
         self.application = application
         self.mode = mode
+        self.cat = cat
         self.helper = FormHelper(self)
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
@@ -130,7 +131,9 @@ class SpecItemForm(forms.Form):
         self.fields['kind'].choices = get_kind_choices(cat)
         self.fields['val_set'].choices = ValSet.objects.filter(project_id=project.id).\
                                                 order_by('name').values_list('id','name')
-        for field in self.fields:
+
+        # Hide fields which are not required for a given category
+        for field in self.fields:   
             if field not in config['form_fields']:
                 self.fields[field].widget = forms.HiddenInput()
                 self.fields[field].required = False 
@@ -138,13 +141,23 @@ class SpecItemForm(forms.Form):
             self.fields[field].label = config['form_fields'][field]['label']
             if not config['form_fields'][field]['req']:
                 self.fields[field].required = False            
-        if self.mode == 'copy':
+        
+        # The ValSet can only be edited in copy mode
+        if self.mode == 'copy':     
             self.fields['val_set'].disabled = False
         else:
             self.fields['val_set'].disabled = True
+        
+        # The domain of enumerated items is always equal to 'enum'  
+        if cat == 'EnumItem':
+            self.fields['domain'].initial = 'enum'
+            self.fields['domain'].disabled = True
           
     def clean(self):
-        """ Verify that the domain:name pair is not duplicated """
+        """ 
+        Verify that: (a) the domain:name pair is not duplicated; (b) if the kind of data item type is set to non-enumerated, 
+        it has no enumerated items attached to it.
+        """
         cleaned_data = self.cleaned_data
         if self.mode == 'copy' or self.mode == 'add':
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
@@ -155,6 +168,14 @@ class SpecItemForm(forms.Form):
                 if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
                         filter(project_id=self.project.id, domain=cleaned_data['domain'], name=cleaned_data['name']).exists():
                     raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
+        
+        if (self.mode == 'edit') and (self.cat == 'DataItemType') and (cleaned_data['kind'] == 'NOT_ENUM'):
+            spec_item = SpecItem.objects.get(domain=cleaned_data['domain'], name=cleaned_data['name'])
+            children = SpecItem.objects.filter(parent=spec_item.id)
+            if children != None:
+                raise forms.ValidationError('Edit Error: this data type has enumerated items attached to it and '+\
+                                            'must therefore be of enumerated type')
+                    
         return cleaned_data
  
   

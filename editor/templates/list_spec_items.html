@@ -44,11 +44,17 @@
           <th>Domain</th>
           <th>Name</th>
           <th>Description</th>
-          <th>Value</th>
-          <th>Kind</th>
-          {% for col in config.cols %}
-          <th>col.label</th>
-          {% endfor %}
+          <th>{{config.form_fields.value.label}}</th>
+          <th>{{config.form_fields.kind.label}}</th>
+          {% if cat == 'DataItemType' %}
+            <th>Size</th>
+          {% endif %}
+          {% if cat == 'Requirement' %}
+            <th>Ver.</th>
+          {% endif %}
+          {% if cat == 'EnumItem' %}
+            <th>Type</th>
+          {% endif %}
           <th>Owner</th>
           <th></th>
         </tr>
@@ -77,6 +83,12 @@
             {% if cat == 'Requirement' %}
             <td>{{item.req.ver_method}}</td>
             {% endif %}
+            {% if cat == 'EnumItem' %}
+            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set_id sel_dom %}"#{{item.domain}}:{{item.name}}>
+                {{item.parent}}
+                </a>
+            </td>
+            {% endif %}
             <td>{{item.owner}}</td>
             <td>
               <div class="btn-group">
@@ -88,9 +100,31 @@
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
+                {% if item.cat == 'DataItemType' and item.kind == 'ENUM' %}
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'add_spec_item' 'EnumItem' project.id application_id sel_dom %}?parent_id={{item.id}}" title="Add {{config.child_desc.name}}">A</a>
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'list_spec_items' cat project.id application_id val_set_id sel_dom %}?expand_id={{item.id}}" title="Show Enumerated Items">En</a>
+                {% endif %}
               </div> 
             </td>
           </tr>
+          {% if item.id == expand_id %}
+            {% for expand_item in expand_items %}
+            <tr class="table-active">
+              <td></td>
+              <td><a href="{% url 'list_spec_items' 'EnumItem' project.id application_id val_set_id 'enum' %}">
+                  {{expand_item.name}}
+                  </a>
+              </td>
+              <td>{{expand_item.title}}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            {% endfor %}
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>

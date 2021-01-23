@@ -6,7 +6,8 @@
 <div class="col-11">
 <div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
   <h2 class="display-6">{{ config.title_history }} {{ item.domain }}:{{ item.name }} 
-            {% if time.title != '' %}({{ item.title }}{% endif %} )</h2>  
+            </h2>  
+            <i><strong>{{ item.title }}</strong> {{ item.desc }}</i>
 </div>
 
     <table class="table table-hover table-sm">

@@ -178,7 +178,7 @@ def get_kind_choices(cat):
        return PCKT_PAR_KIND
     elif cat == 'VerItem':
        return VER_ITEM_KIND
-    messages.error(request, 'Unknown SpecItem category in get_kind_choices(): '+cat)
+    return (("INV","Invalid"),)
     
           
 def get_domains(cat, application_id, project_id):
