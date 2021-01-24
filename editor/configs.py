@@ -115,6 +115,12 @@ def duplicate_spec_item(request, spec_item):
 
 def remove_spec_item(request, spec_item):
     """ Delete the spec_item from the database together with its category-specific items """
+    try:
+        spec_item.delete()
+    except Exception as e:
+        messages.error(request, 'Failure to delete ' + str(spec_item) + \
+                                ', possibly because it has children attached to it: ' + str(e))
+        return
     if spec_item.req != None:
         spec_item.req.delete()    
     elif spec_item.packet != None:
@@ -125,11 +131,6 @@ def remove_spec_item(request, spec_item):
         spec_item.packet_behaviour.delete() 
     elif spec_item.ver_item != None:
         spec_item.ver_item.delete()
-    try:
-        spec_item.delete()
-    except Exception as e:
-        messages.error(request, 'Failure to delete ' + str(spec_item) + \
-                                ', possibly because it has children attached to it: ' + str(e))
           
           
 def save_spec_item(spec_item):

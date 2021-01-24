@@ -129,8 +129,6 @@ class SpecItemForm(forms.Form):
         self.fields['post_cond'].widget.attrs.update(rows = 1)
         self.fields['close_out'].widget.attrs.update(rows = 1)
         self.fields['kind'].choices = get_kind_choices(cat)
-        self.fields['val_set'].choices = ValSet.objects.filter(project_id=project.id).\
-                                                order_by('name').values_list('id','name')
 
         # Hide fields which are not required for a given category
         for field in self.fields:   
@@ -142,11 +140,27 @@ class SpecItemForm(forms.Form):
             if not config['form_fields'][field]['req']:
                 self.fields[field].required = False            
         
-        # The ValSet can only be edited in copy mode
-        if self.mode == 'copy':     
-            self.fields['val_set'].disabled = False
-        else:
+        # In add mode, the ValSet cannot be edited and remains hidden
+        if (self.mode == 'add'):     
+            self.fields['val_set'].widget = forms.HiddenInput()
+        
+        # In edit mode, the ValSet cannot be edited
+        if (self.mode == 'edit'):     
             self.fields['val_set'].disabled = True
+            val_set_id = self.initial['val_set']
+            val_set_name = ValSet.objects.filter(project_id=self.project.id).get(id=val_set_id).name
+            self.fields['val_set'].choices = ((val_set_id, val_set_name),)
+    
+        # In copy mode, the ValSet can be edited
+        if (self.mode == 'copy'):     
+            self.fields['val_set'].choices = ValSet.objects.filter(project_id=project.id).\
+                                                order_by('name').values_list('id','name')
+
+        # In copy mode and edit mode with non-Default ValSet, the domain:name cannot be edited  
+        if (self.mode == 'copy') or (self.mode == 'edit'):   
+            if self.initial['val_set'] != ValSet.objects.get(project_id=project.id, name='Default').id:
+                self.fields['domain'].disabled = True
+                self.fields['name'].disabled = True
         
         # The domain of enumerated items is always equal to 'enum'  
         if cat == 'EnumItem':
@@ -154,29 +168,42 @@ class SpecItemForm(forms.Form):
             self.fields['domain'].disabled = True
           
     def clean(self):
-        """ 
-        Verify that: (a) the domain:name pair is not duplicated; (b) if the kind of data item type is set to non-enumerated, 
-        it has no enumerated items attached to it.
+        """ Verify that: 
+        (a) In add mode, the domain:name pair must be unique within non-deleted, non-obsolete spec_items 
+            in the project and ValSet;
+        (b) In edit or copy mode, if the domain:name has been modified, it must be unique within non-deleted, 
+            non-obsolete spec_items in the project and ValSet;
+        (c) In copy mode,
+        (a) If, in a copy operation, the ValSet has been modified, the Domain/Name pair remains unchanged
+        (b) The domain:name pair is not duplicated within non-deleted, non-obsolete spec_items in the project and ValSet; 
+        (c) If the kind of a data item type is set to non-enumerated, it cannot have enumerated items attached to it.
         """
-        cleaned_data = self.cleaned_data
-        if self.mode == 'copy' or self.mode == 'add':
-            if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
-                        filter(project_id=self.project.id, domain=cleaned_data['domain'], name=cleaned_data['name']).exists():
+        cd = self.cleaned_data
+        default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
+
+        if self.mode == 'add':
+            if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
+                         domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
                 raise forms.ValidationError('Add or Copy Error: Domain:Name pair already exists in this project')
-        if self.mode == 'edit':
+
+        if (self.mode == 'edit') or (self.mode == 'copy'):
             if (('name' in self.changed_data) or ('domain' in self.changed_data)):
-                if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').\
-                        filter(project_id=self.project.id, domain=cleaned_data['domain'], name=cleaned_data['name']).exists():
-                    raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
+                if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
+                         domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
+                    raise forms.ValidationError('Edit or Copy Error: Domain:Name pair already exists in this project')
         
-        if (self.mode == 'edit') and (self.cat == 'DataItemType') and (cleaned_data['kind'] == 'NOT_ENUM'):
-            spec_item = SpecItem.objects.get(domain=cleaned_data['domain'], name=cleaned_data['name'])
+        if ((self.mode == 'copy') and ('val_set' in self.changed_data)):
+            if (('name' in self.changed_data) or ('domain' in self.changed_data)):
+                raise forms.ValidationError('Copy Error: If the ValSet is modified, the Domain:Name pair must remain unchanged')
+                    
+        if (self.cat == 'DataItemType') and (cd['kind'] == 'NOT_ENUM'):
+            spec_item = SpecItem.objects.get(domain=cd['domain'], name=cd['name'])
             children = SpecItem.objects.filter(parent=spec_item.id)
             if children != None:
                 raise forms.ValidationError('Edit Error: this data type has enumerated items attached to it and '+\
                                             'must therefore be of enumerated type')
-                    
-        return cleaned_data
+           
+        return cd
  
   
  
