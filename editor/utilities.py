@@ -180,7 +180,7 @@ def get_kind_choices(cat):
        return VER_ITEM_KIND
     return (("INV","Invalid"),)
     
-          
+         
 def get_domains(cat, application_id, project_id):
     """ 
     Return the list of domains for the specification items in the argument category. If application_id is zero,

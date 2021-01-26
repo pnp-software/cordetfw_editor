@@ -324,18 +324,13 @@
     <img src="{% static 'images/HistoryStatus.png' %}"> 
     </p>
     
-    <h4><a name="#SpecItemOper">Operations Performed on Specification Items</a></h4>
-    <p>
-    TBD
-    </p>
-    
     <h4><a name="ValSets">ValSets</a></h4>
     The editor allows multiple set of values to be assigned to the same specification item.  
     A set of values for the specification values is called a <i>ValSet</i>.
     The admin user defines the range of ValSets for each project. 
     The 'Default' ValSet is pre-defined for all projects. 
     </p><p>
-    The ValSet attribute of a specification item is used to manage the ValSets: 
+    The val_set attribute of a specification item is used to manage the ValSets: 
     when the specification item is created, it is allocated to the Default ValSet.
     The user can then create new instances of the same specification item 
     belonging to one of the other ValSets defined for the project to which the specification_item belongs. 
@@ -344,11 +339,35 @@
     <ul>
     <li>when a new specification item is created, its ValSet is set to 'Default'</li>
     <li>When a specification item is edited, its ValSet remains unchanged</li>
-    <li>When a specification item is copied, the ValSet of the newly created copy can be set freely</li>
+    <li>Only specification items in the Default ValSet can be copied</li>
+    <li>When a specification item is split, the ValSet of the newly created copy can be set freely (within the set of ValSets
+        defined for the project)</li>
     </ul>
     </p>
     
-
+    <h4><a name="SpecItemOper">Operations Performed on Specification Items</a></h4>
+    <p>
+    The following operation may be performed on a SpecItem:
+    <ul>
+    <li><strong>Add</strong>: a new spec_item is created</li>
+    <li><strong>Edit </strong>: an existing spec_item is modified</li>
+    <li><strong>Copy</strong>: a copy is created of a spec_item in the Default ValSet</li>
+    <li><strong>Delete</strong>: a spec_item is deleted</li>
+    <li><strong>Split</strong>: a copy of a spec_item is created in a different ValSet</li>
+    </ul>
+    The semantics of these operations is illustrated in the activity diagrams below.
+    </p><p>
+    <img src="{% static 'images/AddSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/EditSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/CopySpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/DelSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/SplitSpecItem.png' %}"> 
+    </p>
+    
     <h4><a name="IntRef">Internal References</a></h4>
     <p>
     TBD

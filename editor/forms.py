@@ -144,17 +144,17 @@ class SpecItemForm(forms.Form):
         if (self.mode == 'add'):     
             self.fields['val_set'].widget = forms.HiddenInput()
         
-        # In edit mode, the ValSet cannot be edited
+        # In edit mode, the ValSet cannot be edited but is visible
         if (self.mode == 'edit'):     
             self.fields['val_set'].disabled = True
             val_set_id = self.initial['val_set']
             val_set_name = ValSet.objects.filter(project_id=self.project.id).get(id=val_set_id).name
             self.fields['val_set'].choices = ((val_set_id, val_set_name),)
     
-        # In copy mode, the ValSet can be edited
+        # In copy mode, the ValSet can be edited 
         if (self.mode == 'copy'):     
             self.fields['val_set'].choices = ValSet.objects.filter(project_id=project.id).\
-                                                order_by('name').values_list('id','name')
+                                                            order_by('name').values_list('id','name')
 
         # In copy mode and edit mode with non-Default ValSet, the domain:name cannot be edited  
         if (self.mode == 'copy') or (self.mode == 'edit'):   
@@ -171,31 +171,44 @@ class SpecItemForm(forms.Form):
         """ Verify that: 
         (a) In add mode, the domain:name pair must be unique within non-deleted, non-obsolete spec_items 
             in the project and ValSet;
-        (b) In edit or copy mode, if the domain:name has been modified, it must be unique within non-deleted, 
-            non-obsolete spec_items in the project and ValSet;
-        (c) In copy mode,
-        (a) If, in a copy operation, the ValSet has been modified, the Domain/Name pair remains unchanged
-        (b) The domain:name pair is not duplicated within non-deleted, non-obsolete spec_items in the project and ValSet; 
-        (c) If the kind of a data item type is set to non-enumerated, it cannot have enumerated items attached to it.
+        (b) In edit mode, if the domain:name has been modified, it must be unique within non-deleted, 
+            non-obsolete spec_items in the project and in the default ValSet;
+        (c) In copy mode, either the ValSet is modified or the domain:name is modified (but not both)
+        (c) If, in a copy operation, the Domain:Name has been modified, it must be unique among non-deletedthe Domain:Name pair remains unchanged;
+        (d) If, in a copy operation, the ValSet has been modified, it cannot duplicate the ValSet of a non-deleted,
+            non-obsolete spec_item with the same Domain:Name pair
+        (e) If the kind of a data item type is set to non-enumerated, it cannot have enumerated items attached to it.
         """
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
-
+        
         if self.mode == 'add':
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
                 raise forms.ValidationError('Add or Copy Error: Domain:Name pair already exists in this project')
 
-        if (self.mode == 'edit') or (self.mode == 'copy'):
-            if (('name' in self.changed_data) or ('domain' in self.changed_data)):
-                if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
+        if (self.mode == 'edit') and (('name' in self.changed_data) or ('domain' in self.changed_data)):
+            if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
-                    raise forms.ValidationError('Edit or Copy Error: Domain:Name pair already exists in this project')
+                    raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
         
-        if ((self.mode == 'copy') and ('val_set' in self.changed_data)):
+        if (self.mode == 'copy'):
+            was_dom_name_modified = (('name' in self.changed_data) or ('domain' in self.changed_data))
+            was_val_set_modified = (str(self.initial['val_set']) !=  cd['val_set'])
+            if was_dom_name_modified == was_val_set_modified:
+                raise forms.ValidationError('Copy Error: Either the ValSet or the Domain:Name (but not both) must be changed')
+        
+        
+        
+        if ((self.mode == 'copy') and (str(self.initial['val_set']) !=  cd['val_set'])):
             if (('name' in self.changed_data) or ('domain' in self.changed_data)):
                 raise forms.ValidationError('Copy Error: If the ValSet is modified, the Domain:Name pair must remain unchanged')
-                    
+
+        if ((self.mode == 'copy') and (str(self.initial['val_set']) !=  cd['val_set'])):
+                if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
+                         domain=cd['domain'], name=cd['name'], val_set_id=cd['val_set']).exists():
+                    raise forms.ValidationError('Copy Error: ValSet is already in use for this domain:name')
+    
         if (self.cat == 'DataItemType') and (cd['kind'] == 'NOT_ENUM'):
             spec_item = SpecItem.objects.get(domain=cd['domain'], name=cd['name'])
             children = SpecItem.objects.filter(parent=spec_item.id)
