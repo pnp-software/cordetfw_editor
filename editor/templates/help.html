@@ -337,7 +337,7 @@
     </p><p>
     The ValSet is managed as follows:
     <ul>
-    <li>when a new specification item is created, its ValSet is set to 'Default'</li>
+    <li>When a new specification item is created, its ValSet is set to 'Default'</li>
     <li>When a specification item is edited, its ValSet remains unchanged</li>
     <li>Only specification items in the Default ValSet can be copied</li>
     <li>When a specification item is split, the ValSet of the newly created copy can be set freely (within the set of ValSets
@@ -356,6 +356,19 @@
     <li><strong>Split</strong>: a copy of a spec_item is created in a different ValSet</li>
     </ul>
     The semantics of these operations is illustrated in the activity diagrams below.
+    In all cases, the user is presented a form which he fills in with information related to
+    the requested operation.
+    Before being processed, a validity check is performed on the data entered in the form by
+    the user.
+    The validity check comprises: (a) generic checks as specified in the activity
+    diagrams below and (b) category-specific checks.
+    The category-specific checks are:
+    <ul>
+    <li><strong>Data Item Type</strong>: If the kind of a data item type is set to non-enumerated, 
+                                         it cannot have enumerated items attached to it</li>
+    <li><strong>TBD</strong>: TBD</li>
+    </ul>
+    
     </p><p>
     <img src="{% static 'images/AddSpecItem.png' %}"> 
     </p><p>
@@ -370,9 +383,34 @@
     
     <h4><a name="IntRef">Internal References</a></h4>
     <p>
-    TBD
+    In the following text fields:
+    <ul>
+    <li>Title</li>
+    <li>Description</li>
+    <li>Value</li>
+    <li>Justification</li>
+    <li>Remarks</li>
+    </ul>
+    It is possible to include a reference to another specification item.
+    In editing mode, the reference is introduced through the following syntaxt: '#cat:dom:name'.
+    Here, 'cat' is the category of the target specification item; 'dom' is the domain of the
+    target specification item; and 'name' is its nam.
+    When the reference is rendered in display mode, it is converted to a hyperlink; when
+    it is rendered for export, it is converted to TBD.
+    </p><p>
+    Internal references always point to the specification item in the Default ValSet.
+    It is not possible to discriminate between references to specification items in other ValSets.
     </p>    
+
+    <h4><a name="ExportImport">Export and Import Functions</a></h4>
+    <p>
+        TBD
+    </p>
     
+    <h4><a name="Rendering">Rendering</a></h4>
+    <p>
+        TBD
+    </p>
    
     
     <h4><a name="BehaviouralModels">Behavioural Models</a></h4>

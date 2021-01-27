@@ -48,6 +48,7 @@ configs = {'Requirement':{'name': 'Requirement',
                                           'title': {'label': 'Short Desc.', 'req': True, 'model': 'SpecItem'},
                                           'desc': {'label': 'Description', 'req': False, 'model': 'SpecItem'},
                                           'value': {'label': 'Enum Value', 'req': True, 'model': 'SpecItem'},
+                                          'parent': {'label': 'Data Type', 'req': True, 'model': 'SpecItem'},
                                           'justification': {'label': 'Rationale', 'req': False, 'model': 'SpecItem'},
                                           'remarks': {'label': 'Remarks', 'req': False, 'model': 'SpecItem'},
                                           'val_set': {'label': 'ValSet', 'req': False, 'model': 'SpecItem'}

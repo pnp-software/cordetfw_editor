@@ -92,14 +92,18 @@
             <td>{{item.owner}}</td>
             <td>
               <div class="btn-group">
+                {% if item.val_set.name == 'Default' %}  
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
+                {% endif %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'split_spec_item' cat project.id application_id item.id sel_dom %}" title="Split {{config.name}}">S</a>
                 {% if item.cat == 'DataItemType' and item.kind == 'ENUM' %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'add_spec_item' 'EnumItem' project.id application_id sel_dom %}?parent_id={{item.id}}" title="Add {{config.child_desc.name}}">A</a>

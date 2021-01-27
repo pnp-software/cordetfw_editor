@@ -179,6 +179,13 @@ def get_kind_choices(cat):
     elif cat == 'VerItem':
        return VER_ITEM_KIND
     return (("INV","Invalid"),)
+  
+def get_parent_choices(cat, project_id):
+    """ Return the range of choices for the 'parent' attribute of a specification of a given category """
+    if cat == 'EnumItem':
+       return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
+                                    exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name')
+    return (("INV","Invalid"),)
     
          
 def get_domains(cat, application_id, project_id):

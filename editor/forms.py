@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
-from .utilities import get_user_choices, get_kind_choices
+from .utilities import get_user_choices, get_kind_choices, get_parent_choices
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
@@ -99,6 +99,7 @@ class SpecItemForm(forms.Form):
     post_cond = forms.CharField(widget=forms.Textarea)
     close_out = forms.CharField(widget=forms.Textarea)
     ver_status = forms.ChoiceField(choices=REQ_VER_METHOD)
+    parent = forms.ChoiceField(choices=())
    
     def __init__(self, mode, cat, project, application, config, *args, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
@@ -129,6 +130,7 @@ class SpecItemForm(forms.Form):
         self.fields['post_cond'].widget.attrs.update(rows = 1)
         self.fields['close_out'].widget.attrs.update(rows = 1)
         self.fields['kind'].choices = get_kind_choices(cat)
+        self.fields['parent'].choices = get_parent_choices(cat, self.project.id)
 
         # Hide fields which are not required for a given category
         for field in self.fields:   

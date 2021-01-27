@@ -437,6 +437,43 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     context = {'form': form, 'project': project, 'title': title}
     return render(request, 'basic_form.html', context) 
 
+@login_required         
+def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+    project = Project.objects.get(id=project_id)
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+        title = 'Split '+configs[cat]['name']+' in Application '+application.name
+    else:
+        application = None
+        title = 'Split '+configs[cat]['name']+' in Project '+project.name
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+  
+    spec_item = SpecItem.objects.get(id=item_id)
+    if request.method == 'POST':   
+        form = SpecItemForm('split', cat, project, application, configs[cat], request.POST, \
+                            initial=model_to_dict(spec_item))
+        if form.is_valid():
+            new_spec_item = SpecItem()
+            new_spec_item.cat = cat
+            default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+            new_spec_item.val_set = default_val_set
+            dict_to_spec_item(form.cleaned_data, new_spec_item)
+            new_spec_item.updated_at = datetime.now()
+            new_spec_item.owner = get_user(request)
+            new_spec_item.project = project
+            new_spec_item.application = application
+            new_spec_item.status = 'NEW'
+            save_spec_item(new_spec_item)
+            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
+                           '/'+sel_dom+'/list_spec_items'
+            return redirect(redirect_url)
+    else:   
+        form = SpecItemForm('split', cat, project, application, configs[cat], initial=model_to_dict(spec_item))
+
+    context = {'form': form, 'project': project, 'title': title}
+    return render(request, 'basic_form.html', context) 
+
 
 @login_required         
 def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
