@@ -2,7 +2,7 @@
      "editorVersion": "5.25",
      "states": [
           {
-               "id": 210,
+               "id": 155,
                "attrs": {
                     "x": 455,
                     "y": 69,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 211,
+               "id": 156,
                "attrs": {
                     "x": 378,
                     "y": 154,
@@ -63,12 +63,12 @@
                "selected": false
           },
           {
-               "id": 213,
+               "id": 158,
                "attrs": {
                     "x": 363,
                     "y": 261,
                     "width": 214,
-                    "height": 92,
+                    "height": 128,
                     "r": 10,
                     "rx": 10,
                     "ry": 10,
@@ -91,7 +91,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update time to the current time",
+                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update time to the current time\n(e) parent atribute to point to the spec_item\nwhich was split\n(f) other pointer attributes to None",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -102,18 +102,18 @@
                "selected": false
           },
           {
-               "id": 215,
+               "id": 160,
                "attrs": {
-                    "x": 262,
-                    "y": 294,
+                    "x": 266,
+                    "y": 312,
                     "width": 26,
                     "height": 26,
                     "r": 13,
                     "rx": 13,
                     "ry": 13,
                     "fill": "#000",
-                    "stroke": "#666",
-                    "stroke-width": 1,
+                    "stroke": "#6599FF",
+                    "stroke-width": 2,
                     "fill-opacity": 100
                },
                "fwprop": {
@@ -121,15 +121,15 @@
                     "type": "final",
                     "note": ""
                },
-               "selected": false
+               "selected": true
           },
           {
-               "id": 216,
+               "id": 161,
                "attrs": {
                     "x": 195,
                     "y": 68,
                     "width": 232,
-                    "height": 44,
+                    "height": 56,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -142,12 +142,12 @@
                "fwprop": {
                     "autoid": 2,
                     "type": "note",
-                    "note": "Operation to split a spec_item (only possible\non spec_items with status CNF, MOD or NEW) "
+                    "note": "Operation to split a spec_item (only possible\non spec_items in the default ValSet with status\n CNF, MOD or NEW) "
                },
                "selected": false
           },
           {
-               "id": 218,
+               "id": 163,
                "attrs": {
                     "x": 510,
                     "y": 72,
@@ -170,7 +170,7 @@
                "selected": false
           },
           {
-               "id": 220,
+               "id": 165,
                "attrs": {
                     "x": 556,
                     "y": 237,
@@ -192,7 +192,7 @@
                "selected": false
           },
           {
-               "id": 256,
+               "id": 166,
                "attrs": {
                     "x": 197,
                     "y": 160,
@@ -215,7 +215,7 @@
                "selected": false
           },
           {
-               "id": 259,
+               "id": 168,
                "attrs": {
                     "x": 375,
                     "y": 179,
@@ -276,8 +276,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 210,
-               "stateToID": 211,
+               "stateFromID": 155,
+               "stateToID": 156,
                "selected": false
           },
           {
@@ -323,8 +323,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 211,
-               "stateToID": 213,
+               "stateFromID": 156,
+               "stateToID": 158,
                "selected": false
           },
           {
@@ -335,12 +335,12 @@
                          [
                               "M",
                               358,
-                              307
+                              325
                          ],
                          [
                               "L",
-                              296,
-                              307
+                              300,
+                              325
                          ]
                     ],
                     "stroke-width": 2,
@@ -365,8 +365,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 213,
-               "stateToID": 215,
+               "stateFromID": 158,
+               "stateToID": 160,
                "selected": false
           },
           {
@@ -418,8 +418,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 218,
-               "stateToID": 220,
+               "stateFromID": 163,
+               "stateToID": 165,
                "selected": false
           },
           {
@@ -448,8 +448,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -460,8 +460,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 256,
-               "stateToID": 259,
+               "stateFromID": 166,
+               "stateToID": 168,
                "selected": false
           }
      ],
@@ -471,8 +471,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1390,
-               "height": 702,
+               "width": 1247,
+               "height": 630,
                "r": 0,
                "rx": 0,
                "ry": 0,
@@ -481,7 +481,7 @@
                "stroke-width": 0
           },
           "fwprop": {
-               "smName": "SplitSpectItem",
+               "smName": "SplitSpecItem",
                "editorType": "Pr",
                "globalvar": [
                     {

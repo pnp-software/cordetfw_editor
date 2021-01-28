@@ -394,7 +394,7 @@
                "stroke-width": 0
           },
           "fwprop": {
-               "smName": "CopySpectItem",
+               "smName": "CopySpecItem",
                "editorType": "Pr",
                "globalvar": [
                     {

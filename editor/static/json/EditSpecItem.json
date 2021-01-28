@@ -2,7 +2,7 @@
      "editorVersion": "5.25",
      "states": [
           {
-               "id": 37,
+               "id": 29,
                "attrs": {
                     "x": 455,
                     "y": 84,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 38,
+               "id": 30,
                "attrs": {
                     "x": 379,
                     "y": 154,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 40,
+               "id": 32,
                "attrs": {
                     "x": 132,
                     "y": 258,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 42,
+               "id": 34,
                "attrs": {
                     "x": 121,
                     "y": 359,
@@ -141,7 +141,7 @@
                "selected": false
           },
           {
-               "id": 44,
+               "id": 36,
                "attrs": {
                     "x": 457,
                     "y": 462,
@@ -163,7 +163,7 @@
                "selected": false
           },
           {
-               "id": 45,
+               "id": 37,
                "attrs": {
                     "x": 581,
                     "y": 106,
@@ -186,7 +186,7 @@
                "selected": false
           },
           {
-               "id": 47,
+               "id": 39,
                "attrs": {
                     "x": 140,
                     "y": 77,
@@ -209,7 +209,7 @@
                "selected": false
           },
           {
-               "id": 49,
+               "id": 41,
                "attrs": {
                     "x": 554,
                     "y": 231,
@@ -231,7 +231,7 @@
                "selected": false
           },
           {
-               "id": 50,
+               "id": 42,
                "attrs": {
                     "x": 458,
                     "y": 274,
@@ -255,7 +255,7 @@
                "selected": false
           },
           {
-               "id": 51,
+               "id": 43,
                "attrs": {
                     "x": 562,
                     "y": 252,
@@ -294,30 +294,30 @@
                "selected": false
           },
           {
-               "id": 53,
+               "id": 45,
                "attrs": {
                     "x": 140,
                     "y": 142,
-                    "width": 180,
+                    "width": 214,
                     "height": 80,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
                     "fill": "#ccccff",
-                    "stroke": "#666",
-                    "stroke-width": 1,
+                    "stroke": "#6599FF",
+                    "stroke-width": 2,
                     "fill-opacity": 100,
                     "stroke-dasharray": "--"
                },
                "fwprop": {
                     "autoid": 3,
                     "type": "note",
-                    "note": "(a) The ValSet cannot be modified\nin an edit operation\n(b) If the spec_item does not belong\nto the Default ValSet, its domain and\nname cannot be modified"
+                    "note": "(a) The ValSet cannot be modified\nin an edit operation\n(b) If the spec_item does not belong to\ntthe Default ValSet, its domain:name\nand its pointer attributes cannot be modified"
                },
-               "selected": false
+               "selected": true
           },
           {
-               "id": 55,
+               "id": 47,
                "attrs": {
                     "x": 377,
                     "y": 179,
@@ -339,7 +339,7 @@
                "selected": false
           },
           {
-               "id": 56,
+               "id": 48,
                "attrs": {
                     "x": 458,
                     "y": 393,
@@ -363,7 +363,7 @@
                "selected": false
           },
           {
-               "id": 57,
+               "id": 49,
                "attrs": {
                     "x": 575,
                     "y": 453,
@@ -441,8 +441,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 37,
-               "stateToID": 38,
+               "stateFromID": 29,
+               "stateToID": 30,
                "selected": false
           },
           {
@@ -488,8 +488,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 38,
-               "stateToID": 50,
+               "stateFromID": 30,
+               "stateToID": 42,
                "selected": false
           },
           {
@@ -530,8 +530,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 40,
-               "stateToID": 42,
+               "stateFromID": 32,
+               "stateToID": 34,
                "selected": false
           },
           {
@@ -572,8 +572,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 42,
-               "stateToID": 56,
+               "stateFromID": 34,
+               "stateToID": 48,
                "selected": false
           },
           {
@@ -625,8 +625,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 45,
-               "stateToID": 49,
+               "stateFromID": 37,
+               "stateToID": 41,
                "selected": false
           },
           {
@@ -672,8 +672,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 50,
-               "stateToID": 40,
+               "stateFromID": 42,
+               "stateToID": 32,
                "selected": false
           },
           {
@@ -719,8 +719,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 50,
-               "stateToID": 51,
+               "stateFromID": 42,
+               "stateToID": 43,
                "selected": false
           },
           {
@@ -782,8 +782,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 51,
-               "stateToID": 56,
+               "stateFromID": 43,
+               "stateToID": 48,
                "selected": false
           },
           {
@@ -793,7 +793,7 @@
                     "path": [
                          [
                               "M",
-                              325,
+                              359,
                               182
                          ],
                          [
@@ -824,8 +824,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 53,
-               "stateToID": 55,
+               "stateFromID": 45,
+               "stateToID": 47,
                "selected": false
           },
           {
@@ -882,8 +882,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 56,
-               "stateToID": 57,
+               "stateFromID": 48,
+               "stateToID": 49,
                "selected": false
           },
           {
@@ -929,8 +929,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 56,
-               "stateToID": 44,
+               "stateFromID": 48,
+               "stateToID": 36,
                "selected": false
           },
           {
@@ -971,8 +971,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 57,
-               "stateToID": 44,
+               "stateFromID": 49,
+               "stateToID": 36,
                "selected": false
           }
      ],
@@ -982,8 +982,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1390,
-               "height": 702,
+               "width": 1247,
+               "height": 630,
                "r": 0,
                "rx": 0,
                "ry": 0,
@@ -992,7 +992,7 @@
                "stroke-width": 0
           },
           "fwprop": {
-               "smName": "EditSpectItem",
+               "smName": "EditSpecItem",
                "editorType": "Pr",
                "globalvar": [
                     {

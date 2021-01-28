@@ -475,7 +475,7 @@
                "stroke-width": 0
           },
           "fwprop": {
-               "smName": "AddSpectItem",
+               "smName": "AddSpecItem",
                "editorType": "Pr",
                "globalvar": [
                     {

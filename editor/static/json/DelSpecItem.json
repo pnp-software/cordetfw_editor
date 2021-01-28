@@ -658,7 +658,7 @@
                "stroke-width": 0
           },
           "fwprop": {
-               "smName": "DelSpectItem",
+               "smName": "DelSpecItem",
                "editorType": "Pr",
                "globalvar": [
                     {
