@@ -77,7 +77,7 @@
     Suppose that there is a need to maintain a variant of specification item S1. This could, for instance,
     be due to the fact that the system which is being specified in the editor exists in two slightly
     dfferent variants, which differ from each other in having two different instances of specification item S1.
-    In such a scenario, a second ValSet can be created to hold the specification items which have different
+    In such a scenario, a second ValSet is created to hold the specification items which have different
     formulations for the alternative variant of the system.
     </p>
     
@@ -325,24 +325,33 @@
     </p>
     
     <h4><a name="ValSets">ValSets</a></h4>
-    The editor allows multiple set of values to be assigned to the same specification item.  
-    A set of values for the specification values is called a <i>ValSet</i>.
+    A ValSet is a set of alternative values for the specification items in a project.
     The admin user defines the range of ValSets for each project. 
     The 'Default' ValSet is pre-defined for all projects. 
     </p><p>
-    The val_set attribute of a specification item is used to manage the ValSets: 
-    when the specification item is created, it is allocated to the Default ValSet.
-    The user can then create new instances of the same specification item 
-    belonging to one of the other ValSets defined for the project to which the specification_item belongs. 
-    </p><p>
-    The ValSet is managed as follows:
+    The val_set attribute of a specification item is used to manage the ValSets. 
+    When a specification item is created, it is allocated to the Default ValSet.
+    Subsequently, the user can <strong>split</strong> the specification item. 
+    When specification item S1 in the Default ValSet is split, a new specification item S2 is created with
+    the following characteristics:
     <ul>
-    <li>When a new specification item is created, its ValSet is set to 'Default'</li>
-    <li>When a specification item is edited, its ValSet remains unchanged</li>
-    <li>Only specification items in the Default ValSet can be copied</li>
-    <li>When a specification item is split, the ValSet of the newly created copy can be set freely (within the set of ValSets
-        defined for the project)</li>
+    <li>S2 has the same domain:name as S1</li>
+    <li>The val_set attribute of S2 is different from the val_set attribute of all other specification
+        items created by splitting S1</li>
+    <li>The 'parent' attribute of S2 points to S1</li>
+    <li>Other pointer attributes of S2 are left blank</li>
+    <li>Non-pointer attributes of S2 other than domain:name can be set freely</li>
     </ul>
+    When the two specification items S1 and S2 are processed further, the following constraints are enforced:
+    <ul>
+    <li>The ValSet of S1 and S2 cannot be changed</li>
+    <li>The domain:name and the pointer attributes of S2  cannot be changed</li>
+    <li>If the domain:name of S1 is updated, the change is propagated to S2</li>
+    <li>If S1 is deleted, then S2 is deleted, too</li>
+    <li>Pointer attributes of S1 can only point to specification items in the Default ValSet</li>
+    </ul>
+    Thus, S2 serves as a clone of S1 which differs from it in having potentially different values for its
+    attributes of primitive type.
     </p>
     
     <h4><a name="SpecItemOper">Operations Performed on Specification Items</a></h4>

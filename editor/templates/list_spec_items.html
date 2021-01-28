@@ -5,7 +5,7 @@
 {% block content %}
 <div class="col-11">
 <div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
-  <h2 class="display-6">{{ config.title_list }}</h2>  
+  <h2 class="display-6">{{ config.title_list }} in {{val_set.name}} ValSet</h2>  
     <div class="form-inline">
       <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select ValSet</button>
@@ -19,7 +19,7 @@
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select Domain</button>
         <div class="dropdown-menu">
             {% for domain in domains %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set_id domain %}">{{ domain }}</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id domain %}">{{ domain }}</a>
             {% endfor %}
         </div>
       </div>
@@ -29,9 +29,9 @@
       <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Export</button>
         <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set_id sel_dom %}">
+            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}">
                 Export {{config.name}}s</a>
-            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set_id sel_dom %}?export=chg_log">
+            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=chg_log">
                 Export Change Log</a>
         </div>
       </div>
@@ -84,7 +84,7 @@
             <td>{{item.req.ver_method}}</td>
             {% endif %}
             {% if cat == 'EnumItem' %}
-            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set_id sel_dom %}"#{{item.domain}}:{{item.name}}>
+            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id sel_dom %}"#{{item.domain}}:{{item.name}}>
                 {{item.parent}}
                 </a>
             </td>
@@ -95,9 +95,9 @@
                 {% if item.val_set.name == 'Default' %}  
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
-                {% endif %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
+                {% endif %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
@@ -108,7 +108,7 @@
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'add_spec_item' 'EnumItem' project.id application_id sel_dom %}?parent_id={{item.id}}" title="Add {{config.child_desc.name}}">A</a>
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set_id sel_dom %}?expand_id={{item.id}}" title="Show Enumerated Items">En</a>
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}" title="Show Enumerated Items">En</a>
                 {% endif %}
               </div> 
             </td>
@@ -117,7 +117,7 @@
             {% for expand_item in expand_items %}
             <tr class="table-active">
               <td></td>
-              <td><a href="{% url 'list_spec_items' 'EnumItem' project.id application_id val_set_id 'enum' %}">
+              <td><a href="{% url 'list_spec_items' 'EnumItem' project.id application_id val_set.id 'enum' %}">
                   {{expand_item.name}}
                   </a>
               </td>
