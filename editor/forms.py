@@ -100,6 +100,7 @@ class SpecItemForm(forms.Form):
     close_out = forms.CharField(widget=forms.Textarea)
     ver_status = forms.ChoiceField(choices=REQ_VER_METHOD)
     parent = forms.ChoiceField(choices=())
+    disc = forms.ChoiceField(choices=())
    
     def __init__(self, mode, cat, project, application, config, *args, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
@@ -149,13 +150,17 @@ class SpecItemForm(forms.Form):
             val_set_name = ValSet.objects.filter(project_id=self.project.id).get(id=val_set_id).name
             self.fields['val_set'].choices = ((val_set_id, val_set_name),)
     
-        # In split mode, the ValSet can be edited but the domain:name must remain unchanges
+        # In split mode, the ValSet can be edited but domain, name and pointer fields must remain unchanged
+        # Parent field  must remain hidden
         if (self.mode == 'split'):     
             self.fields['val_set'].choices = ValSet.objects.filter(project_id=project.id).\
                                                             order_by('name').values_list('id','name')
             self.fields['domain'].disabled = True
             self.fields['name'].disabled = True
-
+            self.fields['parent'].disabled = True
+            self.fields['parent'].widget = forms.HiddenInput()
+            self.fields['disc'].disabled = True
+            
         # The domain of enumerated items is always equal to 'enum'  
         if cat == 'EnumItem':
             self.fields['domain'].initial = 'enum'
@@ -163,11 +168,11 @@ class SpecItemForm(forms.Form):
           
     def clean(self):
         """ Verify that: 
-        (a) In add and copy modes, the domain:name pair must be unique within non-deleted, non-obsolete spec_items 
+        (a) In add and copy modes, the domain:name pair is unique within non-deleted, non-obsolete spec_items 
             in the project and ValSet;
-        (b) In edit mode, if the domain:name has been modified, it must be unique within non-deleted, 
+        (b) In edit mode, if the domain:name has been modified, it is unique within non-deleted, 
             non-obsolete spec_items in the project and in the default ValSet;
-        (c) In split mode, the ValSet must not be duplicated within the set of non-deleted, non-obsolete spec_items
+        (c) In split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete spec_items
             of a project with the same domain:name 
         (d) If the kind of a data item type is set to non-enumerated, it cannot have enumerated items attached to it.
         """

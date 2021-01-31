@@ -335,18 +335,21 @@
     When specification item S1 in the Default ValSet is split, a new specification item S2 is created with
     the following characteristics:
     <ul>
-    <li>S2 has the same domain:name as S1</li>
+    <li>S2 has the same domain and name as S1</li>
     <li>The val_set attribute of S2 is different from the val_set attribute of all other specification
-        items created by splitting S1</li>
+        items created by splitting S1 (i.e. no two specification items with the same domain and name can 
+        belong to the same ValSet) </li>
     <li>The 'parent' attribute of S2 points to S1</li>
     <li>Other pointer attributes of S2 are left blank</li>
-    <li>Non-pointer attributes of S2 other than domain:name can be set freely</li>
+    <li>Non-pointer attributes of S2 other than domain and name can be set freely</li>
     </ul>
-    When the two specification items S1 and S2 are processed further, the following constraints are enforced:
+    </p><p>
+    When the two specification items S1 and S2 are edited, the following constraints are enforced:
     <ul>
-    <li>The ValSet of S1 and S2 cannot be changed</li>
-    <li>The domain:name and the pointer attributes of S2  cannot be changed</li>
-    <li>If the domain:name of S1 is updated, the change is propagated to S2</li>
+    <li>The ValSet cannot be changed (i.e. the ValSet attribute can only be modified in a split operation)</li>
+    <li>The domain and the name of S2  cannot be changed</li>
+    <li>The pointer attributes of S2  cannot be changed (i.e. they must remain blank)</li>
+    <li>If the domain or the name of S1 is updated, the change is propagated to S2</li>
     <li>If S1 is deleted, then S2 is deleted, too</li>
     <li>Pointer attributes of S1 can only point to specification items in the Default ValSet</li>
     </ul>
@@ -364,20 +367,20 @@
     <li><strong>Delete</strong>: a spec_item is deleted</li>
     <li><strong>Split</strong>: a copy of a spec_item is created in a different ValSet</li>
     </ul>
+    </p><p>
     The semantics of these operations is illustrated in the activity diagrams below.
     In all cases, the user is presented a form which he fills in with information related to
     the requested operation.
     Before being processed, a validity check is performed on the data entered in the form by
     the user.
-    The validity check comprises: (a) generic checks as specified in the activity
-    diagrams below and (b) category-specific checks.
+    The validity check comprises: (a) generic checks and (b) category-specific checks.
+    The generic checks are specified in the activity diagrams below.
     The category-specific checks are:
     <ul>
     <li><strong>Data Item Type</strong>: If the kind of a data item type is set to non-enumerated, 
                                          it cannot have enumerated items attached to it</li>
     <li><strong>TBD</strong>: TBD</li>
     </ul>
-    
     </p><p>
     <img src="{% static 'images/AddSpecItem.png' %}"> 
     </p><p>

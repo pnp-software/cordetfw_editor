@@ -31,3 +31,4 @@ def can_create_project(user):
 def can_add_val_set(user):
     """ Return True if user is admin """
     return (user.is_staff) 
+

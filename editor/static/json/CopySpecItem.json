@@ -2,7 +2,7 @@
      "editorVersion": "5.25",
      "states": [
           {
-               "id": 95,
+               "id": 29,
                "attrs": {
                     "x": 455,
                     "y": 69,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 96,
+               "id": 30,
                "attrs": {
                     "x": 378,
                     "y": 154,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 98,
+               "id": 32,
                "attrs": {
                     "x": 363,
                     "y": 267,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 100,
+               "id": 34,
                "attrs": {
                     "x": 262,
                     "y": 306,
@@ -124,7 +124,7 @@
                "selected": false
           },
           {
-               "id": 101,
+               "id": 35,
                "attrs": {
                     "x": 195,
                     "y": 68,
@@ -147,7 +147,7 @@
                "selected": false
           },
           {
-               "id": 106,
+               "id": 37,
                "attrs": {
                     "x": 510,
                     "y": 68,
@@ -170,7 +170,7 @@
                "selected": false
           },
           {
-               "id": 108,
+               "id": 39,
                "attrs": {
                     "x": 556,
                     "y": 237,
@@ -188,6 +188,29 @@
                     "autoid": 3,
                     "type": "notedot",
                     "note": ""
+               },
+               "selected": false
+          },
+          {
+               "id": 52,
+               "attrs": {
+                    "x": 196,
+                    "y": 153,
+                    "width": 172,
+                    "height": 56,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#ccccff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "stroke-dasharray": "--"
+               },
+               "fwprop": {
+                    "autoid": 5,
+                    "type": "note",
+                    "note": "If the spec_item being copied\nhad aliases in non=Default ValSet,\nthese are not copied"
                },
                "selected": false
           }
@@ -231,8 +254,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 95,
-               "stateToID": 96,
+               "stateFromID": 29,
+               "stateToID": 30,
                "selected": false
           },
           {
@@ -278,8 +301,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 96,
-               "stateToID": 98,
+               "stateFromID": 30,
+               "stateToID": 32,
                "selected": false
           },
           {
@@ -320,8 +343,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 98,
-               "stateToID": 100,
+               "stateFromID": 32,
+               "stateToID": 34,
                "selected": false
           },
           {
@@ -373,8 +396,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 106,
-               "stateToID": 108,
+               "stateFromID": 37,
+               "stateToID": 39,
                "selected": false
           }
      ],
@@ -384,8 +407,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1390,
-               "height": 702,
+               "width": 1247,
+               "height": 630,
                "r": 0,
                "rx": 0,
                "ry": 0,

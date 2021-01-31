@@ -17,8 +17,8 @@ from zipfile import ZipFile
 from datetime import datetime
 from itertools import chain
 
-from editor.configs import configs, dict_to_spec_item, duplicate_spec_item, save_spec_item, \
-                           remove_spec_item
+from editor.configs import configs, dict_to_spec_item, make_obs_spec_item_copy, save_spec_item, \
+                           remove_spec_item, update_dom_name_in_val_set
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
@@ -67,7 +67,7 @@ def change_password(request):
             messages.success(request, 'Your password was successfully updated!')
             return redirect('change_password')
         else:
-            messages.error(request, 'Please correct the error below.')
+            messages.error(request, 'Please correct the error below')
     else:
         form = PasswordChangeForm(request.user)
 
@@ -378,21 +378,13 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                             initial=model_to_dict(spec_item))
         if form.is_valid():
             if spec_item.status == 'CNF':
-                spec_item.status = 'OBS'
-                old_spec_item = duplicate_spec_item(request, spec_item)
-                edited_spec_item = SpecItem()
-                edited_spec_item.cat = cat
-                edited_spec_item.status = 'MOD'
-                edited_spec_item.val_set = spec_item.val_set
-                edited_spec_item.previous = old_spec_item
-            else:
-                edited_spec_item = spec_item
-            dict_to_spec_item(form.cleaned_data, edited_spec_item)
-            edited_spec_item.updated_at = datetime.now()
-            edited_spec_item.owner = get_user(request)
-            edited_spec_item.project = project
-            edited_spec_item.application = application
-            save_spec_item(edited_spec_item)
+                spec_item = make_obs_spec_item_copy(request, spec_item)
+            dict_to_spec_item(form.cleaned_data, spec_item)
+            spec_item.updated_at = datetime.now()
+            spec_item.owner = get_user(request)
+            save_spec_item(spec_item)
+            if (spec_item.val_set.name == 'Default') and (('name' in form.changed_data) or ('domain' in form.changed_data)):
+                update_dom_name_in_val_set(spec_item)
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
@@ -406,16 +398,16 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 @login_required         
 def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
+    spec_item = SpecItem.objects.get(id=item_id)
     if application_id != 0:
         application = Application.objects.get(id=application_id)
         title = 'Copy '+configs[cat]['name']+' in Application '+application.name
     else:
         application = None
         title = 'Copy '+configs[cat]['name']+' in Project '+project.name
-    if not has_access_to_project(request.user, project):
+    if not has_access_to_project(request.user, project) or (spec_item.val_set.name != 'Default'):
         return redirect(base_url)
   
-    spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
         form = SpecItemForm('copy', cat, project, application, configs[cat], request.POST, \
                             initial=model_to_dict(spec_item))
@@ -441,29 +433,28 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 @login_required         
 def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
+    spec_item = SpecItem.objects.get(id=item_id)
     if application_id != 0:
         application = Application.objects.get(id=application_id)
         title = 'Split '+configs[cat]['name']+' in Application '+application.name
     else:
         application = None
         title = 'Split '+configs[cat]['name']+' in Project '+project.name
-    if not has_access_to_project(request.user, project):
+    if not has_access_to_project(request.user, project)  or (spec_item.val_set.name != 'Default'):
         return redirect(base_url)
   
-    spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
         form = SpecItemForm('split', cat, project, application, configs[cat], request.POST, \
                             initial=model_to_dict(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
-            default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-            new_spec_item.val_set = default_val_set
             dict_to_spec_item(form.cleaned_data, new_spec_item)
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
             new_spec_item.application = application
+            new_spec_item.parent = spec_item
             new_spec_item.status = 'NEW'
             save_spec_item(new_spec_item)
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\

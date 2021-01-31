@@ -61,6 +61,7 @@ configs = {'Requirement':{'name': 'Requirement',
                             'cols': {}
                            }
               }
+              
 
 def dict_to_spec_item(dic, spec_item):
     """ 
@@ -102,16 +103,34 @@ def dict_to_spec_item(dic, spec_item):
                 spec_item.req.ver_method = dic['ver_method']
 
           
-def duplicate_spec_item(request, spec_item):
-    """ Create a copy of spec_item, save it to the database and return it """
+def make_obs_spec_item_copy(request, spec_item):
+    """ 
+    The argument spec_item must be made obsolete: the previous pointer of spec_item is reset;
+    a copy of the spec_item is created; its status is set to OBS; the spec_item copy is saved 
+    to the database; the status of the argument spec_item is set to MOD; its previous
+    pointer is set to point to the newly created OBS copy; the original spec_item instance
+    is returned to the caller 
+    """
+    edited_spec_item_id = spec_item.id
+    previous = spec_item.previous
+    spec_item.previous = None
+    spec_item.save()            # Reset the previous pointer of the spec_item 
+    
     if spec_item.cat == 'Requirement':
         req = spec_item.req
         req.id = None
-        req.save()              # Create new instance holding the old version of the Requirement
+        req.save()              # Create new instance holding the old version of Requirement instance
         spec_item.req = req     # Now spec_item points to the newly-created Requirement instance
+    
+    spec_item.status = 'OBS'
+    spec_item.previous = previous
     spec_item.id = None
-    spec_item.save()            # Create new instance holding the old version of the spec_item
-    return spec_item            # Return the newly-created instance of spec_item
+    spec_item.save()            # Create new instance holding the OBS version of the spec_item
+    
+    edited_spec_item = SpecItem.objects.get(id=edited_spec_item_id) # Retrive original spec_item instance
+    edited_spec_item.previous = spec_item   # Now spec_item points to newly-created OBS copy 
+    edited_spec_item.status = 'MOD'
+    return edited_spec_item     # Return the newly-created instance of spec_item
 
 
 def remove_spec_item(request, spec_item):
@@ -120,7 +139,7 @@ def remove_spec_item(request, spec_item):
         spec_item.delete()
     except Exception as e:
         messages.error(request, 'Failure to delete ' + str(spec_item) + \
-                                ', possibly because it has children attached to it: ' + str(e))
+                                ', possibly because other spec_item reference it: ' + str(e))
         return
     if spec_item.req != None:
         spec_item.req.delete()    
@@ -139,3 +158,19 @@ def save_spec_item(spec_item):
     if spec_item.req != None:
         spec_item.req.save()
     spec_item.save()
+
+
+def update_dom_name_in_val_set(spec_item):
+    """ 
+    Propagate a change in domain:name in spec_item to spec_items in other ValSets.
+    This function assumes that spec_item is in the Default ValSet
+    """
+    if spec_item.children != None:    
+        for child in spec_item.children.all():
+            if child.val_set.name != 'Default':
+                child.name = spec_item.name
+                child.domain = spec_item.domain
+                child.save()
+    
+    
+     

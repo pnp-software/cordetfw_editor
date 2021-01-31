@@ -104,9 +104,9 @@
           {
                "id": 6,
                "attrs": {
-                    "x": 376,
+                    "x": 378,
                     "y": 269,
-                    "width": 212,
+                    "width": 208,
                     "height": 80,
                     "r": 10,
                     "rx": 10,
@@ -130,7 +130,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Set: (a) status of spec_item to NEW\n(b) previous pointer to None\n(c) ValSet to the default ValSet\n(d) owner to the current user\n(e) update time to the current time",
+                    "entryDesc": "(a) Set status of spec_item to NEW\n(b) Set previous pointer to None\n(c) Set ValSet to the default ValSet\n(d) Set owner to the current user\n(e) Set update time to the current time",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -168,7 +168,7 @@
                     "x": 589,
                     "y": 164,
                     "width": 194,
-                    "height": 56,
+                    "height": 68,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -181,7 +181,7 @@
                "fwprop": {
                     "autoid": 1,
                     "type": "note",
-                    "note": "The form is valid if the domain:name\nof the new spec_item are unique within\nthe project"
+                    "note": "The form is valid if the domain:name\nof the new spec_item are unique within\nnon-deleted, non-obsolete spec_items\nin the Default ValSet of the project"
                },
                "selected": false
           },
@@ -370,7 +370,7 @@
                     "path": [
                          [
                               "M",
-                              371,
+                              373,
                               309
                          ],
                          [
@@ -465,8 +465,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1390,
-               "height": 702,
+               "width": 1247,
+               "height": 630,
                "r": 0,
                "rx": 0,
                "ry": 0,
