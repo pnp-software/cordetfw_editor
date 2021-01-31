@@ -96,10 +96,10 @@
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
-                <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'split_spec_item' cat project.id application_id item.id sel_dom %}" title="Split {{config.name}}">S</a>
                 {% endif %}
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"

@@ -18,7 +18,8 @@ from datetime import datetime
 from itertools import chain
 
 from editor.configs import configs, dict_to_spec_item, make_obs_spec_item_copy, save_spec_item, \
-                           remove_spec_item, update_dom_name_in_val_set
+                           remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
+                           mark_spec_item_aliases_as_del
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
@@ -475,9 +476,13 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         return redirect(base_url)
 
     if spec_item.status == 'NEW':
+        if spec_item.val_set.name == 'Default':
+            remove_spec_item_aliases(request, spec_item)
         remove_spec_item(request, spec_item)
     else:
-        spec_item.status = 'DEL'   
+        if spec_item.val_set.name == 'Default':
+            mark_spec_item_aliases_as_del(request, spec_item)
+        spec_item.status = 'DEL' 
         spec_item.save() 
     
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\

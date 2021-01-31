@@ -151,7 +151,23 @@ def remove_spec_item(request, spec_item):
         spec_item.packet_behaviour.delete() 
     elif spec_item.ver_item != None:
         spec_item.ver_item.delete()
-          
+     
+def remove_spec_item_aliases(request, spec_item):
+    """ Remove spec_items attached to argument spec_items but in other ValSets """
+    if spec_item.children != None:    
+        for child in spec_item.children.all():
+            if child.val_set.name != 'Default':
+                remove_spec_item(child)
+  
+  
+def mark_spec_item_aliases_as_del(request, spec_item):
+    """ Set status of spec_items attached to argument spec_item but in other ValSet to DEL """           
+    if spec_item.children != None:    
+        for child in spec_item.children.all():
+            if child.val_set.name != 'Default':
+                child.status = 'DEL'
+                child.save()
+
           
 def save_spec_item(spec_item):
     """ Save the spec_item and its associated category-specific model instances """
