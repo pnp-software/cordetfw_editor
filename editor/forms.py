@@ -143,8 +143,12 @@ class SpecItemForm(forms.Form):
             if not config['form_fields'][field]['req']:
                 self.fields[field].required = False            
         
-        # In all modes but split mode, the ValSet cannot be edited but is visible
-        if (self.mode != 'split'):     
+        # In add mode, the ValSet is not visible
+        if (self.mode == 'add'):
+            self.fields['val_set'].widget = forms.HiddenInput()      
+
+        # In all modes but copy and edit mode, the ValSet cannot be edited but is visible
+        if (self.mode == 'copy') or (self.mode == 'edit'):     
             self.fields['val_set'].disabled = True
             val_set_id = self.initial['val_set']
             val_set_name = ValSet.objects.filter(project_id=self.project.id).get(id=val_set_id).name

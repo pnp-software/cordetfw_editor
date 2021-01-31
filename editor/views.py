@@ -301,7 +301,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
         items = items.filter(domain=sel_dom)
         
     if expand_id != None:   # The item whose id is parent_id must be listed together with its children
-        expand_items = SpecItem.objects.filter(parent_id=expand_id)
+        expand_items = SpecItem.objects.filter(parent_id=expand_id, val_set_id=val_set_id)
         expand_id = int(expand_id)  # cast is required for comparison to item_id in list_spect_items.html template
     else:
         expand_items = None
@@ -317,6 +317,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
 @login_required         
 def add_spec_item(request, cat, project_id, application_id, sel_dom):
     project = Project.objects.get(id=project_id)
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     parent_id = request.GET.get('parent_id')
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
@@ -331,8 +332,11 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     if parent_id != None:       # Add a spec_item as child to an existing spec_item    
         parent = SpecItem.objects.get(id=parent_id)
         title = 'Add '+configs[cat]['name']+' to '+configs[parent.cat]['name']+str(parent)
+        list_of_children = SpecItem.objects.filter(parent_id=parent_id, val_set_id=default_val_set.id).\
+                                    exclude(status='DEL').exclude(status='OBS')
     else:
         parent = None
+        list_of_children  = None
   
     if request.method == 'POST':   
         form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
@@ -340,7 +344,6 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
             dict_to_spec_item(form.cleaned_data, new_spec_item)
-            default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
             if parent != None:
                 new_spec_item.parent = parent
             new_spec_item.val_set = default_val_set
@@ -357,8 +360,12 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     else:   
         form = SpecItemForm('add', cat, project, application, configs[cat])
 
-    context = {'form': form, 'project': project, 'title': title}
-    return render(request, 'basic_form.html', context)  
+    context = {'form': form, 'project': project, 'title': title, \
+               'list_of_children': list_of_children, 'sel_dom': sel_dom, 'config': configs[cat], 'cat': cat}
+    if parent == None:
+        return render(request, 'basic_form.html', context)  
+    else:
+        return render(request, 'basic_form_with_children.html', context)  
 
 
 @login_required         
