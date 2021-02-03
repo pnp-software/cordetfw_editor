@@ -55,11 +55,24 @@ configs = {'Requirement':{'name': 'Requirement',
                                           }
                          },
                'DataItem': {'name': 'Data Item',
-                            'title': 'List of Requirements',
-                            'has_children': False,
-                            'child_cat': '',
-                            'cols': {}
-                           }
+                          'title_list': 'List of Data Items',
+                          'title_history': 'History of Data Item ',
+                          'has_children': False,
+                          'child_cat': '',
+                          'cols': [],
+                          'form_fields': {'domain': {'label': 'Domain', 'req': True, 'model': 'SpecItem'},
+                                          'name': {'label': 'Name', 'req': True, 'model': 'SpecItem'},
+                                          'title': {'label': 'Short Desc.', 'req': True, 'model': 'SpecItem'},
+                                          'desc': {'label': 'Description', 'req': False, 'model': 'SpecItem'},
+                                          'value': {'label': 'Value', 'req': True, 'model': 'SpecItem'},
+                                          'kind': {'label': 'Kind', 'req': True, 'model': 'SpecItem'},
+                                          'dim': {'label': 'Mult.', 'req': True, 'model': 'SpecItem'},
+                                          'parent': {'label': 'Data Type', 'req': True, 'model': 'SpecItem'},
+                                          'justification': {'label': 'Rationale', 'req': False, 'model': 'SpecItem'},
+                                          'remarks': {'label': 'Remarks', 'req': False, 'model': 'SpecItem'},
+                                          'val_set': {'label': 'ValSet', 'req': False, 'model': 'SpecItem'}
+                                          }
+                         }
               }
               
 
@@ -88,7 +101,7 @@ def dict_to_spec_item(dic, spec_item):
     if 'kind' in dic:
         spec_item.kind = dic['kind']
     if 'dim' in dic:
-        spec_item.size = dic['dim']
+        spec_item.dim = dic['dim']
     if ('parent' in dic) and (dic['parent'] != ''):
         spec_item.parent = SpecItem.objects.get(id=dic['parent'])
     if ('val_set' in dic) and (dic['val_set'] != ''):

@@ -343,6 +343,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
+            import pdb; pdb.set_trace()
             dict_to_spec_item(form.cleaned_data, new_spec_item)
             if parent != None:
                 new_spec_item.parent = parent

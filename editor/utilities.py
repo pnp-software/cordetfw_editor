@@ -183,9 +183,16 @@ def get_kind_choices(cat):
 def get_parent_choices(cat, project_id):
     """ Return the range of choices for the 'parent' attribute of a specification of a given category """
     if cat == 'EnumItem':
-       return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
-                                    exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name')
-    return (("INV","Invalid"),)
+       pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
+                                    exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
+    if cat == 'DataItem':
+       pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
+                                    exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
+
+    choice_list = []
+    for pc in pcl:
+        choice_list.append((pc[0], pc[1]+' ('+pc[2]+')'))
+    return choice_list
     
          
 def get_domains(cat, application_id, project_id):

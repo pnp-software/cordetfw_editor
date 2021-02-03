@@ -46,13 +46,16 @@
           <th>Description</th>
           <th>{{config.form_fields.value.label}}</th>
           <th>{{config.form_fields.kind.label}}</th>
+          {% if cat == 'DataItem' %}
+            <th>{{config.form_fields.dim.label}}</th>
+          {% endif %}
           {% if cat == 'DataItemType' %}
             <th>Size</th>
           {% endif %}
           {% if cat == 'Requirement' %}
             <th>Ver.</th>
           {% endif %}
-          {% if cat == 'EnumItem' %}
+          {% if cat == 'EnumItem' or cat == 'DataItem' %}
             <th>Type</th>
           {% endif %}
           <th>Owner</th>
@@ -62,7 +65,7 @@
       <tbody>
         {% for item in items %}
            <trv>
-            <td id='{{item.domain}}:{{item.name}}'>{{item.domain}}</td>
+            <td><a name='{{item.domain}}:{{item.name}}'>{{item.domain}}</a></td>
             <td>{{item.name}}</td>
             <td><strong>{{item.title}}</strong> 
                 {% if item.desc != '' %}
@@ -77,14 +80,17 @@
             </td>
             <td>{{item.value}}</td>
             <td>{{item.kind}}</td>
+            {% if cat == 'DataItem' %}
+            <td>{{item.dim}}</td>
+            {% endif %}
             {% if cat == 'DataItemType' %}
             <td>{{item.dim}}</td>
             {% endif %}
             {% if cat == 'Requirement' %}
             <td>{{item.req.ver_method}}</td>
             {% endif %}
-            {% if cat == 'EnumItem' %}
-            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id sel_dom %}"#{{item.domain}}:{{item.name}}>
+            {% if cat == 'EnumItem' or cat == 'DataItem' %}
+            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id sel_dom %}#{{item.parent.domain}}:{{item.parent.name}}" title="{{item.parent.title}}">
                 {{item.parent}}
                 </a>
             </td>
@@ -117,7 +123,8 @@
             {% for expand_item in expand_items %}
             <tr class="table-active">
               <td></td>
-              <td><a href="{% url 'list_spec_items' 'EnumItem' project.id application_id val_set.id 'enum' %}">
+              <td><a href="{% url 'list_spec_items' 'EnumItem' project.id application_id val_set.id 'enum' %}#{{expand_item.domain}}:{{expand_item.name}}"
+                            title="{{expand_item.title}}">
                   {{expand_item.name}}
                   </a>
               </td>
