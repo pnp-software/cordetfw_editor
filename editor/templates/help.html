@@ -403,27 +403,32 @@
     <li>Justification</li>
     <li>Remarks</li>
     </ul>
+    </p><p>
     It is possible to include a reference to another specification item.
+    In the database, the internal reference is stored with a format like: '#iref:n' where 'n'
+    is the identifier of the specification item being referred.
+    The internal reference is <a href="#Rendering">rendered in different ways</a> depending 
+    on the context within which the text field is used.
+    </p><p>
     In editing mode, the reference is introduced through the following syntaxt: '#cat:dom:name'.
     Here, 'cat' is the category of the target specification item; 'dom' is the domain of the
-    target specification item; and 'name' is its nam.
+    target specification item; and 'name' is its name.
     When the reference is rendered in display mode, it is converted to a hyperlink; when
     it is rendered for export, it is converted to TBD.
     </p><p>
     Internal references always point to the specification item in the Default ValSet.
-    It is not possible to discriminate between references to specification items in other ValSets.
+    It is not possible to have an internal reference to specification items in other ValSets.
+    </p><p>
+    In the special case of the 'value' field of data items, the internal references can be
+    used to construct mathematical expressions which depend on other data items.
+    These expressions are evaluated when the data item is rendered for display.
     </p>    
 
     <h4><a name="ExportImport">Export and Import Functions</a></h4>
     <p>
         TBD
     </p>
-    
-    <h4><a name="Rendering">Rendering</a></h4>
-    <p>
-        TBD
-    </p>
-   
+       
     
     <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
     <p>

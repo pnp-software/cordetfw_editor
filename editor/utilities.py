@@ -14,7 +14,7 @@ from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND,
 
 EVAL_MAX_REC = 10
 MAX_DESC_LEN = 40
-pattern_db = re.compile("#(di|mod|req|eVal):([0-9_]+)")
+pattern_db = re.compile("#(iref):([0-9]+)")
 pattern_text = re.compile("#([a-z]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+)")
 pattern_di = re.compile("#(di):([0-9_]+)")
 logger = logging.getLogger(__name__)
@@ -62,61 +62,45 @@ def get_list_refs(s):
 
 def render_for_edit(s):
     """
-    Replace references in the argument string with: <domain>:<name>.
+    The argument string is a text field read from the database and which
+    contains internal references in the format #iref:n.
+    The internal references are replaced with: #<cat>:<domain>:<name>.
     Invalid references are replaced with: ERROR:ERROR.
     """
     match = pattern_db.search(s)
     if match == None:
-       return s
+      return s
     ref = match.group().split(':')
     try:
-       if ref[0] == '#di':
-          item = DataItem.objects.get(id=ref[1])
-          name = item.name
-          domain = item.domain
-       elif ref[0] == '#mod':
-          item = FwProfileModel.objects.get(id=ref[1])
-          name = item.name
-          domain = item.domain
-       elif ref[0] == '#req':
-          item = Requirement.objects.get(id=ref[1])
-          name = item.name
-          domain = item.domain
-       else:
-          name = 'ERROR'
-          domain = 'ERROR'               
-       s_mod = s[:match.start()]+ref[0]+':'+domain+':'+name
+      if ref[0] == 'iref': 
+        item = SpecItem.objects.get(id=ref[1]) 
+        s_mod = s[:match.start()]+item.cat+':'+item.domain+':'+item.name
+      else:
+        s_mod = s[:match.start()]+ref[0]+':'+ref[1]
     except ObjectDoesNotExist:
-       s_mod = s[:match.start()]+ref[0]+':'+'ERROR:ERROR'
+      s_mod = s[:match.start()]+'ERROR:ERROR'
     return s_mod + render_for_edit(s[match.end():])
 
 
 def render_for_export(s):
     """
-    Replace references in the argument string with: <name>.
+    The argument string is a text field read from the database and which
+    contains internal references in the format #iref:n.
+    The internal references are replaced with: <domain>:<name>.
     Invalid references are replaced with: ERROR:ERROR.
     """
     match = pattern_db.search(s)
     if match == None:
-       return s
+      return s
     ref = match.group().split(':')
     try:
-       if ref[0] == '#di':
-          item = DataItem.objects.get(id=ref[1])
-          s_mod = s[:match.start()] + item.name
-       elif ref[0] == '#mod':
-          item = FwProfileModel.objects.get(id=ref[1])
-          s_mod = s[:match.start()] + '\\ref{mod:'+item.name+'}'
-       elif ref[0] == '#req':
-          item = Requirement.objects.get(id=ref[1])
-          s_mod = s[:match.start()] + item.domain+'-'+item.name
-       elif ref[0] == '#eVal':
-          item = EnumDataType.objects.get(id=ref[1])
-          s_mod = s[:match.start()] + item.name
-       else:
-          s_mod = s[:match.start()]+ref[0]+':'+'ERROR:ERROR'
+      if ref[0] == 'iref': 
+        item = SpecItem.objects.get(id=ref[1])
+        s_mod = s[:match.start()] + item.dom+':'+item.name
+      else:
+        s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
     except ObjectDoesNotExist:
-       s_mod = s[:match.start()]+ref[0]+':'+'ERROR:ERROR'
+       s_mod = s[:match.start()]+'ERROR:ERROR'
        
     return s_mod + render_for_export(s[match.end():])
 
