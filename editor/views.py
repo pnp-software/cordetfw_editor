@@ -10,9 +10,7 @@ from django.contrib.auth import update_session_auth_hash, get_user
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.core.files import File
-from django.forms.models import model_to_dict
 from django.core.exceptions import ObjectDoesNotExist
-from django.forms.models import model_to_dict
 from zipfile import ZipFile 
 from datetime import datetime
 from itertools import chain
@@ -24,7 +22,7 @@ from editor.models import Project, ProjectUser, Application, Release, ValSet, Sp
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
-                             get_previous_list
+                             get_previous_list, model_to_form
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project, can_add_val_set
 
@@ -384,7 +382,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
         form = SpecItemForm('edit', cat, project, application, configs[cat], request.POST, \
-                            initial=model_to_dict(spec_item))
+                            initial=model_to_form(spec_item))
         if form.is_valid():
             if spec_item.status == 'CNF':
                 spec_item = make_obs_spec_item_copy(request, spec_item)
@@ -398,7 +396,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('edit', cat, project, application, configs[cat], initial=model_to_dict(spec_item))
+        form = SpecItemForm('edit', cat, project, application, configs[cat], initial=model_to_form(spec_item))
 
     context = {'form': form, 'project': project, 'title': title}
     return render(request, 'basic_form.html', context) 
@@ -419,7 +417,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
   
     if request.method == 'POST':   
         form = SpecItemForm('copy', cat, project, application, configs[cat], request.POST, \
-                            initial=model_to_dict(spec_item))
+                            initial=model_to_form(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
@@ -434,7 +432,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('copy', cat, project, application, configs[cat], initial=model_to_dict(spec_item))
+        form = SpecItemForm('copy', cat, project, application, configs[cat], initial=model_to_form(spec_item))
 
     context = {'form': form, 'project': project, 'title': title}
     return render(request, 'basic_form.html', context) 
@@ -454,7 +452,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
   
     if request.method == 'POST':   
         form = SpecItemForm('split', cat, project, application, configs[cat], request.POST, \
-                            initial=model_to_dict(spec_item))
+                            initial=model_to_form(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
@@ -470,7 +468,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('split', cat, project, application, configs[cat], initial=model_to_dict(spec_item))
+        form = SpecItemForm('split', cat, project, application, configs[cat], initial=model_to_form(spec_item))
 
     context = {'form': form, 'project': project, 'title': title}
     return render(request, 'basic_form.html', context) 

@@ -5,7 +5,8 @@ from django.contrib.auth.models import User
 from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
-from .utilities import get_user_choices, get_kind_choices, get_parent_choices
+from .utilities import get_user_choices, get_kind_choices, get_parent_choices, \
+                       pattern_text, render_for_edit
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
@@ -179,6 +180,7 @@ class SpecItemForm(forms.Form):
         (c) In split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete spec_items
             of a project with the same domain:name 
         (d) If the kind of a data item type is set to non-enumerated, it cannot have enumerated items attached to it.
+        (e) The value field of a data item can only contain internal references to other data items
         """
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
@@ -202,10 +204,32 @@ class SpecItemForm(forms.Form):
             spec_item = SpecItem.objects.get(domain=cd['domain'], name=cd['name'])
             children = SpecItem.objects.filter(parent=spec_item.id)
             if children != None:
-                raise forms.ValidationError('Edit Error: this data type has enumerated items attached to it and '+\
+                raise forms.ValidationError('This data type has enumerated items attached to it and '+\
                                             'must therefore be of enumerated type')
-           
+
+        if (self.cat == 'DataItem'):
+            internal_refs = re.findall(pattern_text, cd['value'])
+            for ref in internal_refs:
+                if ref[0:8] != 'DataItem#':
+                    raise forms.ValidationError('The value field of a data item cannot contain references to non-'+\
+                                            'data items: '+str(ref))
+
         return cd
  
-  
+    def clean_title(self):
+        return render_for_edit(self.cleaned_data['title'])
+
+    def clean_desc(self):
+        return render_for_edit(self.cleaned_data['desc'])
+
+    def clean_value(self):
+        return render_for_edit(self.cleaned_data['value'])
+
+    def clean_justification(self):
+        return render_for_edit(self.cleaned_data['justification'])
+
+    def clean_remarks(self):
+        return render_for_edit(self.cleaned_data['remarks'])
+
+
  

@@ -6,17 +6,25 @@ from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user
 from django.contrib.auth.models import User
+from django.forms.models import model_to_dict
 from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                  MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 
-EVAL_MAX_REC = 10
-MAX_DESC_LEN = 40
-pattern_db = re.compile("#(iref):([0-9]+)")
-pattern_text = re.compile("#([a-z]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+)")
-pattern_di = re.compile("#(di):([0-9_]+)")
+# Max recursion depth for expression in data item value fields
+EVAL_MAX_REC = 10   
+
+# Regular expression pattern for internal references in the database
+pattern_db = re.compile("#(iref):([0-9]+)")     
+
+# Create regular expression pattern for references in edited fields
+s = ''
+for cat_desc in SPEC_ITEM_CAT:
+    s = s+cat_desc[0]+'|'
+pattern_text = re.compile('#('+s[:-1]+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+
 logger = logging.getLogger(__name__)
 
 
@@ -59,10 +67,29 @@ def get_list_refs(s):
     """
     return re.findall("#([a-z]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+)", s)
     
+    
+def render_for_db(s):
+    """
+    Replace internal references in the argument string with: iref:<id>.
+    Invalid references are replaced with: ERROR:ERROR.
+    """
+    match = pattern_text.search(s)
+    if match == None:
+        return s
+    ref = match.group().split(':')
+    try:
+        id = SpecItem.objects.exclude(status='OBS').exclude(status='DEL').get(domain=ref[1], name=ref[2]).id
+        s_mod = s[:match.start()] + '#iref:' + str(id)
+    except ObjectDoesNotExist:
+        logger.warning('Non-existent internal reference: '+str(ref))
+        s_mod = s[:match.start()] + '#' + ref[0] + ':' + ref[1] + ':' + ref[2]
+    
+    return s_mod + render_for_db(s[match.end():])
+    
 
 def render_for_edit(s):
     """
-    The argument string is a text field read from the database and which
+    The argument string is a text field read from the database. It
     contains internal references in the format #iref:n.
     The internal references are replaced with: #<cat>:<domain>:<name>.
     Invalid references are replaced with: ERROR:ERROR.
@@ -84,40 +111,116 @@ def render_for_edit(s):
 
 def render_for_export(s):
     """
-    The argument string is a text field read from the database and which
-    contains internal references in the format #iref:n.
+    The argument string is a text field read from the database. It
+    contains internal references in the form #iref:n.
     The internal references are replaced with: <domain>:<name>.
     Invalid references are replaced with: ERROR:ERROR.
     """
     match = pattern_db.search(s)
     if match == None:
-      return s
+        return s
     ref = match.group().split(':')
     try:
-      if ref[0] == 'iref': 
-        item = SpecItem.objects.get(id=ref[1])
-        s_mod = s[:match.start()] + item.dom+':'+item.name
-      else:
-        s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
+        if ref[0] == 'iref': 
+            item = SpecItem.objects.get(id=ref[1])
+            s_mod = s[:match.start()] + item.dom+':'+item.name
+        else:
+            s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
     except ObjectDoesNotExist:
-       s_mod = s[:match.start()]+'ERROR:ERROR'
+        s_mod = s[:match.start()]+'ERROR:ERROR'
        
     return s_mod + render_for_export(s[match.end():])
 
 
 def render_for_display(s, n):
     """
-    TBD
-    Replace references in the argument string with: <domain>:<name> and hyperlinks.
+    The string s is a text field read from the database. It
+    contains internal references in the form #iref:n. References in
+    the argument string are replaced with <domain>:<name> and hyperlinks.
     Invalid references are replaced with: ERROR:ERROR.
     This function is called recursively to handle all references in string s.
     The argument n is the depth of recursion. 
     The input string is first passed through escape() to sanitize any potentially
     malicious html code entered by the user.
     """
+    if n == 1:  # If the function has been called by the application
+        s = escape(s)
+    
+    match = pattern_db.search(s)
+    if match == None:
+        return s
+    ref = match.group().split(':')
+    try:
+        if ref[0] == 'iref': 
+            item = SpecItem.objects.get(id=ref[1])
+            target = '/editor/'+item.cat+'/'+item.project.id+'/'+item.application.id+'/'+item.val_set.id+'/'+item.dom
+            s_mod = s[:match.start()]+'<a href=\"'+target+'\" title=\"'+item.title+'\">'+item.domain+':'+item.name+'</a>'
+        else:
+            s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
+    except ObjectDoesNotExist:
+        s_mod = s[:match.start()]+ref[0]+':'+'ERROR:ERROR'
+        
+    return s_mod + render_for_display(s[match.end():], n+1)
+ 
 
-    return s
+def render_for_eval(s, n):
+    """ 
+    String s is a text field read from the database. 
+    It contains internal references in the form #iref:n. This function
+    assumes that all such references are pointing to data items and 
+    replaces these references with the numerical values of the data items.
+    This function is called recursively to handle all references in string s.
+    The argument n is the depth of recursion. This is limited to EVAL_MAX_REC.
+    If the function finds an invalid reference or a reference to a 
+    specification item which is not a data item, it returns the string
+    unchanged.
+    """
+    if n > EVAL_MAX_REC:
+        logger.warning('Exceeded recursion depth when evaluating '+s)
+        return s
 
+    match = pattern_db.search(s)
+    if match == None:
+        return s
+    ref = match.group().split(':')
+    try:
+        if ref[0] == 'iref': 
+            item = SpecItem.objects.get(id=ref[1])
+        else:
+            return s
+    except ObjectDoesNotExist:
+        return s
+
+    s_mod = s[:match.start()] + render_for_eval(item.value, n+1)
+    return s_mod + render_for_eval(s[match.end():], n)
+
+
+def eval_di_value(s):
+    """
+    The argument string is assumed to hold a mathematical expression expressed in terms of references to data items.
+    The function first replaces the references to the data items with their values (this is done with function render_for_eval)
+    and then it attempts to evaluate the resulting expression using package cexprtk.
+    """
+    se = render_for_eval(s, 1)
+    try:
+        return str(cexprtk.evaluate_expression(se,{}))
+    except:
+        return s
+        
+        
+def model_to_form(spec_item):
+    """ 
+    The argument is a specification item and the output is a dictionary representing the specification
+    item in a format suitable for display in a form.
+    """
+    form_fields = model_to_dict(spec_item)
+    form_fields['title'] = render_for_edit(form_fields['title'])
+    form_fields['desc'] = render_for_edit(form_fields['desc'])
+    form_fields['value'] = render_for_edit(form_fields['value'])
+    form_fields['justification'] = render_for_edit(form_fields['justification'])
+    form_fields['remarks'] = render_for_edit(form_fields['remarks'])
+    return form_fields
+    
 
 def get_user_choices():
     """ Return a list of pairs (id, user) representing the users in the system """
@@ -167,16 +270,15 @@ def get_kind_choices(cat):
 def get_parent_choices(cat, project_id):
     """ Return the range of choices for the 'parent' attribute of a specification of a given category """
     if cat == 'EnumItem':
-       pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
+        pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
                                     exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
+        return [(pc[0], pc[1]+' ('+pc[2]+')') for pc in pcl]                            
     if cat == 'DataItem':
-       pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
+        pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
                                     exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
-
-    choice_list = []
-    for pc in pcl:
-        choice_list.append((pc[0], pc[1]+' ('+pc[2]+')'))
-    return choice_list
+        return [(pc[0], pc[1]+' ('+pc[2]+')') for pc in pcl] 
+        
+    return [('Invalid','Invalid')]
     
          
 def get_domains(cat, application_id, project_id):

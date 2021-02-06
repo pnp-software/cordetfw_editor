@@ -83,6 +83,7 @@ def dict_to_spec_item(dic, spec_item):
     a category-specific model instance, this is updated with the data from the dictionary; if,
     instead, the spec_item has no category specific model instance, the categoy-specific model
     instance is created and initialized with the data from the dictionary.
+    Function render_for_edit is used to resolve internal references in text fields.
     """
     if 'domain' in dic:
         spec_item.domain = dic['domain']
