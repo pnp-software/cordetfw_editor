@@ -1,0 +1,17 @@
+<script src="/static/bootstrap-suggest.min.js"></script>
+<script>
+var linkElements = [
+  {% for spec_item in spec_items %}
+    {path: '{{spec_item.cat}}:{{spec_item.domain}}:{{spec_item.name}}', comment: '{{spec_item.title}}'},
+  {% endfor %}
+];
+$('.link-suggest').suggest('#', {
+  data: linkElements,
+  map: function(element) {
+    return {
+      value: element.path,
+      text: element.path+'&Tab;<i class="text-secondary">'+element.comment+'</i>'
+    }
+  }
+})
+</script>

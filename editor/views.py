@@ -370,6 +370,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
 @login_required         
 def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
         title = 'Edit '+configs[cat]['name']+' in Application '+application.name
@@ -398,7 +399,9 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     else:   
         form = SpecItemForm('edit', cat, project, application, configs[cat], initial=model_to_form(spec_item))
 
-    context = {'form': form, 'project': project, 'title': title}
+    spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
+                        exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context) 
 
 

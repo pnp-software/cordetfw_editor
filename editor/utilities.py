@@ -82,7 +82,7 @@ def render_for_db(s):
         s_mod = s[:match.start()] + '#iref:' + str(id)
     except ObjectDoesNotExist:
         logger.warning('Non-existent internal reference: '+str(ref))
-        s_mod = s[:match.start()] + '#' + ref[0] + ':' + ref[1] + ':' + ref[2]
+        s_mod = s[:match.start()] + ref[0] + ':' + ref[1] + ':' + ref[2]
     
     return s_mod + render_for_db(s[match.end():])
     
@@ -99,9 +99,9 @@ def render_for_edit(s):
       return s
     ref = match.group().split(':')
     try:
-      if ref[0] == 'iref': 
+      if ref[0] == '#iref': 
         item = SpecItem.objects.get(id=ref[1]) 
-        s_mod = s[:match.start()]+item.cat+':'+item.domain+':'+item.name
+        s_mod = s[:match.start()]+'#'+item.cat+':'+item.domain+':'+item.name
       else:
         s_mod = s[:match.start()]+ref[0]+':'+ref[1]
     except ObjectDoesNotExist:
@@ -121,7 +121,7 @@ def render_for_export(s):
         return s
     ref = match.group().split(':')
     try:
-        if ref[0] == 'iref': 
+        if ref[0] == '#iref': 
             item = SpecItem.objects.get(id=ref[1])
             s_mod = s[:match.start()] + item.dom+':'+item.name
         else:
@@ -151,9 +151,12 @@ def render_for_display(s, n):
         return s
     ref = match.group().split(':')
     try:
-        if ref[0] == 'iref': 
+        if ref[0] == '#iref': 
             item = SpecItem.objects.get(id=ref[1])
-            target = '/editor/'+item.cat+'/'+item.project.id+'/'+item.application.id+'/'+item.val_set.id+'/'+item.dom
+            project_id = str(item.project.id) if item.project != None else '0'
+            application_id = str(item.application.id) if item.application != None else '0'
+            target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
+                    item.domain+'\list_spec_items'
             s_mod = s[:match.start()]+'<a href=\"'+target+'\" title=\"'+item.title+'\">'+item.domain+':'+item.name+'</a>'
         else:
             s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
@@ -184,7 +187,7 @@ def render_for_eval(s, n):
         return s
     ref = match.group().split(':')
     try:
-        if ref[0] == 'iref': 
+        if ref[0] == '#iref': 
             item = SpecItem.objects.get(id=ref[1])
         else:
             return s
