@@ -1,6 +1,7 @@
 from django import template
 from django.utils.safestring import mark_safe
-from ..utilities import render_for_display
+from ..utilities import render_for_display, eval_di_value
+from ..links import render_ver_items_for_display
 register = template.Library()
 
 @register.filter(is_safe=True)
@@ -12,3 +13,15 @@ def filter_refs(s):
     """
     return mark_safe(render_for_display(s, 1))
 
+@register.filter(is_safe=True)
+def filter_ver_items(tc):
+    """
+    The argument is a test case record.
+    The filter returns a string holding a description of the items verified by the test case.
+    """
+    return mark_safe(render_ver_items_for_display(tc))
+
+@register.filter(is_safe=True)
+def filter_di_value(val):
+    """ Parse the mathematical expression in a data item value and return its numerical value. """
+    return mark_safe(eval_di_value(val))

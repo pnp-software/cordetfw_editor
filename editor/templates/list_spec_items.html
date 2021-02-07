@@ -45,10 +45,11 @@
           <th>Name</th>
           <th>Description</th>
           <th>{{config.form_fields.value.label}}</th>
-          <th>{{config.form_fields.kind.label}}</th>
           {% if cat == 'DataItem' %}
+            <th>NVal</th>
             <th>{{config.form_fields.dim.label}}</th>
           {% endif %}
+          <th>{{config.form_fields.kind.label}}</th>
           {% if cat == 'DataItemType' %}
             <th>Size</th>
           {% endif %}
@@ -78,11 +79,12 @@
                 <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
                 {% endif %}
             </td>
-            <td>{{item.value}}</td>
-            <td>{{item.kind}}</td>
+            <td>{{item.value|filter_refs|linebreaksbr}}</td>
             {% if cat == 'DataItem' %}
+            <td>{{item.value|filter_di_value|linebreaksbr}}</td>
             <td>{{item.dim}}</td>
             {% endif %}
+            <td>{{item.kind}}</td>
             {% if cat == 'DataItemType' %}
             <td>{{item.dim}}</td>
             {% endif %}

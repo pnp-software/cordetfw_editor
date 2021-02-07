@@ -1,3 +1,4 @@
+import re
 from django import forms
 from django.forms import formsets
 from django.core.exceptions import ValidationError
@@ -6,7 +7,7 @@ from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_kind_choices, get_parent_choices, \
-                       pattern_text, render_for_edit
+                       pattern_text, render_for_db
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
@@ -217,19 +218,19 @@ class SpecItemForm(forms.Form):
         return cd
  
     def clean_title(self):
-        return render_for_edit(self.cleaned_data['title'])
+        return render_for_db(self.cleaned_data['title'])
 
     def clean_desc(self):
-        return render_for_edit(self.cleaned_data['desc'])
+        return render_for_db(self.cleaned_data['desc'])
 
     def clean_value(self):
-        return render_for_edit(self.cleaned_data['value'])
+        return render_for_db(self.cleaned_data['value'])
 
     def clean_justification(self):
-        return render_for_edit(self.cleaned_data['justification'])
+        return render_for_db(self.cleaned_data['justification'])
 
     def clean_remarks(self):
-        return render_for_edit(self.cleaned_data['remarks'])
+        return render_for_db(self.cleaned_data['remarks'])
 
 
  

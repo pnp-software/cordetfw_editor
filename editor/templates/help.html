@@ -419,11 +419,21 @@
     Internal references always point to the specification item in the Default ValSet.
     It is not possible to have an internal reference to specification items in other ValSets.
     </p><p>
-    In the special case of the 'value' field of data items, the internal references can be
-    used to construct mathematical expressions which depend on other data items.
+    In the special case of the 'value' field of data items, internal references can only be
+    pointers to other data items.
+    The intention is that the value of a data item is expressed as a function of the value 
+    of other data items.
+    The internal references can therefore be used to construct mathematical expressions 
+    which depend on other data items.
     These expressions are evaluated when the data item is rendered for display.
     </p>    
-
+    If specification item S is the target of an internal reference in another
+    specification item, then, if S is deleted, the internal reference will become
+    invalid. 
+    There is no protection against this situation in the function to delete a
+    specification item.
+    Users will notice the hanging reference when they try to display or export the specification
+    item with the reference to S.
     <h4><a name="ExportImport">Export and Import Functions</a></h4>
     <p>
         TBD
