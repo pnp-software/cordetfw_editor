@@ -501,9 +501,64 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 
 @login_required         
 def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
+    project = Project.objects.get(id=project_id)
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+    else:
+        application = None
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+    export_type = request.GET.get('export')
+
+    if (application_id == 0):   # Items to be exported are 'project items'
+        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                    order_by('domain','name') 
+        fdName = project.name.replace(' ','_') + cat + '.csv'
+    else:                       # Items to be exported are 'application items'
+        application = Application.objects.get(id=application_id)
+        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                    order_by('domain','name') 
+        fdName = application.name.replace(' ','_') + cat + '.csv'
+        
+    if (export_type != 'chg_log'):
+        items = items.exclude(status='DEL').exclude(status='OBS')  
+        
+    if (sel_dom != "All_Domains"):
+        items = items.filter(domain=sel_dom)
+
+    fd = '|'.join(x['label'] for x in configs[cat][attr].values())
+    fd = fd + '\n'
+    for item in items:
+        item_dic = model_to_export(item)
+        fd = fd + '|'.join(x['label'] for x in configs[cat][attr].values())
+        
+        
+        
+
+
+    if (export_type == 'export_requirements'):
+        requirements = Requirement.objects.all().order_by('domain','name').filter(application_id=application_id)
+        fdName = application.name.replace(' ','')+'Req.csv'
+        fd = 'Domain|Id|Title|Text|Justification|Notes|Ver|Type|Status|UpdatedAt|Owner\n'
+        for req in requirements:
+            if (req.status != 'OBS') and (req.status != 'DEL'):
+                fd = fd + get_csv_line([req.domain, req.name, req.title, render_for_export(req.text), \
+                        render_for_export(req.justification), render_for_export(req.notes), \
+                        req.ver_method, req.type, req.status, req.updated_at.strftime('%d-%m-%Y %H:%M'), req.owner.username])
+    
+    if (export_type == 'chg_log'):
+        requirements = Requirement.objects.all().order_by('domain','name').filter(application_id=application_id)
+        fdName = application.name.replace(' ','')+'ReqChangeLog.csv'
+        fd = 'Domain|Id|Title|Text|Justification|Notes|Ver|Type|Status|UpdatedAt|Owner\n'
+        for req in requirements:
+            fd = fd + get_csv_line([req.domain, req.name, req.title, render_for_export(req.text), 
+                        render_for_export(req.justification), render_for_export(req.notes), \
+                        req.ver_method, req.type, req.status, req.updated_at.strftime('%d-%m-%Y %H:%M'), req.owner.username])
+    
+    content_disposition = 'attachment; filename= "' + fdName + '"'
+    response = HttpResponse(fd, content_type='text/plain')
+    response['Content-Disposition'] = content_disposition
+    return response            
 
 
 @login_required         

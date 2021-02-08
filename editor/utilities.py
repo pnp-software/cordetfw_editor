@@ -10,6 +10,7 @@ from django.forms.models import model_to_dict
 from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project
+from editor.configs import configs
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                  MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 
@@ -216,14 +217,24 @@ def model_to_form(spec_item):
     The argument is a specification item and the output is a dictionary representing the specification
     item in a format suitable for display in a form.
     """
-    form_fields = model_to_dict(spec_item)
-    form_fields['title'] = render_for_edit(form_fields['title'])
-    form_fields['desc'] = render_for_edit(form_fields['desc'])
-    form_fields['value'] = render_for_edit(form_fields['value'])
-    form_fields['justification'] = render_for_edit(form_fields['justification'])
-    form_fields['remarks'] = render_for_edit(form_fields['remarks'])
-    return form_fields
+    dic = model_to_dict(spec_item)
+    for key, value in configs[spec_item.cat]['attrs'].items():
+        if value['int_ref'] == True:
+            dic[key] = render_for_edit(dic[key])
+    return dic
     
+    
+def model_to_export(spec_item):
+    """ 
+    The argument is a specification item and the output is a dictionary representing the specification
+    item in a format suitable for export.
+    """
+    dic = model_to_dict(spec_item)
+    for key, value in configs[spec_item.cat]['attrs'].items():
+        if value['int_ref'] == True:
+            dic[key] = render_for_export(dic[key])
+    return dic
+        
 
 def get_user_choices():
     """ Return a list of pairs (id, user) representing the users in the system """

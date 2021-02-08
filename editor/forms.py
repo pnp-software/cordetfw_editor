@@ -136,13 +136,17 @@ class SpecItemForm(forms.Form):
         self.fields['parent'].choices = get_parent_choices(cat, self.project.id)
 
         # Hide fields which are not required for a given category
-        for field in self.fields:   
-            if field not in config['form_fields']:
+        for field in self.fields:  
+            if field not in config['attrs']:
                 self.fields[field].widget = forms.HiddenInput()
                 self.fields[field].required = False 
                 continue
-            self.fields[field].label = config['form_fields'][field]['label']
-            if not config['form_fields'][field]['req']:
+            if not config['attrs'][field]['in_form']:
+                self.fields[field].widget = forms.HiddenInput()
+                self.fields[field].required = False 
+                continue
+            self.fields[field].label = config['attrs'][field]['label']
+            if not config['attrs'][field]['req_in_form']:
                 self.fields[field].required = False            
         
         # In add mode, the ValSet is not visible
