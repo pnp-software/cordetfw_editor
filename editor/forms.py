@@ -134,6 +134,9 @@ class SpecItemForm(forms.Form):
         self.fields['close_out'].widget.attrs.update(rows = 1)
         self.fields['kind'].choices = get_kind_choices(cat)
         self.fields['parent'].choices = get_parent_choices(cat, self.project.id)
+        self.fields['dim'].initial = 0
+        self.fields['group'].initial = 0
+        self.fields['repetition'].initial = 0
 
         # Hide fields which are not required for a given category
         for field in self.fields:  
@@ -184,7 +187,8 @@ class SpecItemForm(forms.Form):
             non-obsolete spec_items in the project and in the default ValSet;
         (c) In split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete spec_items
             of a project with the same domain:name 
-        (d) If the kind of a data item type is set to non-enumerated, it cannot have enumerated items attached to it.
+        (d) In edit mode, if the kind of a data item type is set to non-enumerated, it cannot have enumerated 
+            items attached to it.
         (e) The value field of a data item can only contain internal references to other data items
         """
         cd = self.cleaned_data
@@ -205,7 +209,7 @@ class SpecItemForm(forms.Form):
                      domain=cd['domain'], name=cd['name'], val_set_id=cd['val_set']).exists():
                 raise forms.ValidationError('Split Error: ValSet is already in use for this domain:name')
         
-        if (self.cat == 'DataItemType') and (cd['kind'] == 'NOT_ENUM'):
+        if (self.mode == 'edit') and (self.cat == 'DataItemType') and (cd['kind'] == 'NOT_ENUM'):
             spec_item = SpecItem.objects.get(domain=cd['domain'], name=cd['name'])
             children = SpecItem.objects.filter(parent=spec_item.id)
             if children != None:

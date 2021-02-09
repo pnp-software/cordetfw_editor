@@ -28,7 +28,7 @@ from .access import is_project_owner, has_access_to_project, has_access_to_appli
 
 import cexprtk
 import logging
-
+    
 base_url = '/editor'
 logger = logging.getLogger(__name__)
 
@@ -110,13 +110,13 @@ def add_project(request):
                                   application_version = 0,
                                   project_version = 0,
                                   previous = None)
+            new_release.save()
+            new_project.release = new_release
+            new_project.save()
             default_val_set = ValSet(desc = 'Default ValSet',
                                      updated_at = datetime.today(),
                                      project = new_project,
                                      name = 'Default')
-            new_release.save()
-            new_project.release = new_release
-            new_project.save()
             default_val_set.save()
             return redirect(base_url)
     else:   
@@ -330,18 +330,14 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     if parent_id != None:       # Add a spec_item as child to an existing spec_item    
         parent = SpecItem.objects.get(id=parent_id)
         title = 'Add '+configs[cat]['name']+' to '+configs[parent.cat]['name']+str(parent)
-        list_of_children = SpecItem.objects.filter(parent_id=parent_id, val_set_id=default_val_set.id).\
-                                    exclude(status='DEL').exclude(status='OBS')
     else:
         parent = None
-        list_of_children  = None
   
     if request.method == 'POST':   
         form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
-            import pdb; pdb.set_trace()
             dict_to_spec_item(form.cleaned_data, new_spec_item)
             if parent != None:
                 new_spec_item.parent = parent
@@ -360,11 +356,8 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         form = SpecItemForm('add', cat, project, application, configs[cat])
 
     context = {'form': form, 'project': project, 'title': title, \
-               'list_of_children': list_of_children, 'sel_dom': sel_dom, 'config': configs[cat], 'cat': cat}
-    if parent == None:
-        return render(request, 'basic_form.html', context)  
-    else:
-        return render(request, 'basic_form_with_children.html', context)  
+               'sel_dom': sel_dom, 'config': configs[cat], 'cat': cat}
+    return render(request, 'basic_form.html', context)  
 
 
 @login_required         
