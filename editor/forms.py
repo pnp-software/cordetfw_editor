@@ -7,7 +7,7 @@ from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_kind_choices, get_parent_choices, \
-                       pattern_text, render_for_db
+                       pattern_text, pattern_db, render_for_db
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
@@ -189,7 +189,9 @@ class SpecItemForm(forms.Form):
             of a project with the same domain:name 
         (d) In edit mode, if the kind of a data item type is set to non-enumerated, it cannot have enumerated 
             items attached to it.
-        (e) The value field of a data item can only contain internal references to other data items
+        (e) In the value field of a data item, internal references may only point to other data items
+        (f) The value of a data item of enumerated type must be an internal reference to an enumerated value
+            of the data item's type
         """
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
@@ -223,6 +225,21 @@ class SpecItemForm(forms.Form):
                     raise forms.ValidationError('The value field of a data item cannot contain references to non-'+\
                                             'data items: '+str(ref))
 
+        if (self.cat == 'DataItem'):
+            enum_type = SpecItem.objects.get(id=cd['parent'])
+            s_span = re.search(pattern_db, cd['value'].strip()).span()
+            import pdb; pdb.set_trace()
+            if (s_span[0] != 0) or (s_span[1] != len(cd['value'].strip())):
+                raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
+            ref = cd['value'].strip().split(':')
+            try:
+                enum_val = SpecItem.objects.get(id=ref[1])
+            except ObjectDoesNotExist:
+                raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type: '+\
+                                            'The reference is invalid')
+            if enum_val.parent.id != int(cd['parent']):
+                raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
+ 
         return cd
  
     def clean_title(self):

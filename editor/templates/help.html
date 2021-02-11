@@ -377,9 +377,12 @@
     The generic checks are specified in the activity diagrams below.
     The category-specific checks are:
     <ul>
-    <li><strong>Data Item Type</strong>: If the kind of a data item type is set to non-enumerated, 
-                                         it cannot have enumerated items attached to it</li>
-    <li><strong>TBD</strong>: TBD</li>
+    <li><strong>Data Item Types</strong>: If the kind of a data item type is set to non-enumerated, 
+                                          it cannot have enumerated items attached to it</li>
+    <li><strong>Data Items</strong>: The value of data item of enumerated type must be an 
+                                     <a href="#IntRef">internal reference</a> to an enumerated value of that type</li>
+    <li><strong>Data Items</strong>: <a href="#IntRef">Internal reference</a> in the value field may 
+                                     only point to other data items</li>
     </ul>
     </p><p>
     <img src="{% static 'images/AddSpecItem.png' %}"> 
