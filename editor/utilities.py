@@ -111,10 +111,10 @@ def render_for_edit(s):
 
 
 def render_for_export(s):
-    """
-    The argument string is a text field read from the database. It
-    contains internal references in the form #iref:n.
-    The internal references are replaced with: <domain>:<name>.
+    """ 
+    The argument string is a text field read from the database. 
+    Internal references in the form #iref:n are converted to the
+    for: <domain>:<name>. 
     Invalid references are replaced with: ERROR:ERROR.
     """
     match = pattern_db.search(s)
@@ -226,13 +226,39 @@ def model_to_form(spec_item):
     
 def model_to_export(spec_item):
     """ 
-    The argument is a specification item and the output is a dictionary representing the specification
-    item in a format suitable for export.
+    The argument is a specification item and the output is a dictionary as follows: 
+    - Key: label of the fields to be exported
+    - Value: value of field to be exported in a format suitable for use in a latex doc
+    The field label is the same as the field name. Only fields in the 
     """
-    dic = model_to_dict(spec_item)
-    for key, value in configs[spec_item.cat]['attrs'].items():
-        if value['int_ref'] == True:
-            dic[key] = render_for_export(dic[key])
+    dic = {}
+    cat_attrs = configs[spec_item.cat]['attrs']
+    dic['id'] = str(spec_item.id)
+    dic['cat'] = frmt_string(spec_item.cat)
+    dic['name'] = frmt_string(spec_item.name)
+    dic['domain'] = frmt_string(spec_item.domain)
+    dic['project'] = frmt_string(str(spec_item.project))
+    dic['application'] = frmt_string(str(spec_item.application))
+    dic['title'] = frmt_string(spec_item.title)
+    dic['desc'] = frmt_string(render_for_export(spec_item.desc))
+    dic['value'] = frmt_string(render_for_export(spec_item.value))
+    if 'dim' in cat_attrs:
+        dic['dim'] = str(spec_item.dim)
+    if 'parent' in cat_attrs:
+        dic[cat_attrs['parent']['label']] = frmt_string(str(spec_item.parent))
+    dic['owner'] = frmt_string(str(spec_item.owner))
+    dic['status'] = str(spec_item.status)
+    dic['updated_at'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
+    dic['previous'] = str(spec_item.previous.id) if (spec_item.previous != None) else 0
+    dic['justification'] = frmt_string(render_for_export(spec_item.justification))
+    dic['remarks'] = frmt_string(render_for_export(spec_item.remarks))
+    dic['val_set'] = frmt_string(str(spec_item.val_set))
+    if 'kind' in cat_attrs:
+        dic['kind'] = str(spec_item.kind)
+    
+    if spec_item.cat == 'Requirement':
+        dic['ver_method'] = frmt_string(render_for_export(spec_item.req.ver_method))
+ 
     return dic
         
 

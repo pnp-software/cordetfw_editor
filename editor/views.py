@@ -22,7 +22,7 @@ from editor.models import Project, ProjectUser, Application, Release, ValSet, Sp
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
-                             get_previous_list, model_to_form
+                             get_previous_list, model_to_form, model_to_export
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project, can_add_val_set
 
@@ -519,35 +519,14 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     if (sel_dom != "All_Domains"):
         items = items.filter(domain=sel_dom)
 
-    fd = '|'.join(x['label'] for x in configs[cat][attr].values())
-    fd = fd + '\n'
-    for item in items:
+    for i, item in enumerate(items):
         item_dic = model_to_export(item)
-        fd = fd + '|'.join(x['label'] for x in configs[cat][attr].values())
-        
-        
-        
-
-
-    if (export_type == 'export_requirements'):
-        requirements = Requirement.objects.all().order_by('domain','name').filter(application_id=application_id)
-        fdName = application.name.replace(' ','')+'Req.csv'
-        fd = 'Domain|Id|Title|Text|Justification|Notes|Ver|Type|Status|UpdatedAt|Owner\n'
-        for req in requirements:
-            if (req.status != 'OBS') and (req.status != 'DEL'):
-                fd = fd + get_csv_line([req.domain, req.name, req.title, render_for_export(req.text), \
-                        render_for_export(req.justification), render_for_export(req.notes), \
-                        req.ver_method, req.type, req.status, req.updated_at.strftime('%d-%m-%Y %H:%M'), req.owner.username])
-    
-    if (export_type == 'chg_log'):
-        requirements = Requirement.objects.all().order_by('domain','name').filter(application_id=application_id)
-        fdName = application.name.replace(' ','')+'ReqChangeLog.csv'
-        fd = 'Domain|Id|Title|Text|Justification|Notes|Ver|Type|Status|UpdatedAt|Owner\n'
-        for req in requirements:
-            fd = fd + get_csv_line([req.domain, req.name, req.title, render_for_export(req.text), 
-                        render_for_export(req.justification), render_for_export(req.notes), \
-                        req.ver_method, req.type, req.status, req.updated_at.strftime('%d-%m-%Y %H:%M'), req.owner.username])
-    
+        if i == 0:      # Write header to output csv file
+            fd = '|'.join(key for key in item_dic)
+            fd = fd + '\n'
+        fd = fd + '|'.join(str(x) for x in item_dic.values())
+        fd = fd + '\n'
+            
     content_disposition = 'attachment; filename= "' + fdName + '"'
     response = HttpResponse(fd, content_type='text/plain')
     response['Content-Disposition'] = content_disposition
