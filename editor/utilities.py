@@ -124,7 +124,7 @@ def render_for_export(s):
     try:
         if ref[0] == '#iref': 
             item = SpecItem.objects.get(id=ref[1])
-            s_mod = s[:match.start()] + item.dom+':'+item.name
+            s_mod = s[:match.start()] + item.domain+':'+item.name
         else:
             s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
     except ObjectDoesNotExist:
@@ -258,6 +258,9 @@ def model_to_export(spec_item):
     
     if spec_item.cat == 'Requirement':
         dic['ver_method'] = frmt_string(render_for_export(spec_item.req.ver_method))
+ 
+    if spec_item.cat == 'DataItem':
+        dic['NValue'] = eval_di_value(spec_item.value)
  
     return dic
         
