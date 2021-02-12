@@ -173,12 +173,7 @@ class SpecItemForm(forms.Form):
             self.fields['parent'].disabled = True
             self.fields['parent'].widget = forms.HiddenInput()
             self.fields['disc'].disabled = True
-            
-        # The domain of enumerated items is always equal to 'enum'  
-        if cat == 'EnumItem':
-            self.fields['domain'].initial = 'enum'
-            self.fields['domain'].disabled = True
-          
+                      
     def clean(self):
         """ Verify that: 
         (a) In add and copy modes, the domain:name pair is unique within non-deleted, non-obsolete spec_items 
