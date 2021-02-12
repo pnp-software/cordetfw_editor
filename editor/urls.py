@@ -28,6 +28,7 @@ urlpatterns = [
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_dom>/split_spec_item', views.split_spec_item, name='split_spec_item'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_dom>/del_spec_item', views.del_spec_item, name='del_spec_item'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_dom>/export_spec_items', views.export_spec_items, name='export_spec_items'),
+    path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_dom>/import_spec_items', views.import_spec_items, name='import_spec_items'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_dom>/list_spec_item_history', views.list_spec_item_history, name='list_spec_item_history'),
     
 ]

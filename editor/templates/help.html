@@ -176,9 +176,6 @@
         </ul>
     <li><i>Enumerated Item</i>: specification of a value of an enumerated type</li>
         <ul>
-        <li>Domain: this is fixed and equal to 'enum' (which means that all enumerated names must be
-				    unique within a project)</li>
-        <li>Name: the name of the enumerated item</li>
         <li>Value: the value of the enumerated item</li>
         <li>Parent: the type to which the enumerated item belongs</li>
         </ul>
@@ -422,14 +419,14 @@
     It is possible to include a reference to another specification item.
     In the database, the internal reference is stored with a format like: '#iref:n' where 'n'
     is the identifier of the specification item being referred.
-    The internal reference is <a href="#Rendering">rendered in different ways</a> depending 
+    The internal reference is rendered in different ways depending 
     on the context within which the text field is used.
     </p><p>
-    In editing mode, the reference is introduced through the following syntaxt: '#cat:dom:name'.
+    In <strong>editing mode</strong>, the reference is introduced through the following syntaxt: '#cat:dom:name'.
     Here, 'cat' is the category of the target specification item; 'dom' is the domain of the
     target specification item; and 'name' is its name.
-    When the reference is rendered in display mode, it is converted to a hyperlink; when
-    it is rendered for export, it is converted to TBD.
+    When the reference is rendered in <strong>display mode</strong>, it is converted to a hyperlink; when
+    it is rendered in <strong>export mode</strong>, it is converted to '#dom:name'.
     </p><p>
     Internal references always point to the specification item in the Default ValSet.
     It is not possible to have an internal reference to specification items in other ValSets.
@@ -445,15 +442,77 @@
     If specification item S is the target of an internal reference in another
     specification item, then, if S is deleted, the internal reference will become
     invalid. 
-    There is no protection against this situation in the function to delete a
+    There is no protection against this situation in the function which deletes the
     specification item.
     Users will notice the hanging reference when they try to display or export the specification
     item with the reference to S.
-    <h4><a name="ExportImport">Export and Import Functions</a></h4>
+    <p></p>
+     
+    <h4><a name="CatExpImp">Category-Level Export and Import</a></h4>
     <p>
-        TBD
-    </p>
-       
+    Import and export of data can be done either at two levels:
+    <ul>
+    <li>At <strong>category level</strong>, the specification items in a given
+    category are imported or exported</li>
+    <li>At <strong>project level</strong>, an entire project is imported or exported</li>
+    </ul> 
+    </p><p>
+    Category-level import and export are done when the editor is displaying the specification
+    items in a given cateogory and ValSet and, optionally, in a given domain. 
+    The import/export function is applied to the specification items in the currently
+    selected category and ValSet and, optionally, to the selected domain.    
+    </p><p>    
+    Category-level export generates a csv table holding all the specification items in the
+    currently selected category, ValSet and domain.
+    Users are given an option whether to export only the latest version of each specification
+    item or also their history.
+    The field names are the same as the field names in the model.
+    Internal references are rendered as in editing mode.
+    All text fields are formatted to be suitable for use in a latex document
+    (through the escaping of characters such as underscore, hash, percent, etc).
+    </p><p>
+    Category-level import processes a csv file with the same format as the file generated
+    by the export function.
+    One import operation imports a set of specification items of the currently selected
+    category and of the currently selected ValSet.
+    Category-level import can be done in two modes:<i>override-enabled</i> or 
+    <i>override-disabled</i>.
+    When the data in a csv file are imported, each row is assumed to define one specification
+    item.
+    The csv file should define the value of all fields of the specification item with the
+    exception of the following ones: 
+    <ul>
+    <li>The identifier is set by the database back-end when the item is saved</li>
+    <li>The owner is set to the user who triggered the import</li>
+    <li>The update time is set to the current time</li>
+    <li>In override-disabled mode, the status is set to NEW and the previous pointer
+        is set to 'None'</li>
+    <li>In override-enabled mode, the status ad previous fields are set as when an item
+        is created or edited</li>
+    </ul>
+    Each imported specification item is processed as follows:
+    <ul>
+    <li><a href="IntRef">Interal references</a> are converted to their database format</li>
+    <li>Backslashes (used to escape to escape special characters in latex documents) are deleted</li>
+    <li>A specification item is discarded if any of the following import checks are failed:</li>
+        <ul>
+        <li>The category should match the currently selected category</li>
+        <li>The ValSet should match the currently selected ValSet</li>
+        <li>The domain should match the currently selected domain</li>
+        <li>All the fields required for the requested category must be present and have legal values</li>
+        <li>An internal reference to a non-existent specification item is found</li>
+        <li>In override-disabled mode, the domain:name should not yet be in use</li>
+        <li>In override-enabled mode, the domain:name shold not be used outside the selected category</li>
+        <li>If the selected ValSet is not the default ValSet, the domain:name must exist in the 
+            default ValSet</li>
+        </ul>
+    </ul> 
+    </p><p>
+     
+    <h4><a name="CatExpImp">Category-Level Export and Import</a></h4>
+    TBD
+    </p><p>
+
     
     <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
     <p>

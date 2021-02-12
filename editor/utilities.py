@@ -314,11 +314,11 @@ def get_parent_choices(cat, project_id):
     """ Return the range of choices for the 'parent' attribute of a specification of a given category """
     if cat == 'EnumItem':
         pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
-                                    exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
-        return [(pc[0], pc[1]+' ('+pc[2]+')') for pc in pcl]                            
+                        exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','domain','name','title')
+        return [(pc[0], pc[1]+':'+pc[2]+' ('+pc[3]+')') for pc in pcl]                            
     if cat == 'DataItem':
         pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
-                                    exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
+                        exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
         return [(pc[0], pc[1]+' ('+pc[2]+')') for pc in pcl] 
         
     return [('Invalid','Invalid')]

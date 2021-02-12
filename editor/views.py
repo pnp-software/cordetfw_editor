@@ -541,6 +541,38 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     return response            
 
 
+def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
+    project = Project.objects.get(id=project_id)
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+    else:
+        application = None
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+    import_type = request.GET.get('export')
+
+    redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(val_set_id)+\
+                           '/'+sel_dom+'/list_spec_items'    
+  
+    if request.method == 'POST':   
+        try:
+            csv_file = request.FILES['csv_file']
+        except Exception as e:
+            logging.getLogger("error_logger").error("Unable to upload file. "+repr(e))
+            messages.error(request,"Unable to upload file: "+repr(e))
+            return redirect(redirect_url)
+        if csv_file.multiple_chunks():
+            messages.error(request,"Uploaded file is too big (%.2f MB)." % (csv_file.size/(1000*1000),))
+            return redirect(redirect_url)
+        file_data = csv_file.read().decode("utf-8")		
+
+
+    else:
+        context = {'project': project, 'title': 'Some Title'}
+        return render(request, 'upload_file.html', context)
+    return redirect(redirect_url)
+
+
 @login_required         
 def export_project(request, project_id):
     # TBD
