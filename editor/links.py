@@ -2,7 +2,7 @@ import re
 from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
 from editor.models import SpecItem, Application, VerItemToSpecItem
-from .utilities import render_for_export
+from .utilities import convert_spec_item_to_latex
 
 LINK_SEP = '|'
 pattern_text = re.compile("#([a-z]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+)")
@@ -183,14 +183,14 @@ def render_ver_items_for_display(test_case):
             if tc2ver.kind == 'REQ':
                 req = Requirement.objects.get(id=tc2ver.ver_item)
                 target = '/CordetFwEditor/'+str(project_id)+'/'+str(application_id)+'/list_requirements?domainSelected='+req.domain
-                s= s + '<a href=\"'+target+'\" title=\"'+req.title+': '+render_for_export(req.text)+ \
+                s= s + '<a href=\"'+target+'\" title=\"'+req.title+': '+convert_spec_item_to_latex(req.text)+ \
                           '\">'+req.domain+'-'+req.name+'</a>'+' ('+tc2ver.cond+')'
             elif tc2ver.kind == 'DI':
                 di = DataItem.objects.get(id=tc2ver.ver_item)
                 val_set_id = DataItemValSet.objects.get(project_id=project_id, name='Default').id
                 sel_domain = di.domain
                 target = '/CordetFwEditor/'+str(project_id)+'/'+str(val_set_id)+'?domainSelected='+sel_domain
-                s = s + '<a href=\"'+target+'\" title=\"'+render_for_export(di.value)+' '+\
+                s = s + '<a href=\"'+target+'\" title=\"'+convert_spec_item_to_latex(di.value)+' '+\
                           di.unit+' ('+di.description+')\">'+di.name+'</a>'+' ('+tc2ver.cond+')'
             elif tc2ver.kind == 'State Machine':
                 mod = FwProfileModel.objects.get(id=tc2ver.ver_item)

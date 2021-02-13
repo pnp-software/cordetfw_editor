@@ -1,6 +1,6 @@
 from django import template
 from django.utils.safestring import mark_safe
-from ..utilities import render_for_display, eval_di_value
+from ..utilities import convert_db_to_display, eval_di_value
 from ..links import render_ver_items_for_display
 register = template.Library()
 
@@ -11,7 +11,7 @@ def filter_refs(s):
     The input should be passed through escape() before being filtered to ensure that any html code entered 
     by the (possibly malicious) user has been sanitized.
     """
-    return mark_safe(render_for_display(s, 1))
+    return mark_safe(convert_db_to_display(s, 1))
 
 @register.filter(is_safe=True)
 def filter_ver_items(tc):

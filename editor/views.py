@@ -1,5 +1,7 @@
-from django.shortcuts import render
+import csv
 
+from io import StringIO
+from django.shortcuts import render
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.forms import formset_factory                                 
@@ -15,14 +17,14 @@ from zipfile import ZipFile
 from datetime import datetime
 from itertools import chain
 
-from editor.configs import configs, dict_to_spec_item, make_obs_spec_item_copy, save_spec_item, \
+from editor.configs import configs, form_dict_to_spec_item, make_obs_spec_item_copy, save_spec_item, \
                            remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
                            mark_spec_item_aliases_as_del
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
                           Requirement 
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
-                             get_previous_list, model_to_form, model_to_export
+                             get_previous_list, spec_item_to_edit, spec_item_to_latex, spec_item_to_export
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project, can_add_val_set
 
@@ -338,7 +340,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
-            dict_to_spec_item(form.cleaned_data, new_spec_item)
+            form_dict_to_spec_item(form.cleaned_data, new_spec_item)
             if parent != None:
                 new_spec_item.parent = parent
             new_spec_item.val_set = default_val_set
@@ -378,11 +380,11 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
         form = SpecItemForm('edit', cat, project, application, configs[cat], request.POST, \
-                            initial=model_to_form(spec_item))
+                            initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             if spec_item.status == 'CNF':
                 spec_item = make_obs_spec_item_copy(request, spec_item)
-            dict_to_spec_item(form.cleaned_data, spec_item)
+            form_dict_to_spec_item(form.cleaned_data, spec_item)
             spec_item.updated_at = datetime.now()
             spec_item.owner = get_user(request)
             save_spec_item(spec_item)
@@ -392,7 +394,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('edit', cat, project, application, configs[cat], initial=model_to_form(spec_item))
+        form = SpecItemForm('edit', cat, project, application, configs[cat], initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
@@ -416,11 +418,11 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
   
     if request.method == 'POST':   
         form = SpecItemForm('copy', cat, project, application, configs[cat], request.POST, \
-                            initial=model_to_form(spec_item))
+                            initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
-            dict_to_spec_item(form.cleaned_data, new_spec_item)
+            form_dict_to_spec_item(form.cleaned_data, new_spec_item)
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
@@ -431,7 +433,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('copy', cat, project, application, configs[cat], initial=model_to_form(spec_item))
+        form = SpecItemForm('copy', cat, project, application, configs[cat], initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
@@ -454,11 +456,11 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
   
     if request.method == 'POST':   
         form = SpecItemForm('split', cat, project, application, configs[cat], request.POST, \
-                            initial=model_to_form(spec_item))
+                            initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem()
             new_spec_item.cat = cat
-            dict_to_spec_item(form.cleaned_data, new_spec_item)
+            form_dict_to_spec_item(form.cleaned_data, new_spec_item)
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
@@ -470,7 +472,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('split', cat, project, application, configs[cat], initial=model_to_form(spec_item))
+        form = SpecItemForm('split', cat, project, application, configs[cat], initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
@@ -521,19 +523,21 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     order_by('domain','name') 
         fdName = application.name.replace(' ','_') + cat + '.csv'
         
-    if (export_type != 'chg_log'):
-        items = items.exclude(status='DEL').exclude(status='OBS')  
+    items = items.exclude(status='DEL').exclude(status='OBS')  
         
-    if (sel_dom != "All_Domains"):
+    if (sel_dom != 'All_Domains'):
         items = items.filter(domain=sel_dom)
 
+    csv_sep = configs['General']['csv_sep']
+    eol_sep = configs['General']['eol_sep']
     for i, item in enumerate(items):
-        item_dic = model_to_export(item)
+        if (export_type == 'latex_format'):
+            item_dic = spec_item_to_latex(item)
+        else:
+            item_dic = spec_item_to_export(item)
         if i == 0:      # Write header to output csv file
-            fd = '|'.join(key for key in item_dic)
-            fd = fd + '\n'
-        fd = fd + '|'.join(str(x) for x in item_dic.values())
-        fd = fd + '\n'
+            fd = csv_sep.join(key for key in item_dic) + eol_sep
+        fd = fd + csv_sep.join(str(x) for x in item_dic.values()) + eol_sep
             
     content_disposition = 'attachment; filename= "' + fdName + '"'
     response = HttpResponse(fd, content_type='text/plain')
@@ -543,13 +547,14 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
 
 def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
     project = Project.objects.get(id=project_id)
+    val_set = ValSet.objects.filter(project_id=project.id).get(id=val_set_id)
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
     else:
         application = None
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
-    import_type = request.GET.get('export')
 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(val_set_id)+\
                            '/'+sel_dom+'/list_spec_items'    
@@ -558,15 +563,44 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         try:
             csv_file = request.FILES['csv_file']
         except Exception as e:
-            logging.getLogger("error_logger").error("Unable to upload file. "+repr(e))
-            messages.error(request,"Unable to upload file: "+repr(e))
+            messages.error(request,'Unable to upload file: '+repr(e))
             return redirect(redirect_url)
         if csv_file.multiple_chunks():
-            messages.error(request,"Uploaded file is too big (%.2f MB)." % (csv_file.size/(1000*1000),))
+            messages.error(request,'Uploaded file '+csv_file.name+' is too big, size in MB is: '+str(csv_file.size/(1000*1000)))
             return redirect(redirect_url)
-        file_data = csv_file.read().decode("utf-8")		
-
-
+        try:
+            file_data = csv_file.read().decode('utf-8')
+            f = StringIO(file_data)
+            items = csv.DictReader(f, delimiter=configs['General']['csv_sep'])
+            for i, item in enumerate(items):
+                if item['Cat'] != cat:
+                    messages.error(request, 'At line '+str(i+1)+': Incorrect category: expected '+cat+' but found '+item['Cat'])
+                    continue
+                if (sel_dom != 'All_Domains') and (item['Domain'] != sel_dom):
+                    messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_dom+' but found '+item['Domain'])
+                    continue
+                if item['val_set'] != val_set.name:
+                    messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item['Domain'])
+                    continue
+                q = SpecItem.object.filter(project_id=project_id, cat=cat, val_set_id=default_val_set.id, \
+                                name=item['Name'], domain=item['Domain']).exclude(status='DEL').exclude(status='OBS')     
+                if (item['val_set'] != 'Default') and not bool(q):
+                    messages.error(request, ' '+str(i+1)+': Missing item with the same domain:name in Default ValSet for '\
+                                                +item['Domain']+':'+item['Name'])
+                if bool(q):         # New item overrides an existing item
+                    overriden_item = q[0]
+                    if overriden_item.status == 'CNF':
+                        spec_item = make_obs_spec_item_copy(request, overriden_item)
+                else:
+                    spec_item = SpecItem()
+                form_dict_to_spec_item(item, spec_item)
+                spec_item.updated_at = datetime.now()
+                spec_item.owner = get_user(request)
+                save_spec_item(spec_item)
+                    
+                    
+        except Exception as e:
+            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+1)+': '+str(e))
     else:
         context = {'project': project, 'title': 'Some Title'}
         return render(request, 'upload_file.html', context)

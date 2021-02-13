@@ -7,7 +7,7 @@ from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_kind_choices, get_parent_choices, \
-                       pattern_text, pattern_db, render_for_db
+                       pattern_edit, pattern_db, convert_edit_to_db
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
@@ -214,7 +214,7 @@ class SpecItemForm(forms.Form):
                                             'must therefore be of enumerated type')
 
         if (self.cat == 'DataItem'):
-            internal_refs = re.findall(pattern_text, cd['value'])
+            internal_refs = re.findall(pattern_edit, cd['value'])
             for ref in internal_refs:
                 if ref[0:8] != 'DataItem#':
                     raise forms.ValidationError('The value field of a data item cannot contain references to non-'+\
@@ -238,19 +238,19 @@ class SpecItemForm(forms.Form):
         return cd
  
     def clean_title(self):
-        return render_for_db(self.cleaned_data['title'])
+        return convert_edit_to_db(self.cleaned_data['title'])
 
     def clean_desc(self):
-        return render_for_db(self.cleaned_data['desc'])
+        return convert_edit_to_db(self.cleaned_data['desc'])
 
     def clean_value(self):
-        return render_for_db(self.cleaned_data['value'])
+        return convert_edit_to_db(self.cleaned_data['value'])
 
     def clean_justification(self):
-        return render_for_db(self.cleaned_data['justification'])
+        return convert_edit_to_db(self.cleaned_data['justification'])
 
     def clean_remarks(self):
-        return render_for_db(self.cleaned_data['remarks'])
+        return convert_edit_to_db(self.cleaned_data['remarks'])
 
 
  

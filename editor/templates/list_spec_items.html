@@ -30,19 +30,13 @@
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Export</button>
         <div class="dropdown-menu">
             <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}">
-                Export {{config.name}}s</a>
-            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=chg_log">
-                Export Change Log</a>
+                Plain Export</a>
+            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format">
+                Export for Latex</a>
         </div>
       </div>
-      <div class="dropdown mr-sm-2 mt-4">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Import</button>
-        <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">
-                Import {{config.name}}s With Override</a>
-            <a class="dropdown-item" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}?import=chg_log">
-                Import {{config.name}}s No Override</a>
-        </div>
+      <div class="form-group mr-sm-2 mt-4">
+        <a class="btn btn-outline-secondary" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">Import</a>
       </div>
     </div>
 </div>

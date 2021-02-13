@@ -2,7 +2,10 @@ from django.contrib.auth import get_user
 from django.contrib import messages
 from editor.models import SpecItem, Requirement, ValSet, Packet, PacketBehaviour, PacketPar, VerItem
 
-configs = {'Requirement':{'name': 'Requirement',
+configs = {'General': {'csv_sep': '|',
+                       'eol_sep': '\n'
+                       },
+           'Requirement':{'name': 'Requirement',
                           'title_list': 'List of Requirements',
                           'title_history': 'History of Requirement ',
                           'has_children': False,
@@ -237,48 +240,50 @@ configs = {'Requirement':{'name': 'Requirement',
               }
               
 
-def dict_to_spec_item(dic, spec_item):
+def form_dict_to_spec_item(form_dict, spec_item):
     """ 
-    Initialize the spec_item attributes with the value of the corresponding dictionary entries. 
-    If the dictionary also contains category-specific data then: if the spec_item, already has
+    Argument form_dict is a dictionary returned by an edit form with the
+    definition of a specification item (after cleaning by the form).
+    The function initializes the spec_item attributes with the value of the 
+    corresponding dictionary entries. 
+    If the dictionary also contains category-specific data then: if the spec_item already has
     a category-specific model instance, this is updated with the data from the dictionary; if,
-    instead, the spec_item has no category specific model instance, the categoy-specific model
+    instead, the spec_item has no category-specific model instance, the categoy-specific model
     instance is created and initialized with the data from the dictionary.
-    Function render_for_edit is used to resolve internal references in text fields.
     """
-    if 'domain' in dic:
-        spec_item.domain = dic['domain']
-    if 'name' in dic:
-        spec_item.name = dic['name']
-    if 'title' in dic:
-        spec_item.title = dic['title']
-    if 'desc' in dic:
-        spec_item.desc = dic['desc']
-    if 'value' in dic:
-        spec_item.value = dic['value']
-    if 'justification' in dic:
-        spec_item.justification = dic['justification']
-    if 'remarks' in dic:
-        spec_item.remarks = dic['remarks']
-    if 'kind' in dic:
-        spec_item.kind = dic['kind']
-    if 'dim' in dic:
-        spec_item.dim = dic['dim']
-    if ('parent' in dic) and (dic['parent'] != ''):
-        spec_item.parent = SpecItem.objects.get(id=dic['parent'])
-    if ('val_set' in dic) and (dic['val_set'] != ''):
-        spec_item.val_set = ValSet.objects.get(id=dic['val_set'])
+    if 'domain' in form_dict:
+        spec_item.domain = form_dict['domain']
+    if 'name' in form_dict:
+        spec_item.name = form_dict['name']
+    if 'title' in form_dict:
+        spec_item.title = form_dict['title']
+    if 'desc' in form_dict:
+        spec_item.desc = form_dict['desc']
+    if 'value' in form_dict:
+        spec_item.value = form_dict['value']
+    if 'justification' in form_dict:
+        spec_item.justification = form_dict['justification']
+    if 'remarks' in form_dict:
+        spec_item.remarks = form_dict['remarks']
+    if 'kind' in form_dict:
+        spec_item.kind = form_dict['kind']
+    if 'dim' in form_dict:
+        spec_item.dim = form_dict['dim']
+    if ('parent' in form_dict) and (form_dict['parent'] != ''):
+        spec_item.parent = SpecItem.objects.get(id=form_dict['parent'])
+    if ('val_set' in form_dict) and (form_dict['val_set'] != ''):
+        spec_item.val_set = ValSet.objects.get(id=form_dict['val_set'])
     if spec_item.cat == 'Requirement':
-        if 'ver_method' in dic:
+        if 'ver_method' in form_dict:
             if spec_item.req == None:
                 new_req = Requirement()
-                new_req.ver_method = dic['ver_method']
+                new_req.ver_method = form_dict['ver_method']
                 new_req.save()
                 spec_item.req = new_req
             else:
-                spec_item.req.ver_method = dic['ver_method']
+                spec_item.req.ver_method = form_dict['ver_method']
 
-          
+              
 def make_obs_spec_item_copy(request, spec_item):
     """ 
     The argument spec_item must be made obsolete: the previous pointer of spec_item is reset;

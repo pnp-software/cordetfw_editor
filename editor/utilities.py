@@ -20,11 +20,15 @@ EVAL_MAX_REC = 10
 # Regular expression pattern for internal references in the database
 pattern_db = re.compile("#(iref):([0-9]+)")     
 
+# Regular expression pattern for internal references in the database
+pattern_db = re.compile("#(iref):([0-9]+)")     
+
+
 # Create regular expression pattern for references in edited fields
 s = ''
 for cat_desc in SPEC_ITEM_CAT:
     s = s+cat_desc[0]+'|'
-pattern_text = re.compile('#('+s[:-1]+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+pattern_edit = re.compile('#('+s[:-1]+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +47,11 @@ def frmt_string(s):
     for old, new in replacements:
        s = s.replace(old, new)    
     return s
+
+
+def snake_to_camel(s):
+    """ Convert string from snake_case to CamelCase """
+    return ''.join(x.capitalize() or '_' for x in s.split('_'))
 
 
 def get_csv_line(csv_items):
@@ -69,12 +78,14 @@ def get_list_refs(s):
     return re.findall("#([a-z]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+)", s)
     
     
-def render_for_db(s):
+def convert_edit_to_db(s):
     """
-    Replace internal references in the argument string with: iref:<id>.
+    The argument is a text field in edit representation (with internal
+    references in the format '#cat:domain:name'). The function converts
+    it to database representation (internal references become: iref:<id>).
     Invalid references are replaced with: ERROR:ERROR.
     """
-    match = pattern_text.search(s)
+    match = pattern_edit.search(s)
     if match == None:
         return s
     ref = match.group().split(':')
@@ -85,10 +96,10 @@ def render_for_db(s):
         logger.warning('Non-existent internal reference: '+str(ref))
         s_mod = s[:match.start()] + ref[0] + ':' + ref[1] + ':' + ref[2]
     
-    return s_mod + render_for_db(s[match.end():])
+    return s_mod + convert_edit_to_db(s[match.end():])
     
 
-def render_for_edit(s):
+def convert_db_to_edit(s):
     """
     The argument string is a text field read from the database. It
     contains internal references in the format #iref:n.
@@ -107,14 +118,14 @@ def render_for_edit(s):
         s_mod = s[:match.start()]+ref[0]+':'+ref[1]
     except ObjectDoesNotExist:
       s_mod = s[:match.start()]+'ERROR:ERROR'
-    return s_mod + render_for_edit(s[match.end():])
+    return s_mod + convert_db_to_edit(s[match.end():])
 
 
-def render_for_export(s):
+def convert_spec_item_to_latex(s):
     """ 
     The argument string is a text field read from the database. 
     Internal references in the form #iref:n are converted to the
-    for: <domain>:<name>. 
+    for: <domain>:<name> and special latex characters are escaped.
     Invalid references are replaced with: ERROR:ERROR.
     """
     match = pattern_db.search(s)
@@ -124,16 +135,16 @@ def render_for_export(s):
     try:
         if ref[0] == '#iref': 
             item = SpecItem.objects.get(id=ref[1])
-            s_mod = s[:match.start()] + item.domain+':'+item.name
+            s_mod = frmt_string(s[:match.start()] + item.domain+':'+item.name)
         else:
-            s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
+            s_mod = frmt_string(s[:match.start()]+ref[0]+':'+ref[1])
     except ObjectDoesNotExist:
         s_mod = s[:match.start()]+'ERROR:ERROR'
        
-    return s_mod + render_for_export(s[match.end():])
+    return s_mod + convert_spec_item_to_latex(s[match.end():])
 
 
-def render_for_display(s, n):
+def convert_db_to_display(s, n):
     """
     The string s is a text field read from the database. It
     contains internal references in the form #iref:n. References in
@@ -164,7 +175,7 @@ def render_for_display(s, n):
     except ObjectDoesNotExist:
         s_mod = s[:match.start()]+ref[0]+':'+'ERROR:ERROR'
         
-    return s_mod + render_for_display(s[match.end():], n+1)
+    return s_mod + convert_db_to_display(s[match.end():], n+1)
  
 
 def render_for_eval(s, n):
@@ -212,7 +223,7 @@ def eval_di_value(s):
         return s
         
         
-def model_to_form(spec_item):
+def spec_item_to_edit(spec_item):
     """ 
     The argument is a specification item and the output is a dictionary representing the specification
     item in a format suitable for display in a form.
@@ -220,50 +231,91 @@ def model_to_form(spec_item):
     dic = model_to_dict(spec_item)
     for key, value in configs[spec_item.cat]['attrs'].items():
         if value['int_ref'] == True:
-            dic[key] = render_for_edit(dic[key])
+            dic[key] = convert_db_to_edit(dic[key])
     return dic
     
     
-def model_to_export(spec_item):
+def spec_item_to_latex(spec_item):
     """ 
     The argument is a specification item and the output is a dictionary as follows: 
     - Key: label of the fields to be exported
-    - Value: value of field to be exported in a format suitable for use in a latex doc
-    The field label is the same as the field name. Only fields in the 
+    - Value: value of field in latex representation
+    The field label is the same as the field name (in CamelCase rather than snake_case)
+    with the exception of fields with category-specific semantics, which
+    take as name their label as given in the configs dictionary.  
     """
     dic = {}
     cat_attrs = configs[spec_item.cat]['attrs']
-    dic['id'] = str(spec_item.id)
-    dic['cat'] = frmt_string(spec_item.cat)
-    dic['name'] = frmt_string(spec_item.name)
-    dic['domain'] = frmt_string(spec_item.domain)
-    dic['project'] = frmt_string(str(spec_item.project))
-    dic['application'] = frmt_string(str(spec_item.application))
-    dic['title'] = frmt_string(spec_item.title)
-    dic['desc'] = frmt_string(render_for_export(spec_item.desc))
-    dic['value'] = frmt_string(render_for_export(spec_item.value))
+    dic['Id'] = str(spec_item.id)
+    dic['Cat'] = frmt_string(spec_item.cat)
+    dic['Name'] = frmt_string(spec_item.name)
+    dic['Domain'] = frmt_string(spec_item.domain)
+    dic['Project'] = frmt_string(str(spec_item.project))
+    dic['Application'] = frmt_string(str(spec_item.application))
+    dic['Title'] = frmt_string(spec_item.title)
+    dic['Desc'] = convert_spec_item_to_latex(spec_item.desc)
+    dic['Value'] = convert_spec_item_to_latex(spec_item.value)
     if 'dim' in cat_attrs:
-        dic['dim'] = str(spec_item.dim)
+        dic[cat_attrs['dim']['label']] = str(spec_item.dim)
     if 'parent' in cat_attrs:
         dic[cat_attrs['parent']['label']] = frmt_string(str(spec_item.parent))
-    dic['owner'] = frmt_string(str(spec_item.owner))
-    dic['status'] = str(spec_item.status)
-    dic['updated_at'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
-    dic['previous'] = str(spec_item.previous.id) if (spec_item.previous != None) else 0
-    dic['justification'] = frmt_string(render_for_export(spec_item.justification))
-    dic['remarks'] = frmt_string(render_for_export(spec_item.remarks))
-    dic['val_set'] = frmt_string(str(spec_item.val_set))
+    dic['Owner'] = frmt_string(str(spec_item.owner))
+    dic['Status'] = str(spec_item.status)
+    dic['UpdatedAt'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
+    dic['Previous'] = str(spec_item.previous.id) if (spec_item.previous != None) else 0
+    dic['Justification'] = convert_spec_item_to_latex(spec_item.justification)
+    dic['Remarks'] = convert_spec_item_to_latex(spec_item.remarks)
+    dic['ValSet'] = frmt_string(str(spec_item.val_set))
     if 'kind' in cat_attrs:
-        dic['kind'] = str(spec_item.kind)
+        dic['Kind'] = str(spec_item.kind)
     
     if spec_item.cat == 'Requirement':
-        dic['ver_method'] = frmt_string(render_for_export(spec_item.req.ver_method))
+        dic['VerMethod'] = spec_item.req.ver_method
  
     if spec_item.cat == 'DataItem':
         dic['NValue'] = eval_di_value(spec_item.value)
  
     return dic
         
+
+def spec_item_to_export(spec_item):
+    """ 
+    The argument is a specification item and the output is a dictionary as follows: 
+    - Key: label of the fields to be exported
+    - Value: value of field in export representation
+    The field label is the same as the field name with the exception of
+    fields with category-specific semantics which take as name their label as given in
+    the configs dictionary.  
+    """
+    dic = {}
+    cat_attrs = configs[spec_item.cat]['attrs']
+    dic['id'] = spec_item.id
+    dic['cat'] = spec_item.cat
+    dic['name'] = spec_item.name
+    dic['domain'] = spec_item.domain
+    dic['project'] = str(spec_item.project)
+    dic['application'] = str(spec_item.application)
+    dic['title'] = spec_item.title
+    dic['desc'] = convert_db_to_edit(spec_item.desc)
+    dic['value'] = convert_db_to_edit(spec_item.value)
+    dic['owner'] = spec_item.owner
+    dic['status'] = spec_item.status
+    dic['updated_at'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
+    dic['justification'] = convert_db_to_edit(spec_item.justification)
+    dic['remarks'] = convert_db_to_edit(spec_item.remarks)
+    dic['val_set'] = str(spec_item.val_set)
+    if 'dim' in cat_attrs:
+        dic[cat_attrs['dim']['label']] = spec_item.dim
+    if 'parent' in cat_attrs:
+        dic[cat_attrs['parent']['label']] = str(spec_item.parent)
+    if 'kind' in cat_attrs:
+        dic[cat_attrs['kind']['label']] = spec_item.kind
+    
+    if spec_item.cat == 'Requirement':
+        dic['ver_method'] = spec_item.req.ver_method
+ 
+    return dic
+            
 
 def get_user_choices():
     """ Return a list of pairs (id, user) representing the users in the system """

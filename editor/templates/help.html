@@ -447,14 +447,47 @@
     Users will notice the hanging reference when they try to display or export the specification
     item with the reference to S.
     <p></p>
-     
+
+    <h4><a name="SpecItemRep">Specification Item Representations</a></h4>
+    <p>
+    A specification item has multiple representation depending on the context in which it is used:
+    <ul>
+    <li><strong>Database Representation</strong> is the representation of the item in the database</li>
+    <li><strong>Display Representation</strong> is used when rendering the item in an HTML page</li>
+    <li><strong>Latex Representation</strong> is used when rendering the item for export to a csv format
+        to be used in a latex document</li>
+    <li><strong>Edit Representation</strong> is used when rendering the item in a form for editing
+        by the user</li>
+    <li><strong>Export Representation</strong> is used when rendering the item for export to csv format</li>
+    <li><strong>Eval Representation</strong> is used to render the numerical value of a 
+        <a href="#DataItem">data item</a></li>
+    </ul>
+    <p></p>
+    These representations primarily differ in their treatment of references to other specification items:
+    <ul>
+    <li><strong>Database Representation</strong>: internal references are rendered as '#iref:id' where
+        'id' is the identifier of the referenced item; reference fields only contain the identifier
+        of the referenced item.</li>
+    <li><strong>Display Representation</strong>: references are rendered as 'domain:name'
+        with a hyperlink to the referenced item<./li>
+    <li><strong>Latex Representation</strong>: references are rendered as 'domain:name';
+        reference fields are rendered through the string representation of the referenced field;
+        "special characters" which are not accepted by Latex are escaped. </li>
+    <li><strong>Edit Representation</strong>: internal references are rendered as '#cat:domain:name'</li>
+    <li><strong>Export Representation</strong>: internal references are rendered as '#cat:domain:name'
+        reference fields are rendered through the string representation of the referenced field</li>
+    <li><strong>Eval Representation</strong>: the numerical value of the data item is evaluated by
+        recursively evaluating the numerical value of all referenced data items</li>
+    </ul>
+    <p></p>
+      
     <h4><a name="CatExpImp">Category-Level Export and Import</a></h4>
     <p>
     Import and export of data can be done either at two levels:
     <ul>
     <li>At <strong>category level</strong>, the specification items in a given
     category are imported or exported</li>
-    <li>At <strong>project level</strong>, an entire project is imported or exported</li>
+    <li>At <a href="#ProjExpImp"><strong>project level</strong></a>, an entire project is imported or exported</li>
     </ul> 
     </p><p>
     Category-level import and export are done when the editor is displaying the specification
@@ -466,7 +499,14 @@
     currently selected category, ValSet and domain.
     Users are given an option whether to export only the latest version of each specification
     item or also their history.
-    The field names are the same as the field names in the model.
+    The field names are:
+    <ul>
+    <li>For fields with category-specific semantics, the field name is the label field
+        in the configuration object for that field</li>
+    <li>For other fields, it is the same as the field name in the database model changed
+        from snake_case to CamelCase</li>
+    </ul> 
+    </p><p>
     Internal references are rendered as in editing mode.
     All text fields are formatted to be suitable for use in a latex document
     (through the escaping of characters such as underscore, hash, percent, etc).
@@ -475,8 +515,6 @@
     by the export function.
     One import operation imports a set of specification items of the currently selected
     category and of the currently selected ValSet.
-    Category-level import can be done in two modes:<i>override-enabled</i> or 
-    <i>override-disabled</i>.
     When the data in a csv file are imported, each row is assumed to define one specification
     item.
     The csv file should define the value of all fields of the specification item with the
@@ -485,10 +523,11 @@
     <li>The identifier is set by the database back-end when the item is saved</li>
     <li>The owner is set to the user who triggered the import</li>
     <li>The update time is set to the current time</li>
-    <li>In override-disabled mode, the status is set to NEW and the previous pointer
-        is set to 'None'</li>
-    <li>In override-enabled mode, the status ad previous fields are set as when an item
-        is created or edited</li>
+    <li>If there is no item with the same domain:name in the selected category and ValSet,
+        the status is set to NEW and the previous pointer is set to 'None'</li>
+    <li>If there is an item with the same domain:name in the selected category and ValSet,
+        a copy is made of the existing item. the status of the new item is set to MOD and
+        its previous pointer is set to the newly-copied item</li>
     </ul>
     Each imported specification item is processed as follows:
     <ul>
@@ -500,16 +539,17 @@
         <li>The ValSet should match the currently selected ValSet</li>
         <li>The domain should match the currently selected domain</li>
         <li>All the fields required for the requested category must be present and have legal values</li>
+        <li>A reference to a non-existent specification item is found</li>
         <li>An internal reference to a non-existent specification item is found</li>
-        <li>In override-disabled mode, the domain:name should not yet be in use</li>
-        <li>In override-enabled mode, the domain:name shold not be used outside the selected category</li>
         <li>If the selected ValSet is not the default ValSet, the domain:name must exist in the 
-            default ValSet</li>
+            default ValSet for the selected category</li>
+        <li>If the selected ValSet is the default ValSet, the domain:name must either be new or
+            it must exist in the selected category</li>
         </ul>
     </ul> 
     </p><p>
      
-    <h4><a name="CatExpImp">Category-Level Export and Import</a></h4>
+    <h4><a name="ProjExpImp">Project-Level Export and Import</a></h4>
     TBD
     </p><p>
 
@@ -542,8 +582,11 @@
         and its 'previous' field is set to 'None'.</li>
     </ul>
     In the second and third case, an error is issued if more than one entry is found with the same domain:name:status combination is found.
-    </p>
+    </p><p>
     
+    <h4><a name="DataItems">Data Items</a></h4>
+    TBD
+    </p><p>
     
     
     
