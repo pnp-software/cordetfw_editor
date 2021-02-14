@@ -17,7 +17,7 @@ configs = {'General': {'csv_sep': '|',
                                    'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                    'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
                                    'val_set':   {'label': 'ValSet',  'req_in_form': False, 'kind': 'plain_ref'},
-                                   's_kinf':    {'label': 'Ver Method', 'req_in_form': True, 'kind': 'plain_text'}
+                                   's_kind':    {'label': 'Ver Method', 'req_in_form': True, 'kind': 'plain_text'}
                                   }
                          },
                'DataItemType': {'name': 'Data Item Type',

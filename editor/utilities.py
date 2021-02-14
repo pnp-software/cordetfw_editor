@@ -283,37 +283,19 @@ def spec_item_to_export(spec_item):
     The argument is a specification item and the output is a dictionary as follows: 
     - Key: label of the fields to be exported
     - Value: value of field in export representation
-    The field label is the same as the field name with the exception of
-    fields with category-specific semantics which take as name their label as given in
-    the configs dictionary.  
+    The field label is the label as given in the configs dictionary.  
     """
-    dic = {}
     cat_attrs = configs[spec_item.cat]['attrs']
-    dic['id'] = spec_item.id
-    dic['cat'] = spec_item.cat
-    dic['name'] = spec_item.name
-    dic['domain'] = spec_item.domain
-    dic['project'] = str(spec_item.project)
-    dic['application'] = str(spec_item.application)
-    dic['title'] = spec_item.title
-    dic['desc'] = convert_db_to_edit(spec_item.desc)
-    dic['value'] = convert_db_to_edit(spec_item.value)
-    dic['owner'] = spec_item.owner
-    dic['status'] = spec_item.status
-    dic['updated_at'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
-    dic['rationale'] = convert_db_to_edit(spec_item.rationale)
-    dic['remarks'] = convert_db_to_edit(spec_item.remarks)
-    dic['val_set'] = str(spec_item.val_set)
-    if 'dim' in cat_attrs:
-        dic[cat_attrs['dim']['label']] = spec_item.dim
-    if 'parent' in cat_attrs:
-        dic[cat_attrs['parent']['label']] = str(spec_item.parent)
-    if 'kind' in cat_attrs:
-        dic[cat_attrs['kind']['label']] = spec_item.kind
-    
-    if spec_item.cat == 'Requirement':
-        dic['ver_method'] = spec_item.req.ver_method
- 
+    temp_dic = model_to_dict(spec_item)
+    dic = {}
+    for key, value in configs[spec_item.cat]['attrs'].items():
+        if value['kind'] == 'ref_text':
+            dic[cat_attrs[key]['label']] = convert_db_to_edit(temp_dic[key])
+        elif value['kind'] == 'plain_ref':
+            dic[cat_attrs[key]['label']] = str(temp_dic[key])
+        else:
+            dic[cat_attrs[key]['label']] = temp_dic[key]
+    dic['updated_at'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')    
     return dic
         
             
