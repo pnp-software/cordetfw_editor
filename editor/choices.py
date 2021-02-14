@@ -16,8 +16,11 @@ SPEC_ITEM_CAT = (
     ("Model","A behavioural model for an application feature"),
     ("Service","A cordet service"),
     ("Packet","A packet implementing a service command or report"),
+    ("DerPacket","A derived packet"),
     ("PacketPar","A parameter in a packet"),
-    ("PacketBehaviour","The behaviour associated to a packet in an application"),
+    ("InCommand","The behaviour associated to an incoming service command"),
+    ("InReport","The behaviour associated to an incoming service report"),
+    ("OutComponent","The behaviour associated to an out-going service command or report"),
     ("VerItem","A verification item"),
 )
 

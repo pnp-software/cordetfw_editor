@@ -47,35 +47,6 @@ class ValSet(models.Model):
     def __str__(self):
         return self.name
 
-class Requirement(models.Model):
-    ver_method = models.CharField(max_length=24, choices=REQ_VER_METHOD)
-
-class Packet(models.Model):
-    desc_pars =  models.TextField()
-    desc_dest =  models.TextField()
-    disc =  models.ForeignKey('SpecItem', on_delete=models.PROTECT, 
-                                      related_name='der_packets', null=True, blank=True, default=None)
-
-class PacketPar(models.Model):
-    group =  models.SmallIntegerField(default=0)
-    repetition = models.SmallIntegerField(default=0)
-
-class PacketBehaviour(models.Model):
-    acceptance_check =  models.TextField(blank=True, default='')
-    enable_check =  models.TextField(blank=True, default='')
-    repeat_check = models.TextField(blank=True, default='')
-    update_action = models.TextField(blank=True, default='')
-    start_action = models.TextField(blank=True, default='')
-    progress_action = models.TextField(blank=True, default='')
-    termination_action = models.TextField(blank=True, default='')
-    abort_action = models.TextField(blank=True, default='')   
- 
-class VerItem(models.Model):
-    pre_cond = models.TextField(blank=True, default='')
-    post_cond = models.TextField(blank=True, default='')
-    close_out = models.TextField(blank=True, default='')
-    ver_status = models.CharField(max_length=24, choices=VER_STATUS)
-
 class SpecItem(models.Model):    
     cat = models.CharField(max_length=24, choices=SPEC_ITEM_CAT)
     name = models.CharField(max_length=255)
@@ -85,23 +56,27 @@ class SpecItem(models.Model):
                                     on_delete=models.PROTECT, null=True, default=None)
     title = models.CharField(max_length=255)
     desc = models.TextField(blank=True, default='')
-    value = models.TextField(blank=True, default='')
-    dim  = models.IntegerField(blank=True, default=0)
-    parent = models.ForeignKey('self', related_name='children', on_delete=models.PROTECT, null=True, blank=True, default=None)
     owner = models.ForeignKey(User, related_name='owned_spec_items', on_delete=models.PROTECT)
     status = models.CharField(max_length=20, choices=HISTORY_STATUS, default='NEW')
     updated_at = models.DateTimeField()  
     previous = models.OneToOneField('self', on_delete=models.SET_DEFAULT, null=True, default=None)
-    justification = models.TextField(blank=True, default='')
+    rationale = models.TextField(blank=True, default='')
     remarks = models.TextField(blank=True, default='')
     val_set = models.ForeignKey(ValSet, related_name='val_set_spec_items', on_delete=models.PROTECT)
-    kind = models.CharField(max_length=24, choices=REQ_KIND+DI_KIND+DIT_KIND+MODEL_KIND+PCKT_KIND+\
-                                                   PCKT_PAR_KIND+PCKT_APP_KIND+VER_ITEM_KIND)
-    req = models.OneToOneField(Requirement, on_delete=models.PROTECT, null=True, blank=True, default=None)
-    packet = models.OneToOneField(Packet, on_delete=models.PROTECT, null=True, blank=True, default=None)
-    packet_par = models.OneToOneField(PacketPar, on_delete=models.PROTECT, null=True, blank=True, default=None)
-    packet_behaviour = models.OneToOneField(PacketBehaviour, on_delete=models.PROTECT, null=True, blank=True, default=None)
-    ver_item = models.OneToOneField(VerItem, on_delete=models.PROTECT, null=True, blank=True, default=None)
+    p_link = models.ForeignKey('self', related_name='p_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
+    s_link = models.ForeignKey('self', related_name='s_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
+    p_kind = models.CharField(max_length=24, choices=REQ_KIND+DI_KIND+DIT_KIND+MODEL_KIND+PCKT_KIND+\
+                                                     PCKT_PAR_KIND+PCKT_APP_KIND+VER_ITEM_KIND)
+    s_kind = models.CharField(max_length=24, choices=VER_STATUS)
+    value = models.TextField(blank=True, default='')
+    t1 = models.TextField(blank=True, default='')
+    t2 = models.TextField(blank=True, default='')
+    t3 = models.TextField(blank=True, default='')
+    t4 = models.TextField(blank=True, default='')
+    t5 = models.TextField(blank=True, default='')
+    n1  = models.IntegerField(blank=True, default=0)
+    n2  = models.IntegerField(blank=True, default=0)
+    n3  = models.IntegerField(blank=True, default=0)
     def __str__(self):
         return self.domain + ':' + self.name
   

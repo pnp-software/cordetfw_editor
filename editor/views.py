@@ -17,11 +17,9 @@ from zipfile import ZipFile
 from datetime import datetime
 from itertools import chain
 
-from editor.configs import configs, form_dict_to_spec_item, make_obs_spec_item_copy, save_spec_item, \
-                           remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
-                           mark_spec_item_aliases_as_del
-from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem, \
-                          Requirement 
+from editor.configs import configs, make_obs_spec_item_copy, mark_spec_item_aliases_as_del, \
+                           remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
+from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, spec_item_to_export
@@ -338,18 +336,16 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     if request.method == 'POST':   
         form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
         if form.is_valid():
-            new_spec_item = SpecItem()
+            new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
-            form_dict_to_spec_item(form.cleaned_data, new_spec_item)
             if parent != None:
-                new_spec_item.parent = parent
+                new_spec_item.p_link = parent
             new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
             new_spec_item.status = 'NEW'
             new_spec_item.project = project
             new_spec_item.application = application
-            save_spec_item(new_spec_item)
             new_spec_item.save()
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'
@@ -384,10 +380,11 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         if form.is_valid():
             if spec_item.status == 'CNF':
                 spec_item = make_obs_spec_item_copy(request, spec_item)
-            form_dict_to_spec_item(form.cleaned_data, spec_item)
+            for key, value in form.cleaned_data.items():    # Copy form inputs into spec_item
+                setattr(spec_item, key, value)    
             spec_item.updated_at = datetime.now()
             spec_item.owner = get_user(request)
-            save_spec_item(spec_item)
+            spec_item.save()
             if (spec_item.val_set.name == 'Default') and (('name' in form.changed_data) or ('domain' in form.changed_data)):
                 update_dom_name_in_val_set(spec_item)
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
@@ -420,15 +417,14 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         form = SpecItemForm('copy', cat, project, application, configs[cat], request.POST, \
                             initial=spec_item_to_edit(spec_item))
         if form.is_valid():
-            new_spec_item = SpecItem()
+            new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
-            form_dict_to_spec_item(form.cleaned_data, new_spec_item)
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
             new_spec_item.application = application
             new_spec_item.status = 'NEW'
-            save_spec_item(new_spec_item)
+            new_spec_item.save()
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
@@ -458,16 +454,15 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         form = SpecItemForm('split', cat, project, application, configs[cat], request.POST, \
                             initial=spec_item_to_edit(spec_item))
         if form.is_valid():
-            new_spec_item = SpecItem()
+            new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
-            form_dict_to_spec_item(form.cleaned_data, new_spec_item)
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
             new_spec_item.application = application
-            new_spec_item.parent = spec_item
+            new_spec_item.p_link = spec_item
             new_spec_item.status = 'NEW'
-            save_spec_item(new_spec_item)
+            new_spec_item.save()
             redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
@@ -593,10 +588,10 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                         spec_item = make_obs_spec_item_copy(request, overriden_item)
                 else:
                     spec_item = SpecItem()
-                form_dict_to_spec_item(item, spec_item)
+                # TBD: Replace form_dict_to_spec_item(item, spec_item)
                 spec_item.updated_at = datetime.now()
                 spec_item.owner = get_user(request)
-                save_spec_item(spec_item)
+                spec_item.save()
                     
                     
         except Exception as e:

@@ -75,8 +75,8 @@
                 {% if item.desc != '' %}
                 {{item.desc|filter_refs|linebreaksbr}}
                 {% endif %}
-                {% if item.justification != '' %}
-                <br><strong>Justification</strong> {{item.justification|filter_refs|linebreaksbr}}
+                {% if item.rationale != '' %}
+                <br><strong>Rationale</strong> {{item.rationale|filter_refs|linebreaksbr}}
                 {% endif %}
                 {% if item.remarks != '' %}
                 <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
@@ -95,8 +95,8 @@
             <td>{{item.req.ver_method}}</td>
             {% endif %}
             {% if cat == 'EnumItem' or cat == 'DataItem' %}
-            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id sel_dom %}#{{item.parent.domain}}:{{item.parent.name}}" title="{{item.parent.title}}">
-                {{item.parent}}
+            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id sel_dom %}#{{item.p_link.domain}}:{{item.p_link.name}}" title="{{item.p_link.title}}">
+                {{item.p_link}}
                 </a>
             </td>
             {% endif %}

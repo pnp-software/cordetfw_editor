@@ -230,7 +230,7 @@ def spec_item_to_edit(spec_item):
     """
     dic = model_to_dict(spec_item)
     for key, value in configs[spec_item.cat]['attrs'].items():
-        if value['int_ref'] == True:
+        if value['kind'] == 'ref_text':
             dic[key] = convert_db_to_edit(dic[key])
     return dic
     
@@ -263,7 +263,7 @@ def spec_item_to_latex(spec_item):
     dic['Status'] = str(spec_item.status)
     dic['UpdatedAt'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
     dic['Previous'] = str(spec_item.previous.id) if (spec_item.previous != None) else 0
-    dic['Justification'] = convert_spec_item_to_latex(spec_item.justification)
+    dic['rationale'] = convert_spec_item_to_latex(spec_item.rationale)
     dic['Remarks'] = convert_spec_item_to_latex(spec_item.remarks)
     dic['ValSet'] = frmt_string(str(spec_item.val_set))
     if 'kind' in cat_attrs:
@@ -301,7 +301,7 @@ def spec_item_to_export(spec_item):
     dic['owner'] = spec_item.owner
     dic['status'] = spec_item.status
     dic['updated_at'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
-    dic['justification'] = convert_db_to_edit(spec_item.justification)
+    dic['rationale'] = convert_db_to_edit(spec_item.rationale)
     dic['remarks'] = convert_db_to_edit(spec_item.remarks)
     dic['val_set'] = str(spec_item.val_set)
     if 'dim' in cat_attrs:
@@ -315,7 +315,47 @@ def spec_item_to_export(spec_item):
         dic['ver_method'] = spec_item.req.ver_method
  
     return dic
+        
             
+def export_dict_to_spec_item(exp_dict, spec_item):
+    """ 
+    Argument exp_dict is a dictionary created by reading a line in a 
+    plain export file.
+    The function converts the dictionary enries to db format and then 
+    uses them to initialize the spec_item attributes.
+    Only attributes which are imported are initialized.
+    The function will raise an exception if one of the fields expected
+    in the dictionary is not found. 
+    If the dictionary also contains category-specific data then: if the spec_item already has
+    a category-specific model instance, this is updated with the data from the dictionary; if,
+    instead, the spec_item has no category-specific model instance, the categoy-specific model
+    instance is created and initialized with the data from the dictionary.
+    """
+    cat_attrs = configs[spec_item.cat]['attrs']
+    spec_item.domain = exp_dict['domain']
+    spec_item.name = exp_dict['name']
+    spec_item.title = exp_dict['title']
+    spec_item.desc = convert_export_to_db(exp_dict['desc'])
+    spec_item.value = convert_export_to_db(exp_dict['value'])
+    spec_item.rationale = convert_export_to_db(exp_dict['rationale'])
+    spec_item.remarks = convert_export_to_db(exp_dict['remarks'])
+    spec_item.val_set = exp_dict['val_set']
+    if 'kind' in cat_attrs:
+        spec_item.kind = exp_dict[cat_attrs['kind']['label']]
+    if 'dim' in cat_attrs:
+        spec_item.dim = exp_dict[cat_attrs['dim']['label']]
+    if 'parent' in cat_attrs:
+        spec_item.kind = exp_dict[cat_attrs['parent']['label']]
+
+    if spec_item.cat == 'Requirement':
+        if spec_item.req == None:
+            new_req = Requirement()
+            new_req.ver_method = exp_dict['ver_method']
+            new_req.save()
+            spec_item.req = new_req
+        else:
+            spec_item.req.ver_method = exp_dict['ver_method']
+
 
 def get_user_choices():
     """ Return a list of pairs (id, user) representing the users in the system """
@@ -344,8 +384,8 @@ def get_previous_list(item):
     return items
         
         
-def get_kind_choices(cat):
-    """ Return the range of choices for the 'kind' attribute of a specification of a given category """
+def get_p_kind_choices(cat):
+    """ Return the range of choices for the 'p_kind' attribute of a specification of a given category """
     if cat == 'Requirement':
        return REQ_KIND
     elif cat == 'DataItem':
@@ -361,9 +401,17 @@ def get_kind_choices(cat):
     elif cat == 'VerItem':
        return VER_ITEM_KIND
     return (("INV","Invalid"),)
+
+
+def get_s_kind_choices(cat):
+    """ Return the range of choices for the 's_kind' attribute of a specification of a given category """
+    if cat == 'Requirement':
+       return REQ_VER_METHOD
+    return (("INV","Invalid"),)
   
-def get_parent_choices(cat, project_id):
-    """ Return the range of choices for the 'parent' attribute of a specification of a given category """
+  
+def get_p_link_choices(cat, project_id):
+    """ Return the range of choices for the 'p_link' attribute of a specification of a given category """
     if cat == 'EnumItem':
         pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
                         exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','domain','name','title')
@@ -373,7 +421,12 @@ def get_parent_choices(cat, project_id):
                         exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
         return [(pc[0], pc[1]+' ('+pc[2]+')') for pc in pcl] 
         
-    return [('Invalid','Invalid')]
+    return SpecItem.objects.none()
+    
+    
+def get_s_link_choices(cat, project_id):
+    """ Return the range of choices for the 's_link' attribute of a specification of a given category """
+    return SpecItem.objects.none()
     
          
 def get_domains(cat, application_id, project_id):
