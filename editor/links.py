@@ -2,7 +2,7 @@ import re
 from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
 from editor.models import SpecItem, Application, VerItemToSpecItem
-from .utilities import convert_spec_item_to_latex
+from .utilities import convert_db_to_latex
 
 LINK_SEP = '|'
 pattern_text = re.compile("#([a-z]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+)")

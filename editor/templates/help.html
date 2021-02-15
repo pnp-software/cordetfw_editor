@@ -261,9 +261,26 @@
     <a href="#SpecItems">here</a>.
     </p><p>
  
-    <h4><a name="EditorConfig">Editor Configuration</a></h4>
+    <h3><a name="EditorConfig">Editor Configuration</a></h3>
     <p>
-    TBD
+    Configuration information for the editor is held in the <strong>configuration dictionary</strong>.
+    The 'General' key in the dictionary holds general configuration information.
+    Additionally, for each specification item, a 'Category' key is present whose
+    value is another dictionary with configuration information for that category.
+    The most important item in this dictionary is the 'attrs' dictionary which
+    lists the editable fields for that category and, for each, it provides the 
+    following information:
+    <ul>
+    <li>label: the label used when the field is displayed or exported</li>
+    <li>req_in_form: true if the field is mandatory</li>
+    <li>kind: the kind of field, namely one of:</li>
+        <ul>
+        <li>plain_text: a text field without <a href=""#IntRef">internal references</a></li>
+        <li>ref_text: a text field with <a href=""#IntRef">internal references</a></li>
+        <li>plain_ref: a field with a reference to another specification item</li>
+        <li>int: an integer field</li>
+        </ul>
+    </ul>
     </p><p>
          
     
@@ -478,7 +495,8 @@
         to be used in a latex document</li>
     <li><strong>Edit Representation</strong> is used when rendering the item in a form for editing
         by the user</li>
-    <li><strong>Export Representation</strong> is used when rendering the item for export to csv format</li>
+    <li><strong>Export Representation</strong> is used when rendering the item for 
+                                               <a href="#ExpImp">plain export</a> to csv format</li>
     <li><strong>Eval Representation</strong> is used to render the numerical value of a 
         <a href="#DataItem">data item</a></li>
     </ul>
@@ -506,24 +524,21 @@
     There are three kinds of data imports and exports:
     <ul>
     <li>Plain Export/Import</li>
-    <li>Expoer to Latex Format</li>
+    <li>Export to Latex Format</li>
     <li>Project Export/Import</li>
     </ul> 
     </p><p>
     <strong>Plain import and export</strong> are done when the editor is displaying the specification
-    items in a given cateogory and ValSet and, optionally, in a given domain. 
+    items in a given category and ValSet and, optionally, in a given domain. 
     The import/export function is applied to the specification items in the currently
     selected category and ValSet and, optionally, to the selected domain.    
     </p><p>    
     Plain export generates a csv table holding all the specification items in the
     currently selected category, ValSet and domain in <a href="#SpecItemRep">export representation</a>.
     Only the latest version of a specification item is exported.
-    The field names are:
-    <ul>
-    <li>For fields with category-specific semantics, the field name is the label field
-        in the configuration dictionary for that field</li>
-    <li>For other fields, it is the same as the field name in the database model</li>
-    </ul> 
+    The exported fields are All the fields in the <a href="#EditorConfig">configuration dictionary</a>
+    for the selected category. The field names in the exported file is the label
+    the configuration dictionary.
     </p><p>
     Plain import processes a csv file with the same format as the file generated
     by the plain export function.
@@ -531,8 +546,9 @@
     category and of the currently selected ValSet.
     When the data in a csv file are imported, each row is assumed to define one specification
     item.
-    The csv file should define the value of all fields of the specification item with the
-    exception of the following ones: 
+    Only the fields in the <a href="#EditorConfig">configuration dictionary</a> for the
+    selected category are imported. 
+    Other fields are set as follows:
     <ul>
     <li>The identifier is set by the database back-end when the item is saved</li>
     <li>The owner is set to the user who triggered the import</li>
@@ -545,27 +561,30 @@
     </ul>
     Each imported specification item is processed as follows:
     <ul>
-    <li><a href="IntRef">Interal references</a> are converted to their database format</li>
-    <li>Backslashes (used to escape to escape special characters in latex documents) are deleted</li>
     <li>A specification item is discarded if any of the following import checks are failed:</li>
         <ul>
-        <li>The category should match the currently selected category</li>
-        <li>The ValSet should match the currently selected ValSet</li>
-        <li>The domain should match the currently selected domain</li>
-        <li>All the fields required for the requested category must be present and have legal values</li>
-        <li>A reference to a non-existent specification item is found</li>
-        <li>An internal reference to a non-existent specification item is found</li>
+        <li>The category does not match the currently selected category</li>
+        <li>The ValSet does not match the currently selected ValSet</li>
+        <li>The domain does not match the currently selected domain</li>
+        <li>One or more of the fields required for the requested category is not present and
+            does not have legal values</li>
+        <li>A reference field holds a reference to a non-existent specification item is found</li>
         <li>If the selected ValSet is not the default ValSet, the domain:name must exist in the 
             default ValSet for the selected category</li>
-        <li>If the selected ValSet is the default ValSet, the domain:name must either be new or
-            it must exist in the selected category</li>
+        <li>If the selected ValSet is the default ValSet, the domain:name must either be new 
+            within the project or it must exist in the selected category</li>
         </ul>
+    <li>Text fields are converted from export to database format</li>
+    <li>Reference fields are converted to references to model instances</li>
     </ul> 
     </p><p>
     <strong>Latex export</strong> is like plain export except for the following differences:    
     <ul>
-    <li>The name of fields in the export file is changed from snake_case to CamelCase</li>
-    <li>Special latex characters (underscore, hash, percent, etc) are escapde</li>
+    <li>In addition to the fields in the configuration dictionary, the following fields
+        are also exported: project and application name, owner, update time and status;
+        the names of these extra fields in the exported file are the same as the names
+        of the fields in the database model converted to CamelCase</li>
+    <li>Exported fields are converted from database to latex format</li>
     </ul> 
     There is no import facility for latex formatted files.
     </p><p>

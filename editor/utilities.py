@@ -20,10 +20,6 @@ EVAL_MAX_REC = 10
 # Regular expression pattern for internal references in the database
 pattern_db = re.compile("#(iref):([0-9]+)")     
 
-# Regular expression pattern for internal references in the database
-pattern_db = re.compile("#(iref):([0-9]+)")     
-
-
 # Create regular expression pattern for references in edited fields
 s = ''
 for cat_desc in SPEC_ITEM_CAT:
@@ -121,7 +117,7 @@ def convert_db_to_edit(s):
     return s_mod + convert_db_to_edit(s[match.end():])
 
 
-def convert_spec_item_to_latex(s):
+def convert_db_to_latex(s):
     """ 
     The argument string is a text field read from the database. 
     Internal references in the form #iref:n are converted to the
@@ -141,7 +137,7 @@ def convert_spec_item_to_latex(s):
     except ObjectDoesNotExist:
         s_mod = s[:match.start()]+'ERROR:ERROR'
        
-    return s_mod + convert_spec_item_to_latex(s[match.end():])
+    return s_mod + convert_db_to_latex(s[match.end():])
 
 
 def convert_db_to_display(s, n):
@@ -238,45 +234,34 @@ def spec_item_to_edit(spec_item):
 def spec_item_to_latex(spec_item):
     """ 
     The argument is a specification item and the output is a dictionary as follows: 
-    - Key: label of the fields to be exported
+    - Key: label of the fields to be exported to latex format
     - Value: value of field in latex representation
-    The field label is the same as the field name (in CamelCase rather than snake_case)
-    with the exception of fields with category-specific semantics, which
-    take as name their label as given in the configs dictionary.  
+    The field label is the label as given in the configs dictionary without spaces.  
     """
-    dic = {}
     cat_attrs = configs[spec_item.cat]['attrs']
-    dic['Id'] = str(spec_item.id)
-    dic['Cat'] = frmt_string(spec_item.cat)
-    dic['Name'] = frmt_string(spec_item.name)
-    dic['Domain'] = frmt_string(spec_item.domain)
-    dic['Project'] = frmt_string(str(spec_item.project))
-    dic['Application'] = frmt_string(str(spec_item.application))
-    dic['Title'] = frmt_string(spec_item.title)
-    dic['Desc'] = convert_spec_item_to_latex(spec_item.desc)
-    dic['Value'] = convert_spec_item_to_latex(spec_item.value)
-    if 'dim' in cat_attrs:
-        dic[cat_attrs['dim']['label']] = str(spec_item.dim)
-    if 'parent' in cat_attrs:
-        dic[cat_attrs['parent']['label']] = frmt_string(str(spec_item.parent))
-    dic['Owner'] = frmt_string(str(spec_item.owner))
-    dic['Status'] = str(spec_item.status)
-    dic['UpdatedAt'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')
-    dic['Previous'] = str(spec_item.previous.id) if (spec_item.previous != None) else 0
-    dic['rationale'] = convert_spec_item_to_latex(spec_item.rationale)
-    dic['Remarks'] = convert_spec_item_to_latex(spec_item.remarks)
-    dic['ValSet'] = frmt_string(str(spec_item.val_set))
-    if 'kind' in cat_attrs:
-        dic['Kind'] = str(spec_item.kind)
+    temp_dic = model_to_dict(spec_item)
+    dic = {}
+    for key, value in configs[spec_item.cat]['attrs'].items():
+        label = cat_attrs[key]['label'].replace(' ','')
+        if value['kind'] == 'ref_text':
+            dic[label] = convert_db_to_latex(temp_dic[key])
+        elif value['kind'] == 'plain_ref':
+            dic[label] = frmt_string(str(temp_dic[key]))
+        elif value['kind'] == 'plain_text':
+            dic[label] = frmt_string(str(temp_dic[key]))
+        else:
+            dic[label] = temp_dic[key]
     
-    if spec_item.cat == 'Requirement':
-        dic['VerMethod'] = spec_item.req.ver_method
- 
     if spec_item.cat == 'DataItem':
         dic['NValue'] = eval_di_value(spec_item.value)
- 
+
+    dic['UpdatedAt'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')    
+    dic['Owner'] = frmt_string(str(spec_item.owner))
+    dic['Status'] = spec_item.status
+    dic['Project'] = frmt_string(str(spec_item.project))
+    dic['Application'] = frmt_string(str(spec_item.application))
     return dic
-        
+    
 
 def spec_item_to_export(spec_item):
     """ 
@@ -295,7 +280,6 @@ def spec_item_to_export(spec_item):
             dic[cat_attrs[key]['label']] = str(temp_dic[key])
         else:
             dic[cat_attrs[key]['label']] = temp_dic[key]
-    dic['updated_at'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')    
     return dic
         
             
@@ -395,13 +379,11 @@ def get_s_kind_choices(cat):
 def get_p_link_choices(cat, project_id):
     """ Return the range of choices for the 'p_link' attribute of a specification of a given category """
     if cat == 'EnumItem':
-        pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType', kind='ENUM').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','domain','name','title')
-        return [(pc[0], pc[1]+':'+pc[2]+' ('+pc[3]+')') for pc in pcl]                            
+        return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', p_kind='ENUM').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('name')
     if cat == 'DataItem':
-        pcl = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('name').values_list('id','name','title')
-        return [(pc[0], pc[1]+' ('+pc[2]+')') for pc in pcl] 
+        return SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('name')
         
     return SpecItem.objects.none()
     

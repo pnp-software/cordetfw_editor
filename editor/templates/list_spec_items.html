@@ -50,9 +50,9 @@
           <th>{{config.attrs.value.label}}</th>
           {% if cat == 'DataItem' %}
             <th>NVal</th>
-            <th>{{config.attrs.dim.label}}</th>
+            <th>{{config.attrs.n1.label}}</th>
           {% endif %}
-          <th>{{config.attrs.kind.label}}</th>
+          <th>{{config.attrs.p_kind.label}}</th>
           {% if cat == 'DataItemType' %}
             <th>Size</th>
           {% endif %}
@@ -85,11 +85,11 @@
             <td>{{item.value|filter_refs|linebreaksbr}}</td>
             {% if cat == 'DataItem' %}
             <td>{{item.value|filter_di_value|linebreaksbr}}</td>
-            <td>{{item.dim}}</td>
+            <td>{{item.n1}}</td>
             {% endif %}
-            <td>{{item.kind}}</td>
+            <td>{{item.p_kind}}</td>
             {% if cat == 'DataItemType' %}
-            <td>{{item.dim}}</td>
+            <td>{{item.n1}}</td>
             {% endif %}
             {% if cat == 'Requirement' %}
             <td>{{item.req.ver_method}}</td>
@@ -115,7 +115,7 @@
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
-                {% if item.cat == 'DataItemType' and item.kind == 'ENUM' %}
+                {% if item.cat == 'DataItemType' and item.p_kind == 'ENUM' %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'add_spec_item' 'EnumItem' project.id application_id sel_dom %}?parent_id={{item.id}}" title="Add {{config.child_desc.name}}">A</a>
                 <a class="btn btn-outline-dark btn-sm"

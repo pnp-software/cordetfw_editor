@@ -299,7 +299,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
         items = items.filter(domain=sel_dom)
         
     if expand_id != None:   # The item whose id is parent_id must be listed together with its children
-        expand_items = SpecItem.objects.filter(parent_id=expand_id, val_set_id=val_set_id)
+        expand_items = SpecItem.objects.filter(p_link_id=expand_id, val_set_id=val_set_id)
         expand_id = int(expand_id)  # cast is required for comparison to item_id in list_spect_items.html template
     else:
         expand_items = None

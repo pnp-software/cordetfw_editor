@@ -187,7 +187,7 @@ class SpecItemForm(forms.Form):
                      domain=cd['domain'], name=cd['name'], val_set_id=cd['val_set']).exists():
                 raise forms.ValidationError('Split Error: ValSet is already in use for this domain:name')
         
-        if (self.mode == 'edit') and (self.cat == 'DataItemType') and (cd['kind'] == 'NOT_ENUM'):
+        if (self.mode == 'edit') and (self.cat == 'DataItemType') and (cd['p_kind'] == 'NOT_ENUM'):
             spec_item = SpecItem.objects.get(domain=cd['domain'], name=cd['name'])
             children = SpecItem.objects.filter(parent=spec_item.id)
             if children != None:
@@ -201,11 +201,9 @@ class SpecItemForm(forms.Form):
                     raise forms.ValidationError('The value field of a data item cannot contain references to non-'+\
                                             'data items: '+str(ref))
 
-        if (self.cat == 'DataItem'):
-            enum_type = SpecItem.objects.get(id=cd['p_link'])
-            s_span = re.search(pattern_db, cd['value'].strip()).span()
-            import pdb; pdb.set_trace()
-            if (s_span[0] != 0) or (s_span[1] != len(cd['value'].strip())):
+        if (self.cat == 'DataItem') and cd['p_link'].p_kind == 'ENUM':
+            m = re.match(pattern_db, cd['value'].strip())
+            if (m == None) or (m.span()[1] != len(cd['value'].strip())):
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
             ref = cd['value'].strip().split(':')
             try:
@@ -213,7 +211,7 @@ class SpecItemForm(forms.Form):
             except ObjectDoesNotExist:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type: '+\
                                             'The reference is invalid')
-            if enum_val.p_link.id != int(cd['p_link']):
+            if enum_val.p_link.id != cd['p_link'].id:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
  
         return cd
