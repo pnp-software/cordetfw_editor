@@ -239,18 +239,17 @@ def spec_item_to_latex(spec_item):
     The field label is the label as given in the configs dictionary without spaces.  
     """
     cat_attrs = configs[spec_item.cat]['attrs']
-    temp_dic = model_to_dict(spec_item)
     dic = {}
     for key, value in configs[spec_item.cat]['attrs'].items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
-            dic[label] = convert_db_to_latex(temp_dic[key])
+            dic[label] = convert_db_to_latex(getattr(spec_item, key))
         elif value['kind'] == 'plain_ref':
-            dic[label] = frmt_string(str(temp_dic[key]))
+            dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
-            dic[label] = frmt_string(str(temp_dic[key]))
+            dic[label] = frmt_string(str(getattr(spec_item, key)))
         else:
-            dic[label] = temp_dic[key]
+            dic[label] = getattr(spec_item, key)
     
     if spec_item.cat == 'DataItem':
         dic['NValue'] = eval_di_value(spec_item.value)
@@ -271,15 +270,14 @@ def spec_item_to_export(spec_item):
     The field label is the label as given in the configs dictionary.  
     """
     cat_attrs = configs[spec_item.cat]['attrs']
-    temp_dic = model_to_dict(spec_item)
     dic = {}
     for key, value in configs[spec_item.cat]['attrs'].items():
         if value['kind'] == 'ref_text':
-            dic[cat_attrs[key]['label']] = convert_db_to_edit(temp_dic[key])
+            dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
         elif value['kind'] == 'plain_ref':
-            dic[cat_attrs[key]['label']] = str(temp_dic[key])
+            dic[cat_attrs[key]['label']] = str(getattr(spec_item, key)).split(' ')[0]
         else:
-            dic[cat_attrs[key]['label']] = temp_dic[key]
+            dic[cat_attrs[key]['label']] = getattr(spec_item, key)
     return dic
         
             

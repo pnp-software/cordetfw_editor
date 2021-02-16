@@ -27,16 +27,15 @@
         <a class="btn btn-outline-secondary" href="{% url 'add_spec_item' cat project.id application_id sel_dom %}">Add {{config.name}}</a>
       </div>
       <div class="dropdown mr-sm-2 mt-4">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Export</button>
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Import/Export</button>
         <div class="dropdown-menu">
             <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}">
                 Plain Export</a>
             <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format">
                 Export for Latex</a>
+            <a class="dropdown-item" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">
+                Plain Import</a>
         </div>
-      </div>
-      <div class="form-group mr-sm-2 mt-4">
-        <a class="btn btn-outline-secondary" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">Import</a>
       </div>
     </div>
 </div>
@@ -96,7 +95,7 @@
             {% endif %}
             {% if cat == 'EnumItem' or cat == 'DataItem' %}
             <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id sel_dom %}#{{item.p_link.domain}}:{{item.p_link.name}}" title="{{item.p_link.title}}">
-                {{item.p_link}}
+                {{item.p_link.domain}}:{{item.p_link.name}}
                 </a>
             </td>
             {% endif %}

@@ -567,19 +567,17 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             file_data = csv_file.read().decode('utf-8')
             f = StringIO(file_data)
             items = csv.DictReader(f, delimiter=configs['General']['csv_sep'])
+            import pdb; pdb.set_trace()
             for i, item in enumerate(items):
-                if item['Cat'] != cat:
-                    messages.error(request, 'At line '+str(i+1)+': Incorrect category: expected '+cat+' but found '+item['Cat'])
-                    continue
                 if (sel_dom != 'All_Domains') and (item['Domain'] != sel_dom):
                     messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_dom+' but found '+item['Domain'])
                     continue
-                if item['val_set'] != val_set.name:
+                if item['ValSet'] != val_set.name:
                     messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item['Domain'])
                     continue
-                q = SpecItem.object.filter(project_id=project_id, cat=cat, val_set_id=default_val_set.id, \
+                q = SpecItem.objects.filter(project_id=project_id, cat=cat, val_set_id=default_val_set.id, \
                                 name=item['Name'], domain=item['Domain']).exclude(status='DEL').exclude(status='OBS')     
-                if (item['val_set'] != 'Default') and not bool(q):
+                if (item['ValSet'] != 'Default') and not bool(q):
                     messages.error(request, ' '+str(i+1)+': Missing item with the same domain:name in Default ValSet for '\
                                                 +item['Domain']+':'+item['Name'])
                 if bool(q):         # New item overrides an existing item
@@ -592,8 +590,6 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                 spec_item.updated_at = datetime.now()
                 spec_item.owner = get_user(request)
                 spec_item.save()
-                    
-                    
         except Exception as e:
             messages.error(request, 'Unable to read or process uploaded file at line '+str(i+1)+': '+str(e))
     else:

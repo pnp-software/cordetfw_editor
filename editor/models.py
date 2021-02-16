@@ -78,7 +78,7 @@ class SpecItem(models.Model):
     n2  = models.IntegerField(blank=True, default=0)
     n3  = models.IntegerField(blank=True, default=0)
     def __str__(self):
-        return self.domain + ':' + self.name
+        return self.domain + ':' + self.name + ' (' + self.title + ')'
   
 class VerItemToSpecItem(models.Model):
     ver_item = models.ForeignKey(SpecItem, related_name='spec_item_links', on_delete=models.PROTECT) 
