@@ -10,8 +10,12 @@ $('.link-suggest').suggest('#', {
   map: function(element) {
     return {
       value: element.path,
-      text: element.path+'&Tab;<i class="text-secondary">'+element.comment+'</i>'
+      text: '<strong>'+element.path+'<strong>'+'&Tab;<small>'+element.comment+'</small>'
     }
+  },
+  filter: {
+    casesensitive: false,
+    limit: 8
   }
 })
 </script>
