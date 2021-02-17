@@ -1,4 +1,5 @@
 import csv
+import traceback
 
 from io import StringIO
 from django.shortcuts import render
@@ -22,7 +23,8 @@ from editor.configs import configs, make_obs_spec_item_copy, mark_spec_item_alia
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
-                             get_previous_list, spec_item_to_edit, spec_item_to_latex, spec_item_to_export
+                             get_previous_list, spec_item_to_edit, spec_item_to_latex, \
+                             spec_item_to_export, export_to_spec_item
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project, can_add_val_set
 
@@ -567,7 +569,6 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             file_data = csv_file.read().decode('utf-8')
             f = StringIO(file_data)
             items = csv.DictReader(f, delimiter=configs['General']['csv_sep'])
-            import pdb; pdb.set_trace()
             for i, item in enumerate(items):
                 if (sel_dom != 'All_Domains') and (item['Domain'] != sel_dom):
                     messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_dom+' but found '+item['Domain'])
@@ -575,23 +576,41 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                 if item['ValSet'] != val_set.name:
                     messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item['Domain'])
                     continue
-                q = SpecItem.objects.filter(project_id=project_id, cat=cat, val_set_id=default_val_set.id, \
-                                name=item['Name'], domain=item['Domain']).exclude(status='DEL').exclude(status='OBS')     
-                if (item['ValSet'] != 'Default') and not bool(q):
-                    messages.error(request, ' '+str(i+1)+': Missing item with the same domain:name in Default ValSet for '\
-                                                +item['Domain']+':'+item['Name'])
-                if bool(q):         # New item overrides an existing item
-                    overriden_item = q[0]
-                    if overriden_item.status == 'CNF':
-                        spec_item = make_obs_spec_item_copy(request, overriden_item)
+                q_all_cat = SpecItem.objects.filter(project_id=project_id, \
+                            name=item['Name'], domain=item['Domain']).exclude(status='DEL').exclude(status='OBS')    
+                if q_all_cat.exclude(cat=cat).exists():
+                    messages.error(request, ' '+str(i+1)+': '+item['Domain']+':'+item['Name']+' already in use outside selected category')
+                    continue
+                if val_set.name != 'Default':
+                    if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
+                        messages.error(request, ' '+str(i+1)+': '+item['Domain']+':'+item['Name']+' missing from Default ValSet')
+                        continue
+                q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
+                if not bool(q_cat):     # The domain:name is new in selected category
+                    new_spec_item = SpecItem()
+                    new_spec_item.cat = cat
+                    export_to_spec_item(item, new_spec_item)   
+                    new_spec_item.status = 'NEW'
+                    new_spec_item.updated_at = datetime.now()
+                    new_spec_item.previous = None
+                    new_spec_item.owner = get_user(request)
+                    new_spec_item.project = project
+                    new_spec_item.application = application                    
+                    new_spec_item.save()
                 else:
-                    spec_item = SpecItem()
-                # TBD: Replace form_dict_to_spec_item(item, spec_item)
-                spec_item.updated_at = datetime.now()
-                spec_item.owner = get_user(request)
-                spec_item.save()
+                    if q_cat[0].status == 'CNF':
+                        overriden_item = q[0]
+                        spec_item = make_obs_spec_item_copy(request, overriden_item)
+                        spec_item.updated_at = datetime.now()
+                        spec_item.owner = get_user(request)
+                        spec_item.save()
+                    else:
+                        export_to_spec_item(item, q_cat[0]) 
+                        q_cat[0].updated_at = datetime.now()
+                        q_cat[0].owner = get_user(request)
+                        q_cat[0].save()
         except Exception as e:
-            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+1)+': '+str(e))
+            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+1)+'; traceback: '+traceback.format_exc())
     else:
         context = {'project': project, 'title': 'Some Title'}
         return render(request, 'upload_file.html', context)

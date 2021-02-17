@@ -94,7 +94,7 @@
             <td>{{item.req.ver_method}}</td>
             {% endif %}
             {% if cat == 'EnumItem' or cat == 'DataItem' %}
-            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id sel_dom %}#{{item.p_link.domain}}:{{item.p_link.name}}" title="{{item.p_link.title}}">
+            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" title="{{item.p_link.title}}">
                 {{item.p_link.domain}}:{{item.p_link.name}}
                 </a>
             </td>

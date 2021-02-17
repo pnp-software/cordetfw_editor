@@ -1,0 +1,1266 @@
+{
+     "editorVersion": "5.25",
+     "states": [
+          {
+               "id": 1,
+               "attrs": {
+                    "x": 455,
+                    "y": 84,
+                    "width": 30,
+                    "height": 30,
+                    "r": 15,
+                    "rx": 15,
+                    "ry": 15,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "init",
+                    "note": ""
+               },
+               "selected": false
+          },
+          {
+               "id": 2,
+               "attrs": {
+                    "x": 645,
+                    "y": 157,
+                    "width": 152,
+                    "height": 44,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N1",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Print warning message\nand discard spec_item",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 4,
+               "attrs": {
+                    "x": 612,
+                    "y": 442,
+                    "width": 196,
+                    "height": 56,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 2,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N2",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Create old_spec_item as a copy\nthe existing spec_item and set its\nstatus to OBS",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 6,
+               "attrs": {
+                    "x": 612,
+                    "y": 526,
+                    "width": 196,
+                    "height": 92,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 3,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N3",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Update existing spec_item with \ncontent of imported spec_item and set:\n(a) status of spec_item to MOD\n(b) previous pointer to old_spec_item\n(c) owner to the current user\n(d) update time to the current time",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 8,
+               "attrs": {
+                    "x": 964,
+                    "y": 622,
+                    "width": 26,
+                    "height": 26,
+                    "r": 13,
+                    "rx": 13,
+                    "ry": 13,
+                    "fill": "#000",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "final",
+                    "note": ""
+               },
+               "selected": false
+          },
+          {
+               "id": 11,
+               "attrs": {
+                    "x": 147,
+                    "y": 44,
+                    "width": 292,
+                    "height": 56,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#ccccff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "stroke-dasharray": "--"
+               },
+               "fwprop": {
+                    "autoid": 2,
+                    "type": "note",
+                    "note": "Operation import a spec_item. The spec_item description\nis read from a csv file in export format. The behaviour in this\ndiagram is executed for each spec_item in the import file."
+               },
+               "selected": false
+          },
+          {
+               "id": 14,
+               "attrs": {
+                    "x": 458,
+                    "y": 458,
+                    "width": 24,
+                    "height": 24,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "transform": "r45"
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "choice",
+                    "note": "",
+                    "identifier": "DECISION1"
+               },
+               "selected": false
+          },
+          {
+               "id": 17,
+               "attrs": {
+                    "x": 610,
+                    "y": 44,
+                    "width": 200,
+                    "height": 56,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#ccccff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "stroke-dasharray": "--"
+               },
+               "fwprop": {
+                    "autoid": 3,
+                    "type": "note",
+                    "note": "The import operation is done at a time\nwhen a category, ValSet and (optionally)\na domain are selected by the user"
+               },
+               "selected": false
+          },
+          {
+               "id": 74,
+               "attrs": {
+                    "x": 458,
+                    "y": 167,
+                    "width": 24,
+                    "height": 24,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "transform": "r45"
+               },
+               "fwprop": {
+                    "autoid": 3,
+                    "type": "choice",
+                    "note": "",
+                    "identifier": "DECISION3"
+               },
+               "selected": false
+          },
+          {
+               "id": 114,
+               "attrs": {
+                    "x": 458,
+                    "y": 270,
+                    "width": 24,
+                    "height": 24,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "transform": "r45"
+               },
+               "fwprop": {
+                    "autoid": 4,
+                    "type": "choice",
+                    "note": "",
+                    "identifier": "DECISION4"
+               },
+               "selected": false
+          },
+          {
+               "id": 143,
+               "attrs": {
+                    "x": 709,
+                    "y": 270,
+                    "width": 24,
+                    "height": 24,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "transform": "r45"
+               },
+               "fwprop": {
+                    "autoid": 5,
+                    "type": "choice",
+                    "note": "",
+                    "identifier": "DECISION5"
+               },
+               "selected": false
+          },
+          {
+               "id": 178,
+               "attrs": {
+                    "x": 458,
+                    "y": 359,
+                    "width": 24,
+                    "height": 24,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "transform": "r45"
+               },
+               "fwprop": {
+                    "autoid": 6,
+                    "type": "choice",
+                    "note": "",
+                    "identifier": "DECISION6"
+               },
+               "selected": false
+          },
+          {
+               "id": 273,
+               "attrs": {
+                    "x": 372,
+                    "y": 543,
+                    "width": 196,
+                    "height": 80,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 4,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N4",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Update existing spec_item with \ncontent of imported spec_item and set:\n(a) previous pointer to old_spec_item\n(b) owner to the current user\n(c) update time to the current time",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 303,
+               "attrs": {
+                    "x": 553,
+                    "y": 108,
+                    "width": 6,
+                    "height": 6,
+                    "r": 6,
+                    "rx": 6,
+                    "ry": 6,
+                    "fill": "#000",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "notedot",
+                    "note": ""
+               },
+               "selected": false
+          },
+          {
+               "id": 309,
+               "attrs": {
+                    "x": 151,
+                    "y": 520,
+                    "width": 170,
+                    "height": 104,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 5,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N5",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Create new spec_item and\npopulate with content of imported\nspec_item and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update time to current time",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 322,
+               "attrs": {
+                    "x": 457,
+                    "y": 662,
+                    "width": 26,
+                    "height": 26,
+                    "r": 13,
+                    "rx": 13,
+                    "ry": 13,
+                    "fill": "#000",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 2,
+                    "type": "final",
+                    "note": ""
+               },
+               "selected": false
+          }
+     ],
+     "connections": [
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              119
+                         ],
+                         [
+                              "L",
+                              470,
+                              149
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 1,
+               "stateToID": 74,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              710,
+                              503
+                         ],
+                         [
+                              "L",
+                              710,
+                              518
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 4,
+               "stateToID": 6,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              497,
+                              179
+                         ],
+                         [
+                              "L",
+                              637,
+                              179
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "1",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "(Domain or ValSet of spec_item\ndo not match  selected domain) ||\n(domain:name of imported\nspec_item already in use\noutside selected category) ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -8,
+               "shifty": -25,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 74,
+               "stateToID": 2,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              206
+                         ],
+                         [
+                              "L",
+                              470,
+                              252
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "2",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Else ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -21,
+               "shifty": -10,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 74,
+               "stateToID": 114,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              497,
+                              282
+                         ],
+                         [
+                              "L",
+                              691,
+                              282
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "1",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Currently selected ValSet\nis not the default ValSet ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -41,
+               "shifty": -8,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 114,
+               "stateToID": 143,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              721,
+                              255
+                         ],
+                         [
+                              "L",
+                              721,
+                              209
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "1",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Else ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -22,
+               "shifty": 5,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 143,
+               "stateToID": 2,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              309
+                         ],
+                         [
+                              "L",
+                              470,
+                              341
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "2",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Else ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -26,
+               "shifty": 2,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 114,
+               "stateToID": 178,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              721,
+                              309
+                         ],
+                         [
+                              "L",
+                              721,
+                              371
+                         ],
+                         [
+                              "L",
+                              500,
+                              371
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "2",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "There is a spec_item in default\nValSet with same domain:name \nas imported spec_item ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -3,
+               "shifty": -16,
+               "vertexes": [
+                    {
+                         "x": 721,
+                         "y": 371,
+                         "hasMoved": true
+                    }
+               ],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 143,
+               "stateToID": 178,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              398
+                         ],
+                         [
+                              "L",
+                              470,
+                              440
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "1",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "A non-deleted and non-obsolete\nspec_item with same domain:name\nas imported spec_item already exists in \nselected category and ValSet ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -94,
+               "shifty": 2,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 178,
+               "stateToID": 14,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              497,
+                              470
+                         ],
+                         [
+                              "L",
+                              604,
+                              470
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "1",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Status of existing\nspec_item is CNF ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -4,
+               "shifty": -8,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 14,
+               "stateToID": 4,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              497
+                         ],
+                         [
+                              "L",
+                              470,
+                              535
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "2",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Else ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": 20,
+               "shifty": -2,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 14,
+               "stateToID": 273,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              605,
+                              72.00000000000001
+                         ],
+                         [
+                              "L",
+                              556,
+                              72
+                         ],
+                         [
+                              "L",
+                              556,
+                              100
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": "-"
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [
+                    {
+                         "x": 556,
+                         "y": 72,
+                         "hasMoved": true
+                    }
+               ],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 17,
+               "stateToID": 303,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              443,
+                              371
+                         ],
+                         [
+                              "L",
+                              236,
+                              371
+                         ],
+                         [
+                              "L",
+                              236,
+                              512
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "2",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Else ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": 155,
+               "shifty": -2,
+               "vertexes": [
+                    {
+                         "x": 236,
+                         "y": 371,
+                         "hasMoved": true
+                    }
+               ],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 178,
+               "stateToID": 309,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              710,
+                              623
+                         ],
+                         [
+                              "L",
+                              710,
+                              673
+                         ],
+                         [
+                              "L",
+                              491,
+                              674.8249999999999
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [
+                    {
+                         "x": 710,
+                         "y": 673,
+                         "hasMoved": true
+                    }
+               ],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 6,
+               "stateToID": 322,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              628
+                         ],
+                         [
+                              "L",
+                              470,
+                              654
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 273,
+               "stateToID": 322,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              236,
+                              629
+                         ],
+                         [
+                              "L",
+                              236,
+                              673
+                         ],
+                         [
+                              "L",
+                              449,
+                              674.8205128205128
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [
+                    {
+                         "x": 236,
+                         "y": 673,
+                         "hasMoved": true
+                    }
+               ],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 309,
+               "stateToID": 322,
+               "selected": false
+          }
+     ],
+     "globals": {
+          "paperPanX": 0,
+          "paperPanY": 0,
+          "attrs": {
+               "x": 0,
+               "y": 0,
+               "width": 1187,
+               "height": 731,
+               "r": 0,
+               "rx": 0,
+               "ry": 0,
+               "fill": "#eee",
+               "stroke": "#000",
+               "stroke-width": 0
+          },
+          "fwprop": {
+               "smName": "ImportSpecItem",
+               "editorType": "Pr",
+               "globalvar": [
+                    {
+                         "type": "int",
+                         "name": "",
+                         "value": ""
+                    }
+               ],
+               "smIncludes": "",
+               "smNotes": "",
+               "memalloc": "dynamic",
+               "displayInfo": 0,
+               "displayOrder": 0,
+               "smTags": "CordetFwEditor"
+          }
+     }
+}

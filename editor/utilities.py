@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.forms.models import model_to_dict
 from django.db.models import ForeignKey
 from datetime import datetime
-from editor.models import SpecItem, ProjectUser, Application, Release, Project
+from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
                  MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
@@ -18,7 +18,10 @@ from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND,
 EVAL_MAX_REC = 10   
 
 # Regular expression pattern for internal references in the database
-pattern_db = re.compile("#(iref):([0-9]+)")     
+pattern_db = re.compile('#(iref):([0-9]+)')     
+
+# Regular expression pattern for plain reference in export format
+pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')     
 
 # Create regular expression pattern for references in edited fields
 s = ''
@@ -93,6 +96,18 @@ def convert_edit_to_db(s):
         s_mod = s[:match.start()] + ref[0] + ':' + ref[1] + ':' + ref[2]
     
     return s_mod + convert_edit_to_db(s[match.end():])
+    
+    
+def convert_exp_to_db(s):
+    """
+    The argument is a plain reference field in export representation 
+    (the reference is represented by the string domain:name). 
+    The function converts it to database representation.
+    Invalid references raise an exception.
+    """
+    m = pattern_ref_exp.match(s)
+    ref = m.group().split(':')
+    return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').get(domain=ref[0], name=ref[1])
     
 
 def convert_db_to_edit(s):
@@ -244,12 +259,12 @@ def spec_item_to_latex(spec_item):
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
             dic[label] = convert_db_to_latex(getattr(spec_item, key))
-        elif value['kind'] == 'plain_ref':
+        elif value['kind'] == 'spec_item_ref':
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
             dic[label] = frmt_string(str(getattr(spec_item, key)))
         else:
-            dic[label] = getattr(spec_item, key)
+            dic[label] = frmt_string(str(getattr(spec_item, key)))
     
     if spec_item.cat == 'DataItem':
         dic['NValue'] = eval_di_value(spec_item.value)
@@ -274,51 +289,33 @@ def spec_item_to_export(spec_item):
     for key, value in configs[spec_item.cat]['attrs'].items():
         if value['kind'] == 'ref_text':
             dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
-        elif value['kind'] == 'plain_ref':
+        elif value['kind'] == 'spec_item_ref':
             dic[cat_attrs[key]['label']] = str(getattr(spec_item, key)).split(' ')[0]
         else:
-            dic[cat_attrs[key]['label']] = getattr(spec_item, key)
+            dic[cat_attrs[key]['label']] = str(getattr(spec_item, key))
     return dic
         
             
-def export_dict_to_spec_item(exp_dict, spec_item):
+def export_to_spec_item(imp_dict, spec_item):
     """ 
-    Argument exp_dict is a dictionary created by reading a line in a 
-    plain export file.
-    The function converts the dictionary enries to db format and then 
-    uses them to initialize the spec_item attributes.
+    Argument imp_dict is a dictionary created by reading a line in a 
+    plain import file.
+    The function converts the dictionary enries to db format and uses them 
+    to initialize the argument spec_item.
     Only attributes which are imported are initialized.
     The function will raise an exception if one of the fields expected
     in the dictionary is not found. 
-    If the dictionary also contains category-specific data then: if the spec_item already has
-    a category-specific model instance, this is updated with the data from the dictionary; if,
-    instead, the spec_item has no category-specific model instance, the categoy-specific model
-    instance is created and initialized with the data from the dictionary.
     """
     cat_attrs = configs[spec_item.cat]['attrs']
-    spec_item.domain = exp_dict['domain']
-    spec_item.name = exp_dict['name']
-    spec_item.title = exp_dict['title']
-    spec_item.desc = convert_export_to_db(exp_dict['desc'])
-    spec_item.value = convert_export_to_db(exp_dict['value'])
-    spec_item.rationale = convert_export_to_db(exp_dict['rationale'])
-    spec_item.remarks = convert_export_to_db(exp_dict['remarks'])
-    spec_item.val_set = exp_dict['val_set']
-    if 'kind' in cat_attrs:
-        spec_item.kind = exp_dict[cat_attrs['kind']['label']]
-    if 'dim' in cat_attrs:
-        spec_item.dim = exp_dict[cat_attrs['dim']['label']]
-    if 'parent' in cat_attrs:
-        spec_item.kind = exp_dict[cat_attrs['parent']['label']]
-
-    if spec_item.cat == 'Requirement':
-        if spec_item.req == None:
-            new_req = Requirement()
-            new_req.ver_method = exp_dict['ver_method']
-            new_req.save()
-            spec_item.req = new_req
+    for key, value in configs[spec_item.cat]['attrs'].items():
+        if key == 'val_set':
+            spec_item.val_set = ValSet.objects.get(name=imp_dict[cat_attrs[key]['label']])
+        elif value['kind'] == 'ref_text':
+            setattr(spec_item, key, convert_edit_to_db(imp_dict[cat_attrs[key]['label']]))
+        elif value['kind'] == 'spec_item_ref':
+            setattr(spec_item, key, convert_exp_to_db(imp_dict[cat_attrs[key]['label']]))
         else:
-            spec_item.req.ver_method = exp_dict['ver_method']
+            setattr(spec_item, key, imp_dict[cat_attrs[key]['label']])
 
 
 def get_user_choices():

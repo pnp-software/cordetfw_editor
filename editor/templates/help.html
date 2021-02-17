@@ -559,24 +559,8 @@
         a copy is made of the existing item. the status of the new item is set to MOD and
         its previous pointer is set to the newly-copied item</li>
     </ul>
-    Each imported specification item is processed as follows:
-    <ul>
-    <li>A specification item is discarded if any of the following import checks are failed:</li>
-        <ul>
-        <li>The category does not match the currently selected category</li>
-        <li>The ValSet does not match the currently selected ValSet</li>
-        <li>The domain does not match the currently selected domain</li>
-        <li>One or more of the fields required for the requested category is not present and
-            does not have legal values</li>
-        <li>A reference field holds a reference to a non-existent specification item is found</li>
-        <li>If the selected ValSet is not the default ValSet, the domain:name must exist in the 
-            default ValSet for the selected category</li>
-        <li>If the selected ValSet is the default ValSet, the domain:name must either be new 
-            within the project or it must exist in the selected category</li>
-        </ul>
-    <li>Text fields are converted from export to database format</li>
-    <li>Reference fields are converted to references to model instances</li>
-    </ul> 
+    Each imported specification item is processed according to the following activity diagram:
+    <img src="{% static 'images/ImportSpecItem.png' %}"> 
     </p><p>
     <strong>Latex export</strong> is like plain export except for the following differences:    
     <ul>
