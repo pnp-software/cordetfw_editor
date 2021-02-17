@@ -47,20 +47,27 @@
           <th>Name</th>
           <th>Description</th>
           <th>{{config.attrs.value.label}}</th>
+          
           {% if cat == 'DataItem' %}
             <th>NVal</th>
+          {% endif %}
+          
+          {% if cat == 'DataItem' or cat == 'DataItemType' or cat == 'VerItem' %}
+          <th>{{config.attrs.p_kind.label}}</th>
+          {% endif %}
+
+          {% if cat == 'VerItem' or cat == 'Requirement' %}
+          <th>{{config.attrs.s_kind.label}}</th>
+          {% endif %}
+            
+          {% if cat == 'DataItemType' %}
             <th>{{config.attrs.n1.label}}</th>
           {% endif %}
-          <th>{{config.attrs.p_kind.label}}</th>
-          {% if cat == 'DataItemType' %}
-            <th>Size</th>
-          {% endif %}
-          {% if cat == 'Requirement' %}
-            <th>Ver.</th>
-          {% endif %}
+          
           {% if cat == 'EnumItem' or cat == 'DataItem' %}
             <th>Type</th>
           {% endif %}
+          
           <th>Owner</th>
           <th></th>
         </tr>
@@ -81,18 +88,40 @@
                 <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
                 {% endif %}
             </td>
-            <td>{{item.value|filter_refs|linebreaksbr}}</td>
+            
+            <td>{{item.value|filter_refs|linebreaksbr}}
+            {% if cat == 'VerItem' %}
+                {% if item.t1 != '' %}
+                <br><strong>{{config.attrs.t1.label}}</strong>
+                {{item.t1|filter_refs|linebreaksbr}}
+                {% endif %}
+                {% if item.t2 != '' %}
+                <br><strong>{{config.attrs.t2.label}}</strong>
+                {{item.t2|filter_refs|linebreaksbr}}
+                {% endif %}
+                {% if item.t3 != '' %}
+                <br><strong>{{config.attrs.t3.label}}</strong>
+                {{item.t3|filter_refs|linebreaksbr}}
+                {% endif %}
+            {% endif %}
+            </td>
+            
             {% if cat == 'DataItem' %}
             <td>{{item.value|filter_di_value|linebreaksbr}}</td>
-            <td>{{item.n1}}</td>
             {% endif %}
+            
+            {% if cat == 'DataItem' or cat == 'DataItemType' or cat == 'VerItem' %}
             <td>{{item.p_kind}}</td>
+            {% endif %}
+            
+            {% if cat == 'VerItem' or cat == 'Requirement' %}
+            <th>{{item.s_kind}}</th>
+            {% endif %}
+           
             {% if cat == 'DataItemType' %}
-            <td>{{item.n1}}</td>
+            <th>{{item.n1}}</th>
             {% endif %}
-            {% if cat == 'Requirement' %}
-            <td>{{item.req.ver_method}}</td>
-            {% endif %}
+      
             {% if cat == 'EnumItem' or cat == 'DataItem' %}
             <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" title="{{item.p_link.title}}">
                 {{item.p_link.domain}}:{{item.p_link.name}}
@@ -116,9 +145,15 @@
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
                 {% if item.cat == 'DataItemType' and item.p_kind == 'ENUM' %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' 'EnumItem' project.id application_id sel_dom %}?parent_id={{item.id}}" title="Add {{config.child_desc.name}}">A</a>
+                   href="{% url 'add_spec_item' 'EnumItem' project.id application_id sel_dom %}?parent_id={{item.id}}" title="Add Enumerated Item">A</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}" title="Show Enumerated Items">En</a>
+                {% endif %}
+                {% if item.cat == 'VerItem' %}
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'add_ver_link' project.id application_id item.id sel_dom %}" title="Add Verification Link">A</a>
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}" title="Show Verification Links">L</a>
                 {% endif %}
               </div> 
             </td>
@@ -133,7 +168,7 @@
                   </a>
               </td>
               <td>{{expand_item.title}}</td>
-              <td></td>
+              <td>{{expand_item.desc}}</td>
               <td></td>
               <td></td>
               <td></td>

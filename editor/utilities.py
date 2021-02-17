@@ -12,7 +12,7 @@ from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
-                 MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
+                 MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
 
 # Max recursion depth for expression in data item value fields
 EVAL_MAX_REC = 10   
@@ -368,6 +368,8 @@ def get_s_kind_choices(cat):
     """ Return the range of choices for the 's_kind' attribute of a specification of a given category """
     if cat == 'Requirement':
        return REQ_VER_METHOD
+    if cat == 'VerItem':
+       return VER_STATUS
     return (("INV","Invalid"),)
   
   

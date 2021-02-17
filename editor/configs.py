@@ -72,15 +72,14 @@ configs = {'General': {'csv_sep': '|',
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
                                    'desc':      {'label': 'Desc', 'req_in_form': False, 'kind': 'ref_text'},
-                                   'value':     {'label': 'Value', 'req_in_form': True, 'kind': 'ref_text'},
+                                   'value':     {'label': 'Definition', 'req_in_form': True, 'kind': 'ref_text'},
                                    'rationale': {'label': 'Rationale', 'req_in_form': False, 'kind': 'ref_text'},
                                    'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                    'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
-                                   'p_link':    {'label': 'Type', 'req_in_form': False, 'kind': 'spec_item_ref'},
+                                   's_kind':    {'label': 'Ver Status', 'req_in_form': True, 'kind': 'plain_text'},
                                    't1':        {'label': 'PreCondition', 'req_in_form': False, 'kind': 'ref_text'},
                                    't2':        {'label': 'PostCondition', 'req_in_form': False, 'kind': 'ref_text'},
                                    't3':        {'label': 'Outcome', 'req_in_form': False, 'kind': 'ref_text'},
-                                   't4':        {'label': 'Ver Status', 'req_in_form': False, 'kind': 'ref_text'},
                                    'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                    }
                          }              }

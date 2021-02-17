@@ -500,6 +500,23 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 
 
 @login_required         
+def add_ver_link(request, project_id, application_id, ver_item_id, sel_dom):
+    project = Project.objects.get(id=project_id)
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+    parent_id = request.GET.get('parent_id')
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+    else:
+        application = None
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+    # TBD
+    redirect_url = '/editor/'
+    return redirect(redirect_url)
+
+
+
+@login_required         
 def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
     project = Project.objects.get(id=project_id)
     if application_id != 0:
