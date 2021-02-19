@@ -122,12 +122,19 @@
             <th>{{item.n1}}</th>
             {% endif %}
       
-            {% if cat == 'EnumItem' or cat == 'DataItem' %}
+            {% if cat == 'EnumItem'%}
+            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" title="{{item.s_link.title}}">
+                {{item.s_link.domain}}:{{item.s_link.name}}
+                </a>
+            </td>
+            {% endif %}
+            {% if cat == 'DataItem' %}
             <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" title="{{item.p_link.title}}">
                 {{item.p_link.domain}}:{{item.p_link.name}}
                 </a>
             </td>
             {% endif %}
+
             <td>{{item.owner}}</td>
             <td>
               <div class="btn-group">
@@ -162,13 +169,13 @@
             {% for expand_item in expand_items %}
             <tr class="table-active">
               <td></td>
-              <td><a href="{% url 'list_spec_items' 'EnumItem' project.id application_id val_set.id 'enum' %}#{{expand_item.domain}}:{{expand_item.name}}"
-                            title="{{expand_item.title}}">
+              <td><a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
+                            title="{{expand_item.value}}">
                   {{expand_item.name}}
                   </a>
               </td>
               <td>{{expand_item.title}}</td>
-              <td>{{expand_item.desc}}</td>
+              <td></td>
               <td></td>
               <td></td>
               <td></td>

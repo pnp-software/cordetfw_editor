@@ -375,18 +375,17 @@ def get_s_kind_choices(cat):
   
 def get_p_link_choices(cat, project_id):
     """ Return the range of choices for the 'p_link' attribute of a specification of a given category """
-    if cat == 'EnumItem':
-        return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', p_kind='ENUM').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('name')
     if cat == 'DataItem':
         return SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('name')
-        
+                        exclude(status='DEL').exclude(status='OBS').order_by('name')        
     return SpecItem.objects.none()
     
     
 def get_s_link_choices(cat, project_id):
     """ Return the range of choices for the 's_link' attribute of a specification of a given category """
+    if cat == 'EnumItem':
+        return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', p_kind='ENUM').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('name')
     return SpecItem.objects.none()
     
          

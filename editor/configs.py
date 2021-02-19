@@ -45,7 +45,7 @@ configs = {'General': {'csv_sep': '|',
                                    'value':     {'label': 'Value', 'req_in_form': True, 'kind': 'ref_text'},
                                    'rationale': {'label': 'Rationale', 'req_in_form': False, 'kind': 'ref_text'},
                                    'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
-                                   'p_link':    {'label': 'Type', 'req_in_form': True, 'kind': 'spec_item_ref'},
+                                   's_link':    {'label': 'Type', 'req_in_form': True, 'kind': 'spec_item_ref'},
                                    'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                   }
                          },

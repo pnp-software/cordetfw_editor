@@ -174,7 +174,7 @@
     <li><i>Enumerated Item</i>: specification of a value of an enumerated type</li>
         <ul>
         <li>Value: the value of the enumerated item</li>
-        <li>Primary Link: the type to which the enumerated item belongs</li>
+        <li>Secondary Link: the type to which the enumerated item belongs</li>
         </ul>
     <li><i>Data Item</i>: specification of a data item</li>
         <ul>
@@ -210,8 +210,8 @@
         </ul>
     <li><i>Packet Parameter</i>: specification of a parameter in a packet</li>
         <ul>
-        <li>Primary Link: a pointer to the packet or derived packet to which the parameter belongs</li>
-        <li>Secondary Link: a pointer to the data item acting as parameter</li>
+        <li>Primary Link: a pointer to the data item acting as parameter</li>
+        <li>Secondary Link: a pointer to the packet or derived packet to which the parameter belongs</li>
         <li>Primary Kind: the role of the packet parameter (discriminant, housekeeping parameter, or packet parameter)</li>
         <li>N1: the position of the parameter within the packet</li>
         <li>N2: the parameter group size</li>
@@ -220,7 +220,7 @@
     <li><i>Incoming Commands</i>: specification of the behaviour associated to a packet 
                                   carrying a command to an application</li>
         <ul>
-        <li>Parent: a pointer to the packet or derived packet </li>
+        <li>Primary Link: a pointer to the packet or derived packet </li>
         <li>Value: the acceptance check </li>
         <li>T1: the ready check </li>
         <li>T2: the start action</li>
@@ -231,14 +231,14 @@
     <li><i>Incoming Reports</i>: specification of the behaviour associated to a packet 
                                  carrying a report to an application</li>
         <ul>
-        <li>Parent: a pointer to the packet or derived packet </li>
+        <li>Primary Link: a pointer to the packet or derived packet </li>
         <li>Value: the acceptance check </li>
         <li>T1: the update action</li>
         </ul>
     <li><i>Out-going Command or Report</i>: specification of the behaviour associated to a packet 
                                             carrying an out-going command or report from an application</li>
         <ul>
-        <li>Parent: a pointer to the packet or derived packet </li>
+        <li>Primary Link: a pointer to the packet or derived packet </li>
         <li>Value: the enable check </li>
         <li>T1: the ready check </li>
         <li>T2: the repeat check</li>
