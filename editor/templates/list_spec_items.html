@@ -150,11 +150,21 @@
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
-                {% if config.expand_cat != 'None' %}
+                {% if config.expand.s_link != 'None' and val_set.name == 'Default' %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand_cat project.id application_id sel_dom %}" title="Add {{config.expand_cat}}">A</a>
+                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}" 
+                   title="Add {{config.expand.s_link}} Child">As</a>
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}" title="Show {{config.expand_cat}}s">X</a>
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link" 
+                   title="Show {{config.expand.s_link}} Children">Xs</a>
+                {% endif %}
+                {% if config.expand.p_link != 'None' and val_set.name == 'Default' %}
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}" 
+                   title="Add {{config.expand.p_link}} Child">Ap</a>
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link" 
+                   title="Show {{config.expand.p_link}} Children">Xp</a>
                 {% endif %}
               </div> 
             </td>
@@ -162,9 +172,9 @@
           {% if item.id == expand_id %}
             {% for expand_item in expand_items %}
             <tr class="table-active">
-              <td></td>
+              <td>{{expand_item.domain}}</td>
               <td><a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
-                            title="{{expand_item.value}}">
+                            title="{{expand_item.value|filter_di_value|linebreaksbr}}">
                   {{expand_item.name}}
                   </a>
               </td>

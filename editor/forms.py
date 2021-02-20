@@ -97,7 +97,7 @@ class SpecItemForm(forms.Form):
     t4 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     t5 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
    
-    def __init__(self, mode, cat, project, application, config, *args, **kwargs):
+    def __init__(self, mode, cat, project, application, config, s_parent_id, p_parent_id, *args, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
         self.project = project
         self.application = application
@@ -119,8 +119,8 @@ class SpecItemForm(forms.Form):
         self.fields['t5'].widget.attrs.update(rows = 1)
         self.fields['p_kind'].choices = get_p_kind_choices(cat)
         self.fields['s_kind'].choices = get_s_kind_choices(cat)
-        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project.id)
-        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project.id)
+        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project.id, p_parent_id)
+        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project.id, s_parent_id)
         self.fields['n1'].initial = 0
         self.fields['n2'].initial = 0
         self.fields['n3'].initial = 0

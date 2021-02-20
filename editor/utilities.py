@@ -373,21 +373,56 @@ def get_s_kind_choices(cat):
     return (("INV","Invalid"),)
   
   
-def get_p_link_choices(cat, project_id):
+def get_p_link_choices(cat, project_id, p_parent_id):
     """ Return the range of choices for the 'p_link' attribute of a specification of a given category """
+    if p_parent_id != None:
+        return SpecItem.objects.filter(id=int(p_parent_id)) 
     if cat == 'DataItem':
         return SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
                         exclude(status='DEL').exclude(status='OBS').order_by('name')        
     return SpecItem.objects.none()
     
     
-def get_s_link_choices(cat, project_id):
+def get_s_link_choices(cat, project_id, s_parent_id):
     """ Return the range of choices for the 's_link' attribute of a specification of a given category """
+    if s_parent_id != None:
+        return SpecItem.objects.filter(id=int(s_parent_id))
     if cat == 'EnumItem':
         return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', p_kind='ENUM').\
                         exclude(status='DEL').exclude(status='OBS').order_by('name')
     return SpecItem.objects.none()
     
+    
+def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
+    """ 
+    Get the list of expand_items for the spec_item whose ID is expand_id.
+    The expand_link is either 's_link' or 'p_link'    
+    If the expand_link is 's_link', the expand_items the spec_items whose
+    s_link points to expand_id (i.e. they are the children of expand_id 
+    according to s_link).
+    If the expand_link is 'p_link', the expand_items the spec_items whose
+    p_link points to expand_id (i.e. they are the children of expand_id 
+    according to p_link).
+    The information in configs[cat]['expand'] determines whether or not
+    a given spec_item has s_link or p_link children. 
+    """
+    if configs[cat]['expand'][expand_link] == 'None':
+        return None
+    expand_items = None
+    if expand_link == 's_link':
+        expand_items = SpecItem.objects.filter(project_id=project_id, \
+                            cat=configs[cat]['expand'][expand_link], \
+                            s_link_id=expand_id, \
+                            val_set_id=val_set_id).\
+                            exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
+    if expand_link == 'p_link':
+        expand_items = SpecItem.objects.filter(project_id=project_id, \
+                            cat=configs[cat]['expand'][expand_link], \
+                            p_link_id=expand_id, \
+                            val_set_id=val_set_id).\
+                            exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
+    return expand_items
+      
          
 def get_domains(cat, application_id, project_id):
     """ 

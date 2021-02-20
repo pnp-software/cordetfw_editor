@@ -24,7 +24,7 @@ from editor.models import Project, ProjectUser, Application, Release, ValSet, Sp
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
-                             spec_item_to_export, export_to_spec_item
+                             spec_item_to_export, export_to_spec_item, get_expand_items
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project, can_add_val_set
 
@@ -287,6 +287,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     project = Project.objects.get(id=project_id)
     val_set = ValSet.objects.get(id=val_set_id)
     expand_id = request.GET.get('expand_id')
+    expand_link = request.GET.get('expand_link')
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
     
@@ -299,12 +300,10 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     
     if (sel_dom != "All_Domains"):
         items = items.filter(domain=sel_dom)
-        
-    if expand_id != None:   # The item whose id is parent_id must be listed together with its children
-        expand_items = SpecItem.objects.filter(project_id=project_id, \
-                            cat=configs[cat]['expand_cat'], s_link_id=expand_id, val_set_id=val_set_id).\
-                            exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
-        expand_id = int(expand_id)  # cast is required for comparison to item_id in list_spect_items.html template
+    
+    if (expand_id != None) and (expand_link != 'None'):   # parent_id must be listed together with its children
+        expand_items = get_expand_items(cat, project_id, val_set_id, expand_id, expand_link)     
+        expand_id = int(expand_id)      # Cast is necessary for comparison to spec_item_id in list_spec_items.html
     else:
         expand_items = None
     
@@ -320,7 +319,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
 def add_spec_item(request, cat, project_id, application_id, sel_dom):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-    parent_id = request.GET.get('parent_id')
+    s_parent_id = request.GET.get('s_parent_id')
+    p_parent_id = request.GET.get('p_parent_id')
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
 
@@ -331,19 +331,11 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         application = None
         title = 'Add '+configs[cat]['name']+' to Project '+project.name
         
-    if parent_id != None:       # Add a spec_item as child to an existing spec_item    
-        parent = SpecItem.objects.get(id=parent_id)
-        title = 'Add '+configs[cat]['name']+' to '+configs[parent.cat]['name']+str(parent)
-    else:
-        parent = None
-  
     if request.method == 'POST':   
-        form = SpecItemForm('add', cat, project, application, configs[cat], request.POST)
+        form = SpecItemForm('add', cat, project, application, configs[cat], s_parent_id, p_parent_id, request.POST)
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
-            if parent != None:
-                new_spec_item.p_link = parent
             new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now()
             new_spec_item.owner = get_user(request)
@@ -355,7 +347,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('add', cat, project, application, configs[cat])
+        form = SpecItemForm('add', cat, project, application, configs[cat], s_parent_id, p_parent_id)
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
@@ -368,6 +360,8 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
 def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+    s_parent_id = request.GET.get('s_parent_id')
+    p_parent_id = request.GET.get('p_parent_id')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
         title = 'Edit '+configs[cat]['name']+' in Application '+application.name
@@ -379,8 +373,8 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
   
     spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
-        form = SpecItemForm('edit', cat, project, application, configs[cat], request.POST, \
-                            initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('edit', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+                            request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             if spec_item.status == 'CNF':
                 spec_item = make_obs_spec_item_copy(request, spec_item)
@@ -395,7 +389,8 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('edit', cat, project, application, configs[cat], initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('edit', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
@@ -408,6 +403,8 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     spec_item = SpecItem.objects.get(id=item_id)
+    s_parent_id = request.GET.get('s_parent_id')
+    p_parent_id = request.GET.get('p_parent_id')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
         title = 'Copy '+configs[cat]['name']+' in Application '+application.name
@@ -418,7 +415,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('copy', cat, project, application, configs[cat], request.POST, \
+        form = SpecItemForm('copy', cat, project, application, configs[cat], s_parent_id, p_parent_id, request.POST, \
                             initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
@@ -433,7 +430,8 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('copy', cat, project, application, configs[cat], initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('copy', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
@@ -445,6 +443,8 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     spec_item = SpecItem.objects.get(id=item_id)
+    s_parent_id = request.GET.get('s_parent_id')
+    p_parent_id = request.GET.get('p_parent_id')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
         title = 'Split '+configs[cat]['name']+' in Application '+application.name
@@ -455,8 +455,8 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('split', cat, project, application, configs[cat], request.POST, \
-                            initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('split', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+                             request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
@@ -471,7 +471,8 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                            '/'+sel_dom+'/list_spec_items'
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('split', cat, project, application, configs[cat], initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('split', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
