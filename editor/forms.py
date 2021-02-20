@@ -75,28 +75,6 @@ class ReleaseForm(forms.Form):
         self.fields['description'].widget.attrs.update(rows = 2)
 
 
-class VerLinkForm(forms.Form):
-    title = forms.CharField(max_length=255)
-    description = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    spec_item = forms.ModelChoiceField(queryset=None, empty_label=None)
-    
-    def __init__(self, *args, **kwargs):
-        super(ValSetForm, self).__init__(*args, **kwargs)
-        self.project = project
-        self.application = application
-        self.mode = mode
-        self.default_val_set_id = default_val_set_id
-        self.helper = FormHelper(self)
-        self.helper.wrapper_class = 'row'
-        self.helper.label_class = 'col-md-2'
-        self.helper.field_class = 'col-md-8'
-        self.helper.add_input(Submit('submit', 'Submit'))
-        self.fields['description'].widget.attrs.update(rows = 2)
-        self.fields['spec_item'].label = 'Verified Item'
-        self.fields['spec_item'].queryset = SpecItem.objects.filter(val_set_id=default_val_set_id).\
-                                    exclude(status='DEL').exclude(status='OBS')
-                                         
-
 class SpecItemForm(forms.Form):
     domain = forms.CharField(max_length=255)
     name = forms.CharField(max_length=255)

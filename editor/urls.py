@@ -21,11 +21,6 @@ urlpatterns = [
     path('<int:application_id>/edit_application', views.edit_application, name='edit_application'),
     path('<int:application_id>/make_application_release', views.make_application_release, name='make_application_release'),
 
-    path('<int:project_id>/<int:application_id>/<int:ver_item_id>/<str:sel_dom>/add_ver_link', views.add_ver_link, name='add_ver_link'),
-    path('<int:project_id>/<int:application_id>/<int:ver_link_id>/<str:sel_dom>/copy_ver_link', views.copy_ver_link, name='copy_ver_link'),
-    path('<int:project_id>/<int:application_id>/<int:ver_link_id>/<str:sel_dom>/edit_ver_link', views.edit_ver_link, name='edit_ver_link'),
-    path('<int:project_id>/<int:application_id>/<int:ver_link_id>/<str:sel_dom>/del_ver_link', views.del_ver_link, name='del_ver_link'),
-
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_dom>/list_spec_items', views.list_spec_items, name='list_spec_items'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<str:sel_dom>/add_spec_item', views.add_spec_item, name='add_spec_item'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_dom>/edit_spec_item', views.edit_spec_item, name='edit_spec_item'),

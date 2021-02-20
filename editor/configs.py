@@ -6,8 +6,7 @@ configs = {'General': {'csv_sep': '|',
                        'eol_sep': '\n'
                        },
            'Requirement':{'name': 'Requirement',
-                          'title_list': 'List of Requirements',
-                          'title_history': 'History of Requirement ',
+                          'expand_cat': 'None',
                           'attrs': {'domain':   {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
@@ -21,8 +20,7 @@ configs = {'General': {'csv_sep': '|',
                                   }
                          },
                'DataItemType': {'name': 'Data Item Type',
-                          'title_list': 'List of Data Item Types', 
-                          'title_history': 'History of Data Item Type ',
+                          'expand_cat': 'EnumItem', 
                           'attrs': {'domain':   {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
@@ -36,8 +34,7 @@ configs = {'General': {'csv_sep': '|',
                                   }
                          },
                'EnumItem': {'name': 'Enumerated Item',
-                          'title_list': 'List of Enumerated Items',
-                          'title_history': 'History of Enumerated Item ',
+                          'expand_cat': 'None',
                           'attrs': {'domain':   {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
@@ -50,8 +47,7 @@ configs = {'General': {'csv_sep': '|',
                                   }
                          },
                'DataItem': {'name': 'Data Item',
-                           'title_list': 'List of Data Items',
-                           'title_history': 'History of Data Item ',
+                           'expand_cat': 'None',
                            'attrs': {'domain':  {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
@@ -63,11 +59,9 @@ configs = {'General': {'csv_sep': '|',
                                    't1':        {'label': 'Multiplicty', 'req_in_form': False, 'kind': 'ref_text'},
                                    'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                    }
-                         }
-,
+                         },
                'VerItem': {'name': 'Verification Item',
-                           'title_list': 'List of Verification Items',
-                           'title_history': 'History of Verification Item ',
+                           'expand_cat': 'VerLink',
                            'attrs': {'domain':  {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
@@ -82,7 +76,22 @@ configs = {'General': {'csv_sep': '|',
                                    't3':        {'label': 'Outcome', 'req_in_form': False, 'kind': 'ref_text'},
                                    'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                    }
-                         }              }
+                           },
+               'VerLink': {'name': 'Verification Item',
+                           'expand_cat': 'None',
+                           'attrs': {'domain':  {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
+                                   'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
+                                   'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
+                                   'desc':      {'label': 'Desc', 'req_in_form': False, 'kind': 'ref_text'},
+                                   'value':     {'label': 'Ver Conditions', 'req_in_form': False, 'kind': 'ref_text'},
+                                   'rationale': {'label': 'Rationale', 'req_in_form': False, 'kind': 'ref_text'},
+                                   'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
+                                   'p_link':    {'label': 'Ver Item', 'req_in_form': True, 'kind': 'spec_item_ref'},
+                                   's_link':    {'label': 'Spec Item', 'req_in_form': True, 'kind': 'spec_item_ref'},
+                                   'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
+                                   }
+                           }  
+            }
               
               
 def make_obs_spec_item_copy(request, spec_item):

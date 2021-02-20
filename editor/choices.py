@@ -22,6 +22,7 @@ SPEC_ITEM_CAT = (
     ("InReport","The behaviour associated to an incoming service report"),
     ("OutComponent","The behaviour associated to an out-going service command or report"),
     ("VerItem","A verification item"),
+    ("VerLink","A verification link"),
 )
 
 # The kind of a requirement

@@ -21,8 +21,7 @@ from itertools import chain
 from editor.configs import configs, make_obs_spec_item_copy, mark_spec_item_aliases_as_del, \
                            remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
-from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, \
-                         VerLinkForm
+from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item
@@ -302,7 +301,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
         items = items.filter(domain=sel_dom)
         
     if expand_id != None:   # The item whose id is parent_id must be listed together with its children
-        expand_items = SpecItem.objects.filter(s_link_id=expand_id, val_set_id=val_set_id).\
+        expand_items = SpecItem.objects.filter(project_id=project_id, \
+                            cat=configs[cat]['expand_cat'], s_link_id=expand_id, val_set_id=val_set_id).\
                             exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
         expand_id = int(expand_id)  # cast is required for comparison to item_id in list_spect_items.html template
     else:
@@ -498,58 +498,6 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
                            '/'+sel_dom+'/list_spec_items'    
-    return redirect(redirect_url)
-
-
-@login_required         
-def add_ver_link(request, project_id, application_id, ver_item_id, sel_dom):
-    project = Project.objects.get(id=project_id)
-    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-    #ver_item = 
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
-    else:
-        application = None
-    if not has_access_to_project(request.user, project):
-        return redirect(base_url)
- 
-    if request.method == 'POST':   
-        form = VerLinkForm('add', project, application, request.POST)
-        if form.is_valid():
-            new_ver_link = VerItemToSpecItem(**form.cleaned_data)
-            new_ver_link.ver_item = ver_item
-            new_spec_item.save()
-            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set.id)+\
-                           '/'+sel_dom+'/list_spec_items'
-            return redirect(redirect_url)
-    else:   
-        form = VerLinkForm('add', project, application, configs[cat])
-
-    ver_item_links = VerItemToSpecItem.objects.filter(ver_item_id=ver_item_id)
-    default_val_set_id = ValSet.objects.filter(project_id=project.id).get(name='Default').id
-    context = {'form': form, 'project': project, 'mode': 'Add', 'sel_dom': sel_dom, 'ver_item_links': ver_item_links, \
-               'default_val_set_id': default_val_set_id}
-    return render(request, 'link_item_form.html', context)  
-
-
-@login_required         
-def copy_ver_link(request, project_id, application_id, ver_item_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
-
-
-@login_required         
-def edit_ver_link(request, project_id, application_id, ver_item_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
-
-
-@login_required         
-def del_ver_link(request, project_id, application_id, ver_item_id, sel_dom):
-    # TBD
-    redirect_url = '/editor/'
     return redirect(redirect_url)
 
 

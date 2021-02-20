@@ -5,7 +5,7 @@
 {% block content %}
 <div class="col-11">
 <div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
-  <h2 class="display-6">{{ config.title_list }} in {{val_set.name}} ValSet</h2>  
+  <h2 class="display-6">List of {{config.name}}s in {{val_set.name}} ValSet</h2>  
     <div class="form-inline">
       <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select ValSet</button>
@@ -150,17 +150,11 @@
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
-                {% if item.cat == 'DataItemType' and item.p_kind == 'ENUM' %}
+                {% if config.expand_cat != 'None' %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' 'EnumItem' project.id application_id sel_dom %}?parent_id={{item.id}}" title="Add Enumerated Item">A</a>
+                   href="{% url 'add_spec_item' config.expand_cat project.id application_id sel_dom %}" title="Add {{config.expand_cat}}">A</a>
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}" title="Show Enumerated Items">En</a>
-                {% endif %}
-                {% if item.cat == 'VerItem' %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_ver_link' project.id application_id item.id sel_dom %}" title="Add Verification Link">A</a>
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}" title="Show Verification Links">L</a>
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}" title="Show {{config.expand_cat}}s">X</a>
                 {% endif %}
               </div> 
             </td>

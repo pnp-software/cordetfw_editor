@@ -163,7 +163,7 @@
         <ul>
         <li>Value: the normative text of the requirement</li>
         <li>Primary Kind: the kind of requirement (standard requirement, adaptation requirement, or constraint requirement)</li>
-        <li>secondary Kind: the verification method for the requirement</li>
+        <li>Secondary Kind: the verification method for the requirement</li>
         </ul>
     <li><i>Data Item Type</i>: specification of a data item type </li>
         <ul>
@@ -198,15 +198,15 @@
         <li>Value: the sub-service identifier</li>
         <li>T1: a description of the parameters</li>
         <li>T2: a description of the packet destination</li>
-        <li>Primary Link: a pointer to the service to which the packet belongs</li>
+        <li>Secondary Link: a pointer to the service to which the packet belongs</li>
         </ul>
     <li><i>Derived Packet</i>: specification of a derived packet</li>
         <ul>
         <li>Value: the sub-service identifier</li>
         <li>T1: a description of the parameters</li>
-        <li>Primary Link: a pointer to the parent packet </li>
-        <li>Secondary Link: a pointer to the enumerated item representing the value of the discriminant 
-                            for a derived packet</li>
+        <li>Secondary Link: a pointer to the parent packet </li>
+        <li>Primary Link: a pointer to the enumerated item representing the value of the discriminant 
+                          for a derived packet</li>
         </ul>
     <li><i>Packet Parameter</i>: specification of a parameter in a packet</li>
         <ul>
@@ -254,7 +254,13 @@
         <li>T1: the pre-conditions for the verification activity</li>
         <li>T2: the post-conditions for the verification activity</li>
         <li>T3: the outcome of the verification activity</li>
-        <li>Verified Items: the specification items verified by the verification item</li>
+        </ul>
+    </ul>
+    <li><i>Verification Link</i>: a link between a verification item and the specification item it verifies</li>
+        <ul>
+        <li>Value: the description of the conditions under which the verification link is valid </li>
+        <li>Primary Link: the pointer to the verification item</li>
+        <li>Secondary Link: the pointer to the verified item</li>
         </ul>
     </ul>
     For some categories, category-specific attributes are defined in addition to the core attributes defined
