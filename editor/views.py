@@ -24,7 +24,8 @@ from editor.models import Project, ProjectUser, Application, Release, ValSet, Sp
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
-                             spec_item_to_export, export_to_spec_item, get_expand_items
+                             spec_item_to_export, export_to_spec_item, get_expand_items, \
+                             get_redirect_url
 from .access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project, can_add_val_set
 
@@ -343,8 +344,8 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item.project = project
             new_spec_item.application = application
             new_spec_item.save()
-            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set.id)+\
-                           '/'+sel_dom+'/list_spec_items'
+            redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                            sel_dom, s_parent_id, p_parent_id)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('add', cat, project, application, configs[cat], s_parent_id, p_parent_id)

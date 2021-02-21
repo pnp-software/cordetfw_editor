@@ -174,7 +174,7 @@
             <tr class="table-active">
               <td>{{expand_item.domain}}</td>
               <td><a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
-                            title="{{expand_item.value|filter_di_value|linebreaksbr}}">
+                            title="{{expand_item.value|filter_refs_for_tip|linebreaksbr}}">
                   {{expand_item.name}}
                   </a>
               </td>

@@ -6,9 +6,8 @@ configs = {'General': {'csv_sep': '|',
                        'eol_sep': '\n'
                        },
            'Requirement':{'name': 'Requirement',
-                          'expand': {'s_link': 'None',
-                                     'p_link': 'None'
-                                     },
+                          'expand': {'s_link': 'None', 
+                                     'p_link': 'None' },
                           'attrs': {'domain':   {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
@@ -22,9 +21,8 @@ configs = {'General': {'csv_sep': '|',
                                   }
                          },
                'DataItemType': {'name': 'Data Item Type',
-                          'expand': {'s_link': 'EnumItem',
-                                     'p_link': 'DataItem'
-                                     },
+                          'expand': {'s_link': 'EnumItem', 's_label': 'Enumerated Item',
+                                     'p_link': 'DataItem', 'p_label': 'Data Item'},
                           'attrs': {'domain':   {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
                                    'title':     {'label': 'Title', 'req_in_form': True, 'kind': 'plain_text'},
@@ -70,7 +68,7 @@ configs = {'General': {'csv_sep': '|',
                          },
                'VerItem': {'name': 'Verification Item',
                            'expand': {'s_link': 'None',
-                                      'p_link': 'VerLink'
+                                      'p_link': 'VerLink', 'p_label': 'Verification Link'
                                       },
                            'attrs': {'domain':  {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
                                    'name':      {'label': 'Name', 'req_in_form': True, 'kind': 'plain_text'},
