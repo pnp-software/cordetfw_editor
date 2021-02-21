@@ -52,7 +52,7 @@
             <th>NVal</th>
           {% endif %}
           
-          {% if cat == 'DataItem' or cat == 'DataItemType' or cat == 'VerItem' %}
+          {% if cat == 'DataItem' or cat == 'VerItem' %}
           <th>{{config.attrs.p_kind.label}}</th>
           {% endif %}
 
@@ -60,11 +60,11 @@
           <th>{{config.attrs.s_kind.label}}</th>
           {% endif %}
             
-          {% if cat == 'DataItemType' %}
+          {% if cat == 'DataItemType' or cat == 'EnumType' %}
             <th>{{config.attrs.n1.label}}</th>
           {% endif %}
           
-          {% if cat == 'EnumItem' or cat == 'DataItem' %}
+          {% if cat == 'EnumValue' or cat == 'DataItem' %}
             <th>Type</th>
           {% endif %}
           
@@ -110,7 +110,7 @@
             <td>{{item.value|filter_di_value|linebreaksbr}}</td>
             {% endif %}
             
-            {% if cat == 'DataItem' or cat == 'DataItemType' or cat == 'VerItem' %}
+            {% if cat == 'DataItem' or cat == 'VerItem' %}
             <td>{{item.p_kind}}</td>
             {% endif %}
             
@@ -118,18 +118,20 @@
             <th>{{item.s_kind}}</th>
             {% endif %}
            
-            {% if cat == 'DataItemType' %}
+            {% if cat == 'DataItemType' or cat == 'EnumType' %}
             <th>{{item.n1}}</th>
             {% endif %}
       
-            {% if cat == 'EnumItem'%}
-            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" title="{{item.s_link.title}}">
+            {% if cat == 'EnumValue'%}
+            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
+                title="{{item.s_link.title}}">
                 {{item.s_link.domain}}:{{item.s_link.name}}
                 </a>
             </td>
             {% endif %}
             {% if cat == 'DataItem' %}
-            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" title="{{item.p_link.title}}">
+            <td><a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
+                title="{{item.p_link.title}}">
                 {{item.p_link.domain}}:{{item.p_link.name}}
                 </a>
             </td>
@@ -153,18 +155,18 @@
                 {% if config.expand.s_link != 'None' and val_set.name == 'Default' %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}" 
-                   title="Add {{config.expand.s_link}} Child">As</a>
+                   title="Add {{config.expand.s_label}} Child">As</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link" 
-                   title="Show {{config.expand.s_link}} Children">Xs</a>
+                   title="Show {{config.expand.s_label}} Children">Xs</a>
                 {% endif %}
                 {% if config.expand.p_link != 'None' and val_set.name == 'Default' %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}" 
-                   title="Add {{config.expand.p_link}} Child">Ap</a>
+                   title="Add {{config.expand.p_label}} Child">Ap</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link" 
-                   title="Show {{config.expand.p_link}} Children">Xp</a>
+                   title="Show {{config.expand.p_label}} Children">Xp</a>
                 {% endif %}
               </div> 
             </td>

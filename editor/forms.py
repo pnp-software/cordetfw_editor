@@ -9,7 +9,7 @@ from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_p_kind_choices, get_p_link_choices, \
                        pattern_edit, pattern_db, convert_edit_to_db, get_s_kind_choices, \
                        get_s_link_choices
-from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
+from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import configs
@@ -164,8 +164,7 @@ class SpecItemForm(forms.Form):
             non-obsolete spec_items in the project and in the default ValSet;
         (c) In split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete spec_items
             of a project with the same domain:name 
-        (d) In edit mode, if the kind of a data item type is set to non-enumerated, it cannot have enumerated 
-            items attached to it.
+        (d) Deleted.
         (e) In the value field of a data item, internal references may only point to other data items
         (f) The value of a data item of enumerated type must be an internal reference to an enumerated value
             of the data item's type
@@ -188,21 +187,14 @@ class SpecItemForm(forms.Form):
                      domain=cd['domain'], name=cd['name'], val_set_id=cd['val_set']).exists():
                 raise forms.ValidationError('Split Error: ValSet is already in use for this domain:name')
         
-        if (self.mode == 'edit') and (self.cat == 'DataItemType') and (cd['p_kind'] == 'NOT_ENUM'):
-            spec_item = SpecItem.objects.get(domain=cd['domain'], name=cd['name'])
-            children = SpecItem.objects.filter(parent=spec_item.id)
-            if children != None:
-                raise forms.ValidationError('This data type has enumerated items attached to it and '+\
-                                            'must therefore be of enumerated type')
-
         if (self.cat == 'DataItem'):
             internal_refs = re.findall(pattern_edit, cd['value'])
             for ref in internal_refs:
                 if ref[0:8] != 'DataItem#':
                     raise forms.ValidationError('The value field of a data item cannot contain references to non-'+\
-                                            'data items: '+str(ref))
+                                                'data items: '+str(ref))
 
-        if (self.cat == 'DataItem') and cd['p_link'].p_kind == 'ENUM':
+        if (self.cat == 'DataItem') and cd['p_link'].cat == 'EnumType':
             m = re.match(pattern_db, cd['value'].strip())
             if (m == None) or (m.span()[1] != len(cd['value'].strip())):
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
@@ -212,7 +204,7 @@ class SpecItemForm(forms.Form):
             except ObjectDoesNotExist:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type: '+\
                                             'The reference is invalid')
-            if enum_val.p_link.id != cd['p_link'].id:
+            if enum_val.s_link.id != cd['p_link'].id:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
  
         return cd

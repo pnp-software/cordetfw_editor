@@ -11,7 +11,7 @@ from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
-from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, DIT_KIND, \
+from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                  MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
 
 # Max recursion depth for expression in data item value fields
@@ -351,8 +351,6 @@ def get_p_kind_choices(cat):
        return REQ_KIND
     elif cat == 'DataItem':
        return DI_KIND
-    elif cat == 'DataItemType':
-       return DIT_KIND
     elif cat == 'Model':
        return MODEL_KIND
     elif cat == 'Packet':
@@ -378,8 +376,11 @@ def get_p_link_choices(cat, project_id, p_parent_id):
     if p_parent_id != None:
         return SpecItem.objects.filter(id=int(p_parent_id)) 
     if cat == 'DataItem':
-        return SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
+        q1 = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
                         exclude(status='DEL').exclude(status='OBS').order_by('name')        
+        q2 = SpecItem.objects.filter(project_id=project_id, cat='EnumType').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('name') 
+        return q1 | q2
     return SpecItem.objects.none()
     
     
@@ -387,7 +388,7 @@ def get_s_link_choices(cat, project_id, s_parent_id):
     """ Return the range of choices for the 's_link' attribute of a specification of a given category """
     if s_parent_id != None:
         return SpecItem.objects.filter(id=int(s_parent_id))
-    if cat == 'EnumItem':
+    if cat == 'EnumValue':
         return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', p_kind='ENUM').\
                         exclude(status='DEL').exclude(status='OBS').order_by('name')
     return SpecItem.objects.none()

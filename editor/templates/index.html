@@ -57,6 +57,9 @@
                     href="{% url 'list_spec_items' 'DataItemType' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
                     title="Manage Data Types">Typ</a>
               <a class="btn btn-outline-dark btn-sm" 
+                    href="{% url 'list_spec_items' 'EnumType' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
+                    title="Manage Enumerated Data Types">ETyp</a>
+              <a class="btn btn-outline-dark btn-sm" 
                     href="{% url 'list_spec_items' 'Service' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
                     title="Manage Services">Serv</a>
               <a class="btn btn-outline-dark btn-sm" 

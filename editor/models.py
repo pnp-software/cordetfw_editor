@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from editor.choices import SPEC_ITEM_CAT, VER_STATUS, HISTORY_STATUS,\
-                           REQ_KIND, DI_KIND, DIT_KIND, MODEL_KIND, PCKT_KIND, \
+                           REQ_KIND, DI_KIND, MODEL_KIND, PCKT_KIND, \
                            PCKT_PAR_KIND, PCKT_APP_KIND, VER_ITEM_KIND, REQ_VER_METHOD 
 
 class Release(models.Model):
@@ -65,7 +65,7 @@ class SpecItem(models.Model):
     val_set = models.ForeignKey(ValSet, related_name='val_set_spec_items', on_delete=models.PROTECT)
     p_link = models.ForeignKey('self', related_name='p_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
     s_link = models.ForeignKey('self', related_name='s_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
-    p_kind = models.CharField(max_length=24, choices=REQ_KIND+DI_KIND+DIT_KIND+MODEL_KIND+PCKT_KIND+\
+    p_kind = models.CharField(max_length=24, choices=REQ_KIND+DI_KIND+MODEL_KIND+PCKT_KIND+\
                                                      PCKT_PAR_KIND+PCKT_APP_KIND+VER_ITEM_KIND)
     s_kind = models.CharField(max_length=24, choices=VER_STATUS)
     value = models.TextField(blank=True, default='')
