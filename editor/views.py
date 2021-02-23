@@ -533,18 +533,21 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         items = items.filter(domain=sel_dom)
 
     csv_sep = configs['General']['csv_sep']
-    eol_sep = configs['General']['eol_sep']
+    fd = StringIO()
     for i, item in enumerate(items):
         if (export_type == 'latex_format'):
             item_dic = spec_item_to_latex(item)
         else:
             item_dic = spec_item_to_export(item)
-        if i == 0:      # Write header to output csv file
-            fd = csv_sep.join(key for key in item_dic) + eol_sep
-        fd = fd + csv_sep.join(str(x) for x in item_dic.values()) + eol_sep
+        if i == 0:      # Open DictWriter and write header fields
+            csv_writer = csv.DictWriter(fd, delimiter=csv_sep, fieldnames=list(item_dic.keys()))
+            csv_writer.writeheader()
+        csv_writer.writerow(item_dic)
+    exp_string = fd.getvalue()
+    fd.close()        
             
     content_disposition = 'attachment; filename= "' + fdName + '"'
-    response = HttpResponse(fd, content_type='text/plain')
+    response = HttpResponse(exp_string, content_type='text/plain')
     response['Content-Disposition'] = content_disposition
     return response            
 

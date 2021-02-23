@@ -103,7 +103,7 @@ def convert_exp_to_db(s):
     The argument is a plain reference field in export representation 
     (the reference is represented by the string domain:name). 
     The function converts it to database representation.
-    Invalid references raise an exception.
+    Invalid references raise an exception which must be handled by the caller.
     """
     m = pattern_ref_exp.match(s)
     ref = m.group().split(':')
@@ -180,7 +180,7 @@ def convert_db_to_display(s, n):
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'\list_spec_items'
-            s_mod = s[:match.start()]+'<a href=\"'+target+'\" title=\"'+item.title+'\">'+item.domain+':'+item.name+'</a>'
+            s_mod = s[:match.start()]+'<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+item.domain+':'+item.name+'</a>'
         else:
             s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
     except ObjectDoesNotExist:
@@ -258,7 +258,7 @@ def spec_item_to_latex(spec_item):
     for key, value in configs[spec_item.cat]['attrs'].items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
-            dic[label] = convert_db_to_latex(getattr(spec_item, key))
+            dic[label] = frmt_string(convert_db_to_latex(getattr(spec_item, key)))
         elif value['kind'] == 'spec_item_ref':
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
@@ -300,7 +300,7 @@ def export_to_spec_item(imp_dict, spec_item):
     """ 
     Argument imp_dict is a dictionary created by reading a line in a 
     plain import file.
-    The function converts the dictionary enries to db format and uses them 
+    The function converts the dictionary entries to db format and uses them 
     to initialize the argument spec_item.
     Only attributes which are imported are initialized.
     The function will raise an exception if one of the fields expected
@@ -381,6 +381,9 @@ def get_p_link_choices(cat, project_id, p_parent_id):
         q2 = SpecItem.objects.filter(project_id=project_id, cat='EnumType').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name') 
         return q1 | q2
+    if cat == 'VerLink':
+        return SpecItem.objects.filter(project_id=project_id, cat='VerItem').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
     return SpecItem.objects.none()
     
     

@@ -17,7 +17,7 @@ configs = {'General': {'csv_sep': '|',
                                    'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                    'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
                                    'val_set':   {'label': 'ValSet',  'req_in_form': False, 'kind': 'plain_ref'},
-                                   's_kind':    {'label': 'Ver Method', 'req_in_form': True, 'kind': 'plain_text'}
+                                   's_kind':    {'label': 'Ver', 'req_in_form': True, 'kind': 'plain_text'}
                                   }
                          },
                'DataItemType': {'name': 'Data Item Type',
@@ -75,7 +75,9 @@ configs = {'General': {'csv_sep': '|',
                                    'rationale': {'label': 'Rationale', 'req_in_form': False, 'kind': 'ref_text'},
                                    'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                    'p_link':    {'label': 'Type', 'req_in_form': True, 'kind': 'spec_item_ref'},
-                                   't1':        {'label': 'Multiplicty', 'req_in_form': False, 'kind': 'ref_text'},
+                                   'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
+                                   't1':        {'label': 'Multiplicity', 'req_in_form': False, 'kind': 'ref_text'},
+                                   't2':        {'label': 'Unit', 'req_in_form': False, 'kind': 'plain_text'},
                                    'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                    }
                          },

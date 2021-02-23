@@ -186,7 +186,8 @@
                    of other data items)</li>
         <li>Primary Kind: the kind of data item (a constant, a global variable, a parameter, a packet parameter)</li>
         <li>Primary Link: the type of data item (a pointer to a Data Item Type specification item)</li>
-        <li>N1: the multiplicity of the data item</li>
+        <li>T1: the multiplicity of the data item</li>
+        <li>T2: the unit of measure of the data item</li>
         </ul>
     <li><i>Behavioural Model</i>: a FW Profile model describing an aspect of an application behaviour</li>
         <ul>
@@ -522,10 +523,11 @@
         with a hyperlink to the referenced item<./li>
     <li><strong>Latex Representation</strong>: references are rendered as 'domain:name';
         reference fields are rendered through the string representation of the referenced field;
-        "special characters" which are not accepted by Latex are escaped. </li>
+        "special characters" which are not accepted by Latex are escaped; carriage return is 
+        rendered as '\newline'. </li>
     <li><strong>Edit Representation</strong>: internal references are rendered as '#cat:domain:name'</li>
-    <li><strong>Export Representation</strong>: internal references are rendered as '#cat:domain:name'
-        reference fields are rendered through the string representation of the referenced field</li>
+    <li><strong>Export Representation</strong>: internal references are rendered as '#cat:domain:name';
+        reference fields are rendered through the string representation of the referenced field;</li>
     <li><strong>Eval Representation</strong>: the numerical value of the data item is evaluated by
         recursively evaluating the numerical value of all referenced data items</li>
     </ul>
