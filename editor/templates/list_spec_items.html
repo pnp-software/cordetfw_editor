@@ -23,9 +23,6 @@
             {% endfor %}
         </div>
       </div>
-      <div class="form-group mr-sm-2 mt-4">
-        <a class="btn btn-outline-secondary" href="{% url 'add_spec_item' cat project.id application_id sel_dom %}">Add {{config.name}}</a>
-      </div>
       <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Import/Export</button>
         <div class="dropdown-menu">
@@ -37,15 +34,27 @@
                 Plain Import</a>
         </div>
       </div>
+      <div class="dropdown mr-sm-2 mt-4">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Traceability</button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">
+                {{config.name}}s to Verification Items</a>
+            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">
+                Verification Items to {{config.name}}s</a>
+        </div>
+      </div>
+      <div class="form-group mr-sm-2 mt-4">
+        <a class="btn btn-outline-secondary" href="{% url 'add_spec_item' cat project.id application_id sel_dom %}">Add {{config.name}}</a>
+      </div>
     </div>
 </div>
 
     <table class="table table-hover table-striped table-sm">
       <thead>
         <tr class="table-warning">
-          <th>Domain</th>
-          <th>Name</th>
-          <th>Description</th>
+          <th>{{config.attrs.domain.label}}</th>
+          <th>{{config.attrs.name.label}}</th>
+          <th>{{config.attrs.desc.label}}</th>
           <th>{{config.attrs.value.label}}</th>
           
           {% if cat == 'DataItem' %}
@@ -185,6 +194,9 @@
                   </a>
               </td>
               <td>{{expand_item.title}}</td>
+              {% for i in n_pad_fields %}
+              <td></td>
+              {% endfor %}
               <td>
                 <div class="btn-group">  
                   {% if expand_link == 'p_link' %}

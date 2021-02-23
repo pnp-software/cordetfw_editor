@@ -311,8 +311,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
-               'val_set': val_set, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, \
-               'expand_id': expand_id, 'expand_items': expand_items, 'expand_link': expand_link}
+               'val_set': val_set, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, 'expand_id': expand_id, \
+               'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs[cat]['n_list_fields']-3)}
     return render(request, 'list_spec_items.html', context)    
 
 
