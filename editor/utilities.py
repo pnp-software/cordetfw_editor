@@ -377,20 +377,25 @@ def get_p_link_choices(cat, project_id, p_parent_id):
         return SpecItem.objects.filter(id=int(p_parent_id)) 
     if cat == 'DataItem':
         q1 = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('name')        
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')        
         q2 = SpecItem.objects.filter(project_id=project_id, cat='EnumType').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('name') 
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name') 
         return q1 | q2
     return SpecItem.objects.none()
     
     
 def get_s_link_choices(cat, project_id, s_parent_id):
-    """ Return the range of choices for the 's_link' attribute of a specification of a given category """
+    """ Return the range of choices for the 's_link' attribute of a spec_item of a given category """
     if s_parent_id != None:
         return SpecItem.objects.filter(id=int(s_parent_id))
     if cat == 'EnumValue':
-        return SpecItem.objects.filter(project_id=project_id, cat='DataItemType', p_kind='ENUM').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('name')
+        return SpecItem.objects.filter(project_id=project_id, cat='EnumType'). \
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
+    if cat == 'VerLink':
+        return SpecItem.objects.filter(project_id=project_id).exclude(cat='VerItem'). \
+                        exclude(status='DEL').exclude(status='OBS').order_by('cat', 'domain', 'name')
+                        
+                        
     return SpecItem.objects.none()
     
     

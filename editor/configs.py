@@ -98,7 +98,7 @@ configs = {'General': {'csv_sep': '|',
                                    'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                    }
                            },
-               'VerLink': {'name': 'Verification Item',
+               'VerLink': {'name': 'Verification Link',
                            'expand': {'s_link': 'None',
                                       'p_link': 'None'
                                       },
@@ -161,8 +161,8 @@ def remove_spec_item_aliases(request, spec_item):
   
 def mark_spec_item_aliases_as_del(request, spec_item):
     """ Set status of spec_items attached to argument spec_item but in other ValSet to DEL """           
-    if spec_item.children != None:    
-        for child in spec_item.children.all():
+    if spec_item.p_children != None:    
+        for child in spec_item.p_children.all():
             if child.val_set.name != 'Default':
                 child.status = 'DEL'
                 child.save()

@@ -40,7 +40,7 @@
     </div>
 </div>
 
-    <table class="table table-hover table-sm">
+    <table class="table table-hover table-striped table-sm">
       <thead>
         <tr class="table-warning">
           <th>Domain</th>
@@ -74,7 +74,7 @@
       </thead>
       <tbody>
         {% for item in items %}
-           <trv>
+           <tr>
             <td><a name='{{item.domain}}:{{item.name}}'>{{item.domain}}</a></td>
             <td>{{item.name}}</td>
             <td><strong>{{item.title}}</strong> 
@@ -123,7 +123,7 @@
             {% endif %}
       
             {% if cat == 'EnumValue'%}
-            <td><a href="{% url 'list_spec_items' 'DataItemType' project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
+            <td><a href="{% url 'list_spec_items' 'EnumType' project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
                 title="{{item.s_link.title}}">
                 {{item.s_link.domain}}:{{item.s_link.name}}
                 </a>
@@ -154,19 +154,23 @@
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
                 {% if config.expand.s_link != 'None' and val_set.name == 'Default' %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}" 
-                   title="Add {{config.expand.s_label}} Child">As</a>
-                <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link" 
                    title="Show {{config.expand.s_label}} Children">Xs</a>
                 {% endif %}
                 {% if config.expand.p_link != 'None' and val_set.name == 'Default' %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}" 
-                   title="Add {{config.expand.p_label}} Child">Ap</a>
-                <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link" 
                    title="Show {{config.expand.p_label}} Children">Xp</a>
+                {% endif %}
+                {% if expand_link == 's_link' and val_set.name == 'Default' %}
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}" 
+                   title="Add {{config.expand.s_label}} Child">As</a>
+                {% endif %}
+                {% if expand_link == 'p_link' and val_set.name == 'Default' %}
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}" 
+                   title="Add {{config.expand.p_label}} Child">Ap</a>
                 {% endif %}
               </div> 
             </td>
@@ -181,10 +185,42 @@
                   </a>
               </td>
               <td>{{expand_item.title}}</td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
+              <td>
+                <div class="btn-group">  
+                  {% if expand_link == 'p_link' %}
+                    {% if item.val_set.name == 'Default' %}  
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       title="Copy {{config.expand.p_label}} Child">C</a>
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       title="Split {{config.expand.p_label}} Child">S</a>
+                    {% endif %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       title="Delete {{config.expand.p_label}} Child">D</a>
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       title="Edit {{config.expand.p_label}} Child">E</a>
+                  {% endif %}
+                  {% if expand_link == 's_link' %}
+                    {% if item.val_set.name == 'Default' %}  
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       title="Copy {{config.expand.s_label}} Child">C</a>
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       title="Split {{config.expand.s_label}} Child">S</a>
+                    {% endif %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       title="Delete {{config.expand.s_label}} Child">D</a>
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       title="Edit {{config.expand.s_label}} Child">E</a>
+                  {% endif %}
+                </div>
+              </td>    
             </tr>
             {% endfor %}
           {% endif %}

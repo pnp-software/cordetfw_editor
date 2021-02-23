@@ -312,7 +312,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set': val_set, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, \
-               'expand_id': expand_id, 'expand_items': expand_items}
+               'expand_id': expand_id, 'expand_items': expand_items, 'expand_link': expand_link}
     return render(request, 'list_spec_items.html', context)    
 
 
@@ -386,8 +386,8 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
             spec_item.save()
             if (spec_item.val_set.name == 'Default') and (('name' in form.changed_data) or ('domain' in form.changed_data)):
                 update_dom_name_in_val_set(spec_item)
-            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
-                           '/'+sel_dom+'/list_spec_items'
+            redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                            sel_dom, s_parent_id, p_parent_id)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('edit', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
@@ -427,8 +427,8 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
             new_spec_item.application = application
             new_spec_item.status = 'NEW'
             new_spec_item.save()
-            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
-                           '/'+sel_dom+'/list_spec_items'
+            redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                            sel_dom, s_parent_id, p_parent_id)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('copy', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
@@ -468,8 +468,8 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
             new_spec_item.p_link = spec_item
             new_spec_item.status = 'NEW'
             new_spec_item.save()
-            redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
-                           '/'+sel_dom+'/list_spec_items'
+            redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                            sel_dom, s_parent_id, p_parent_id)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('split', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
@@ -485,6 +485,9 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     spec_item = SpecItem.objects.get(id=item_id)
     project = Project.objects.get(id=project_id)
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+    s_parent_id = request.GET.get('s_parent_id')
+    p_parent_id = request.GET.get('p_parent_id')
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
 
@@ -498,8 +501,8 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         spec_item.status = 'DEL' 
         spec_item.save() 
     
-    redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(spec_item.val_set.id)+\
-                           '/'+sel_dom+'/list_spec_items'    
+    redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                            sel_dom, s_parent_id, p_parent_id)
     return redirect(redirect_url)
 
 
