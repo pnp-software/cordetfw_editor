@@ -1,7 +1,6 @@
 from django import template
 from django.utils.safestring import mark_safe
 from ..utilities import convert_db_to_display, eval_di_value, convert_db_to_edit
-from ..links import render_ver_items_for_display
 register = template.Library()
 
 @register.filter(is_safe=True)

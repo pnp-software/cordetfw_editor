@@ -58,6 +58,7 @@
           <th>{{config.attrs.value.label}}</th>
           
           {% if cat == 'DataItem' %}
+            <th>{{config.attrs.t2.label}}</th>
             <th>NVal</th>
           {% endif %}
           
@@ -116,6 +117,7 @@
             </td>
             
             {% if cat == 'DataItem' %}
+            <td>{{item.t2}}</td>
             <td>{{item.value|filter_di_value|linebreaksbr}}</td>
             {% endif %}
             
@@ -133,15 +135,15 @@
       
             {% if cat == 'EnumValue'%}
             <td><a href="{% url 'list_spec_items' 'EnumType' project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
-                title="{{item.s_link.title}}">
-                {{item.s_link.domain}}:{{item.s_link.name}}
+                title="{{item.s_link.domain}}: {{item.s_link.title}}">
+                {{item.s_link.name}}
                 </a>
             </td>
             {% endif %}
             {% if cat == 'DataItem' %}
             <td><a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
-                title="{{item.p_link.title}}">
-                {{item.p_link.domain}}:{{item.p_link.name}}
+                title="{{item.p_link.domain}}: {{item.p_link.title}}">
+                {{item.p_link.name}}
                 </a>
             </td>
             {% endif %}
@@ -187,9 +189,9 @@
           {% if item.id == expand_id %}
             {% for expand_item in expand_items %}
             <tr class="table-active">
-              <td>{{expand_item.domain}}</td>
+              <td><a name='expand:{{expand_item.domain}}:{{expand_item.name}}'>{{expand_item.domain}}</a></td>
               <td><a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
-                            title="{{expand_item.value|filter_refs_for_tip|linebreaksbr}}">
+                            title="{{expand_item.value|filter_di_value|linebreaksbr}}">
                   {{expand_item.name}}
                   </a>
               </td>

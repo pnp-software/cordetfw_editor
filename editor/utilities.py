@@ -180,7 +180,7 @@ def convert_db_to_display(s, n):
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'\list_spec_items'
-            s_mod = s[:match.start()]+'<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+item.domain+':'+item.name+'</a>'
+            s_mod = s[:match.start()]+'<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.domain+': '+item.title+'\">'+item.name+'</a>'
         else:
             s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
     except ObjectDoesNotExist:
@@ -434,7 +434,7 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
    
 
 def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
-                     sel_dom, s_parent_id, p_parent_id):
+                     sel_dom, s_parent_id, p_parent_id, target_spec_item):
     """
     Compute the url to which the user is re-directed after having added/copied/edited
     a spec_item. If s_parent_id or p_parent_id are different from 'None', then the 
@@ -443,15 +443,18 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
     """
     if (s_parent_id != None):
         s_parent = SpecItem.objects.get(id=s_parent_id)
+        target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'         
+                           '/'+sel_dom+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
     if (p_parent_id != None):
         p_parent = SpecItem.objects.get(id=p_parent_id)
+        target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'         
+                           '/'+sel_dom+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
     
+    target = '#'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
     return '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items'  
+                           '/'+sel_dom+'/list_spec_items'+target
       
          
 def get_domains(cat, application_id, project_id):
