@@ -315,10 +315,11 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     
     domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
+    display_list = list(configs[cat]['attrs'])
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set': val_set, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs[cat]['n_list_fields']-3),
-               'item_ver_links': item_ver_links}
+               'item_ver_links': item_ver_links, 'display_list': display_list}
     return render(request, 'list_spec_items.html', context)    
 
 
@@ -351,7 +352,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item.application = application
             new_spec_item.save()
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_dom, s_parent_id, p_parent_id)
+                                            sel_dom, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('add', cat, project, application, configs[cat], s_parent_id, p_parent_id)

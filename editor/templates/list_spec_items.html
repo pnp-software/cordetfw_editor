@@ -54,31 +54,63 @@
         <tr class="table-warning">
           <th>{{config.attrs.domain.label}}</th>
           <th>{{config.attrs.name.label}}</th>
-          <th>{{config.attrs.desc.label}}</th>
-          <th>{{config.attrs.value.label}}</th>
           
-          {% if cat == 'DataItem' %}
-            <th>{{config.attrs.t2.label}}</th>
-            <th>NVal</th>
+          <!-- Title and: description, rationale, and remarks -->
+          {% if 'title' in display_list or 'desc' in display_list or 'rationale' in display_list or 'remarks' in display_list %}
+          <th>{{config.attrs.desc.label}}</th>
           {% endif %}
           
-          {% if cat == 'DataItem' or cat == 'VerItem' %}
-          <th>{{config.attrs.p_kind.label}}</th>
+          <!-- For data items: value, NValue, unit of measure and multiplicity -->
+          {% if cat == 'DataItem'  %}
+            {% if 'value' in display_list %}
+            <th>{{config.attrs.value.label}}</th>
+            <th>NVal</th>
+            {% endif %}
+            {% if 't2' in display_list %}
+            <th>{{config.attrs.t2.label}}</th>
+            {% endif %}
+            {% if 't1' in display_list %}
+            <th>{{config.attrs.t1.label}}</th>
+            {% endif %}
+          {% endif %}
+          
+          <!-- For non-data items: value and, underneath, the five text fields  -->          
+          {% if cat != 'DataItem' %}
+            {% if 'value' in display_list %}
+            <th>{{config.attrs.value.label}}</th>
+            {% endif %}
           {% endif %}
 
-          {% if cat == 'VerItem' or cat == 'Requirement' %}
+          <!-- The p_kind and s_kind  -->          
+          {% if 'p_kind' in display_list %}
+          <th>{{config.attrs.p_kind.label}}</th>
+          {% endif %}
+          {% if 's_kind' in display_list %}
           <th>{{config.attrs.s_kind.label}}</th>
           {% endif %}
-            
-          {% if cat == 'DataItemType' or cat == 'EnumType' %}
-            <th>{{config.attrs.n1.label}}</th>
+
+          <!-- The generic integer fields  -->          
+          {% if 'n1' in display_list %}
+          <th>{{config.attrs.n1.label}}</th>
+          {% endif %}
+          {% if 'n2' in display_list %}
+          <th>{{config.attrs.n2.label}}</th>
+          {% endif %}
+          {% if 'n3' in display_list %}
+          <th>{{config.attrs.n3.label}}</th>
+          {% endif %}
+
+          <!-- The p_link and s_link  -->          
+          {% if 'p_link' in display_list %}
+          <th>{{config.attrs.p_link.label}}</th>
+          {% endif %}
+          {% if 's_link' in display_list %}
+          <th>{{config.attrs.s_link.label}}</th>
           {% endif %}
           
-          {% if cat == 'EnumValue' or cat == 'DataItem' %}
-            <th>Type</th>
-          {% endif %}
-          
+          {% if 'owner' in display_list %}
           <th>Owner</th>
+          {% endif %}
           <th></th>
         </tr>
       </thead>
@@ -87,60 +119,81 @@
            <tr>
             <td><a name='{{item.domain}}:{{item.name}}'>{{item.domain}}</a></td>
             <td>{{item.name}}</td>
+            
+            <!-- Title and: description, rationale, and remarks -->
+            {% if 'title' in display_list %}
             <td><strong>{{item.title}}</strong> 
-                {% if item.desc != '' %}
+            {% endif  %}
+                {% if item.desc != '' and 'desc' in display_list %}
                 {{item.desc|filter_refs|linebreaksbr}}
                 {% endif %}
-                {% if item.rationale != '' %}
+                {% if item.rationale != '' and 'rationale' in display_list %}
                 <br><strong>Rationale</strong> {{item.rationale|filter_refs|linebreaksbr}}
                 {% endif %}
-                {% if item.remarks != '' %}
+                {% if item.remarks != '' and 'remarks' in display_list %}
                 <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
                 {% endif %}
             </td>
             
-            <td>{{item.value|filter_refs|linebreaksbr}}
-            {% if cat == 'VerItem' %}
-                {% if item.t1 != '' %}
-                <br><strong>{{config.attrs.t1.label}}</strong>
-                {{item.t1|filter_refs|linebreaksbr}}
-                {% endif %}
-                {% if item.t2 != '' %}
-                <br><strong>{{config.attrs.t2.label}}</strong>
-                {{item.t2|filter_refs|linebreaksbr}}
-                {% endif %}
-                {% if item.t3 != '' %}
-                <br><strong>{{config.attrs.t3.label}}</strong>
-                {{item.t3|filter_refs|linebreaksbr}}
-                {% endif %}
-            {% endif %}
-            </td>
-            
+            <!-- For data items: value, NValue, unit of measure and multiplicity -->
             {% if cat == 'DataItem' %}
-            <td>{{item.t2}}</td>
-            <td>{{item.value|filter_di_value|linebreaksbr}}</td>
+                {% if 'value' in display_list %}
+                <td>{{item.value|filter_refs|linebreaksbr}}</td>
+                <td>{{item.value|filter_di_value|linebreaksbr}}</td>
+                {% endif %}
+                {% if 't2' in display_list %}
+                <td>{{item.t2}}</td>
+                {% endif %}
+                {% if 't1' in display_list %}
+                <td>{{item.t1}}</td>
+                {% endif %}
             {% endif %}
             
-            {% if cat == 'DataItem' or cat == 'VerItem' %}
+            <!-- For non-data items: value and, underneath, the five text fields  -->          
+            {% if cat != 'DataItem' %}
+                {% if 'value' in display_list %}
+                <td>{{item.value|filter_refs|linebreaksbr}}
+                {% endif  %}
+                {% if 't1' in display_list %}
+                <br><strong>{{config.attrs.t1.label}}</strong>{{item.t1|filter_refs|linebreaksbr}}
+                {% endif  %}
+                {% if 't2' in display_list %}
+                <br><strong>{{config.attrs.t2.label}}</strong>{{item.t2|filter_refs|linebreaksbr}}
+                {% endif  %}
+                {% if 't3' in display_list %}
+                <br><strong>{{config.attrs.t3.label}}</strong>{{item.t3|filter_refs|linebreaksbr}}
+                {% endif  %}
+                </td>
+            {% endif %}
+            
+            <!-- The p_kind and s_kind  -->          
+            {% if 'p_kind' in display_list %}
             <td>{{item.p_kind}}</td>
             {% endif %}
+            {% if 's_kind' in display_list %}
+            <td>{{item.s_kind}}</td>
+            {% endif %}
             
-            {% if cat == 'VerItem' or cat == 'Requirement' %}
-            <th>{{item.s_kind}}</th>
+            <!-- The generic integer fields  -->          
+            {% if 'n1' in display_list %}
+            <td>{{item.n1}}</td>
             {% endif %}
-           
-            {% if cat == 'DataItemType' or cat == 'EnumType' %}
-            <th>{{item.n1}}</th>
+            {% if 'n2' in display_list %}
+            <td>{{item.n2}}</td>
             {% endif %}
-      
-            {% if cat == 'EnumValue'%}
-            <td><a href="{% url 'list_spec_items' 'EnumType' project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
+            {% if 'n3' in display_list %}
+            <td>{{item.n3}}</td>
+            {% endif %}
+
+            <!-- The p_link and s_link  -->          
+            {% if 's_link' in display_list %}
+            <td><a href="{% url 'list_spec_items' item.s_link.cat project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
                 title="{{item.s_link.domain}}: {{item.s_link.title}}">
                 {{item.s_link.name}}
                 </a>
             </td>
             {% endif %}
-            {% if cat == 'DataItem' %}
+            {% if 'p_link' in display_list %}
             <td><a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
                 title="{{item.p_link.domain}}: {{item.p_link.title}}">
                 {{item.p_link.name}}
@@ -148,7 +201,9 @@
             </td>
             {% endif %}
 
+            {% if 'owner' in display_list %}
             <td>{{item.owner}}</td>
+            {% endif %}
             <td>
               <div class="btn-group">
                 {% if item.val_set.name == 'Default' %}  
