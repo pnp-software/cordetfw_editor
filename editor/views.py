@@ -290,6 +290,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     val_set = ValSet.objects.get(id=val_set_id)
     expand_id = request.GET.get('expand_id')
     expand_link = request.GET.get('expand_link')
+    display = request.GET.get('display')
     if not has_access_to_project(request.user, project):
         return redirect(base_url)
     
@@ -312,14 +313,29 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     item_ver_links = {}
     for item in items:
         item_ver_links[item.id] = list_ver_items_for_display(item)
+
+    display_list = list(configs[cat]['attrs'])
+    if (display == 'short') or (display == 'trac'):
+        try:
+            display_list.remove('desc')
+            display_list.remove('rationale')
+            display_list.remove('remarks')
+            if cat == 'VerItem':
+                display_list.remove('t1')
+                display_list.remove('t2')
+                display_list.remove('t3')
+        except ValueError:
+            pass
+    if (display == 'trac'):
+        display_list.append('trac')
+        display_list.remove('owner')
     
     domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
-    display_list = list(configs[cat]['attrs'])
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set': val_set, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs[cat]['n_list_fields']-3),
-               'item_ver_links': item_ver_links, 'display_list': display_list}
+               'item_ver_links': item_ver_links, 'display_list': display_list, 'display': display}
     return render(request, 'list_spec_items.html', context)    
 
 

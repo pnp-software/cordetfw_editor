@@ -33,3 +33,8 @@ def filter_refs_for_tip(s):
     by the (possibly malicious) user has been sanitized.
     """
     return mark_safe(convert_db_to_edit(s))
+
+@register.filter(is_safe=True)
+def get_dict_item(dict, key):
+    """ Return the value of the argument key in the argument dictionary """
+    return dict.get(key)

@@ -218,7 +218,7 @@ class SpecItemForm(forms.Form):
     def clean_value(self):
         return convert_edit_to_db(self.cleaned_data['value'])
 
-    def clean_justification(self):
+    def clean_rationale(self):
         return convert_edit_to_db(self.cleaned_data['rationale'])
 
     def clean_remarks(self):

@@ -35,12 +35,14 @@
         </div>
       </div>
       <div class="dropdown mr-sm-2 mt-4">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Traceability</button>
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Display Format</button>
         <div class="dropdown-menu">
             <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">
-                {{config.name}}s to Verification Items</a>
-            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">
-                Verification Items to {{config.name}}s</a>
+                Default</a>
+            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display=short">
+                Short wihtout Traceability Info</a>
+            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display=trac">
+                Short with Traceability Info</a>
         </div>
       </div>
       <div class="form-group mr-sm-2 mt-4">
@@ -108,9 +110,15 @@
           <th>{{config.attrs.s_link.label}}</th>
           {% endif %}
           
+          <!-- Either the Owner or the traceability information  --> 
           {% if 'owner' in display_list %}
           <th>Owner</th>
           {% endif %}
+          {% if 'trac' in display_list %}
+          <th>Verification Links</th>
+          {% endif %}
+ 
+          <!-- The edit/copy/delete/split buttons  --> 
           <th></th>
         </tr>
       </thead>
@@ -201,9 +209,15 @@
             </td>
             {% endif %}
 
+            <!-- Either the Owner or the traceability information  --> 
             {% if 'owner' in display_list %}
             <td>{{item.owner}}</td>
             {% endif %}
+            {% if 'trac' in display_list %}
+            <td>{{item_ver_links|get_dict_item:item.id|safe}}</td>
+            {% endif %}
+            
+            <!-- The edit/copy/delete/split buttons  --> 
             <td>
               <div class="btn-group">
                 {% if item.val_set.name == 'Default' %}  
@@ -218,25 +232,30 @@
                    href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
-                {% if config.expand.s_link != 'None' and val_set.name == 'Default' %}
+                {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link" 
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&display={{display}}" 
                    title="Show {{config.expand.s_label}} Children">Xs</a>
                 {% endif %}
-                {% if config.expand.p_link != 'None' and val_set.name == 'Default' %}
+                {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link" 
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&display={{display}}" 
                    title="Show {{config.expand.p_label}} Children">Xp</a>
                 {% endif %}
-                {% if expand_link == 's_link' and val_set.name == 'Default' %}
+                {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}" 
+                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}&display={{display}}" 
                    title="Add {{config.expand.s_label}} Child">As</a>
                 {% endif %}
-                {% if expand_link == 'p_link' and val_set.name == 'Default' %}
+                {% if expand_link == 'p_link' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}" 
+                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}&display={{display}}" 
                    title="Add {{config.expand.p_label}} Child">Ap</a>
+                {% endif %}
+                {% if 'trac' in display_list %}
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_dom %}?s_parent_id={{item.id}}&display={{display}}" 
+                   title="Add Verification Link">A</a>
                 {% endif %}
               </div> 
             </td>

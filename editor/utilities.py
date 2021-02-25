@@ -166,9 +166,6 @@ def convert_db_to_display(s, n):
     The input string is first passed through escape() to sanitize any potentially
     malicious html code entered by the user.
     """
-    if n == 1:  # If the function has been called by the application
-        s = escape(s)
-    
     match = pattern_db.search(s)
     if match == None:
         return s
@@ -223,8 +220,10 @@ def render_for_eval(s, n):
 
 def eval_di_value(s):
     """
-    The argument string is assumed to hold a mathematical expression expressed in terms of references to data items.
-    The function first replaces the references to the data items with their values (this is done with function render_for_eval)
+    The argument string is assumed to hold a mathematical expression expressed 
+    in terms of references to data items.
+    The function first replaces the references to the data items with their 
+    values (this is done with function render_for_eval)
     and then it attempts to evaluate the resulting expression using package cexprtk.
     """
     se = render_for_eval(s, 1)

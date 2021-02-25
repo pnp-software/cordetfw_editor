@@ -20,7 +20,7 @@ def list_ver_items_for_display(spec_item):
         target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+str(link.p_link.application_id)+\
                  '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'\list_spec_items'
         s = s + '<a href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
-            link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + '}'
+            link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + ')'
     return s
 
 #--------------------------------------------------------------------------------
@@ -35,6 +35,6 @@ def list_ver_items_for_latex(spec_item):
     for link in ver_links:
         if s != '':
             s = s + '\n'
-        s = s + link.p_link.domain+':' + link.p_link.name + ' (' + link.p_link.title + '}'
+        s = s + link.p_link.domain+':' + link.p_link.name + ' (' + link.p_link.title + ')'
     return s
 

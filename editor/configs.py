@@ -23,7 +23,7 @@ configs = {'General': {'csv_sep': '|',
                                   }
                          },
                'DataItemType': {'name': 'Data Item Type',
-                          'n_list_fields': 5,
+                          'n_list_fields': 6,
                           'expand': {'s_link': 'None',
                                      'p_link': 'DataItem', 'p_label': 'Data Item', 'p_field': 'title'},
                           'attrs': {'domain':   {'label': 'Domain', 'req_in_form': True, 'kind': 'plain_text'},
