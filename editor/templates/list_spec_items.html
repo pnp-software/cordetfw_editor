@@ -40,7 +40,7 @@
             <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">
                 Default</a>
             <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display=short">
-                Short wihtout Traceability Info</a>
+                Short without Traceability Info</a>
             <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display=trac">
                 Short with Traceability Info</a>
         </div>
@@ -163,13 +163,13 @@
                 <td>{{item.value|filter_refs|linebreaksbr}}
                 {% endif  %}
                 {% if 't1' in display_list %}
-                <br><strong>{{config.attrs.t1.label}}</strong>{{item.t1|filter_refs|linebreaksbr}}
+                <br><strong>{{config.attrs.t1.label}}</strong> {{item.t1|filter_refs|linebreaksbr}}
                 {% endif  %}
                 {% if 't2' in display_list %}
-                <br><strong>{{config.attrs.t2.label}}</strong>{{item.t2|filter_refs|linebreaksbr}}
+                <br><strong>{{config.attrs.t2.label}}</strong> {{item.t2|filter_refs|linebreaksbr}}
                 {% endif  %}
                 {% if 't3' in display_list %}
-                <br><strong>{{config.attrs.t3.label}}</strong>{{item.t3|filter_refs|linebreaksbr}}
+                <br><strong>{{config.attrs.t3.label}}</strong> {{item.t3|filter_refs|linebreaksbr}}
                 {% endif  %}
                 </td>
             {% endif %}
@@ -196,15 +196,15 @@
             <!-- The p_link and s_link  -->          
             {% if 's_link' in display_list %}
             <td><a href="{% url 'list_spec_items' item.s_link.cat project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
-                title="{{item.s_link.domain}}: {{item.s_link.title}}">
-                {{item.s_link.name}}
+                title="{{item.s_link.title}}: {{item.s_link.desc}} ">
+                {{item.s_link.domain}}:{{item.s_link.name}}
                 </a>
             </td>
             {% endif %}
             {% if 'p_link' in display_list %}
             <td><a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
-                title="{{item.p_link.domain}}: {{item.p_link.title}}">
-                {{item.p_link.name}}
+                title="{{item.p_link.title}}: {{item.p_link.desc}}">
+                {{item.p_link.domain}}:{{item.p_link.name}}
                 </a>
             </td>
             {% endif %}
@@ -234,12 +234,12 @@
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
                 {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&display={{display}}" 
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&display={{display}}#{{item.domain}}:{{item.name}}" 
                    title="Show {{config.expand.s_label}} Children">Xs</a>
                 {% endif %}
                 {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&display={{display}}" 
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&display={{display}}#{{item.domain}}:{{item.name}}" 
                    title="Show {{config.expand.p_label}} Children">Xp</a>
                 {% endif %}
                 {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
@@ -269,7 +269,7 @@
                   {{expand_item.name}}
                   </a>
               </td>
-              <td>{{expand_item.title}}</td>
+              <td>{{expand_item|get_short_desc}}</td>
               {% for i in n_pad_fields %}
               <td></td>
               {% endfor %}

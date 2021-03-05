@@ -1,7 +1,12 @@
+import os
 import csv
 import traceback
 
 from io import StringIO
+from zipfile import ZipFile 
+from datetime import datetime
+from itertools import chain
+from zipfile import ZipFile
 from django.shortcuts import render
 from django.contrib import messages
 from django.shortcuts import render, redirect
@@ -14,9 +19,8 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist
-from zipfile import ZipFile 
-from datetime import datetime
-from itertools import chain
+from django.forms.models import model_to_dict
+from django.http import FileResponse
 
 from editor.configs import configs, make_obs_spec_item_copy, mark_spec_item_aliases_as_del, \
                            remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
@@ -25,9 +29,12 @@ from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, 
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
-                             get_redirect_url
+                             get_redirect_url, export_items
 from editor.links import list_ver_items_for_display, list_ver_items_for_latex
-from .access import is_project_owner, has_access_to_project, has_access_to_application, \
+from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
+                             ValSetResource, SpecItemResource, ReleaseResource
+
+from editor.access import is_project_owner, has_access_to_project, has_access_to_application, \
                     is_spec_item_owner, can_create_project, can_add_val_set
 
 import cexprtk
@@ -653,9 +660,74 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
 
 @login_required         
 def export_project(request, project_id):
-    # TBD
-    redirect_url = '/editor/'
-    return redirect(redirect_url)
+    project = Project.objects.get(id=project_id)
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
+
+    temp_dir = configs['General']['temp_dir']
+    csv_sep = configs['General']['csv_sep']
+    
+    exp_dir = os.path.join(temp_dir,'cordetfw_editor_'+datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+    try:  
+        os.mkdir(exp_dir)  
+    except OSError as e:  
+        messages.error(request, 'Failure to create export directory at '+exp_dir+': '+str(e))
+        redirect_url = '/editor/'
+        return redirect(redirect_url)        
+    
+    project_exp = ProjectResource().export(Project.objects.filter(id=project_id))
+    with open(os.path.join(exp_dir,'project.csv'),'w') as fd:
+        fd.write(project_exp.csv)
+
+    spec_items_exp = SpecItemResource().export(SpecItem.objects.filter(project_id=project_id))
+    with open(os.path.join(exp_dir,'spec_items.csv'),'w') as fd:
+        fd.write(spec_items_exp.csv)
+
+    spec_items_exp = SpecItemResource().export(SpecItem.objects.filter(project_id=project_id))
+    with open(os.path.join(exp_dir,'spec_items.csv'),'w') as fd:
+        fd.write(spec_items_exp.csv)
+
+    val_set_exp = ValSetResource().export(ValSet.objects.filter(project_id=project_id))
+    with open(os.path.join(exp_dir,'val_sets.csv'),'w') as fd:
+        fd.write(val_set_exp.csv)
+
+    project_users_exp = ProjectUserResource().export(ProjectUser.objects.filter(project_id=project_id))
+    with open(os.path.join(exp_dir,'project_users.csv'),'w') as fd:
+        fd.write(project_users_exp.csv)
+
+    release_list = []
+    release = project.release
+    while release != None:
+        release_list.append(release.id)
+        release = release.previous
+    applications = Application.objects.filter(project_id=project_id)
+    for application in applications:
+        release = application.release
+        while release != None:
+            release_list.append(release.id)
+            release = release.previous
+    releases = Release.objects.filter(id__in=release_list)
+    
+    releases_exp = ReleaseResource().export(releases)
+    with open(os.path.join(exp_dir,'releases.csv'),'w') as fd:
+        fd.write(releases_exp.csv)
+
+    applications_exp = ApplicationResource().export(applications)
+    with open(os.path.join(exp_dir,'applications.csv'),'w') as fd:
+        fd.write(applications_exp.csv)
+
+    zip_file_path = os.path.join(exp_dir,'cordetfw_editor.zip')
+    zip_obj = ZipFile(zip_file_path, 'w')
+    zip_obj.write(os.path.join(exp_dir,'project.csv'))
+    zip_obj.write(os.path.join(exp_dir,'applications.csv'))
+    zip_obj.write(os.path.join(exp_dir,'val_sets.csv'))
+    zip_obj.write(os.path.join(exp_dir,'project_users.csv'))
+    zip_obj.write(os.path.join(exp_dir,'releases.csv'))
+    zip_obj.write(os.path.join(exp_dir,'spec_items.csv'))
+    zip_obj.close()            
+            
+    zip_file = open(zip_file_path, 'rb')
+    return FileResponse(zip_file)        
 
 
 @login_required         

@@ -37,6 +37,8 @@ ALLOWED_HOSTS = ['localhost', '217.160.170.47', 'pnp-software.io', 'www.pnp-soft
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
+# Make project import a transaction
+IMPORT_EXPORT_USE_TRANSACTIONS = True
 
 # Application definition
 
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'admin_honeypot',
     'axes',
+    'import_export',
 ]
 
 MIDDLEWARE = [

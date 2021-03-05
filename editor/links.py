@@ -28,13 +28,23 @@ def list_ver_items_for_latex(spec_item):
     """
     Return a string listing the verification items which have a verification link to the 
     argument spec_item. The ver_items in the list are formatted for latex output.
+    If the argument spec_item belongs to the 'VerItem' category (e.g. it is a test case),
+    then the return string lists the specification items which are verified by it; 
+    otherwise, the return string lists the verification items which verify it.
     """
-    ver_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat='VerLink',
+    if spec_item.cat != 'VerItem':
+        ver_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat='VerLink',
                 s_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+    else:
+        ver_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat='VerLink',
+                p_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
     s = ''
     for link in ver_links:
         if s != '':
             s = s + '\n'
-        s = s + link.p_link.domain+':' + link.p_link.name + ' (' + link.p_link.title + ')'
-    return s
+        if spec_item.cat != 'VerItem':
+            s = s + link.p_link.domain+':' + link.p_link.name + ' (' + link.p_link.title + ')'
+        else:
+            s = s + link.s_link.domain+':' + link.s_link.name + ' (' + link.s_link.title + ')'
+    return frmt_string(s)
 

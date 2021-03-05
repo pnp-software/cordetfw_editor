@@ -309,6 +309,8 @@ def export_to_spec_item(imp_dict, spec_item):
     for key, value in configs[spec_item.cat]['attrs'].items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(name=imp_dict[cat_attrs[key]['label']])
+        elif key == 'owner':
+            continue
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(imp_dict[cat_attrs[key]['label']]))
         elif value['kind'] == 'spec_item_ref':
@@ -529,5 +531,14 @@ def do_project_release(request, project, description):
        do_application_release(request, application, description, is_proj_release = True)
     
 
-
+def export_items(items, file_path, csv_sep):
+    """ Export the argument items in csv format to the argument file """
+    with open(file_path,'w') as fd:
+        for i, item in enumerate(items):
+            item_dic = spec_item_to_export(item)
+            if i == 0:      # Open DictWriter and write header fields
+                csv_writer = csv.DictWriter(fd, delimiter=csv_sep, fieldnames=list(item_dic.keys()))
+                csv_writer.writeheader()
+            csv_writer.writerow(item_dic)
+    
 

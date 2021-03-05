@@ -3,7 +3,9 @@ from django.contrib import messages
 from editor.models import SpecItem, ValSet
 
 configs = {'General': {'csv_sep': '|',
-                       'eol_sep': '\n'
+                       'eol_sep': '\n',
+                       'temp_dir': '/tmp',
+                       'short_desc_len': 100
                        },
            'Requirement':{'name': 'Requirement',
                           'n_list_fields': 6,
@@ -189,8 +191,8 @@ def update_dom_name_in_val_set(spec_item):
     Propagate a change in domain:name in spec_item to spec_items in other ValSets.
     This function assumes that spec_item is in the Default ValSet
     """
-    if spec_item.children != None:    
-        for child in spec_item.children.all():
+    if spec_item.p_children != None:    
+        for child in spec_item.p_children.all():
             if child.val_set.name != 'Default':
                 child.name = spec_item.name
                 child.domain = spec_item.domain
