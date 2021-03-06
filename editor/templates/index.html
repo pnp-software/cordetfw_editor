@@ -8,9 +8,14 @@
   <h1 class="display-6">Cordet FW Editor</h1>
   <p class="lead">Web-based editor to support the specification of a set of related service-based applications</p>
   {% if user.is_staff %}
-  <div class="form-group mr-sm-2 mt-4">
-      <a class="btn btn-outline-secondary" href="{% url 'add_project' %}">Add Project</a>
-  </div>
+  <div class="form-inline">
+      <div class="form-group mr-sm-2 mt-4">
+          <a class="btn btn-outline-secondary" href="{% url 'add_project' %}">Add Project</a>
+      </div>
+      <div class="form-group mr-sm-2 mt-4">
+          <a class="btn btn-outline-secondary" href="{% url 'import_project' %}">Import Project</a>
+      </div>
+  </div>  
   {% endif %}
 </div>
 

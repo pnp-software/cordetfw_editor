@@ -5,6 +5,7 @@ import traceback
 from io import StringIO
 from zipfile import ZipFile 
 from datetime import datetime
+from tablib import Dataset
 from itertools import chain
 from zipfile import ZipFile
 from django.shortcuts import render
@@ -29,7 +30,7 @@ from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, 
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
-                             get_redirect_url, export_items
+                             get_redirect_url, make_temp_dir
 from editor.links import list_ver_items_for_display, list_ver_items_for_latex
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
@@ -599,7 +600,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
   
     if request.method == 'POST':   
         try:
-            csv_file = request.FILES['csv_file']
+            csv_file = request.FILES['upload_file']
         except Exception as e:
             messages.error(request,'Unable to upload file: '+repr(e))
             return redirect(redirect_url)
@@ -653,9 +654,50 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         except Exception as e:
             messages.error(request, 'Unable to read or process uploaded file at line '+str(i+1)+'; traceback: '+traceback.format_exc())
     else:
-        context = {'project': project, 'title': 'Some Title'}
+        context = {'project': project, 'title': 'Upload CSV File'}
         return render(request, 'upload_file.html', context)
     return redirect(redirect_url)
+
+
+@login_required    
+def import_project(request):
+    if not can_create_project(request.user):
+        return redirect(base_url)
+  
+    if request.method == 'POST':   
+        try:
+            zip_file = request.FILES['upload_file']
+        except Exception as e:
+            messages.error(request,'Unable to upload file: '+repr(e))
+            return redirect(base_url)
+        if zip_file.multiple_chunks():
+            messages.error(request,'Uploaded file '+zip_file.name+' is too big, size in MB is: '+str(zip_file.size/(1000*1000)))
+            return redirect(base_url)
+
+        temp_dir = configs['General']['temp_dir']
+        csv_sep = configs['General']['csv_sep']
+        imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
+        if imp_dir == '':
+            return redirect(base_url)
+        imp_project = os.path.join(imp_dir,'import_project.zip')
+        with open(imp_project, 'wb') as fd:
+            fd.write(zip_file.read())
+        zip_obj = ZipFile(imp_project, 'r')
+        zip_obj.extractall(imp_dir)
+        zip_obj.close()
+        with open(os.path.join(imp_dir,'project.csv'), 'r') as fd:
+            imp_data_set = Dataset().load(fd)
+        project_res = ProjectResource()
+        imp_result = project_res.import_data(imp_data_set, dry_run=True)
+        if not imp_result.has_errors():
+            imp_result = project_res.import_data(imp_data_set, dry_run=False)
+        else:
+            messages.error(request, 'Unable to import '+os.path.join(imp_dir,'project.csv'))
+    else:
+        context = {'title': 'Upload Zip File'}
+        return render(request, 'upload_file.html', context)
+
+    return redirect(base_url)
 
 
 @login_required         
@@ -666,14 +708,9 @@ def export_project(request, project_id):
 
     temp_dir = configs['General']['temp_dir']
     csv_sep = configs['General']['csv_sep']
-    
-    exp_dir = os.path.join(temp_dir,'cordetfw_editor_'+datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
-    try:  
-        os.mkdir(exp_dir)  
-    except OSError as e:  
-        messages.error(request, 'Failure to create export directory at '+exp_dir+': '+str(e))
-        redirect_url = '/editor/'
-        return redirect(redirect_url)        
+    exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
+    if exp_dir == '':
+        return redirect(base_url)
     
     project_exp = ProjectResource().export(Project.objects.filter(id=project_id))
     with open(os.path.join(exp_dir,'project.csv'),'w') as fd:
@@ -718,12 +755,12 @@ def export_project(request, project_id):
 
     zip_file_path = os.path.join(exp_dir,'cordetfw_editor.zip')
     zip_obj = ZipFile(zip_file_path, 'w')
-    zip_obj.write(os.path.join(exp_dir,'project.csv'))
-    zip_obj.write(os.path.join(exp_dir,'applications.csv'))
-    zip_obj.write(os.path.join(exp_dir,'val_sets.csv'))
-    zip_obj.write(os.path.join(exp_dir,'project_users.csv'))
-    zip_obj.write(os.path.join(exp_dir,'releases.csv'))
-    zip_obj.write(os.path.join(exp_dir,'spec_items.csv'))
+    zip_obj.write(os.path.join(exp_dir,'project.csv'), 'project.csv')
+    zip_obj.write(os.path.join(exp_dir,'applications.csv'), 'applications.csv')
+    zip_obj.write(os.path.join(exp_dir,'val_sets.csv'), 'val_sets.csv')
+    zip_obj.write(os.path.join(exp_dir,'project_users.csv'), 'project_users.csv')
+    zip_obj.write(os.path.join(exp_dir,'releases.csv'), 'releases.csv')
+    zip_obj.write(os.path.join(exp_dir,'spec_items.csv'), 'spec_items.csv')
     zip_obj.close()            
             
     zip_file = open(zip_file_path, 'rb')

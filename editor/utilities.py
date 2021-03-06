@@ -1,3 +1,4 @@
+import os
 import re
 import cexprtk
 import logging
@@ -531,14 +532,15 @@ def do_project_release(request, project, description):
        do_application_release(request, application, description, is_proj_release = True)
     
 
-def export_items(items, file_path, csv_sep):
-    """ Export the argument items in csv format to the argument file """
-    with open(file_path,'w') as fd:
-        for i, item in enumerate(items):
-            item_dic = spec_item_to_export(item)
-            if i == 0:      # Open DictWriter and write header fields
-                csv_writer = csv.DictWriter(fd, delimiter=csv_sep, fieldnames=list(item_dic.keys()))
-                csv_writer.writeheader()
-            csv_writer.writerow(item_dic)
-    
+def make_temp_dir(dir_path, name):
+    """ Create a directory 'name_<TimeStamp>' in the directory 'dir_path' and return 
+        the dir name or an empty string if the creation failed
+    """
+    new_dir_path = os.path.join(dir_path,name+datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+    try:  
+        os.mkdir(new_dir_path)  
+    except OSError as e:  
+        messages.error(request, 'Failure to create export directory at '+exp_dir+': '+str(e))
+        return ''
+    return new_dir_path
 
