@@ -31,6 +31,7 @@ from editor.utilities import get_domains, do_application_release, do_project_rel
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
                              get_redirect_url, make_temp_dir
+from editor.imports import import_project_tables
 from editor.links import list_ver_items_for_display, list_ver_items_for_latex
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
@@ -674,25 +675,22 @@ def import_project(request):
             messages.error(request,'Uploaded file '+zip_file.name+' is too big, size in MB is: '+str(zip_file.size/(1000*1000)))
             return redirect(base_url)
 
+        # Create directory where import file is unzipped
         temp_dir = configs['General']['temp_dir']
         csv_sep = configs['General']['csv_sep']
         imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
         if imp_dir == '':
             return redirect(base_url)
+            
+        # Unzip import file    
         imp_project = os.path.join(imp_dir,'import_project.zip')
         with open(imp_project, 'wb') as fd:
             fd.write(zip_file.read())
         zip_obj = ZipFile(imp_project, 'r')
         zip_obj.extractall(imp_dir)
         zip_obj.close()
-        with open(os.path.join(imp_dir,'project.csv'), 'r') as fd:
-            imp_data_set = Dataset().load(fd)
-        project_res = ProjectResource()
-        imp_result = project_res.import_data(imp_data_set, dry_run=True)
-        if not imp_result.has_errors():
-            imp_result = project_res.import_data(imp_data_set, dry_run=False)
-        else:
-            messages.error(request, 'Unable to import '+os.path.join(imp_dir,'project.csv'))
+
+        import_project_tables(request, imp_dir)
     else:
         context = {'title': 'Upload Zip File'}
         return render(request, 'upload_file.html', context)

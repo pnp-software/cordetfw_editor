@@ -7,7 +7,7 @@ class ReleaseResource(resources.ModelResource):
     class Meta:
         model = Release
 
-    def dehydrate_owner(self, spec_item):
+    def dehydrate_release_author(self, spec_item):
         return str(spec_item.release_author)
 
         
@@ -18,6 +18,7 @@ class ProjectResource(resources.ModelResource):
     def dehydrate_owner(self, spec_item):
         return str(spec_item.owner)
         
+                
 class ApplicationResource(resources.ModelResource):
     class Meta:
         model = Application
@@ -28,6 +29,7 @@ class ProjectUserResource(resources.ModelResource):
         
     def dehydrate_owner(self, spec_item):
         return str(spec_item.owner)
+
         
 class ValSetResource(resources.ModelResource):
     class Meta:
