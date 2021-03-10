@@ -30,7 +30,7 @@ from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, 
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
-                             get_redirect_url, make_temp_dir
+                             get_redirect_url, make_temp_dir, get_default_val_set_id
 from editor.imports import import_project_tables
 from editor.links import list_ver_items_for_display, list_ver_items_for_latex
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
@@ -50,11 +50,11 @@ def index(request):
     listOfProjects = []
     userRequestName = str(request.user)     
     for project in projects:
-        userHasAccess = ProjectUser.objects.filter(project_id=project.id).\
+        userHasAccess = ProjectUser.objects.filter(project_id=project).\
                                         filter(user__username__contains=userRequestName).exists()
          
         applications = project.applications.all().order_by('name') 
-        default_val_set_id = ValSet.objects.filter(project_id=project.id).get(name='Default').id
+        default_val_set_id = get_default_val_set_id(request, project)
         listOfProjects.append({'project': project, 
                                'applications': list(applications),
                                'default_val_set_id': default_val_set_id,

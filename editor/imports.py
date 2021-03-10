@@ -59,6 +59,54 @@ def import_project_tables(request, imp_dir):
         messages.error(request, 'Failure to open or read import ValSet file '+val_set_csv+': '+str(e))
         return
 
+    # Read the ProjectUser table
+    project_user_csv = os.path.join(imp_dir,'project_users.csv')
+    try:
+        dict =  csv.DictReader(open(project_user_csv, 'r'))
+        project_users = []
+        with open(project_user_csv, 'r') as fd:
+            reader = csv.DictReader(fd)
+            for row in reader:          
+                project_users.append(row)
+    except Exception as e:
+        messages.error(request, 'Failure to open or read import ProjectUser file '+project_user_csv+': '+str(e))
+        return
+        
+    # Check that all project users exist
+    user_name_2_user = {}    
+    try:
+        for project_user in project_users:
+            user_name_2_user[project_user[user]] = User.objects.get(username=project_user[user])
+    except Exception as e:
+        messages.error(request, 'The project user '+project_user[user]+' does not exist: '+str(e))
+        return   
+        
+    # Read the Application table
+    application_csv = os.path.join(imp_dir,'applications.csv')
+    try:
+        dict =  csv.DictReader(open(application_csv, 'r'))
+        applications = []
+        with open(application_csv, 'r') as fd:
+            reader = csv.DictReader(fd)
+            for row in reader:          
+                applications.append(row)
+    except Exception as e:
+        messages.error(request, 'Failure to open or read import Application file '+application_csv+': '+str(e))
+        return
+        
+    # Read the SpecItem table
+    spec_item_csv = os.path.join(imp_dir,'spec_items.csv')
+    try:
+        dict =  csv.DictReader(open(application_csv, 'r'))
+        spec_items = []
+        with open(spec_item_csv, 'r') as fd:
+            reader = csv.DictReader(fd)
+            for row in reader:          
+                spec_items.append(row)
+    except Exception as e:
+        messages.error(request, 'Failure to open or read import SpecItem file '+spec_item_csv+': '+str(e))
+        return
+        
     # Import the release instances into the database
     old_id_2_new_id = {}
     for release in releases:
@@ -88,5 +136,26 @@ def import_project_tables(request, imp_dir):
     new_project.save()
     
     # Import the ValSet instances
-    #for val_set in val_sets:
-    #    if 
+    for val_set in val_sets:
+        new_val_set = ValSet(updated_at = val_set['updated_at'],
+                             project = new_project,
+                             name = val_set['name'],
+                             desc = val_set['desc'])
+        new_val_set.save()
+    
+    # Import the Project Users
+    for project_user in project_users:
+        new_project_user = ProjectUser(updated_at = project_user['updated_at'],
+                                       project = new_project,
+                                       user = user_name_2_user[project_user[user]])
+        new_project_user.save()
+        
+    # Import the Applications
+    for application in applications:
+        new_application = Application(updated_at = application['updated_at'],
+                                       project = new_project,
+                                       desc = application['desc'],
+                                       name = application['name'])
+        new_application.release_id = old_id_2_new_id[application['release']]
+        new_application.save()
+        

@@ -546,7 +546,19 @@ def make_temp_dir(dir_path, name):
     return new_dir_path
 
 
-     
+def get_default_val_set_id(request, project):
+    """ 
+        Return the default ValSet id for the argument project. If the ValSet cannot
+        be retrieved, a value of zero is returned.
+    """
+    try:
+        id = ValSet.objects.filter(project_id=project.id).get(name='Default').id    
+        return id 
+    except Exception as e:
+        messages.error(request, 'Failure to retrieve the ValSet for project '+str(project)+\
+                       '. This probably meanns that the data for the projects are corrupted. '+\
+                       'Error message was: '+str(e))
+        return 0
     
     
 
