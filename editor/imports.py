@@ -4,7 +4,7 @@ import csv
 from django.contrib.auth.models import User
 from django.contrib import messages
 from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Application
-from editor.utilities import frmt_string
+from editor.utilities import frmt_string, convert_edit_to_db
 
 #--------------------------------------------------------------------------------
 def import_project_tables(request, imp_dir):
@@ -80,6 +80,7 @@ def import_project_tables(request, imp_dir):
     except Exception as e:
         messages.error(request, 'The project user '+project_user[user]+' does not exist: '+str(e))
         return   
+    user_name_2_user[project_owner.username] = project_owner 
         
     # Read the Application table
     application_csv = os.path.join(imp_dir,'applications.csv')
@@ -136,12 +137,14 @@ def import_project_tables(request, imp_dir):
     new_project.save()
     
     # Import the ValSet instances
+    val_set_old_id_2_new = {}
     for val_set in val_sets:
         new_val_set = ValSet(updated_at = val_set['updated_at'],
                              project = new_project,
                              name = val_set['name'],
                              desc = val_set['desc'])
         new_val_set.save()
+        val_set_old_id_2_new[val_set['id']] = new_val_set
     
     # Import the Project Users
     for project_user in project_users:
@@ -151,6 +154,7 @@ def import_project_tables(request, imp_dir):
         new_project_user.save()
         
     # Import the Applications
+    application_old_id_2_new = {}
     for application in applications:
         new_application = Application(updated_at = application['updated_at'],
                                        project = new_project,
@@ -158,4 +162,64 @@ def import_project_tables(request, imp_dir):
                                        name = application['name'])
         new_application.release_id = old_id_2_new_id[application['release']]
         new_application.save()
+        application_old_id_2_new[application['id']] = new_application
         
+    # Import SpecItems
+    spec_item_old_id_2_new_id = {}
+    spec_item_new_id_2_old_id = {}
+    for spec_item in spec_items:
+        new_spec_item = SpecItem(cat = spec_item['cat'],
+                                 name = spec_item['name'],
+                                 domain = spec_item['domain'],
+                                 project = new_project,
+                                 application = application_old_id_2_new[spec_item['application']],
+                                 title = spec_item['title'],
+                                 desc = spec_item['desc'],
+                                 owner = user_name_2_user[spec_item['owner']],
+                                 val_set = val_set_old_id_2_new[spec_item['val_set']],
+                                 status = spec_item['status'],
+                                 updated_at = spec_item['updated_at'],
+                                 rationale = spec_item['rationale'],
+                                 remarks = spec_item['remarks'],
+                                 p_kind = spec_item['p_kind'],
+                                 s_kind = spec_item['s_kind'],
+                                 value = spec_item['value'],
+                                 t1 = spec_item['t1'],
+                                 t2 = spec_item['t2'],
+                                 t3 = spec_item['t3'],
+                                 t4 = spec_item['t4'],
+                                 t5 = spec_item['t5'],
+                                 n1 = spec_item['n1'],
+                                 n2 = spec_item['n2'],
+                                 n3 = spec_item['n3'])
+        import pdb; pdb.set_trace()
+        new_spec_item.save()
+        spec_item_old_id_2_new_id[spec_item['id']] = new_spec_item.id
+        spec_item_new_id_2_old[new_spec_item.id] = spec_item
+        
+    new_spec_items = SpecItem.objects.filter(project_id=new_project_id)
+    for new_spec_item in new_spec_items:
+        old_spec_item = spec_item_new_id_2_old[new_spec_item.id] 
+        new_spec_item.previous.id = spec_item_old_id_2_new_id[old_spec_item['previous']]
+        new_spec_item.p_link.id = spec_item_old_id_2_new_id[old_spec_item['p_link']]
+        new_spec_item.s_link.id = spec_item_old_id_2_new_id[old_spec_item['s_link']]
+        new_spec_item.desc = convert_edit_to_db(new_spec_item.desc)
+        new_spec_item.rationale = convert_edit_to_db(new_spec_item.rationale)
+        new_spec_item.remarks = convert_edit_to_db(new_spec_item.remarks)
+        new_spec_item.t1 = convert_edit_to_db(new_spec_item.t1)
+        new_spec_item.t2 = convert_edit_to_db(new_spec_item.t2)
+        new_spec_item.t3 = convert_edit_to_db(new_spec_item.t3)
+        new_spec_item.t4 = convert_edit_to_db(new_spec_item.t4)
+        new_spec_item.t5 = convert_edit_to_db(new_spec_item.t5)
+        new_spec_item.value = convert_edit_to_db(new_spec_item.value)
+        
+        
+        
+        
+        
+        
+        
+    
+    
+    
+    
