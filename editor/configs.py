@@ -5,7 +5,8 @@ from editor.models import SpecItem, ValSet
 configs = {'General': {'csv_sep': '|',
                        'eol_sep': '\n',
                        'temp_dir': '/tmp',
-                       'short_desc_len': 100
+                       'short_desc_len': 100,
+                       'max_depth': 200
                        },
            'Requirement':{'name': 'Requirement',
                           'n_list_fields': 6,

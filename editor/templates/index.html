@@ -42,6 +42,8 @@
            <div class="btn-group">
               {% if user.is_staff %}
                  <a class="btn btn-outline-dark btn-sm" href="{% url 'edit_project' item.project.id %}" title="Edit Project">E</a>
+                 <a class="btn btn-outline-dark btn-sm" href="{% url 'del_project' item.project.id %}" 
+                    onclick="return confirm('Are you sure you want to delete this item?');" title="Delete Project">D</a>
               {% else %}
                  <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">E</a>
               {% endif %}

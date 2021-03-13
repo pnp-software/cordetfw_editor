@@ -30,7 +30,8 @@ from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, 
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
-                             get_redirect_url, make_temp_dir, get_default_val_set_id
+                             get_redirect_url, make_temp_dir, get_default_val_set_id, \
+                             del_release
 from editor.imports import import_project_tables
 from editor.links import list_ver_items_for_display, list_ver_items_for_latex
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
@@ -187,6 +188,29 @@ def edit_project(request, project_id):
     context = {'form': form, 'project': project, 'users': users, \
                 'project_users': project_users, 'val_sets': val_sets}
     return render(request, 'edit_project.html', context)    
+
+
+@login_required         
+def del_project(request, project_id):
+    if not can_create_project(request.user):
+        return redirect(base_url)
+    project = Project.objects.get(id=project_id)
+    
+    project_release = project.release
+    
+    SpecItem.objects.filter(project_id=project_id).delete()
+    ValSet.objects.filter(project_id=project_id).delete()
+    applications = Application.objects.filter(project_id=project_id)
+    for application in applications:
+        application_release = application.release
+        application.delete()
+        del_release(request, application_release, 1)
+        
+    ProjectUser.objects.filter(project_id=project_id).delete()
+    Project.objects.filter(id=project_id).delete()
+    del_release(request, project_release, 1)
+
+    return redirect(base_url)    
 
 
 @login_required         

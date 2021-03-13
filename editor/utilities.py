@@ -560,5 +560,19 @@ def get_default_val_set_id(request, project):
                        'Error message was: '+str(e))
         return 0
     
-    
+def del_release(request, release, n):
+    """ 
+        Recursively delete a release and its previous releases. If the depth of recursion 
+        exceeds max_depth, an error is declared and False is returned.
+    """
+    if n > configs['General']['max_depth']:
+        messages.error(request, 'Attempt to delete a release has reached the limit '+\
+                                    'on the depth of recursion: '+str(n))
+        return False
+        
+    previous_release = release.previous
+    release.delete()        
+    if previous_release != None:
+        del_release(request, previous_release, n+1)
+    return True                                 
 

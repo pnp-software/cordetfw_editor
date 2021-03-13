@@ -155,6 +155,7 @@ def import_project_tables(request, imp_dir):
         
     # Import the Applications
     application_old_id_2_new = {}
+    application_old_id_2_new[''] = None
     for application in applications:
         new_application = Application(updated_at = application['updated_at'],
                                        project = new_project,
@@ -163,10 +164,10 @@ def import_project_tables(request, imp_dir):
         new_application.release_id = old_id_2_new_id[application['release']]
         new_application.save()
         application_old_id_2_new[application['id']] = new_application
-        
+    
     # Import SpecItems
-    spec_item_old_id_2_new_id = {}
-    spec_item_new_id_2_old_id = {}
+    spec_item_old_id_2_new = {}
+    spec_item_new_id_2_old = {}
     for spec_item in spec_items:
         new_spec_item = SpecItem(cat = spec_item['cat'],
                                  name = spec_item['name'],
@@ -192,17 +193,21 @@ def import_project_tables(request, imp_dir):
                                  n1 = spec_item['n1'],
                                  n2 = spec_item['n2'],
                                  n3 = spec_item['n3'])
-        import pdb; pdb.set_trace()
         new_spec_item.save()
-        spec_item_old_id_2_new_id[spec_item['id']] = new_spec_item.id
+        spec_item_old_id_2_new[spec_item['id']] = new_spec_item
         spec_item_new_id_2_old[new_spec_item.id] = spec_item
         
-    new_spec_items = SpecItem.objects.filter(project_id=new_project_id)
+    new_spec_items = SpecItem.objects.filter(project_id=new_project.id)
     for new_spec_item in new_spec_items:
         old_spec_item = spec_item_new_id_2_old[new_spec_item.id] 
-        new_spec_item.previous.id = spec_item_old_id_2_new_id[old_spec_item['previous']]
-        new_spec_item.p_link.id = spec_item_old_id_2_new_id[old_spec_item['p_link']]
-        new_spec_item.s_link.id = spec_item_old_id_2_new_id[old_spec_item['s_link']]
+
+        if old_spec_item['previous'] != '':
+            new_spec_item.previous = spec_item_old_id_2_new[old_spec_item['previous']]
+        if old_spec_item['p_link'] != '':
+            new_spec_item.p_link = spec_item_old_id_2_new[old_spec_item['p_link']]
+        if old_spec_item['s_link'] != '':
+            new_spec_item.p_link = spec_item_old_id_2_new[old_spec_item['s_link']]
+
         new_spec_item.desc = convert_edit_to_db(new_spec_item.desc)
         new_spec_item.rationale = convert_edit_to_db(new_spec_item.rationale)
         new_spec_item.remarks = convert_edit_to_db(new_spec_item.remarks)
