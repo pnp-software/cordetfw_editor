@@ -217,6 +217,7 @@ def import_project_tables(request, imp_dir):
         new_spec_item.t4 = convert_edit_to_db(new_spec_item.t4)
         new_spec_item.t5 = convert_edit_to_db(new_spec_item.t5)
         new_spec_item.value = convert_edit_to_db(new_spec_item.value)
+        new_spec_item.save()
         
         
         

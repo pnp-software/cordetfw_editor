@@ -198,7 +198,14 @@ def del_project(request, project_id):
     
     project_release = project.release
     
+    spec_items = SpecItem.objects.filter(project_id=project_id)
+    for spec_item in spec_items:    # Remove all cross-references between spec_items
+        spec_item.p_link = None
+        spec_item.s_link = None
+        spec_item.previous = None
+        spec_item.save()
     SpecItem.objects.filter(project_id=project_id).delete()
+    
     ValSet.objects.filter(project_id=project_id).delete()
     applications = Application.objects.filter(project_id=project_id)
     for application in applications:
