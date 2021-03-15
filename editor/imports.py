@@ -200,13 +200,12 @@ def import_project_tables(request, imp_dir):
     new_spec_items = SpecItem.objects.filter(project_id=new_project.id)
     for new_spec_item in new_spec_items:
         old_spec_item = spec_item_new_id_2_old[new_spec_item.id] 
-
         if old_spec_item['previous'] != '':
             new_spec_item.previous = spec_item_old_id_2_new[old_spec_item['previous']]
         if old_spec_item['p_link'] != '':
             new_spec_item.p_link = spec_item_old_id_2_new[old_spec_item['p_link']]
         if old_spec_item['s_link'] != '':
-            new_spec_item.p_link = spec_item_old_id_2_new[old_spec_item['s_link']]
+            new_spec_item.s_link = spec_item_old_id_2_new[old_spec_item['s_link']]
 
         new_spec_item.desc = convert_edit_to_db(new_spec_item.desc)
         new_spec_item.rationale = convert_edit_to_db(new_spec_item.rationale)

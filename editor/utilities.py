@@ -398,7 +398,7 @@ def get_s_link_choices(cat, project_id, s_parent_id):
         return SpecItem.objects.filter(project_id=project_id, cat='EnumType'). \
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
     if cat == 'VerLink':
-        return SpecItem.objects.filter(project_id=project_id).exclude(cat='VerItem'). \
+        return SpecItem.objects.filter(project_id=project_id).exclude(cat='VerItem').exclude(cat='VerLink'). \
                         exclude(status='DEL').exclude(status='OBS').order_by('cat', 'domain', 'name')
                         
                         

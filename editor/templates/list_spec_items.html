@@ -194,22 +194,22 @@
             {% endif %}
 
             <!-- The p_link and s_link  -->          
-            {% if 's_link' in display_list %}
-                {% if item.s_link != None %}
-                <td><a href="{% url 'list_spec_items' item.s_link.cat project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
-                    title="{{item.s_link.title}}: {{item.s_link.desc}} ">
-                    {{item.s_link.domain}}:{{item.s_link.name}}
+            {% if 'p_link' in display_list %}
+                {% if item.p_link != None %}            
+                <td><a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
+                    title="{{item.p_link.title}}: {{item.p_link.desc}}">
+                    {{item.p_link.domain}}:{{item.p_link.name}}
                     </a>
                 </td>
                 {% else %}
                 <td></td>
                 {% endif %}
             {% endif %}
-            {% if 'p_link' in display_list %}
-                {% if item.p_link != None %}            
-                <td><a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
-                    title="{{item.p_link.title}}: {{item.p_link.desc}}">
-                    {{item.p_link.domain}}:{{item.p_link.name}}
+            {% if 's_link' in display_list %}
+                {% if item.s_link != None %}
+                <td><a href="{% url 'list_spec_items' item.s_link.cat project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
+                    title="{{item.s_link.title}}: {{item.s_link.desc}} ">
+                    {{item.s_link.domain}}:{{item.s_link.name}}
                     </a>
                 </td>
                 {% else %}
