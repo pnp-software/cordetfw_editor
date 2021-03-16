@@ -375,7 +375,7 @@ def get_s_kind_choices(cat):
   
   
 def get_p_link_choices(cat, project_id, p_parent_id):
-    """ Return the range of choices for the 'p_link' attribute of a specification of a given category """
+    """ Return the range of choices for the 'p_link' attribute of a spec_item of a given category """
     if p_parent_id != None:
         return SpecItem.objects.filter(id=int(p_parent_id)) 
     if cat == 'DataItem':
@@ -387,7 +387,12 @@ def get_p_link_choices(cat, project_id, p_parent_id):
     if cat == 'VerLink':
         return SpecItem.objects.filter(project_id=project_id, cat='VerItem').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+    if cat == 'Packet':
+        return SpecItem.objects.filter(project_id=project_id, cat='Service').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
     return SpecItem.objects.none()
+    
+    
     
     
 def get_s_link_choices(cat, project_id, s_parent_id):
@@ -409,7 +414,7 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
     """ 
     Get the list of expand_items for the spec_item whose ID is expand_id.
     The expand_link is either 's_link' or 'p_link'    
-    If the expand_link is 's_link', the expand_items the spec_items whose
+    If the expand_link is 's_link', the expand_items are the spec_items whose
     s_link points to expand_id (i.e. they are the children of expand_id 
     according to s_link).
     If the expand_link is 'p_link', the expand_items the spec_items whose

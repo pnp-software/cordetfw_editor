@@ -197,14 +197,14 @@
         </ul>
     <li><i>Service</i>: specification of a service in a project</li>
         <ul>
-        <li>Value: the service identifier</li>
+        <li>Value: the service type identifier</li>
         </ul>
     <li><i>Packet</i>: specification of a packet implementing a command or report in a service</li>
         <ul>
-        <li>Value: the sub-service identifier</li>
+        <li>Value: the sub-service type identifier</li>
         <li>T1: a description of the parameters</li>
         <li>T2: a description of the packet destination</li>
-        <li>Secondary Link: a pointer to the service to which the packet belongs</li>
+        <li>Primary Link: a pointer to the service to which the packet belongs</li>
         </ul>
     <li><i>Derived Packet</i>: specification of a derived packet</li>
         <ul>
@@ -216,8 +216,8 @@
         </ul>
     <li><i>Packet Parameter</i>: specification of a parameter in a packet</li>
         <ul>
-        <li>Primary Link: a pointer to the data item acting as parameter</li>
-        <li>Secondary Link: a pointer to the packet or derived packet to which the parameter belongs</li>
+        <li>Secondary Link: a pointer to the data item acting as parameter</li>
+        <li>Primary Link: a pointer to the packet or derived packet to which the parameter belongs</li>
         <li>Primary Kind: the role of the packet parameter (discriminant, housekeeping parameter, or packet parameter)</li>
         <li>N1: the position of the parameter within the packet</li>
         <li>N2: the parameter group size</li>

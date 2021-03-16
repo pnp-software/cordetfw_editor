@@ -360,10 +360,9 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
             display_list.remove('desc')
             display_list.remove('rationale')
             display_list.remove('remarks')
-            if cat == 'VerItem':
-                display_list.remove('t1')
-                display_list.remove('t2')
-                display_list.remove('t3')
+            display_list.remove('t1')
+            display_list.remove('t2')
+            display_list.remove('t3')
         except ValueError:
             pass
     if (display == 'trac'):
