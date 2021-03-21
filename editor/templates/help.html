@@ -154,6 +154,25 @@
     The category-specific attributes are discussed <a href="#SpecItemCat">below</a>.
     </p><p>
     
+    <h4><a name="IntExtSpecItems">Internal and External Specification Items</a></h4>
+    <p>
+    Specification items which are entirely defined within the editor are <strong>internal specification items</strong>.
+    Specification items which are partially defined externally (e.g. figures created outside the editor or
+    <a href="#BehaviouralModels">behavioural models</a> created in the FW Profile Editor) 
+    are <strong>external specification items</strong>.
+    </p><p>
+    Even for external specification items, the user can still add information to the data
+    imported from the external source (e.g. a descriptive text or a rationale).
+    The attributes of external specification items which cannot be edited (because they contain information
+    which is imported from outside the editor) are identified as such in the 
+    <a href="#EditorConfig">configuration dictionary</a> of the editor.  
+    </p><p>
+    The distinction between internal and external specification items is at the level of specification
+    item categories: the <a href="#BehaviouralModels">behavioural model</a> category contains only
+    external specification items; all other categories only contain internal specification items.
+    </p><p>
+
+
     <h4><a name="SpecItemCat">Specification Item Categories</a></h4>
     <p>
     The specification item categories are listed below together with the semantics of their
@@ -175,7 +194,7 @@
         <li>Value: the native type to which the type is mapped</li>
         <li>N1: the size in number of bits of the type</li>
         </ul>
-    <li><i>Enumerated Item</i>: specification of a value of an enumerated type</li>
+    <li><i>Enumerated Value</i>: specification of a value of an enumerated type</li>
         <ul>
         <li>Value: the value of the enumerated item</li>
         <li>Secondary Link: the type to which the enumerated item belongs</li>
@@ -261,7 +280,6 @@
         <li>T2: the post-conditions for the verification activity</li>
         <li>T3: the outcome of the verification activity</li>
         </ul>
-    </ul>
     <li><i>Verification Link</i>: a link between a verification item and the specification item it verifies</li>
         <ul>
         <li>Value: the description of the conditions under which the verification link is valid </li>
@@ -269,17 +287,35 @@
         <li>Secondary Link: the pointer to the verified item</li>
         </ul>
     </ul>
-    For some categories, category-specific attributes are defined in addition to the core attributes defined
+    The figure shows how categories are linked to each other through their p_link and s_link attributes.
+    The three boxes gruped together to the right of the figure ("Application Cmd/Rep") are the categories
+    representing: incoming commands, incomint reports and out-going commands/reports.
     <a href="#SpecItems">here</a>.
     </p><p>
+    <img src="{% static 'images/CatLinks.png' %}"> 
+    </p>
  
     <h3><a name="EditorConfig">Editor Configuration</a></h3>
     <p>
     Configuration information for the editor is held in the <strong>configuration dictionary</strong>.
     The 'General' key in the dictionary holds general configuration information.
     Additionally, for each specification item, a 'Category' key is present whose
-    value is another dictionary with configuration information for that category.
-    The most important item in this dictionary is the 'attrs' dictionary which
+    value is another dictionary with configuration information for that category, including:
+    <ul>
+    <li>The name of the category</li>
+    <li>The list of external attributes for the category (i.e. the specification items whose content
+        originates outside the editor, see also <a href="#IntExtSpecItems">here</a>)</li>
+    <li>The number of fields when the specification items of the given categories are displayed
+        in list form</li>
+    </ul>
+    The 'expand' item in the configuration dictionary determines whether a specification item can be
+    'expanded' when it is displayed by the editor.
+    Specification items refer to each other through their s_link and p_link attributes.
+    When a specification item is expanded, the items which are linked to it either through their
+    s_link or through p_link are listed.
+    The 'expand' item in the configuration dictionary dete
+    </p><p>
+    The 'attrs' item in the configuration dictionary 
     lists the editable fields for that category and, for each, it provides the 
     following information:
     <ul>
@@ -291,6 +327,7 @@
         <li>ref_text: a text field with <a href=""#IntRef">internal references</a></li>
         <li>spec_item_ref: a field with a reference to another specification item</li>
         <li>plain_ref: a field with a reference to a model instance other than a specification item</li>
+        <li>image: a field holding image data</li>
         <li>int: an integer field</li>
         </ul>
     </ul>
@@ -409,10 +446,14 @@
     The following operation may be performed on a SpecItem:
     <ul>
     <li><strong>Add</strong>: a new spec_item is created</li>
-    <li><strong>Edit </strong>: an existing spec_item is modified</li>
-    <li><strong>Copy</strong>: a copy is created of a spec_item in the Default ValSet</li>
+    <li><strong>Edit</strong>: an existing spec_item is modified</li>
+    <li><strong>Copy</strong>: a copy is created of a spec_item in the Default ValSet
+                               (only for internal specification items)</li>
     <li><strong>Delete</strong>: a spec_item is deleted</li>
-    <li><strong>Split</strong>: a copy of a spec_item is created in a different ValSet</li>
+    <li><strong>Split</strong>: a copy of a spec_item is created in a different ValSet
+                                (only for internal specification items)</li>
+    <li><strong>Refresh</strong>: the external content of a specification item is refreshed
+                                (only for external specification items)</li>
     </ul>
     </p><p>
     The semantics of these operations is illustrated in the activity diagrams below.
@@ -424,12 +465,14 @@
     The generic checks are specified in the activity diagrams below.
     The category-specific checks are:
     <ul>
-    <li><strong>Data Item Types</strong>: If the kind of a data item type is set to non-enumerated, 
-                                          it cannot have enumerated items attached to it</li>
-    <li><strong>Data Items</strong>: The value of data item of enumerated type must be an 
-                                     <a href="#IntRef">internal reference</a> to an enumerated value of that type</li>
     <li><strong>Data Items</strong>: <a href="#IntRef">Internal reference</a> in the value field may 
                                      only point to other data items</li>
+    <li><strong>Data Items</strong>: The value of of a data item of enumerated kind must be an
+                                     <a href="#IntRef">Internal reference</a> to an enumerated value of the
+                                     the same type as the data item</li>
+    <li><strong>Behavioural Model</strong>: neither the domain nor the name can be be modified in editing mode</li>
+    <li><strong>Behavioural Model</strong>: during an add operation, a model with the specified domain and name
+                                            must exist in the FW Profile Database</li>
     </ul>
     </p><p>
     <img src="{% static 'images/AddSpecItem.png' %}"> 
@@ -441,6 +484,8 @@
     <img src="{% static 'images/DelSpecItem.png' %}"> 
     </p><p>
     <img src="{% static 'images/SplitSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/RefreshSpecItem.png' %}"> 
     </p>
     
     <h4><a name="IntRef">Internal References</a></h4>
@@ -575,7 +620,9 @@
         its previous pointer is set to the newly-copied item</li>
     </ul>
     Each imported specification item is processed according to the following activity diagram:
+    <p></p>
     <img src="{% static 'images/ImportSpecItem.png' %}"> 
+    <p>
     The typical use case for the plain import/export functions is as follows.
     A user needs to perform the same operation on a large number of data items (e.g.
     update their names; capitalize their domain name; clear their values; etc).
@@ -620,31 +667,19 @@
     Within the FW Profile Editor, models have a name and can have a domain and a title.
     Models are defined as json strings and an svg representation which can be used to render them as pictures.
     </p><p>
-    The Cordet FW Editor has a connection to FW Profile Editor Database and it allows a user to import all the models 
-    corresponding to one or more domains.
-    In response to an import request, the Cordet FW Editor retrieves the FW Profile Models of the selected domains from the FW Profile Editor
-    Database and imports them into a dedicated table (the <i>FwProfileModel</i> table) in the Cordet FW Editor Database. 
-    The import function processes each imported model according to the following rules:
-    <ul>
-    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
-        'CNF', and if the imported entry is identical to the local entry, then nothing is done.</li>
-    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
-        'CNF', and if the imported entry differs from the local entry, then the status of the local entry is changed from 'CNF' to 'OBS' and
-        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
-        and its 'previous' field is set to point to the old entry.</li>
-    <li>If an entry exists in the FwProfileModel table with the same domain and name as the imported model, and if the status of this entry is
-        'NEW', then the entry is overwritten with the imported data.</li>
-    <li>In all other cases, 
-        a new record is created in the FwProfileModel table to hold the imported model. The status of the newly created entry is set to 'NEW'
-        and its 'previous' field is set to 'None'.</li>
-    </ul>
-    In the second and third case, an error is issued if more than one entry is found with the same domain:name:status combination is found.
+    The Cordet FW Editor has a connection to the FW Profile Editor Database, which allows a user to import 
+    selected models. 
+    A user can only import FW Profile modes which belong to him.
+    A model is imported through the <a href="#SpecItemOper">'add' operation</a>.
     </p><p>
     
     <h4><a name="DataItems">Data Items</a></h4>
     TBD
     </p><p>
     
+    <h4><a name="Packets">Packets</a></h4>
+    TBD
+    </p><p>
     
     
     

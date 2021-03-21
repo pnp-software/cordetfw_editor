@@ -13,6 +13,7 @@ from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import configs
+from editor.fwprofile_db import get_model
 
 class ProjectForm(forms.Form):
     name = forms.CharField()
@@ -97,12 +98,14 @@ class SpecItemForm(forms.Form):
     t4 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     t5 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
    
-    def __init__(self, mode, cat, project, application, config, s_parent_id, p_parent_id, *args, **kwargs):
+    def __init__(self, mode, request, cat, project, application, config, s_parent_id, p_parent_id, *args, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
         self.project = project
         self.application = application
         self.mode = mode
         self.cat = cat
+        self.config = config
+        self.request = request
         self.helper = FormHelper(self)
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
@@ -127,7 +130,7 @@ class SpecItemForm(forms.Form):
 
         # Hide fields which are not required for a given category
         for field in self.fields:  
-            if field not in config['attrs']:
+            if (field not in config['attrs']) or (field in config['ext_attrs']):
                 self.fields[field].widget = forms.HiddenInput()
                 self.fields[field].required = False 
                 continue
@@ -155,7 +158,7 @@ class SpecItemForm(forms.Form):
             self.fields['p_link'].widget = forms.HiddenInput()
             self.fields['s_link'].disabled = True
             self.fields['s_link'].widget = forms.HiddenInput()
-                      
+                       
     def clean(self):
         """ Verify that: 
         (a) In add and copy modes, the domain:name pair is unique within non-deleted, non-obsolete spec_items 
@@ -200,29 +203,37 @@ class SpecItemForm(forms.Form):
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
             ref = cd['value'].strip().split(':')
             try:
-                enum_val = SpecItem.objects.get(id=ref[1])
+                enum_val = SpecItem.objects.get(id=ref[1], cat='DataItem')
             except ObjectDoesNotExist:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type: '+\
                                             'The reference is invalid')
-            if enum_val.s_link.id != cd['p_link'].id:
+            if enum_val.p_link.id != cd['p_link'].id:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
  
         return cd
  
     def clean_title(self):
-        return convert_edit_to_db(self.cleaned_data['title'])
+        return convert_edit_to_db(self.project, elf.cleaned_data['title'])
 
     def clean_desc(self):
-        return convert_edit_to_db(self.cleaned_data['desc'])
+        return convert_edit_to_db(self.project, self.cleaned_data['desc'])
 
     def clean_value(self):
-        return convert_edit_to_db(self.cleaned_data['value'])
+        if self.config['ext_attrs'] != []:
+            fw_model = get_model(self.request, self.cleaned_data['domain'], self.cleaned_data['name'])
+            if fw_model == None:
+                raise forms.ValidationError('No FW Profile model with name '+self.cleaned_data['name']+\
+                                                                ' found in project '+self.cleaned_data['domain'])
+            else:
+                return fw_model['svg_rep']
+        else:
+            return convert_edit_to_db(self.project, self.cleaned_data['value'])
 
     def clean_rationale(self):
-        return convert_edit_to_db(self.cleaned_data['rationale'])
+        return convert_edit_to_db(self.project, self.cleaned_data['rationale'])
 
     def clean_remarks(self):
-        return convert_edit_to_db(self.cleaned_data['remarks'])
+        return convert_edit_to_db(self.project, self.cleaned_data['remarks'])
 
 
  

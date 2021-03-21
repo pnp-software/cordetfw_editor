@@ -45,7 +45,7 @@
                 <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
                 {% endif %}
             </td>
-            <td>{{item.value}}</td>
+            <td>{{item.value|filter_refs|linebreaksbr}}</td>
             <td>{{item.kind}}</td>
             {% if cat == 'DataItemType' %}
             <td>{{item.dim}}</td>

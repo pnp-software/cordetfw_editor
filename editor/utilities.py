@@ -13,6 +13,7 @@ from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
+from editor.fwprofile_db import get_model
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                  MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
 
@@ -79,7 +80,7 @@ def get_list_refs(s):
     return re.findall("#([a-z]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+)", s)
     
     
-def convert_edit_to_db(s):
+def convert_edit_to_db(project, s):
     """
     The argument is a text field in edit representation (with internal
     references in the format '#cat:domain:name'). The function converts
@@ -91,13 +92,14 @@ def convert_edit_to_db(s):
         return s
     ref = match.group().split(':')
     try:
-        id = SpecItem.objects.exclude(status='OBS').exclude(status='DEL').get(domain=ref[1], name=ref[2]).id
+        id = SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
+                get(project_id=project.id, cat=ref[0], domain=ref[1], name=ref[2]).id
         s_mod = s[:match.start()] + '#iref:' + str(id)
     except ObjectDoesNotExist:
         logger.warning('Non-existent internal reference: '+str(ref))
         s_mod = s[:match.start()] + ref[0] + ':' + ref[1] + ':' + ref[2]
     
-    return s_mod + convert_edit_to_db(s[match.end():])
+    return s_mod + convert_edit_to_db(project, s[match.end():])
     
     
 def convert_exp_to_db(s):
@@ -264,6 +266,8 @@ def spec_item_to_latex(spec_item):
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
             dic[label] = frmt_string(str(getattr(spec_item, key)))
+        elif value['kind'] == 'image':
+            dic[label] = 'image data'
         else:
             dic[label] = frmt_string(str(getattr(spec_item, key)))
     
@@ -292,12 +296,14 @@ def spec_item_to_export(spec_item):
             dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
         elif value['kind'] == 'spec_item_ref':
             dic[cat_attrs[key]['label']] = str(getattr(spec_item, key)).split(' ')[0]
+        elif value['kind'] == 'image':
+            dic[cat_attrs[key]['label']] = 'image data'
         else:
             dic[cat_attrs[key]['label']] = str(getattr(spec_item, key))
     return dic
         
             
-def export_to_spec_item(imp_dict, spec_item):
+def export_to_spec_item(request, project, imp_dict, spec_item):
     """ 
     Argument imp_dict is a dictionary created by reading a line in a 
     plain import file.
@@ -310,11 +316,14 @@ def export_to_spec_item(imp_dict, spec_item):
     cat_attrs = configs[spec_item.cat]['attrs']
     for key, value in configs[spec_item.cat]['attrs'].items():
         if key == 'val_set':
-            spec_item.val_set = ValSet.objects.get(name=imp_dict[cat_attrs[key]['label']])
+            spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
+        elif (key == 'value') and (spec_item.cat == 'Model'):
+            model_dict = get_model(request, imp_dict[cat_attrs['domain']['label']], imp_dict[cat_attrs['name']['label']]) 
+            spec_item.value = model_dict['svg_rep']
         elif key == 'owner':
             continue
         elif value['kind'] == 'ref_text':
-            setattr(spec_item, key, convert_edit_to_db(imp_dict[cat_attrs[key]['label']]))
+            setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
         elif value['kind'] == 'spec_item_ref':
             setattr(spec_item, key, convert_exp_to_db(imp_dict[cat_attrs[key]['label']]))
         else:

@@ -32,5 +32,6 @@ urlpatterns = [
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_dom>/export_spec_items', views.export_spec_items, name='export_spec_items'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_dom>/import_spec_items', views.import_spec_items, name='import_spec_items'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_dom>/list_spec_item_history', views.list_spec_item_history, name='list_spec_item_history'),
+    path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_dom>/refresh_spec_item', views.refresh_spec_item, name='refresh_spec_item'),
     
 ]

@@ -395,7 +395,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         title = 'Add '+configs[cat]['name']+' to Project '+project.name
         
     if request.method == 'POST':   
-        form = SpecItemForm('add', cat, project, application, configs[cat], s_parent_id, p_parent_id, request.POST)
+        form = SpecItemForm('add', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, request.POST)
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
@@ -410,7 +410,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('add', cat, project, application, configs[cat], s_parent_id, p_parent_id)
+        form = SpecItemForm('add', request, cat, project, application, configs[cat], s_parent_id, p_parent_id)
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
@@ -436,7 +436,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
   
     spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
-        form = SpecItemForm('edit', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('edit', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
                             request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             if spec_item.status == 'CNF':
@@ -452,13 +452,23 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('edit', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('edit', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context) 
+
+
+@login_required         
+def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+    project = Project.objects.get(id=project_id)
+    # TBD
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
+    return render(request, 'basic_form.html', context) 
+    
+
 
 
 @login_required         
@@ -478,8 +488,8 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('copy', cat, project, application, configs[cat], s_parent_id, p_parent_id, request.POST, \
-                            initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('copy', request, cat, project, application, configs[cat], s_parent_id, \
+                            p_parent_id, request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
@@ -493,7 +503,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('copy', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('copy', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -518,7 +528,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('split', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('split', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
                              request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
@@ -534,7 +544,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('split', cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('split', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -662,7 +672,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                 if not bool(q_cat):     # The domain:name is new in selected category
                     new_spec_item = SpecItem()
                     new_spec_item.cat = cat
-                    export_to_spec_item(item, new_spec_item)   
+                    export_to_spec_item(request, project, item, new_spec_item)   
                     new_spec_item.status = 'NEW'
                     new_spec_item.updated_at = datetime.now()
                     new_spec_item.previous = None
@@ -678,7 +688,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                         spec_item.owner = get_user(request)
                         spec_item.save()
                     else:
-                        export_to_spec_item(item, q_cat[0]) 
+                        export_to_spec_item(request, project, item, q_cat[0]) 
                         q_cat[0].updated_at = datetime.now()
                         q_cat[0].owner = get_user(request)
                         q_cat[0].save()

@@ -20,13 +20,21 @@ indent_mode=2
 [project]
 name=cordetfw_editor
 base_path=/home/ap/Projects/cordetfw_editor
+description=
 
 [long line marker]
 long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=0
+current_page=1
+FILE_NAME_0=6200;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fconfigs.py;0;4
+FILE_NAME_1=35807;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Fhelp.html;0;4
+FILE_NAME_2=15674;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fviews.py;0;4
+FILE_NAME_3=14874;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Futilities.py;0;4
+FILE_NAME_4=12070;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Flist_spec_items.html;0;4
+FILE_NAME_5=0;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fchoices.py;0;4
+FILE_NAME_6=0;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fmodels.py;0;4
 
 [VTE]
 last_dir=/home/ap

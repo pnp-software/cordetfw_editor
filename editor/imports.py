@@ -207,15 +207,15 @@ def import_project_tables(request, imp_dir):
         if old_spec_item['s_link'] != '':
             new_spec_item.s_link = spec_item_old_id_2_new[old_spec_item['s_link']]
 
-        new_spec_item.desc = convert_edit_to_db(new_spec_item.desc)
-        new_spec_item.rationale = convert_edit_to_db(new_spec_item.rationale)
-        new_spec_item.remarks = convert_edit_to_db(new_spec_item.remarks)
-        new_spec_item.t1 = convert_edit_to_db(new_spec_item.t1)
-        new_spec_item.t2 = convert_edit_to_db(new_spec_item.t2)
-        new_spec_item.t3 = convert_edit_to_db(new_spec_item.t3)
-        new_spec_item.t4 = convert_edit_to_db(new_spec_item.t4)
-        new_spec_item.t5 = convert_edit_to_db(new_spec_item.t5)
-        new_spec_item.value = convert_edit_to_db(new_spec_item.value)
+        new_spec_item.desc = convert_edit_to_db(new_project, new_spec_item.desc)
+        new_spec_item.rationale = convert_edit_to_db(new_project, new_spec_item.rationale)
+        new_spec_item.remarks = convert_edit_to_db(new_project, new_spec_item.remarks)
+        new_spec_item.t1 = convert_edit_to_db(new_project, new_spec_item.t1)
+        new_spec_item.t2 = convert_edit_to_db(new_project, new_spec_item.t2)
+        new_spec_item.t3 = convert_edit_to_db(new_project, new_spec_item.t3)
+        new_spec_item.t4 = convert_edit_to_db(new_project, new_spec_item.t4)
+        new_spec_item.t5 = convert_edit_to_db(new_project, new_spec_item.t5)
+        new_spec_item.value = convert_edit_to_db(new_project, new_spec_item.value)
         new_spec_item.save()
         
         

@@ -228,11 +228,15 @@
             <!-- The edit/copy/delete/split buttons  --> 
             <td>
               <div class="btn-group">
-                {% if item.val_set.name == 'Default' %}  
+                {% if item.val_set.name == 'Default' and config.ext_attrs|length == 0 %}  
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'split_spec_item' cat project.id application_id item.id sel_dom %}" title="Split {{config.name}}">S</a>
+                {% endif %}
+                {% if config.ext_attrs|length != 0 %}  
+                <a class="btn btn-outline-dark btn-sm"
+                   href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_dom %}" title="Refresg {{config.name}}">R</a>
                 {% endif %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
