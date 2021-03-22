@@ -33,6 +33,7 @@ from editor.utilities import get_domains, do_application_release, do_project_rel
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
                              del_release
 from editor.imports import import_project_tables
+from editor.fwprofile_db import get_model
 from editor.links import list_ver_items_for_display, list_ver_items_for_latex
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
@@ -464,12 +465,24 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 @login_required         
 def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
-    # TBD
-    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
-    return render(request, 'basic_form.html', context) 
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+    if not has_access_to_project(request.user, project):
+        return redirect(base_url)
     
+    spec_item = SpecItem.objects.get(id=item_id)
+    model_dict = get_model(request, spec_item.domain, spec_item.name)
+    if model_dict['svg_rep'] != spec_item.value:
+        if spec_item.status == 'CNF':
+            spec_item = make_obs_spec_item_copy(request, spec_item)
+        spec_item.value = model_dict['svg_rep']
+        spec_item.updated_at = datetime.now()
+        spec_item.owner = get_user(request)
+        spec_item.save()
 
-
+    redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+\
+                    str(default_val_set.id)+'/'+sel_dom+'/list_spec_items'
+    return redirect(redirect_url)
+    
 
 @login_required         
 def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
