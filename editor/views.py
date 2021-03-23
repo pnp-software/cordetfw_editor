@@ -478,9 +478,11 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom
         spec_item.updated_at = datetime.now()
         spec_item.owner = get_user(request)
         spec_item.save()
+    else:
+        messages.warning(request,'Model has not changed -- no refresh needed')
 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+\
-                    str(default_val_set.id)+'/'+sel_dom+'/list_spec_items'
+                    str(default_val_set.id)+'/'+sel_dom+'/list_spec_items#'+spec_item.domain+':'+spec_item.name
     return redirect(redirect_url)
     
 

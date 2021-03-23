@@ -38,8 +38,8 @@
                 {% if item.desc != '' %}
                 {{item.desc|filter_refs|linebreaksbr}}
                 {% endif %}
-                {% if item.justification != '' %}
-                <br><strong>Justification</strong> {{item.justification|filter_refs|linebreaksbr}}
+                {% if item.rationale != '' %}
+                <br><strong>Rationale</strong> {{item.rationale|filter_refs|linebreaksbr}}
                 {% endif %}
                 {% if item.remarks != '' %}
                 <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
