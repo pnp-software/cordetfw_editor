@@ -130,7 +130,11 @@
             
             <!-- Title and: description, rationale, and remarks -->
             {% if 'title' in display_list %}
-            <td><strong>{{item.title}}</strong> 
+                {% if item.desc != '' and 'desc' in display_list %}
+                <td><strong>{{item.title}}</strong> 
+                {% else %}
+                <td>{{item.title}}
+                {% endif %}
             {% endif  %}
                 {% if item.desc != '' and 'desc' in display_list %}
                 {{item.desc|filter_refs|linebreaksbr}}

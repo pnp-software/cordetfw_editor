@@ -213,7 +213,7 @@ class SpecItemForm(forms.Form):
         return cd
  
     def clean_title(self):
-        return convert_edit_to_db(self.project, elf.cleaned_data['title'])
+        return convert_edit_to_db(self.project, self.cleaned_data['title'])
 
     def clean_desc(self):
         return convert_edit_to_db(self.project, self.cleaned_data['desc'])
