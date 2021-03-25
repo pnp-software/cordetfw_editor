@@ -20,9 +20,9 @@ class ProjectForm(forms.Form):
     owner = forms.ChoiceField(choices=())
     description = forms.CharField(widget=forms.Textarea)
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
-        self.fields['owner'].choices = get_user_choices()
+        self.fields['owner'].choices = get_user_choices(project)
         self.helper = FormHelper(self)
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'

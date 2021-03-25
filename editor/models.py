@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from editor.choices import SPEC_ITEM_CAT, VER_STATUS, HISTORY_STATUS,\
                            REQ_KIND, DI_KIND, MODEL_KIND, PCKT_KIND, \
-                           PCKT_PAR_KIND, PCKT_APP_KIND, VER_ITEM_KIND, REQ_VER_METHOD 
+                           PCKT_PAR_KIND, PCKT_APP_KIND, VER_ITEM_KIND, \
+                           REQ_VER_METHOD, USER_ROLE 
 
 class Release(models.Model):
     release_author = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -27,9 +28,10 @@ class ProjectUser(models.Model):
     updated_at = models.DateField(auto_now=True)
     user = models.ForeignKey(User, related_name='used_projects', on_delete=models.PROTECT)
     project = models.ForeignKey(Project, related_name='project_users', on_delete=models.PROTECT)
+    role = models.CharField(max_length=24, choices=USER_ROLE, default = 'RO')
     def __str__(self):
-        return self.user.username + ' as user of: ' + self.project.name    
-
+        return self.user.username + ' as user of: ' + self.project.name 
+    
 class Application(models.Model):
     name = models.CharField(max_length=255)
     desc = models.TextField()
@@ -77,6 +79,7 @@ class SpecItem(models.Model):
     n1  = models.IntegerField(blank=True, default=0)
     n2  = models.IntegerField(blank=True, default=0)
     n3  = models.IntegerField(blank=True, default=0)
+    change_log = models.TextField(blank=True, default='')
     def __str__(self):
         return self.domain + ':' + self.name + ' (' + self.title + ')'
   

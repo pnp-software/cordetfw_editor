@@ -33,6 +33,13 @@ REQ_KIND = (
     ("AP","Adaptation Point Requirement"),
 )
 
+# The role of a project user
+USER_ROLE = (
+    ("RO","Read-Only"),
+    ("RW","Read-Write"),
+)
+
+
 # The kind of a data item
 DI_KIND = (
     ("CNS","Constant"),

@@ -330,10 +330,18 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
             setattr(spec_item, key, imp_dict[cat_attrs[key]['label']])
 
 
-def get_user_choices():
-    """ Return a list of pairs (id, user) representing the users in the system """
-    users = User.objects.all().order_by('username').values_list('id','username', 'first_name', 'last_name')
+def get_user_choices(project):
+    """ 
+        Return a list of pairs (id, user) representing the users in the system 
+        (excluding, if it exists, the owner of the project)
+    """
     user_choices = []
+    if project != None:
+        users = User.objects.all().exclude(id=project.owner.id).order_by('username').\
+                                           values_list('id', 'username', 'first_name', 'last_name')
+        user_choices.append((project.owner.id, project.owner.username+' ('+project.owner.first_name+' '+project.owner.last_name+')'))
+    else:
+        users = User.objects.all().order_by('username').values_list('id','username', 'first_name', 'last_name')
     for user in users:
        if ((user[2] != '') or (user[3] != '')):
           user_choices.append((user[0], user[1]+' ('+user[2]+' '+user[3]+')'))

@@ -89,7 +89,7 @@ def change_password(request):
 @login_required         
 def add_application(request, project_id):
     project = Project.objects.get(id=project_id)
-    if not is_project_owner(request.user, project):
+    if not is_project_owner(request, project):
         return redirect(base_url)
     
     if request.method == 'POST':    # Bind form to posted data 
@@ -109,11 +109,11 @@ def add_application(request, project_id):
 
 @login_required         
 def add_project(request):
-    if not can_create_project(request.user):
+    if not can_create_project(request):
         return redirect(base_url)
     
     if request.method == 'POST':    
-        form = ProjectForm(request.POST)
+        form = ProjectForm(None, request.POST)
         if form.is_valid():
             new_project = Project(name = form.cleaned_data['name'],
                                   desc = form.cleaned_data['description'],
@@ -135,7 +135,7 @@ def add_project(request):
             default_val_set.save()
             return redirect(base_url)
     else:   
-        form = ProjectForm()
+        form = ProjectForm(None)
 
     context = {'form': form, 'title': 'Add New Project', }
     return render(request, 'basic_form.html', context)    
@@ -143,17 +143,19 @@ def add_project(request):
 
 @login_required         
 def edit_project(request, project_id):
-    if not can_create_project(request.user):
+    if not can_create_project(request):
         return redirect(base_url)
     project = Project.objects.get(id=project_id)
     
     # Handle case where edit_project is invoked to add a new user to the project 
     user_id = request.GET.get('user_id')
+    user_role = request.GET.get('role')
     if user_id != None:     
         if not ProjectUser.objects.filter(project_id=project_id, user_id=user_id).exists():
             new_project_user = ProjectUser(updated_at = datetime.now(),
                                            user = User.objects.get(id=user_id),
-                                           project = project)
+                                           project = project,
+                                           role = user_role)
             new_project_user.save()
     
     # Handle case where edit_project is invoked to delete a user from the project 
@@ -171,7 +173,7 @@ def edit_project(request, project_id):
                                     ', possibly because it is still in use: '+repr(e))
 
     if request.method == 'POST':    # Bind form to posted data 
-        form = ProjectForm(request.POST)
+        form = ProjectForm(project, request.POST)
         if form.is_valid():
             project.name = form.cleaned_data['name']
             project.desc = form.cleaned_data['description']
@@ -179,11 +181,11 @@ def edit_project(request, project_id):
             project.save()
             return redirect(base_url)
     else:   
-        form = ProjectForm(initial={'name': project.name, 
-                                    'description': project.desc, 
-                                    'owner': project.owner})
+        form = ProjectForm(project, initial={'name': project.name, 
+                                             'description': project.desc, 
+                                             'owner': project.owner})
     
-    users = User.objects.all().order_by('username').values()
+    users = User.objects.all().exclude(username=project.owner).order_by('username').values()
     project_users = list(ProjectUser.objects.filter(project_id=project_id))
     val_sets = list(ValSet.objects.filter(project_id=project_id))
     context = {'form': form, 'project': project, 'users': users, \
@@ -193,7 +195,7 @@ def edit_project(request, project_id):
 
 @login_required         
 def del_project(request, project_id):
-    if not can_create_project(request.user):
+    if not can_create_project(request):
         return redirect(base_url)
     project = Project.objects.get(id=project_id)
     
@@ -225,7 +227,7 @@ def del_project(request, project_id):
 def edit_application(request, application_id):
     application = Application.objects.get(id = application_id)
     project = application.project
-    if not is_project_owner(request.user, project):
+    if not is_project_owner(request, project):
         return redirect(base_url)
     
     if request.method == 'POST':    
@@ -245,7 +247,7 @@ def edit_application(request, application_id):
 @login_required         
 def make_project_release(request, project_id):
     project = Project.objects.get(id=project_id)
-    if not is_project_owner(request.user, project):
+    if not is_project_owner(request, project):
         return redirect(base_url)
     
     if request.method == 'POST':    
@@ -264,7 +266,7 @@ def make_project_release(request, project_id):
 @login_required         
 def make_application_release(request, application_id):
     application = Application.objects.get(id=application_id)
-    if not is_project_owner(request.user, application.project):
+    if not is_project_owner(request, application.project):
         return redirect(base_url)
     
     if request.method == 'POST':    
@@ -283,7 +285,7 @@ def make_application_release(request, application_id):
 @login_required         
 def add_val_set(request, project_id):
     project = Project.objects.get(id=project_id)
-    if not can_add_val_set(request.user):
+    if not can_add_val_set(request):
         return redirect(base_url)
     
     redirect_url = '/editor/'+str(project_id)+'/edit_project'
@@ -306,7 +308,7 @@ def add_val_set(request, project_id):
 def edit_val_set(request, project_id, val_set_id):
     project = Project.objects.get(id=project_id)
     val_set = ValSet.objects.get(id=val_set_id)
-    if not can_add_val_set(request.user):
+    if not can_add_val_set(request):
         return redirect(base_url)
     
     redirect_url = '/editor/'+str(project_id)+'/edit_project'
@@ -717,7 +719,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
 
 @login_required    
 def import_project(request):
-    if not can_create_project(request.user):
+    if not can_create_project(request):
         return redirect(base_url)
   
     if request.method == 'POST':   
