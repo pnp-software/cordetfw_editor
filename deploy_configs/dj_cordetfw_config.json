@@ -1,0 +1,13 @@
+{
+	"SECURE_KEY": "your_secure_key",
+	"DATABASES": {
+    		"default": {
+        		"ENGINE": "django.db.backends.mysql",
+        		"NAME": "dj_server",
+        		"USER": "dj_user",
+        		"PASSWORD": "your_password",
+        		"HOST": "127.0.0.1",
+        		"PORT": "3306"
+    		}
+	}
+}
