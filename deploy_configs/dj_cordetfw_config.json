@@ -9,5 +9,13 @@
         		"HOST": "127.0.0.1",
         		"PORT": "3306"
     		}
-	}
+	},
+	"FWPROFILE_DB": {
+	    "USER": "fw_user",
+	    "PWD": "your password",
+	    "HOST": "127.0.0.1",
+	    "NAME": "fwprofile_db"
+	}	
+	
+	
 }
