@@ -27,14 +27,18 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=1
-FILE_NAME_0=6200;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fconfigs.py;0;4
-FILE_NAME_1=35807;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Fhelp.html;0;4
-FILE_NAME_2=15674;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fviews.py;0;4
-FILE_NAME_3=14874;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Futilities.py;0;4
-FILE_NAME_4=12070;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Flist_spec_items.html;0;4
-FILE_NAME_5=0;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fchoices.py;0;4
-FILE_NAME_6=0;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fmodels.py;0;4
+current_page=2
+FILE_NAME_0=20156;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fconfigs.py;0;4
+FILE_NAME_1=11021;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Fhelp.html;0;4
+FILE_NAME_2=13414;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fviews.py;0;4
+FILE_NAME_3=13121;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Futilities.py;0;4
+FILE_NAME_4=1124;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fforms.py;0;4
+FILE_NAME_5=10183;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fimports.py;0;4
+FILE_NAME_6=1575;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fmodels.py;0;4
+FILE_NAME_7=1284;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fchoices.py;0;4
+FILE_NAME_8=1795;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Fedit_project.html;0;4
+FILE_NAME_9=721;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Flist_spec_items.html;0;4
+FILE_NAME_10=1344;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Faccess.py;0;4
 
 [VTE]
 last_dir=/home/ap

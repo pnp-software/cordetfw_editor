@@ -38,8 +38,8 @@ from editor.links import list_ver_items_for_display, list_ver_items_for_latex
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 
-from editor.access import is_project_owner, has_access_to_project, has_access_to_application, \
-                    is_spec_item_owner, can_create_project, can_add_val_set
+from editor.access import is_project_owner, has_read_access_to_project, \
+                    can_create_project, can_add_val_set, has_write_access_to_project
 
 import cexprtk
 import logging
@@ -334,7 +334,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     expand_id = request.GET.get('expand_id')
     expand_link = request.GET.get('expand_link')
     display = request.GET.get('display')
-    if not has_access_to_project(request.user, project):
+    if not has_read_access_to_project(request, project):
         return redirect(base_url)
     
     if (application_id == 0):   # Items to be listed are 'project items'
@@ -387,7 +387,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
-    if not has_access_to_project(request.user, project):
+    if not has_write_access_to_project(request, project):
         return redirect(base_url)
 
     if application_id != 0:
@@ -434,7 +434,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     else:
         application = None
         title = 'Edit '+configs[cat]['name']+' in Project '+project.name
-    if not has_access_to_project(request.user, project):
+    if not has_write_access_to_project(request, project):
         return redirect(base_url)
   
     spec_item = SpecItem.objects.get(id=item_id)
@@ -468,7 +468,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-    if not has_access_to_project(request.user, project):
+    if not has_write_access_to_project(request, project):
         return redirect(base_url)
     
     spec_item = SpecItem.objects.get(id=item_id)
@@ -501,7 +501,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     else:
         application = None
         title = 'Copy '+configs[cat]['name']+' in Project '+project.name
-    if not has_access_to_project(request.user, project) or (spec_item.val_set.name != 'Default'):
+    if not has_write_access_to_project(request, project) or (spec_item.val_set.name != 'Default'):
         return redirect(base_url)
   
     if request.method == 'POST':   
@@ -541,7 +541,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     else:
         application = None
         title = 'Split '+configs[cat]['name']+' in Project '+project.name
-    if not has_access_to_project(request.user, project)  or (spec_item.val_set.name != 'Default'):
+    if not has_write_access_to_project(request, project)  or (spec_item.val_set.name != 'Default'):
         return redirect(base_url)
   
     if request.method == 'POST':   
@@ -577,7 +577,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
-    if not has_access_to_project(request.user, project):
+    if not has_write_access_to_project(request, project):
         return redirect(base_url)
 
     if spec_item.status == 'NEW':
@@ -602,7 +602,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         application = Application.objects.get(id=application_id)
     else:
         application = None
-    if not has_access_to_project(request.user, project):
+    if not has_read_access_to_project(request, project):
         return redirect(base_url)
     export_type = request.GET.get('export')
 
@@ -650,7 +650,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         application = Application.objects.get(id=application_id)
     else:
         application = None
-    if not has_access_to_project(request.user, project):
+    if not has_write_access_to_project(request, project):
         return redirect(base_url)
 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(val_set_id)+\
@@ -758,7 +758,7 @@ def import_project(request):
 @login_required         
 def export_project(request, project_id):
     project = Project.objects.get(id=project_id)
-    if not has_access_to_project(request.user, project):
+    if not has_read_access_to_project(request, project):
         return redirect(base_url)
 
     temp_dir = configs['General']['temp_dir']
@@ -826,7 +826,7 @@ def export_project(request, project_id):
 def list_spec_item_history(request, cat, project_id, application_id, item_id, sel_dom):
     # If application_id is zero, then the items to be listed are 'project items'; otherwise they are 'application items'
     project = Project.objects.get(id=project_id)
-    if not has_access_to_project(request.user, project):
+    if not has_read_access_to_project(request, project):
         return redirect(base_url)
     
     spec_item = SpecItem.objects.get(id=item_id)
