@@ -25,6 +25,24 @@
     The model has two parts: a static part which defines the structure of the editor database; 
     and a dynamic part which defines the behaviour associated to the data held in the database.
     The editor behaviour is implemented in the back-end component of the editor.
+    </p><p>
+    Distinctive features of the editor include:
+    <ul>
+    <li>Support for multiple versions of requirements through the <a href="#ValSets">ValSet</a> concept</li>
+    <li>Support for a <a href="#History">history</a> to keep track of evolution of requirements</li>
+    <li>Support for creating <a href="IntRef">links between requirements</a> with auto-completion facilities</li>
+    <li>Support for linking <a href="#VerItems">verification information</a> to requirements</li>
+    <li><a href="#SpecItemRep">Rendering of requirements</a> either as hyperlinked html or as text in a form 
+        suitable for import in latex documents</li>
+    <li>Link to the <a href="#BehaviouralModels">FW Profile Editor</a> to allow behavioural models to be used 
+        as requirements</li>
+    <li>Provision of <a href="#ExpImp">import and export facilities</a> to csv formats for all requirements</li>
+    <li>Support for <a href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
+    <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
+    <li>Distribution through a free and open licence to allow users to 
+        <a href="#EditorExtension">extend the editor</a> to meet their needs</li>
+    </ul>
+    
     </p>
  
    
@@ -149,6 +167,7 @@
                                  (empty if the specification item has no history)</li>
     <li><i>Justification</i>: the rationale for the existence of the specification item or for its value</li>
     <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
+    <li><i>Implementation</i>: information about how the specification item is implemented</li> 
     <li><i>ValSet(*)</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
     </ul>
     The category-specific attributes are discussed <a href="#SpecItemCat">below</a>.
@@ -189,12 +208,14 @@
         </ul>
     <li><i>Data Item Type</i>: specification of a non-enumerated data item type </li>
         <ul>
-        <li>Value: the native type to which the type is mapped</li>
+        <li>Value: the default value for instances of the type</li>
+        <li>Implementation: the native type to which the type is mapped</li>
         <li>N1: the size in number of bits of the type</li>
         </ul>
     <li><i>Enumerated Data Item Type</i>: specification of an enumerated data item type </li>
         <ul>
-        <li>Value: the native type to which the type is mapped</li>
+        <li>Value: the default value for instances of the type</li>
+        <li>Implementation: the native type to which the type is mapped</li>
         <li>N1: the size in number of bits of the type</li>
         </ul>
     <li><i>Enumerated Value</i>: specification of a value of an enumerated type</li>
@@ -213,9 +234,8 @@
         </ul>
     <li><i>Behavioural Model</i>: a FW Profile model describing an aspect of an application behaviour</li>
         <ul>
-        <li>Value: the json representation of the model</li>
+        <li>Value: the svg representation of the model</li>
         <li>Primary Kind: the kind of model (a state machine or a procedure)</li>
-        <li>T1: the svg representation of the model</li>
         </ul>
     <li><i>Service</i>: specification of a service in a project</li>
         <ul>
@@ -238,6 +258,7 @@
         </ul>
     <li><i>Packet Parameter</i>: specification of a parameter in a packet</li>
         <ul>
+        <li>Value: the default value of the packet parameter</li>
         <li>Secondary Link: a pointer to the data item acting as parameter</li>
         <li>Primary Link: a pointer to the packet or derived packet to which the parameter belongs</li>
         <li>Primary Kind: the role of the packet parameter (discriminant, housekeeping parameter, or packet parameter)</li>
@@ -354,7 +375,7 @@
     </ul>
     The <strong>basic users</strong> (or just "users" for short) manage the project and the specification items they contain 
     in accordance with their roles.
-    Within a project, a user has one of two roles:
+    Within a project, a user has one of three roles:
     <ul>
     <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
     The project owner can: 
@@ -363,12 +384,20 @@
         <li>Make a new release of a project or of one of its applications</li>
         <li>Create new specification items in the project </li>
         <li>Edit, view, copy and delete the specification items in the project </li>
+        <li>Import and export all project items </li>
         </ul>
-    <li>The <strong>Project User</strong> is allocated to a project by the admin user.
-    The project user can: 
+    <li>The <strong>Project User with Read/Write Access</strong> is allocated to a project by the admin user
+    and can: 
         <ul>
         <li>Create new specification items within the project </li>
         <li>Edit, view, copy and delete specification items in the project</li>
+        <li>Import and export all project items </li>
+        </ul>
+    <li>The <strong>Project User with Read-Only Access</strong> is allocated to a project by the admin user
+    and can: 
+        <ul>
+        <li>View specification items in the project</li>
+        <li>Export all project items </li>
         </ul>
     </ul>
     A user can be assigned (either as owner or as plain user) to multiple projects.
@@ -683,8 +712,50 @@
     <h4><a name="Packets">Packets</a></h4>
     TBD
     </p><p>
+        
+    <h4><a name="VerItems">Verification Items</a></h4>
+    TBD
+    </p><p>    
+
+    <h3><a name="EditorGen">Editor Generators</a></h4>
+    The editor supports the embedding of <a href="#EditorGen"><generators/a> which process the specification items of a project to, for instance,
+    generate code.
+    TBD
+    </p><p>    
+
+
     
+    <h3><a name="EditorExtension">Editor Extension</a></h4>
+    The Cordet FW Editor is distributed through an open and free licence.
+    Users therefore have the option to modify it to match their specific needs.
+    Two kinds of extension are especially common and are discussed below.
+    </p><p>
+    The editor offers a wide range of pre-defined <a href="SpecItemCat">specification item categories</a> but
+    some users may need specification items with a special semantics which warrants the definition of a dedicated category.
+    The process for creating a new specification item category is:
+    <ul>
+    <li>The name of the newly defined category is added to the data structure <code>SPEC_ITEM_CAT</code> in <code>choices.py</code></li>
+    <li>The descriptor for the new category is added to the <a href="#EditorConfig">configuration dictionary</a>
+        in file <code>configs.py</code></li>
+    <li>If specification items of the new category are to be accessed from the index page, then a button or other
+        trigger is set up in file <code>template/index.html</code></li>    
+    <li>If the new specification item category includes links the <code>p_link</code>
+        or the <code>s_link</code> attributes, then functions <code>get_p_link_choices</code> and/or <code>get_s_link_choices</code>
+        are expanded accordingly</li>
+    <li>If the new specification item category includes the <code>p_kind</code>
+        or the <code>s_kind</code> attributes, then functions <code>get_p_kind_choices</code> and/or <code>get_s_kind_choices</code>
+        are expanded accordingly</li>
+    </ul>
+    Note that no change in the database is required.
+    </p><p>
+    The editor supports the embedding of <a href="#EditorGen"><generators/a> which process the specification items of a project to, for instance,
+    generate code.
+    The editor offers TBD pre-defined generators. Users may need to add their own generators.
+    The process for doing so is: TBD.
     
+     
+    </p><p>    
+   
     
  
     

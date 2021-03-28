@@ -57,7 +57,7 @@
           <th>{{config.attrs.domain.label}}</th>
           <th>{{config.attrs.name.label}}</th>
           
-          <!-- Title and: description, rationale, and remarks -->
+          <!-- Title and: description, rationale, remarks and implementation -->
           {% if 'title' in display_list or 'desc' in display_list or 'rationale' in display_list or 'remarks' in display_list %}
           <th>{{config.attrs.desc.label}}</th>
           {% endif %}
@@ -128,7 +128,7 @@
             <td><a name='{{item.domain}}:{{item.name}}'>{{item.domain}}</a></td>
             <td>{{item.name}}</td>
             
-            <!-- Title and: description, rationale, and remarks -->
+            <!-- Title and: description, rationale, remarks and mplementation -->
             {% if 'title' in display_list %}
                 {% if item.desc != '' and 'desc' in display_list %}
                 <td><strong>{{item.title}}</strong> 
@@ -144,6 +144,9 @@
                 {% endif %}
                 {% if item.remarks != '' and 'remarks' in display_list %}
                 <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
+                {% endif %}
+                {% if item.implementation != '' and 'implementation' in display_list %}
+                <br><strong>Implementation</strong> {{item.implementation|filter_refs|linebreaksbr}}
                 {% endif %}
             </td>
             

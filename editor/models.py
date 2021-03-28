@@ -64,6 +64,7 @@ class SpecItem(models.Model):
     previous = models.OneToOneField('self', on_delete=models.SET_DEFAULT, null=True, default=None)
     rationale = models.TextField(blank=True, default='')
     remarks = models.TextField(blank=True, default='')
+    implementation = models.TextField(blank=True, default='')
     val_set = models.ForeignKey(ValSet, related_name='val_set_spec_items', on_delete=models.PROTECT)
     p_link = models.ForeignKey('self', related_name='p_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
     s_link = models.ForeignKey('self', related_name='s_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
