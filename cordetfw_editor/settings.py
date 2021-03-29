@@ -154,7 +154,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static_editor/'
 
 # Redirect to home URL after login (default redirects to: /accounts/profile/)
-LOGIN_REDIRECT_URL = '/editor'
+LOGIN_REDIRECT_URL = '/editor/editor'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
