@@ -728,11 +728,18 @@
     <h3><a name="EditorExtension">Editor Extension</a></h4>
     The Cordet FW Editor is distributed through an open and free licence.
     Users therefore have the option to modify it to match their specific needs.
-    Two kinds of extension are especially common and are discussed below.
+    Some kinds of extension are especially common and are discussed below.
+    </p><p>
+    The <strong>labels</strong> appearing on the header when specification items are listed can be modified by editing the 
+    <a href="#EditorConfig">configuration dictionary</a>. Similarly, the set of <strong>mandatory attributes</strong> of a
+    specification item category can also be modified by editing the <a href="#EditorConfig">configuration dictionary</a>.
+    </p><p>
+    The range of values for the <code>p_kind</code> and <code>s_kind</code> attributes of a specification item can
+    be modified by editing the corresponding data structures in <code>choices.py</code>.
     </p><p>
     The editor offers a wide range of pre-defined <a href="SpecItemCat">specification item categories</a> but
     some users may need specification items with a special semantics which warrants the definition of a dedicated category.
-    The process for creating a new specification item category is:
+    The process for <strong>creating a new specification item category</strong> is:
     <ul>
     <li>The name of the newly defined category is added to the data structure <code>SPEC_ITEM_CAT</code> in <code>choices.py</code></li>
     <li>The descriptor for the new category is added to the <a href="#EditorConfig">configuration dictionary</a>
