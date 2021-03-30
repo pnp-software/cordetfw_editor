@@ -85,21 +85,26 @@
 
           <!-- The p_kind and s_kind  -->          
           {% if 'p_kind' in display_list %}
-          <th>{{config.attrs.p_kind.label}}</th>
+          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=p_kind" 
+                 title="List in alphabetical order">{{config.attrs.p_kind.label}}</a></th>
           {% endif %}
           {% if 's_kind' in display_list %}
-          <th>{{config.attrs.s_kind.label}}</th>
+          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=s_kind" 
+                 title="List in alphabetical order">{{config.attrs.s_kind.label}}</a></th>
           {% endif %}
 
           <!-- The generic integer fields  -->          
           {% if 'n1' in display_list %}
-          <th>{{config.attrs.n1.label}}</th>
+          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=n1" 
+                 title="List in alphabetical order">{{config.attrs.n1.label}}</a></th>
           {% endif %}
           {% if 'n2' in display_list %}
-          <th>{{config.attrs.n2.label}}</th>
+          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=n2" 
+                 title="List in alphabetical order">{{config.attrs.n2.label}}</a></th>
           {% endif %}
           {% if 'n3' in display_list %}
-          <th>{{config.attrs.n3.label}}</th>
+          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=n3" 
+                 title="List in alphabetical order">{{config.attrs.n3.label}}</a></th>
           {% endif %}
 
           <!-- The p_link and s_link  -->          
@@ -112,7 +117,8 @@
           
           <!-- Either the Owner or the traceability information  --> 
           {% if 'owner' in display_list %}
-          <th>Owner</th>
+          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=owner" 
+                 title="List in alphabetical order">Owner</a></th>
           {% endif %}
           {% if 'trac' in display_list %}
           <th>Verification Links</th>

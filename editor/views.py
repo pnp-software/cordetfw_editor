@@ -334,18 +334,24 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     expand_id = request.GET.get('expand_id')
     expand_link = request.GET.get('expand_link')
     display = request.GET.get('display')
+    order_by = request.GET.get('order_by')
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
     
     if (application_id == 0):   # Items to be listed are 'project items'
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                    exclude(status='DEL').exclude(status='OBS').order_by('domain','name') 
+                    exclude(status='DEL').exclude(status='OBS') 
     else:                       # Items to be listed are 'application items'
         items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                    exclude(status='DEL').exclude(status='OBS').order_by('domain','name') 
+                    exclude(status='DEL').exclude(status='OBS')
     
     if (sel_dom != "All_Domains"):
         items = items.filter(domain=sel_dom)
+        
+    if order_by != None:
+        items = items.order_by(order_by, 'domain','name')
+    else:
+        items = items.order_by('domain','name')
     
     if (expand_id != None) and (expand_link != 'None'):   # parent_id must be listed together with its children
         expand_items = get_expand_items(cat, project_id, val_set_id, expand_id, expand_link)     
@@ -377,7 +383,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set': val_set, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs[cat]['n_list_fields']-3),
-               'item_ver_links': item_ver_links, 'display_list': display_list, 'display': display}
+               'item_ver_links': item_ver_links, 'display_list': display_list, 'display': display, order_by: 'order_by'}
     return render(request, 'list_spec_items.html', context)    
 
 
