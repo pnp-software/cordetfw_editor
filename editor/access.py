@@ -5,7 +5,7 @@ from django.contrib import messages
 
 def is_project_owner(request, project):
     """ Return True if user owns the project """
-    if request.user == project.owner.id:
+    if request.user.id == project.owner.id:
         return True
     else:
         messages.error(request, 'This operation is only accessible to the owner of project '+project.name)
