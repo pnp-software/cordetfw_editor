@@ -104,6 +104,9 @@
                     href="{% url 'list_spec_items' 'Requirement' item.project.id application.id item.default_val_set_id 'All_Domains' %}"
                     title="Manage Requirements">Req</a>
                 <a class="btn btn-outline-dark btn-sm"
+                    href="{% url 'list_spec_items' 'AdaptPoint' item.project.id application.id item.default_val_set_id 'All_Domains' %}"
+                    title="Manage Adaptation Points">AP</a>
+                <a class="btn btn-outline-dark btn-sm"
                     href="{% url 'list_spec_items' 'Model' item.project.id application.id item.default_val_set_id 'All_Domains' %}"
                     title="Manage Behavioural Models">Mod</a>
                 <a class="btn btn-outline-dark btn-sm"

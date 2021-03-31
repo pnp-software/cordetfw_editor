@@ -10,6 +10,7 @@ HISTORY_STATUS = (
 # The specification item categories
 SPEC_ITEM_CAT = (
     ("Requirement","An application requirement"),
+    ("AdaptPoint","An adaptation point"),
     ("DataItemType","A non-enumerated data item type"),
     ("EnumType","An enumerated data item type"),
     ("EnumValue","An enumerated item"),
@@ -33,12 +34,17 @@ REQ_KIND = (
     ("AP","Adaptation Point Requirement"),
 )
 
+# The kind of adaptation point
+AP_KIND = (
+    ("SPC","Specification Level"),
+    ("IMP","Implementation Level"),
+)
+
 # The role of a project user
 USER_ROLE = (
     ("RO","Read-Only"),
     ("RW","Read-Write"),
 )
-
 
 # The kind of a data item
 DI_KIND = (

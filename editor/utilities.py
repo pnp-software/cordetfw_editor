@@ -391,38 +391,47 @@ def get_s_kind_choices(cat):
     return (("INV","Invalid"),)
   
   
-def get_p_link_choices(cat, project_id, p_parent_id):
-    """ Return the range of choices for the 'p_link' attribute of a spec_item of a given category """
+def get_p_link_choices(cat, project, application, p_parent_id):
+    """ 
+        If p_parent_id is different from None, the function returns the spec_items which 
+        have p_parent_id as their p_link parent. Otherwise, it returns the range of 
+        choices for the 'p_link' attribute of a spec_item of a given category 
+    """
     if p_parent_id != None:
         return SpecItem.objects.filter(id=int(p_parent_id)) 
     if cat == 'DataItem':
-        q1 = SpecItem.objects.filter(project_id=project_id, cat='DataItemType').\
+        q1 = SpecItem.objects.filter(project_id=project.id, cat='DataItemType').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')        
-        q2 = SpecItem.objects.filter(project_id=project_id, cat='EnumType').\
+        q2 = SpecItem.objects.filter(project_id=project.id, cat='EnumType').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name') 
         return q1 | q2
     if cat == 'VerLink':
-        return SpecItem.objects.filter(project_id=project_id, cat='VerItem').\
+        return SpecItem.objects.filter(project_id=project.id, cat='VerItem').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
     if cat == 'Packet':
-        return SpecItem.objects.filter(project_id=project_id, cat='Service').\
+        return SpecItem.objects.filter(project_id=project.id, cat='Service').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+    if (cat == 'AdaptPoint') and (application != None):
+        return SpecItem.objects.filter(application_id=application.id, cat='Requirement').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+                        
     return SpecItem.objects.none()
     
     
-    
-    
-def get_s_link_choices(cat, project_id, s_parent_id):
-    """ Return the range of choices for the 's_link' attribute of a spec_item of a given category """
+def get_s_link_choices(cat, project, application, s_parent_id):
+    """ 
+        If s_parent_id is different from None, the function returns the spec_items which 
+        have s_parent_id as their s_link parent. Otherwise, it returns the range of 
+        choices for the 's_link' attribute of a spec_item of a given category 
+    """
     if s_parent_id != None:
         return SpecItem.objects.filter(id=int(s_parent_id))
     if cat == 'EnumValue':
-        return SpecItem.objects.filter(project_id=project_id, cat='EnumType'). \
+        return SpecItem.objects.filter(project_id=project.id, cat='EnumType'). \
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
     if cat == 'VerLink':
-        return SpecItem.objects.filter(project_id=project_id).exclude(cat='VerItem').exclude(cat='VerLink'). \
+        return SpecItem.objects.filter(project_id=project.id).exclude(cat='VerItem').exclude(cat='VerLink'). \
                         exclude(status='DEL').exclude(status='OBS').order_by('cat', 'domain', 'name')
-                        
                         
     return SpecItem.objects.none()
     
