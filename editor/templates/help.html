@@ -8,89 +8,70 @@
 <div id="toc">
     <div class="jumbotron jumbotron-fluid bg-transparent mb-n5">
       <h2>Cordet Editor - Online Help</h2>
-      <p class="lead">Web-based editor to support the specification of a service-oriented software application</p>
+      <p class="lead">Web-based editor to support the specification of a set of related applications</p>
     </div>
 </div>
         
 <div id="contents">
 
 <div class="container-fluid bg-grey">
+    <h3><a name="Overview">Overview</a></h3>
     <p>
-    The editor provides an environment where users can specify their service-oriented applications.
-    The editor explicitly supports the service concept of the 
-    <a href="https://www.pnp-software.com/cordetfw">Cordet Framework</a> but can also be used independently
-    of the framework as a generic requirements capture tool.
-    </p><p>
-    The data managed by the editor are stored in a database held on a server.
-    The processing of the editor data is done by a back-end running on the server.
-    The rendering of the editor data is done by a front-end running on a client machine.
-    </p><p>
-    The Cordet Editor lets users create an <strong>instance</strong> of a specification for their applications.
-    The editor enforces a <strong>model</strong> of how this specification instance is built.
-    The model has two parts: a static part which defines the structure of the editor database; 
-    and a dynamic part which defines the behaviour associated to the data held in the database.
-    The editor behaviour is implemented in the back-end component of the editor.
+    The Cordet Editor provides an environment where users can define various kinds of specification items
+    for their applications.
+    The specification information is stored in a database held on a server.
+    The processing of the specification data is done by a back-end running on the server.
+    The access to the editor data is through a browser on a client machine.
     </p><p>
     Distinctive features of the editor include:
     <ul>
+    <li>Design based on a <a href="#ModellingLevels">meta-modelling concept</a> to allow 
+        customization to meet user needs</li>
+    <li>Distribution through a free and open licence </li>
     <li>Support for multiple versions of requirements through the <a href="#ValSets">ValSet</a> concept</li>
-    <li>Support for a <a href="#History">history</a> to keep track of evolution of requirements</li>
-    <li>Support for creating <a href="IntRef">links between requirements</a> with auto-completion facilities</li>
-    <li>Support for linking <a href="#VerItems">verification information</a> to requirements</li>
+    <li>Support for a <a href="#History">history mechanism</a> to keep track of requirement evolution</li>
+    <li>Support for creating <a href="#IntRef">links between requirements</a> with auto-completion facilities</li>
     <li><a href="#SpecItemRep">Rendering of requirements</a> either as hyperlinked html or as text in a form 
-        suitable for import in latex documents</li>
-    <li>Link to the <a href="#BehaviouralModels">FW Profile Editor</a> to allow behavioural models to be used 
-        as requirements</li>
+        suitable for import in documents</li>
+    <li>Support for importing of and linking to <a href="ExtSpecRes">external specification resources</a></li>
     <li>Provision of <a href="#ExpImp">import and export facilities</a> to csv formats for all requirements</li>
     <li>Support for <a href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
     <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
-    <li>Distribution through a free and open licence to allow users to 
-        <a href="#EditorExtension">extend the editor</a> to meet their needs</li>
     </ul>
-    
-    </p>
- 
-   
-    <h3><a name="EditorAccess">Editor Access</a></h3>
+    </p><p>
+        
+    <h3><a name="ModellingLevels">Modelling Levels</a></h3>
     <p>
-    Access to the editor is for members only. 
-    Prospective users apply for membership by contacting the <a href="mailto:pnp-software@pnp-software.com">administrator</a>.
-    Members are given a user name and an initial password (which they are expected to change after the first log-in) and they
-    are allocated to one or more <i>projects</i>.
+    The editor is built on a <a href="#MetaModel">meta-model</a> which defines its basic concepts
+    and the operations which may be performed upon them.
+    The key concept at meta-modelling level is that of <a href="#SpecItems">specification item</a>.
+    A specification item is a set of specification-related information which are manipulated as 
+    a single unit.
+    </p><p>
+    When the editor is deployed, it is configured to match the needs of its target projects.
+    The outcome of this configuration process is an <a href="#Model">editor model</a> which
+    defines the concrete categories of specification items and their mutual relationships.
+    </p><p>
+    when the editor is used, its model is instantiated to create a set of concrete
+    specification item instances which specify the applications in a project.
     </p>
     
-    <h3><a name="ModelledConcepts">Modelled Concepts</a></h3>
+    <h3><a name="MetaModel">The Editor Meta-Model</a></h3>
     <p>
-    The editor database models the following concepts:
+    The editor meta-model is built on the following concepts:
     <ul>
-    <li>Users</li>
-    <li>Projects</li>
-    <li>Applications</li>
-    <li>Releases</li>
-    <li>Specification Items</li>
-    <li>ValSets</li>
+    <li><a href="#Users">Users</a></li>
+    <li><a href="#ProjAndApp">Projects</a></li>
+    <li><a href="#ProjAndApp">Applications</a></li>
+    <li><a href="#Releases">Releases</a></li>
+    <li><a href="#SpecItems">Specification Items</a></li>
+    <li><a href="#ValSets">ValSets</a></li>
     </ul>
-    The <strong>users</strong> are the entities interacting with the editor.
-    An admin user is responsible for administration tasks; other users are responsible for populating
-    the database.
-    Each user is allocated to a project (but the same user may be allocated to multiple projects).
-    Each user may have different <a href"#UserRoles">roles</a> within a project defining different 
-    levels of access to the project artifacts.
     </p><p>
-    A <strong>project</strong> is the top-level container for a specification created by the editor users.
-    It consists of a set of <strong>applications</strong>.
-    Each specification item belongs either to a project (in which case it is common to all applications
-    within the project) or it belongs to an application within a project.
-    </p><p>
-    Both projects and applications may have multiple <a href"#Releases"><strong>releases</strong></a>.
-    A project release is identified by a non-negative integer.
-    An application release is identified by a pair "x.y" where 'x' is the release identifier of the
-    project to which the application belongs and 'y' is a non-negative integer.
-    </p><p>
-    A <a href="#SpecItems"><strong>specification item</strong></a> is the lowest-level item managed by the editor.
-    Specification items are created, edited and deleted by the users.
-    A specification item could, for instance, consist of an application requirement, or of the definition
-    of a data item, or of a model used to describe part of an application behaviour.
+    A <a href="#SpecItems"><strong>specification item</strong></a> is the lowest-level item managed 
+    by the editor.
+    It encapsulates a set of data which contribute to the specification of the project or its 
+    applications and which are manipulated by the editor as a single entity.
     </p><p>
     A <strong>ValSet</strong> is a set of values for the specification items within a project.
     The "Default" ValSet is pre-defined.
@@ -104,13 +85,108 @@
     formulations for the alternative variant of the system.
     </p>
     
-    <h3><a name="SpecItems">Specification Items</a></h3>
+    <h4><a name="Users">Editor Users</a></h3>
+    <p>
+    The editor users are the entities which have access to the editor.
+    There are two types of users: the <strong>admin user</strong> and the <strong>basic users</strong>.
+    </p><p>
+    The <strong>admin user</strong> is responsible for: 
+    <ul>
+    <li>Creating and managing basic users</li>
+    <li>Creating projects and assigning their owner</li>
+    <li>Assigning basic users to a project</li>
+    <li>Defining the <a href="#ValSets">ValSets</a> for the specification items of 
+        a project</li>
+    </ul>
+    The <strong>basic users</strong> (or just "users" for short) manage the project 
+    and the specification items they contain in accordance with their roles.
+    Within a project, a user has one of three roles:
+    <ul>
+    <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
+    The project owner can: 
+        <ul>
+        <li>Create and edit applications within the project</li>
+        <li>Make a new release of a project or of one of its applications</li>
+        <li>Create new specification items in the project </li>
+        <li>Edit, view, copy and delete the specification items in the project </li>
+        <li>Import and export all project items </li>
+        </ul>
+    <li>The <strong>Project User with Read/Write Access</strong> is allocated to a project by the admin user
+    and can: 
+        <ul>
+        <li>Create new specification items within the project </li>
+        <li>Edit, view, copy and delete specification items in the project</li>
+        <li>Import and export all project items </li>
+        </ul>
+    <li>The <strong>Project User with Read-Only Access</strong> is allocated to a project by the admin user
+    and can: 
+        <ul>
+        <li>View specification items in the project</li>
+        <li>Export all project items </li>
+        </ul>
+    </ul>
+    A user can be assigned (either as owner or as plain user) to multiple projects.
+    </p>
+ 
+    <h4><a name="ProjAndApp">Projects and Applications</a></h4>
+    A <strong>project</strong> is the top-level container for a specification created by the editor users.
+    It consists of a set of <strong>applications</strong>.
+    Each specification item belongs either to a project (in which case it is common to all applications
+    within the project) or it belongs to an application within a project.
+    Specification items within the same project can reference each other but no references are possible
+    across project boundaries.
+     
+    <h4><a name="Releases">Release Mechanism</a></h4>
+    <p>
+    Both projects and applications may be <strong>released</strong>.
+    In between releases, specification items can be updated or deleted.
+    When a project or an application is released, its specification items are frozen.
+    </p><p>
+    The release number of a project is a non-negative integer.
+    The release number of an application has the form "x.y", where 'x' is the release number of the
+    project to which the application belongs and 'y' is a non-negative number. 
+    The release numbers of projects and applications are set according to the 
+    following rules:
+    <ul>
+    <li>When a project is created, its release number x is set to zero</li>
+    <li>When an application is created the y component of its release number is set to zero</li>
+    <li>When the project owner makes a new release of a project, its release number is incremented by 1
+    and the y component of the release number of its applications is set to zero</li>
+    <li>When the project owner makes a new release of an applicatioin, 
+    the y component of the release number of the application is incremented by 1</li>
+    </ul>
+    A textual description may be attached to each release.
+    A release of a project or of an application causes the history status of the specification items
+    in the project or application to be updated according to the editor's
+    <strong>history mechanism</strong>. 
+    </p><p>
+    Specification items carry history information through the following attributes:
+    (a) the owner; (b) the status; (c) the previous pointer; and (d) the update time.
+    The status is one of the following:
+        <ul>
+        <li><strong>New</strong>: the item has been created in the current release</li>
+        <li><strong>Modified </strong>: the item was created in a previous release and 
+        has been modified in the current release</li>
+        <li><strong>Confirmed</strong>: the item was created in a previous release and 
+        has not been modified in the current release</li>
+        <li><strong>Obsolete</strong>: the item was created in a previous release and 
+        has since been modified</li>
+        <li><strong>Deleted</strong>: the item was created in a previous release and 
+        has since been deleted</li>
+        </ul>
+    The status information evolves according to the logic in the state diagram:
+    </p><p>
+    <img src="{% static 'images/HistoryStatus.png' %}"> 
+    </p>
+     
+    <h4><a name="SpecItems">Specification Items</a></h4>
     <p>
     Specification items are defined by their attributes and by the behaviour associated to them
     (i.e. by the way they are handled by the editor).
     Specification items are divided into <strong>categories</strong>. 
     Specification items in the same category have the same behaviour associated to them (i.e. they are
     treated in the same way by the editor).    
+    The specification item categories are defined at <a href="Model">editor model level</a>.
     </p><p>
     Some specification item attributes (the <strong>core attributes</strong>) have a semantics which is
     independent of the specification item category.
@@ -121,32 +197,21 @@
     of name space.
     The name is unique within the domain.
     </p><p>
-    The editor keeps track of the <a href="#History"><strong>history</strong></a> of specification 
+    The editor keeps track of the <a href="#Releases"><strong>history</strong></a> of specification 
     items by maintaining different copies
     of the specification item reflecting the temporal evolution of the specification item.
     The history mechanism is supported by the 
     <strong>update time</strong> attribute representing the time when the specification time was last updated
     and by the <strong>previous</strong> attribute which points to the previous version of the specification item. 
     </p><p>
-    Each specification item has an owner, which is the user who last updated the specification item.
-    </p><p>
-    Some categories of specification item may play different roles or may be of different kinds.
-    This is captured by the <strong>primary kind</strong> and <strong>secondary kind</strong> attributes.
+    Each specification item has an <strong>owner</strong>, which is the user who last updated the specification item.
     </p><p>
     Each specification item has a short description (its <strong>title</strong>) and it may have a long
     description (its <strong>description</strong>). 
     The short description cannot exceed a pre-defined length. 
-    Short and long description are intended to be edited together: the short description should be the first
+    Short and long description are intended to be edited together: the short description will often be the first
     sentence of the complete (short+long) description. 
-    The short description is also shown as a tip when hovering over an item in an HTML page.
-    </p><p>
-    Specification items may have up to three integer attributes which are called <strong>n1</strong>, 
-    <strong>n2</strong> and <strong>n3</strong> and up to six text attributes.
-    The primary text attribute is called the <strong>value</strong> and the others are called 
-    <strong>t1</strong> to <strong>t5</strong>.
-    </p><p>
-    Specification items may have up to two links to other specification items: the <strong>primary link</strong>
-    and the <strong>secondary link</strong>.      
+    The short description is shown as a tip when hovering over an item in an HTML page.
     </p><p>
     The <strong>justification</strong> attribute holds information describing the rationale for the
     existing of the specification item and the <strong>remarks</strong> attributes holds generic remarks.    
@@ -175,12 +240,83 @@
     <li><i>Implementation</i>: information about how the specification item is implemented</li> 
     <li><i>ValSet(*)</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
     </ul>
-    The category-specific attributes are discussed <a href="#SpecItemCat">below</a>.
     </p><p>
+    The category-specific specification items are used during the 
+    <a href="#Model">instantiation of the editor meta-model</a>, when the concrete 
+    specification item categories are defined.
+    It is at this time that the category-specific attributes are given their meaning.
+    </p><p>
+    Some categories of specification items may play different roles or may be of different kinds.
+    This is captured by the <strong>primary kind</strong> (<code>p_kind</code>) and 
+    <strong>secondary kind</strong> (<code>s_kind</code>) attributes.
+    </p><p>
+    Specification items may have up to three integer attributes which are called <strong>n1</strong>, 
+    <strong>n2</strong> and <strong>n3</strong> and up to six text attributes.
+    The primary text attribute is called the <strong>value</strong> and the others are called 
+    <strong>t1</strong> to <strong>t5</strong>.
+    </p><p>
+    Specification items may have up to two links to other specification items: 
+    the <strong>primary link</strong> (<code>p_link</code>)
+    and the <strong>secondary link</strong> (<code>s_link</code>).      
+    </p><p>
+    Thus, in summary, the category-specific attributes of specification items are:
+    <ul>
+    <li><i>Primary and Secondary Kind</i>: enumerated values defining the role or kind of a 
+        specification item</li>
+    <li><i>Primary and Secondary Links</i>: links to other specification items</li>
+    <li><i>n1 to n5</i>: integer attributes</li>
+    <li><i>Value</i>: a text attribute representing a value</li>
+    <li><i>t1 to t5</i>: text attributes</li>
+    </ul>
+    </p><p>
+    Depending on the category, some of these attributes are optional and others are mandatory.
+    </p><p>
+    The default editor model provides an example of how specification items are defined 
+    and of how the category-specific attributes are used to support their definition. 
+    </p>
     
-    <h4><a name="IntExtSpecItems">Internal and External Specification Items</a></h4>
+    <h5><a name="SpecItemOper">Operations Performed on Specification Items</a></h5>
     <p>
-    Specification items which are entirely defined within the editor are <strong>internal specification items</strong>.
+    The following operation may be performed on a specification item (spec_item):
+    <ul>
+    <li><strong>Add</strong>: a new spec_item is created</li>
+    <li><strong>Edit</strong>: an existing spec_item is modified</li>
+    <li><strong>Copy</strong>: a copy is created of a spec_item in the Default ValSet
+                               (only for internal specification items)</li>
+    <li><strong>Delete</strong>: a spec_item is deleted</li>
+    <li><strong>Split</strong>: a copy of a spec_item is created in a different ValSet
+                                (only for internal specification items)</li>
+    <li><strong>Refresh</strong>: the external content of a specification item is refreshed
+                                (only for external specification items)</li>
+    </ul>
+    </p><p>
+    The semantics of these operations is illustrated in the activity diagrams below.
+    In all cases, the user is presented a form which he fills in with information related to
+    the requested operation.
+    Before being processed, a validity check is performed on the data entered in the form by
+    the user.
+    The validity check comprises: (a) generic checks and (b) category-specific checks.
+    The generic checks are specified in the activity diagrams below.
+    The category-specific checks are defined as part of the 
+    <a href="#Model">instantiation of the editor meta-model</a>.
+    </p><p>
+    <img src="{% static 'images/AddSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/EditSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/CopySpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/DelSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/SplitSpecItem.png' %}"> 
+    </p><p>
+    <img src="{% static 'images/RefreshSpecItem.png' %}"> 
+    </p>
+     
+    <h5><a name="IntExtSpecItems">Internal and External Specification Items</a></h5>
+    <p>
+    Specification items which are entirely defined within the editor are 
+    <strong>internal specification items</strong>.
     Specification items which are partially defined externally (e.g. figures created outside the editor or
     <a href="#BehaviouralModels">behavioural models</a> created in the FW Profile Editor) 
     are <strong>external specification items</strong>.
@@ -192,12 +328,224 @@
     <a href="#EditorConfig">configuration dictionary</a> of the editor.  
     </p><p>
     The distinction between internal and external specification items is at the level of specification
-    item categories: the <a href="#BehaviouralModels">behavioural model</a> category contains only
+    item categories. For instance, in the <a href="#DefEditorModel">default editor model</a>, 
+    the <a href="#BehaviouralModels">behavioural model</a> category contains only
     external specification items; all other categories only contain internal specification items.
     </p><p>
     External specification items may only belong to the default ValSet (because the specification 
-    items are imported from an xternal source and hence it is not possible for the editor to 
+    items are imported from an external source and hence it is not possible for the editor to 
     maintain mutliple versions of the same instance).
+    
+    <h5><a name="IntRef">Internal References</a></h5>
+    <p>
+    In the following text fields:
+    <ul>
+    <li>Description</li>
+    <li>Value</li>
+    <li>Justification</li>
+    <li>Remarks</li>
+    <li>t1 to t5</li>
+    </ul>
+    </p><p>
+    It is possible to include a reference to another specification item.
+    In the database, the internal reference is stored with a format like: '#iref:n' where 'n'
+    is the identifier of the specification item being referred.
+    The internal reference is rendered in different ways depending 
+    on the context within which the text field is used.
+    </p><p>
+    In <strong>editing mode</strong>, the reference is introduced through the following syntaxt: 
+    '#cat:dom:name'.
+    Here, 'cat' is the category of the target specification item; 'dom' is the domain of the
+    target specification item; and 'name' is its name.
+    When the reference is rendered in <strong>display mode</strong>, it is converted to a hyperlink; when
+    it is rendered in <strong>export mode</strong>, it is converted to '#dom:name'.
+    </p><p>
+    Internal references always point to the specification item in the Default ValSet.
+    It is not possible to have an internal reference to specification items in other ValSets.
+    </p><p>
+    In the special case of the 'value' field of data items, 
+    The internal references may be used to construct mathematical expressions 
+    which depend on the value of other specification items.
+    These expressions are evaluated when the specification item is rendered for display.
+    The intention is that the value of a specification item is expressed as a function of the value 
+    of other specification items.
+    <p></p>    
+    If specification item S is the target of an internal reference in another
+    specification item, then, if S is deleted, the internal reference will become
+    invalid. 
+    There is no protection against this situation in the function which deletes the
+    specification item.
+    Users will notice the hanging reference when they try to display or export the specification
+    item with the reference to S.
+    </p>
+
+    <h5><a name="SpecItemRep">Specification Item Representations</a></h5>
+    <p>
+    A specification item has multiple representations depending on the context in which it is used:
+    <ul>
+    <li><strong>Database Representation</strong> is the representation of the item in the database</li>
+    <li><strong>Display Representation</strong> is used when rendering the item in an HTML page</li>
+    <li><strong>Latex Representation</strong> is used when rendering the item for export to a csv format
+        to be used in a latex document</li>
+    <li><strong>Edit Representation</strong> is used when rendering the item in a form for editing
+        by the user</li>
+    <li><strong>Export Representation</strong> is used when rendering the item for 
+                                               <a href="#ExpImp">plain export</a> to csv format</li>
+    <li><strong>Eval Representation</strong> is used to render the numerical value of a 
+        <a href="#DataItem">data item</a></li>
+    </ul>
+    <p></p>
+    These representations primarily differ in their treatment of references to other specification items:
+    <ul>
+    <li><strong>Database Representation</strong>: internal references are rendered as '#iref:id' where
+        'id' is the identifier of the referenced item; reference fields only contain the identifier
+        of the referenced item.</li>
+    <li><strong>Display Representation</strong>: references are rendered as 'domain:name'
+        with a hyperlink to the referenced item<./li>
+    <li><strong>Latex Representation</strong>: references are rendered as 'domain:name';
+        reference fields are rendered through the string representation of the referenced field;
+        "special characters" which are not accepted by Latex are escaped; carriage return is 
+        rendered as '\newline'. </li>
+    <li><strong>Edit Representation</strong>: internal references are rendered as '#cat:domain:name'</li>
+    <li><strong>Export Representation</strong>: internal references are rendered as '#cat:domain:name';
+        reference fields are rendered through the string representation of the referenced field;</li>
+    <li><strong>Eval Representation</strong>: the numerical value of the data item is evaluated by
+        recursively evaluating the numerical value of all referenced data items</li>
+    </ul>
+    <p></p>
+
+    <h4><a name="ValSets">ValSets</a></h4>
+    A ValSet is a set of alternative values for the specification items in a project.
+    The admin user defines the range of ValSets for each project. 
+    The 'Default' ValSet is pre-defined for all projects. 
+    </p><p>
+    The ValSet attribute of a specification item is used to manage the ValSets. 
+    When a specification item is created, it is allocated to the Default ValSet.
+    Subsequently, the user can <strong>split</strong> the specification item. 
+    When specification item S1 in the Default ValSet is split, a new specification item S2 is created with
+    the following characteristics:
+    <ul>
+    <li>S2 has the same domain and name as S1</li>
+    <li>The val_set attribute of S2 is different from the val_set attribute of all other specification
+        items created by splitting S1 (i.e. no two specification items with the same domain and name can 
+        belong to the same ValSet) </li>
+    <li>The 'parent' attribute of S2 points to S1</li>
+    <li>Other pointer attributes of S2 are left blank</li>
+    <li>Non-pointer attributes of S2 other than domain and name can be set freely</li>
+    </ul>
+    </p><p>
+    When the two specification items S1 and S2 are edited, the following constraints are enforced:
+    <ul>
+    <li>The ValSet cannot be changed (i.e. the ValSet attribute can only be modified in a split operation)</li>
+    <li>The domain and the name of S2  cannot be changed</li>
+    <li>The pointer attributes of S2  cannot be changed (i.e. they must remain blank)</li>
+    <li>If the domain or the name of S1 is updated, the change is propagated to S2</li>
+    <li>If S1 is deleted, then S2 is deleted, too</li>
+    <li>Pointer attributes of S1 can only point to specification items in the Default ValSet</li>
+    </ul>
+    Thus, S2 serves as a clone of S1 which differs from it in having potentially different values for its
+    attributes of primitive type.
+    </p>
+ 
+      
+    <h4><a name="ExpImp">Export and Import</a></h4>
+    <p>
+    There are three kinds of data imports and exports:
+    <ul>
+    <li>Plain Export/Import</li>
+    <li>Export to Latex Format</li>
+    <li>Project Export/Import</li>
+    </ul> 
+    </p><p>
+    <strong>Plain import and export</strong> are done when the editor is displaying the specification
+    items in a given category and ValSet and, optionally, in a given domain. 
+    The import/export function is applied to the specification items in the currently
+    selected category and ValSet and, optionally, to the selected domain.    
+    </p><p>    
+    Plain export generates a csv table holding all the specification items in the
+    currently selected category, ValSet and domain.
+    The exported items are rendered in <a href="#SpecItemRep">export representation</a>.
+    Only the latest version of a specification item is exported.
+    The exported fields are those listed in the <a href="#EditorConfig">configuration dictionary</a>
+    for the selected category. The field names in the exported file are the labels
+    the configuration dictionary.
+    </p><p>
+    Plain import processes a csv file with the same format as the file generated
+    by the plain export function.
+    One import operation imports a set of specification items of the currently selected
+    category and of the currently selected ValSet.
+    When the data in a csv file are imported, each row is assumed to define one specification
+    item.
+    Only the fields in the <a href="#EditorConfig">configuration dictionary</a> for the
+    selected category are imported. 
+    Other fields are set as follows:
+    <ul>
+    <li>The identifier is set by the database back-end when the item is saved</li>
+    <li>The owner is set to the user who triggered the import</li>
+    <li>The update time is set to the current time</li>
+    <li>If there is no item with the same domain:name in the selected category and ValSet,
+        the status is set to NEW and the previous pointer is set to 'None'</li>
+    <li>If there is an item with the same domain:name in the selected category and ValSet,
+        a copy is made of the existing item. the status of the new item is set to MOD and
+        its previous pointer is set to the newly-copied item</li>
+    </ul>
+    Each imported specification item is processed according to the following activity diagram:
+    <p></p>
+    <img src="{% static 'images/ImportSpecItem.png' %}"> 
+    <p>
+    The typical use case for the plain import/export functions is as follows.
+    A user needs to perform the same operation on a large number of data items (e.g.
+    update their names; capitalize their domain name; clear their values; etc).
+    This kind of operation is awkward to do within the editor but would be easy to do 
+    if the affected specification items were embedded in an excel spreadsheet.
+    Hence, the user proceeds as follows: (a) perform a plain export; (b) edit the
+    exported data (in excel or other similat environment); (c) perform a plain import
+    for the modified data.
+    </p><p>
+    <strong>Latex export</strong> is like plain export except for the following differences:    
+    <ul>
+    <li>In addition to the fields in the configuration dictionary, the following fields
+        are also exported: project and application name, owner, update time and status;
+        the names of these extra fields in the exported file are the same as the names
+        of the fields in the database model converted to CamelCase</li>
+    <li>Exported fields are converted from database to latex format</li>
+    </ul> 
+    There is no import facility for latex formatted files.
+    </p><p>
+    <strong>Project export</strong> is used to back up the data in a project.
+    The export function downloads a set of csv files as a single zip file.
+    The csv files, taken together, define all the data in a project.    
+    </p><p>
+    <strong>Project import</strong> is the reverse operation of a project export.
+    The operation takes a zip back up the data in a project.
+    The import function uploads a zip file which has been generated by the export function
+    and it reconstructs the project it defines.
+    The project import function is only successful if the project being imported
+    does not yet exist.
+    </p><p>
+    The project import function can only be triggered by the editor adminstrator.
+    This restriction is due to the fact that import of incomplete or incorrect
+    data can corrupt the database.
+   
+   
+   
+   
+    <ul>
+    <li><strong>Data Items</strong>: <a href="#IntRef">Internal reference</a> in the value field may 
+                                     only point to other data items</li>
+    <li><strong>Data Items</strong>: The value of of a data item of enumerated kind must be an
+                                     <a href="#IntRef">Internal reference</a> to an enumerated value of the
+                                     the same type as the data item</li>
+    <li><strong>Behavioural Model</strong>: neither the domain nor the name can be be modified in editing mode</li>
+    <li><strong>Behavioural Model</strong>: during an add operation, a model with the specified domain and name
+                                            must exist in the FW Profile Database</li>
+    </ul>
+   
+   
+   
+   
+    
+    
 
 
     <h4><a name="SpecItemCat">Specification Item Categories</a></h4>
@@ -369,337 +717,13 @@
     </p><p>
          
     
-    <h3><a name="EditorBehaviour">Editor Behaviour</a></h3>
-    <p>
-    The following sub-sections describe various aspects of the editor behaviour.
-    
-    <h4><a name="UserRoles">User Roles</a></h4>
-    <p>
-    There are two types of users: the <strong>admin user</strong> and <strong>basic users</strong>.
-    </p><p>
-    The <strong>admin user</strong> is responsible for: 
-    <ul>
-    <li>Creating and managing basic users</li>
-    <li>Creating projects and assigning their owner</li>
-    <li>Assigning basic users to a project</li>
-    <li>Defining the ValSets for the specification items of a project</li>
-    </ul>
-    The <strong>basic users</strong> (or just "users" for short) manage the project and the specification items they contain 
-    in accordance with their roles.
-    Within a project, a user has one of three roles:
-    <ul>
-    <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
-    The project owner can: 
-        <ul>
-        <li>Create and edit applications within the project</li>
-        <li>Make a new release of a project or of one of its applications</li>
-        <li>Create new specification items in the project </li>
-        <li>Edit, view, copy and delete the specification items in the project </li>
-        <li>Import and export all project items </li>
-        </ul>
-    <li>The <strong>Project User with Read/Write Access</strong> is allocated to a project by the admin user
-    and can: 
-        <ul>
-        <li>Create new specification items within the project </li>
-        <li>Edit, view, copy and delete specification items in the project</li>
-        <li>Import and export all project items </li>
-        </ul>
-    <li>The <strong>Project User with Read-Only Access</strong> is allocated to a project by the admin user
-    and can: 
-        <ul>
-        <li>View specification items in the project</li>
-        <li>Export all project items </li>
-        </ul>
-    </ul>
-    A user can be assigned (either as owner or as plain user) to multiple projects.
-    </p>
     
     
-    <h4><a name="Releases">Release Mechanism</a></h4>
-    <p>
-    The release number of a project is a non-negative integer.
-    The release number of an application has the form "x.y", where 'x' is the release number of the
-    project to which the application belongs and 'y' is a non-negative number. 
-    The release numbers of projects and applications are set according to the rules stated below.:
-    <ul>
-    <li>When a project is created, its release number x if set to zero</li>
-    <li>When an application is created the y component of its release number is set to zero</li>
-    <li>When the project owner makes a new release of a project, its release number is incremented by 1
-    and the y component of the release number of its applications is set to zero</li>
-    <li>When the project owner makes a new release of an applicatioin, 
-    the y component of the release number of the application is incremented by 1</li>
-    </ul>
-    A textual description may be attached to each release.
-    A release of a project or of an application causes the history status of the specification items
-    in the project or application to be updated as described <a href="#History">below</a>. 
-    </p>
     
-    <h4><a name="History">History Mechanism</a></h4>
-    <p>
-    Specification items carry history information through the following attributes:
-    (a) the owner; (b) the status; (c) the previous pointer; and (d) the update time.
-    The status is one of the following:
-        <ul>
-        <li><strong>New</strong>: the item has been created in the current release</li>
-        <li><strong>Modified </strong>: the item was created in a previous release and has been modified in the current release</li>
-        <li><strong>Confirmed</strong>: the item was created in a previous release and has not been modified in the current release</li>
-        <li><strong>Obsolete</strong>: the item was created in a previous release and has since been modified</li>
-        <li><strong>Deleted</strong>: the item was created in a previous release and has since been deleted</li>
-        </ul>
-    The status information evolves according to the logic in the state diagram:
-    </p><p>
-    <img src="{% static 'images/HistoryStatus.png' %}"> 
-    </p>
     
-    <h4><a name="ValSets">ValSets</a></h4>
-    A ValSet is a set of alternative values for the specification items in a project.
-    The admin user defines the range of ValSets for each project. 
-    The 'Default' ValSet is pre-defined for all projects. 
-    </p><p>
-    The val_set attribute of a specification item is used to manage the ValSets. 
-    When a specification item is created, it is allocated to the Default ValSet.
-    Subsequently, the user can <strong>split</strong> the specification item. 
-    When specification item S1 in the Default ValSet is split, a new specification item S2 is created with
-    the following characteristics:
-    <ul>
-    <li>S2 has the same domain and name as S1</li>
-    <li>The val_set attribute of S2 is different from the val_set attribute of all other specification
-        items created by splitting S1 (i.e. no two specification items with the same domain and name can 
-        belong to the same ValSet) </li>
-    <li>The 'parent' attribute of S2 points to S1</li>
-    <li>Other pointer attributes of S2 are left blank</li>
-    <li>Non-pointer attributes of S2 other than domain and name can be set freely</li>
-    </ul>
-    </p><p>
-    When the two specification items S1 and S2 are edited, the following constraints are enforced:
-    <ul>
-    <li>The ValSet cannot be changed (i.e. the ValSet attribute can only be modified in a split operation)</li>
-    <li>The domain and the name of S2  cannot be changed</li>
-    <li>The pointer attributes of S2  cannot be changed (i.e. they must remain blank)</li>
-    <li>If the domain or the name of S1 is updated, the change is propagated to S2</li>
-    <li>If S1 is deleted, then S2 is deleted, too</li>
-    <li>Pointer attributes of S1 can only point to specification items in the Default ValSet</li>
-    </ul>
-    Thus, S2 serves as a clone of S1 which differs from it in having potentially different values for its
-    attributes of primitive type.
-    </p>
     
-    <h4><a name="SpecItemOper">Operations Performed on Specification Items</a></h4>
-    <p>
-    The following operation may be performed on a SpecItem:
-    <ul>
-    <li><strong>Add</strong>: a new spec_item is created</li>
-    <li><strong>Edit</strong>: an existing spec_item is modified</li>
-    <li><strong>Copy</strong>: a copy is created of a spec_item in the Default ValSet
-                               (only for internal specification items)</li>
-    <li><strong>Delete</strong>: a spec_item is deleted</li>
-    <li><strong>Split</strong>: a copy of a spec_item is created in a different ValSet
-                                (only for internal specification items)</li>
-    <li><strong>Refresh</strong>: the external content of a specification item is refreshed
-                                (only for external specification items)</li>
-    </ul>
-    </p><p>
-    The semantics of these operations is illustrated in the activity diagrams below.
-    In all cases, the user is presented a form which he fills in with information related to
-    the requested operation.
-    Before being processed, a validity check is performed on the data entered in the form by
-    the user.
-    The validity check comprises: (a) generic checks and (b) category-specific checks.
-    The generic checks are specified in the activity diagrams below.
-    The category-specific checks are:
-    <ul>
-    <li><strong>Data Items</strong>: <a href="#IntRef">Internal reference</a> in the value field may 
-                                     only point to other data items</li>
-    <li><strong>Data Items</strong>: The value of of a data item of enumerated kind must be an
-                                     <a href="#IntRef">Internal reference</a> to an enumerated value of the
-                                     the same type as the data item</li>
-    <li><strong>Behavioural Model</strong>: neither the domain nor the name can be be modified in editing mode</li>
-    <li><strong>Behavioural Model</strong>: during an add operation, a model with the specified domain and name
-                                            must exist in the FW Profile Database</li>
-    </ul>
-    </p><p>
-    <img src="{% static 'images/AddSpecItem.png' %}"> 
-    </p><p>
-    <img src="{% static 'images/EditSpecItem.png' %}"> 
-    </p><p>
-    <img src="{% static 'images/CopySpecItem.png' %}"> 
-    </p><p>
-    <img src="{% static 'images/DelSpecItem.png' %}"> 
-    </p><p>
-    <img src="{% static 'images/SplitSpecItem.png' %}"> 
-    </p><p>
-    <img src="{% static 'images/RefreshSpecItem.png' %}"> 
-    </p>
     
-    <h4><a name="IntRef">Internal References</a></h4>
-    <p>
-    In the following text fields:
-    <ul>
-    <li>Description</li>
-    <li>Value</li>
-    <li>Justification</li>
-    <li>Remarks</li>
-    <li>Parameter Description</li>
-    <li>Destination Description</li>
-    <li>Acceptance Check</li>
-    <li>Enable Check</li>
-    <li>Ready Check</li>
-    <li>Repeat Check</li>
-    <li>Start Action</li>
-    <li>Update Action</li>
-    <li>Termination Action</li>
-    <li>Progress Action</li>
-    <li>Abort Action</li>
-    <li>Pre-Condition</li>
-    <li>Post-Condition</li>
-    </ul>
-    </p><p>
-    It is possible to include a reference to another specification item.
-    In the database, the internal reference is stored with a format like: '#iref:n' where 'n'
-    is the identifier of the specification item being referred.
-    The internal reference is rendered in different ways depending 
-    on the context within which the text field is used.
-    </p><p>
-    In <strong>editing mode</strong>, the reference is introduced through the following syntaxt: '#cat:dom:name'.
-    Here, 'cat' is the category of the target specification item; 'dom' is the domain of the
-    target specification item; and 'name' is its name.
-    When the reference is rendered in <strong>display mode</strong>, it is converted to a hyperlink; when
-    it is rendered in <strong>export mode</strong>, it is converted to '#dom:name'.
-    </p><p>
-    Internal references always point to the specification item in the Default ValSet.
-    It is not possible to have an internal reference to specification items in other ValSets.
-    </p><p>
-    In the special case of the 'value' field of data items, internal references can only be
-    pointers to other data items.
-    The intention is that the value of a data item is expressed as a function of the value 
-    of other data items.
-    The internal references can therefore be used to construct mathematical expressions 
-    which depend on other data items.
-    These expressions are evaluated when the data item is rendered for display.
-    </p>    
-    If specification item S is the target of an internal reference in another
-    specification item, then, if S is deleted, the internal reference will become
-    invalid. 
-    There is no protection against this situation in the function which deletes the
-    specification item.
-    Users will notice the hanging reference when they try to display or export the specification
-    item with the reference to S.
-    <p></p>
-
-    <h4><a name="SpecItemRep">Specification Item Representations</a></h4>
-    <p>
-    A specification item has multiple representation depending on the context in which it is used:
-    <ul>
-    <li><strong>Database Representation</strong> is the representation of the item in the database</li>
-    <li><strong>Display Representation</strong> is used when rendering the item in an HTML page</li>
-    <li><strong>Latex Representation</strong> is used when rendering the item for export to a csv format
-        to be used in a latex document</li>
-    <li><strong>Edit Representation</strong> is used when rendering the item in a form for editing
-        by the user</li>
-    <li><strong>Export Representation</strong> is used when rendering the item for 
-                                               <a href="#ExpImp">plain export</a> to csv format</li>
-    <li><strong>Eval Representation</strong> is used to render the numerical value of a 
-        <a href="#DataItem">data item</a></li>
-    </ul>
-    <p></p>
-    These representations primarily differ in their treatment of references to other specification items:
-    <ul>
-    <li><strong>Database Representation</strong>: internal references are rendered as '#iref:id' where
-        'id' is the identifier of the referenced item; reference fields only contain the identifier
-        of the referenced item.</li>
-    <li><strong>Display Representation</strong>: references are rendered as 'domain:name'
-        with a hyperlink to the referenced item<./li>
-    <li><strong>Latex Representation</strong>: references are rendered as 'domain:name';
-        reference fields are rendered through the string representation of the referenced field;
-        "special characters" which are not accepted by Latex are escaped; carriage return is 
-        rendered as '\newline'. </li>
-    <li><strong>Edit Representation</strong>: internal references are rendered as '#cat:domain:name'</li>
-    <li><strong>Export Representation</strong>: internal references are rendered as '#cat:domain:name';
-        reference fields are rendered through the string representation of the referenced field;</li>
-    <li><strong>Eval Representation</strong>: the numerical value of the data item is evaluated by
-        recursively evaluating the numerical value of all referenced data items</li>
-    </ul>
-    <p></p>
-      
-    <h4><a name="ExpImp">Export and Import</a></h4>
-    <p>
-    There are three kinds of data imports and exports:
-    <ul>
-    <li>Plain Export/Import</li>
-    <li>Export to Latex Format</li>
-    <li>Project Export/Import</li>
-    </ul> 
-    </p><p>
-    <strong>Plain import and export</strong> are done when the editor is displaying the specification
-    items in a given category and ValSet and, optionally, in a given domain. 
-    The import/export function is applied to the specification items in the currently
-    selected category and ValSet and, optionally, to the selected domain.    
-    </p><p>    
-    Plain export generates a csv table holding all the specification items in the
-    currently selected category, ValSet and domain.
-    The exported items are rendered in <a href="#SpecItemRep">export representation</a>.
-    Only the latest version of a specification item is exported.
-    The exported fields are those listed in the <a href="#EditorConfig">configuration dictionary</a>
-    for the selected category. The field names in the exported file are the labels
-    the configuration dictionary.
-    </p><p>
-    Plain import processes a csv file with the same format as the file generated
-    by the plain export function.
-    One import operation imports a set of specification items of the currently selected
-    category and of the currently selected ValSet.
-    When the data in a csv file are imported, each row is assumed to define one specification
-    item.
-    Only the fields in the <a href="#EditorConfig">configuration dictionary</a> for the
-    selected category are imported. 
-    Other fields are set as follows:
-    <ul>
-    <li>The identifier is set by the database back-end when the item is saved</li>
-    <li>The owner is set to the user who triggered the import</li>
-    <li>The update time is set to the current time</li>
-    <li>If there is no item with the same domain:name in the selected category and ValSet,
-        the status is set to NEW and the previous pointer is set to 'None'</li>
-    <li>If there is an item with the same domain:name in the selected category and ValSet,
-        a copy is made of the existing item. the status of the new item is set to MOD and
-        its previous pointer is set to the newly-copied item</li>
-    </ul>
-    Each imported specification item is processed according to the following activity diagram:
-    <p></p>
-    <img src="{% static 'images/ImportSpecItem.png' %}"> 
-    <p>
-    The typical use case for the plain import/export functions is as follows.
-    A user needs to perform the same operation on a large number of data items (e.g.
-    update their names; capitalize their domain name; clear their values; etc).
-    This kind of operation is awkward to do within the editor but would be easy to do 
-    if the affected specification items were embedded in an excel spreadsheet.
-    Hence, the user proceeds as follows: (a) perform a plain export; (b) edit the
-    exported data (in excel or other similat environment); (c) perform a plain import
-    for the modified data.
     
-    </p><p>
-    <strong>Latex export</strong> is like plain export except for the following differences:    
-    <ul>
-    <li>In addition to the fields in the configuration dictionary, the following fields
-        are also exported: project and application name, owner, update time and status;
-        the names of these extra fields in the exported file are the same as the names
-        of the fields in the database model converted to CamelCase</li>
-    <li>Exported fields are converted from database to latex format</li>
-    </ul> 
-    There is no import facility for latex formatted files.
-    </p><p>
-    <strong>Project export</strong> is used to back up the data in a project.
-    The export function downloads a set of csv files as a single zip file.
-    The csv files, taken together, define all the data in a project.    
-    </p><p>
-    <strong>Project import</strong> is the reverse operation of a project export.
-    The operation takes a zip back up the data in a project.
-    The import function uploads a zip file which has been generated by the export function
-    and it reconstructs the project it defines.
-    The project import function is only successful if the project being imported
-    does not yet exist.
-    </p><p>
-    The project import function can only be triggered by the editor adminstrator.
-    This restriction is due to the fact that import of incomplete or incorrect
-    data can corrupt the database.
     
     <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
     <p>
