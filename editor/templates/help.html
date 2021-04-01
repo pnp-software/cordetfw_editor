@@ -3,11 +3,16 @@
 {% load static %}
 
 {% block content %}
+
 <div class="col-lg-10 col-xl-9">
-<div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
-  <h2 class="display-6">Cordet FW Editor - Online Help</h2>
-  <p class="lead">Web-based editor to support the specification of a service-oriented software application</p>
+<div id="toc">
+    <div class="jumbotron jumbotron-fluid bg-transparent mb-n5">
+      <h2>Cordet Editor - Online Help</h2>
+      <p class="lead">Web-based editor to support the specification of a service-oriented software application</p>
+    </div>
 </div>
+        
+<div id="contents">
 
 <div class="container-fluid bg-grey">
     <p>
@@ -20,7 +25,7 @@
     The processing of the editor data is done by a back-end running on the server.
     The rendering of the editor data is done by a front-end running on a client machine.
     </p><p>
-    The Cordet FW Editor lets users create an <strong>instance</strong> of a specification for their applications.
+    The Cordet Editor lets users create an <strong>instance</strong> of a specification for their applications.
     The editor enforces a <strong>model</strong> of how this specification instance is built.
     The model has two parts: a static part which defines the structure of the editor database; 
     and a dynamic part which defines the behaviour associated to the data held in the database.
@@ -46,7 +51,7 @@
     </p>
  
    
-    <h3>Editor Access</h3>
+    <h3><a name="EditorAccess">Editor Access</a></h3>
     <p>
     Access to the editor is for members only. 
     Prospective users apply for membership by contacting the <a href="mailto:pnp-software@pnp-software.com">administrator</a>.
@@ -54,7 +59,7 @@
     are allocated to one or more <i>projects</i>.
     </p>
     
-    <h3>Modelled Concepts</h3>
+    <h3><a name="ModelledConcepts">Modelled Concepts</a></h3>
     <p>
     The editor database models the following concepts:
     <ul>
@@ -705,7 +710,7 @@
     Within the FW Profile Editor, models have a name and can have a domain and a title.
     Models are defined as json strings and an svg representation which can be used to render them as pictures.
     </p><p>
-    The Cordet FW Editor has a connection to the FW Profile Editor Database, which allows a user to import 
+    The Cordet Editor has a connection to the FW Profile Editor Database, which allows a user to import 
     selected models. 
     A user can only import FW Profile modes which belong to him.
     A model is imported through the <a href="#SpecItemOper">'add' operation</a>.
@@ -719,12 +724,14 @@
     TBD
     </p><p>
         
-    <h4><a name="VerItems">Verification Items</a></h4>
+    <h4><a name="VerItems">Verification Items</a></h4> 
+    
     TBD
     </p><p>    
 
-    <h3><a name="EditorGen">Editor Generators</a></h4>
-    The editor supports the embedding of <a href="#EditorGen"><generators/a> which process the specification items of a project to, for instance,
+    <h3><a name="EditorGen">Editor Generators</a></h3>
+    <a name="EditorGen"></a>
+    The editor supports the embedding of <a href="#EditorGen">generators</a> which process the specification items of a project to, for instance,
     generate code.
     TBD
     </p><p>    
@@ -732,7 +739,7 @@
 
     
     <h3><a name="EditorExtension">Editor Extension</a></h4>
-    The Cordet FW Editor is distributed through an open and free licence.
+    The Cordet Editor is distributed through an open and free licence.
     Users therefore have the option to modify it to match their specific needs.
     Some kinds of extension are especially common and are discussed below.
     </p><p>
@@ -761,7 +768,7 @@
     </ul>
     Note that no change in the database is required.
     </p><p>
-    The editor supports the embedding of <a href="#EditorGen"><generators/a> which process the specification items of a project to, for instance,
+    The editor supports the embedding of <a href="#EditorGen">generators</a> which process the specification items of a project to, for instance,
     generate code.
     The editor offers TBD pre-defined generators. Users may need to add their own generators.
     The process for doing so is: TBD.
@@ -770,12 +777,48 @@
     </p><p>    
    
     
- 
-    
+<!-- 
+    JS to create table of contents at top of page 
+    from: https://stackoverflow.com/questions/187619/is-there-a-javascript-solution-to-generating-a-table-of-contents-for-a-page 
+    and modified to handle <a name> tags in the headers
+--> 
+<script>
+window.onload = function () {
+    var toc = "";
+    var level = 0;
 
-     
- 
+    document.getElementById("contents").innerHTML =
+        document.getElementById("contents").innerHTML.replace(
+            /<h([\d])><a\s[a-zA-Z=\"]+>([^<]+)<\/a><\/h([\d])>/gi,
+            function (str, openLevel, titleText, closeLevel) {
+                if (openLevel != closeLevel) {
+                    return str;
+                }
 
+                if (openLevel > level) {
+                    toc += (new Array(openLevel - level + 1)).join("<ul>");
+                } else if (openLevel < level) {
+                    toc += (new Array(level - openLevel + 1)).join("</ul>");
+                }
+
+                level = parseInt(openLevel);
+
+                var anchor = titleText.replace(/ /g, "_");
+                toc += "<li><a href=\"#" + anchor + "\">" + titleText
+                    + "</a></li>";
+
+                return "<h" + openLevel + "><a name=\"" + anchor + "\">"
+                    + titleText + "</a></h" + closeLevel + ">";
+            }
+        );
+
+    if (level) {
+        toc += (new Array(level + 1)).join("</ul>");
+    }
+
+    document.getElementById("toc").innerHTML += toc;
+};
+</script>
     
     
     
@@ -796,4 +839,7 @@
 
 
 </div>
+
+    </div>     
+
 {% endblock %}
