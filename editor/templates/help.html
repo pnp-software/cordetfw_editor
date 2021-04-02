@@ -39,22 +39,36 @@
     <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
     </ul>
     </p><p>
-        
-    <h3><a name="ModellingLevels">Modelling Levels</a></h3>
+
+    <h3><a name="HowToUse">How To Use the Editor</a></h3>
     <p>
-    The editor is built on a <a href="#MetaModel">meta-model</a> which defines its basic concepts
+    The editor is built as a django project made available through an open and free licence.
+    The installation instructions are in the 
+    <a href="https://github.com/pnp-software/cordetfw_editor">project home page</a>.
+    </p><p>
+    The editor is available in a default configuration which can be used "as is". 
+    However, projects normally have project-specific categories of requirements, or need to maintain
+    project-specific relationships among their requirements, or need to generate
+    project-specific artifacts from their requirements.
+    The Cordet Editor cater to these needs by being built on 
+    a <a href="#MetaModel">meta-model</a> which defines its basic concepts
     and the operations which may be performed upon them.
     The key concept at meta-modelling level is that of <a href="#SpecItems">specification item</a>.
     A specification item is a set of specification-related information which are manipulated as 
     a single unit.
     </p><p>
-    When the editor is deployed, it is configured to match the needs of its target projects.
+    When users deploy the editor, they are expected to 
+    <a href="Instantiation">configure</a> it to match their needs.
     The outcome of this configuration process is an <a href="#Model">editor model</a> which
-    defines the concrete categories of specification items and their mutual relationships.
+    defines the concrete categories of specification items and their mutual relationships.\
+    and the generators to process them.
     </p><p>
     when the editor is used, its model is instantiated to create a set of concrete
     specification item instances which specify the applications in a project.
     </p>
+    <img src="{% static 'images/ModelLevels.png' %}" width="600" height="400" class="center"> 
+    </p><p>
+     
     
     <h3><a name="MetaModel">The Editor Meta-Model</a></h3>
     <p>
@@ -242,7 +256,7 @@
     </ul>
     </p><p>
     The category-specific specification items are used during the 
-    <a href="#Model">instantiation of the editor meta-model</a>, when the concrete 
+    <a href="#Instantiaton">instantiation of the editor meta-model</a>, when the concrete 
     specification item categories are defined.
     It is at this time that the category-specific attributes are given their meaning.
     </p><p>
@@ -298,7 +312,7 @@
     The validity check comprises: (a) generic checks and (b) category-specific checks.
     The generic checks are specified in the activity diagrams below.
     The category-specific checks are defined as part of the 
-    <a href="#Model">instantiation of the editor meta-model</a>.
+    <a href="#Instantiaton">instantiation of the editor meta-model</a>.
     </p><p>
     <img src="{% static 'images/AddSpecItem.png' %}"> 
     </p><p>
@@ -447,7 +461,7 @@
     attributes of primitive type.
     </p>
  
-      
+    
     <h4><a name="ExpImp">Export and Import</a></h4>
     <p>
     There are three kinds of data imports and exports:
@@ -523,23 +537,83 @@
     The project import function is only successful if the project being imported
     does not yet exist.
     </p><p>
-    The project import function can only be triggered by the editor adminstrator.
+    The project import function can only be triggered by the editor administrator.
     This restriction is due to the fact that import of incomplete or incorrect
     data can corrupt the database.
    
-   
-   
-   
+    <h4><a name="Generators">Generators</a></h4>
+    <p>
+    The editor supports the embedding of generators which process the specification items of a project to, for instance,
+    generate code or inputs for documents.
+    No generators are defined at meta-model levels. 
+    They are defined as part of the <a href="#Instantiaton">instantiation of the editor</a>.
+    </p><p>    
+    TBD
+
+
+    <h3><a name="Instantiation">Editor Instantiation</a></h3>
+    <p>
+    The Cordet Editor is built on a meta-model which users are expected to instantiate when they deploy the
+    editor.
+    The <a href="#DefModel">default instantiation</a> can be used as a blue-print for the user-specific instantiation.
+    During the instantiation process: 
     <ul>
-    <li><strong>Data Items</strong>: <a href="#IntRef">Internal reference</a> in the value field may 
-                                     only point to other data items</li>
-    <li><strong>Data Items</strong>: The value of of a data item of enumerated kind must be an
-                                     <a href="#IntRef">Internal reference</a> to an enumerated value of the
-                                     the same type as the data item</li>
-    <li><strong>Behavioural Model</strong>: neither the domain nor the name can be be modified in editing mode</li>
-    <li><strong>Behavioural Model</strong>: during an add operation, a model with the specified domain and name
-                                            must exist in the FW Profile Database</li>
+    <li>The categories of specification items and their mutual relationships are defined</li>
+    <li>The generators are defined</li>
     </ul>
+    </p><p>    
+    These tasks are performed by: (a) filling out the configuration dictionary of the editor and (b)
+    implementing the configuration module TBD. 
+    
+   
+    <h4><a name="EditorConfig">Editor Configuration Dictionary</a></h4>
+    <p>
+    Configuration information for the editor is held in the <strong>configuration dictionary</strong>.
+    The 'General' key in the dictionary holds general configuration information.
+    Additionally, for each specification item, a 'Category' key is present whose
+    value is another dictionary with configuration information for that category, including:
+    <ul>
+    <li>The name of the category</li>
+    <li>The list of external attributes for the category (i.e. the specification items whose content
+        originates outside the editor, see also <a href="#IntExtSpecItems">here</a>)</li>
+    <li>The number of fields when the specification items of the given categories are displayed
+        in list form</li>
+    </ul>
+    The 'expand' item in the configuration dictionary determines whether a specification item can be
+    'expanded' when it is displayed by the editor.
+    Specification items refer to each other through their s_link and p_link attributes.
+    When a specification item is expanded, the items which are linked to it either through their
+    s_link or through p_link are listed.
+    The 'expand' item in the configuration dictionary dete
+    </p><p>
+    The 'attrs' item in the configuration dictionary 
+    lists the editable fields for that category and, for each, it provides the 
+    following information:
+    <ul>
+    <li>label: the label used when the field is displayed or exported</li>
+    <li>req_in_form: true if the field is mandatory</li>
+    <li>kind: the kind of field, namely one of:</li>
+        <ul>
+        <li>plain_text: a text field without <a href=""#IntRef">internal references</a></li>
+        <li>ref_text: a text field with <a href=""#IntRef">internal references</a></li>
+        <li>spec_item_ref: a field with a reference to another specification item</li>
+        <li>plain_ref: a field with a reference to a model instance other than a specification item</li>
+        <li>image: a field holding image data</li>
+        <li>int: an integer field</li>
+        </ul>
+    </ul>
+    </p><p>
+   
+   
+   
+    </p><p>    
+
+
+    <h3><a name="DefModel">Default Editor Model</a></h3>
+
+
+
+   
    
    
    
@@ -677,44 +751,21 @@
     </p><p>
     <img src="{% static 'images/CatLinks.png' %}"> 
     </p>
+     <ul>
+    <li><strong>Data Items</strong>: <a href="#IntRef">Internal reference</a> in the value field may 
+                                     only point to other data items</li>
+    <li><strong>Data Items</strong>: The value of of a data item of enumerated kind must be an
+                                     <a href="#IntRef">Internal reference</a> to an enumerated value of the
+                                     the same type as the data item</li>
+    <li><strong>Behavioural Model</strong>: neither the domain nor the name can be be modified in editing mode</li>
+    <li><strong>Behavioural Model</strong>: during an add operation, a model with the specified domain and name
+                                            must exist in the FW Profile Database</li>
+    </ul>
+   
+
  
-    <h3><a name="EditorConfig">Editor Configuration</a></h3>
-    <p>
-    Configuration information for the editor is held in the <strong>configuration dictionary</strong>.
-    The 'General' key in the dictionary holds general configuration information.
-    Additionally, for each specification item, a 'Category' key is present whose
-    value is another dictionary with configuration information for that category, including:
-    <ul>
-    <li>The name of the category</li>
-    <li>The list of external attributes for the category (i.e. the specification items whose content
-        originates outside the editor, see also <a href="#IntExtSpecItems">here</a>)</li>
-    <li>The number of fields when the specification items of the given categories are displayed
-        in list form</li>
-    </ul>
-    The 'expand' item in the configuration dictionary determines whether a specification item can be
-    'expanded' when it is displayed by the editor.
-    Specification items refer to each other through their s_link and p_link attributes.
-    When a specification item is expanded, the items which are linked to it either through their
-    s_link or through p_link are listed.
-    The 'expand' item in the configuration dictionary dete
-    </p><p>
-    The 'attrs' item in the configuration dictionary 
-    lists the editable fields for that category and, for each, it provides the 
-    following information:
-    <ul>
-    <li>label: the label used when the field is displayed or exported</li>
-    <li>req_in_form: true if the field is mandatory</li>
-    <li>kind: the kind of field, namely one of:</li>
-        <ul>
-        <li>plain_text: a text field without <a href=""#IntRef">internal references</a></li>
-        <li>ref_text: a text field with <a href=""#IntRef">internal references</a></li>
-        <li>spec_item_ref: a field with a reference to another specification item</li>
-        <li>plain_ref: a field with a reference to a model instance other than a specification item</li>
-        <li>image: a field holding image data</li>
-        <li>int: an integer field</li>
-        </ul>
-    </ul>
-    </p><p>
+ 
+ 
          
     
     
@@ -753,12 +804,6 @@
     TBD
     </p><p>    
 
-    <h3><a name="EditorGen">Editor Generators</a></h3>
-    <a name="EditorGen"></a>
-    The editor supports the embedding of <a href="#EditorGen">generators</a> which process the specification items of a project to, for instance,
-    generate code.
-    TBD
-    </p><p>    
 
 
     

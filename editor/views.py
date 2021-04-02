@@ -61,7 +61,7 @@ def index(request):
                                'applications': list(applications),
                                'default_val_set_id': default_val_set_id,
                                'user_has_access': userHasAccess})
-    context = {'list_of_projects': listOfProjects}
+    context = {'list_of_projects': listOfProjects, 'configs': configs, }
     return render(request, 'index.html', context=context)
  
 
@@ -363,7 +363,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     for item in items:
         item_ver_links[item.id] = list_ver_items_for_display(item)
 
-    display_list = list(configs[cat]['attrs'])
+    display_list = list(configs['cats'][cat]['attrs'])
     if (display == 'short') or (display == 'trac'):
         try:
             display_list.remove('desc')
@@ -381,8 +381,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     domains = get_domains(cat, application_id, project_id) 
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
-               'val_set': val_set, 'val_sets': val_sets, 'config': configs[cat], 'cat': cat, 'expand_id': expand_id, \
-               'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs[cat]['n_list_fields']-3),
+               'val_set': val_set, 'val_sets': val_sets, 'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
+               'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs['cats'][cat]['n_list_fields']-3),
                'item_ver_links': item_ver_links, 'display_list': display_list, 'display': display, order_by: 'order_by'}
     return render(request, 'list_spec_items.html', context)    
 
@@ -398,13 +398,13 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
 
     if application_id != 0:
         application = Application.objects.get(id=application_id)
-        title = 'Add '+configs[cat]['name']+' to Application '+application.name
+        title = 'Add '+configs['cats'][cat]['name']+' to Application '+application.name
     else:
         application = None
-        title = 'Add '+configs[cat]['name']+' to Project '+project.name
+        title = 'Add '+configs['cats'][cat]['name']+' to Project '+project.name
         
     if request.method == 'POST':   
-        form = SpecItemForm('add', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, request.POST)
+        form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, request.POST)
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
@@ -419,12 +419,12 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('add', request, cat, project, application, configs[cat], s_parent_id, p_parent_id)
+        form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id)
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, \
-               'sel_dom': sel_dom, 'config': configs[cat], 'cat': cat, 'spec_items': spec_items}
+               'sel_dom': sel_dom, 'config': configs['cats'][cat], 'cat': cat, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context)  
 
 
@@ -436,16 +436,16 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     p_parent_id = request.GET.get('p_parent_id')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
-        title = 'Edit '+configs[cat]['name']+' in Application '+application.name
+        title = 'Edit '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
         application = None
-        title = 'Edit '+configs[cat]['name']+' in Project '+project.name
+        title = 'Edit '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
   
     spec_item = SpecItem.objects.get(id=item_id)
     if request.method == 'POST':   
-        form = SpecItemForm('edit', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             if spec_item.status == 'CNF':
@@ -461,7 +461,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('edit', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -503,15 +503,15 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     p_parent_id = request.GET.get('p_parent_id')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
-        title = 'Copy '+configs[cat]['name']+' in Application '+application.name
+        title = 'Copy '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
         application = None
-        title = 'Copy '+configs[cat]['name']+' in Project '+project.name
+        title = 'Copy '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project) or (spec_item.val_set.name != 'Default'):
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('copy', request, cat, project, application, configs[cat], s_parent_id, \
+        form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, \
                             p_parent_id, request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
@@ -526,7 +526,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('copy', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -543,15 +543,15 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
     p_parent_id = request.GET.get('p_parent_id')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
-        title = 'Split '+configs[cat]['name']+' in Application '+application.name
+        title = 'Split '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
         application = None
-        title = 'Split '+configs[cat]['name']+' in Project '+project.name
+        title = 'Split '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project)  or (spec_item.val_set.name != 'Default'):
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('split', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                              request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
@@ -567,7 +567,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                                             sel_dom, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('split', request, cat, project, application, configs[cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -838,5 +838,5 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
     spec_item = SpecItem.objects.get(id=item_id)
     
     context = {'item': spec_item, 'items': get_previous_list(spec_item), 'project': project, \
-               'application_id': application_id,  'config':configs[cat], 'cat':cat, 'sel_dom': sel_dom}
+               'application_id': application_id,  'config':configs['cats'][cat], 'cat':cat, 'sel_dom': sel_dom}
     return render(request, 'list_spec_item_history.html', context)    

@@ -243,7 +243,7 @@ def spec_item_to_edit(spec_item):
     item in a format suitable for display in a form.
     """
     dic = model_to_dict(spec_item)
-    for key, value in configs[spec_item.cat]['attrs'].items():
+    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if value['kind'] == 'ref_text':
             dic[key] = convert_db_to_edit(dic[key])
     return dic
@@ -256,9 +256,9 @@ def spec_item_to_latex(spec_item):
     - Value: value of field in latex representation
     The field label is the label as given in the configs dictionary without spaces.  
     """
-    cat_attrs = configs[spec_item.cat]['attrs']
+    cat_attrs = configs['cats'][spec_item.cat]['attrs']
     dic = {}
-    for key, value in configs[spec_item.cat]['attrs'].items():
+    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
             dic[label] = frmt_string(convert_db_to_latex(getattr(spec_item, key)))
@@ -289,9 +289,9 @@ def spec_item_to_export(spec_item):
     - Value: value of field in export representation
     The field label is the label as given in the configs dictionary.  
     """
-    cat_attrs = configs[spec_item.cat]['attrs']
+    cat_attrs = configs['cats'][spec_item.cat]['attrs']
     dic = {}
-    for key, value in configs[spec_item.cat]['attrs'].items():
+    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if value['kind'] == 'ref_text':
             dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
         elif value['kind'] == 'spec_item_ref':
@@ -313,8 +313,8 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     The function will raise an exception if one of the fields expected
     in the dictionary is not found. 
     """
-    cat_attrs = configs[spec_item.cat]['attrs']
-    for key, value in configs[spec_item.cat]['attrs'].items():
+    cat_attrs = configs['cats'][spec_item.cat]['attrs']
+    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
         elif (key == 'value') and (spec_item.cat == 'Model'):
@@ -449,18 +449,18 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
     The information in configs[cat]['expand'] determines whether or not
     a given spec_item has s_link or p_link children. 
     """
-    if configs[cat]['expand'][expand_link] == 'None':
+    if configs['cats'][cat]['expand'][expand_link] == 'None':
         return None
     expand_items = None
     if expand_link == 's_link':
         expand_items = SpecItem.objects.filter(project_id=project_id, \
-                            cat=configs[cat]['expand'][expand_link], \
+                            cat=configs['cats'][cat]['expand'][expand_link], \
                             s_link_id=expand_id, \
                             val_set_id=val_set_id).\
                             exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
     if expand_link == 'p_link':
         expand_items = SpecItem.objects.filter(project_id=project_id, \
-                            cat=configs[cat]['expand'][expand_link], \
+                            cat=configs['cats'][cat]['expand'][expand_link], \
                             p_link_id=expand_id, \
                             val_set_id=val_set_id).\
                             exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
