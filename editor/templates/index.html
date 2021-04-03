@@ -57,27 +57,21 @@
               <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Rel</a>
               {% endif %}
               {% if item.user_has_access or request.user == item.project.owner %}
-              <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_spec_items' 'DataItem' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
-                    title="Manage Data Pool">Dp</a>
-              <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_spec_items' 'DataItemType' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
-                    title="Manage Data Types">Typ</a>
-              <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_spec_items' 'EnumType' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
-                    title="Manage Enumerated Data Types">ETyp</a>
-              <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_spec_items' 'Service' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
-                    title="Manage Services">Serv</a>
-              <a class="btn btn-outline-dark btn-sm" 
-                    href="{% url 'list_spec_items' 'Packet' item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
-                    title="List Packets">Pckt</a>
+                {% for cat, value in configs.items %}        
+                    {% if value.access_from_index.level == 'Project' %}
+                     <a class="btn btn-outline-dark btn-sm" 
+                            href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
+                            title="Manage {{ value.name }}s">{{ value.abbr }}</a>
+                    {% endif %}
+                {% endfor %}
               <a class="btn btn-outline-dark btn-sm" 
                     href="{% url 'export_project' item.project.id %}" title="Export Project">Ex</a>
               {% else %}
-              <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Dp</a>
-              <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Typ</a>
-              <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Ex</a>
+                {% for cat, value in configs.items %}        
+                    {% if value.access_from_index.level == 'Project' %}
+                     <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">{{ value.abbr }}</a>
+                    {% endif %}
+                {% endfor %}
               {% endif %}
            </div>
          </td>
@@ -100,22 +94,19 @@
                 <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Rel</a>
                 {%endif %}
                 {% if item.user_has_access or request.user == item.project.owner %}
-                <a class="btn btn-outline-dark btn-sm"
-                    href="{% url 'list_spec_items' 'Requirement' item.project.id application.id item.default_val_set_id 'All_Domains' %}"
-                    title="Manage Requirements">Req</a>
-                <a class="btn btn-outline-dark btn-sm"
-                    href="{% url 'list_spec_items' 'AdaptPoint' item.project.id application.id item.default_val_set_id 'All_Domains' %}"
-                    title="Manage Adaptation Points">AP</a>
-                <a class="btn btn-outline-dark btn-sm"
-                    href="{% url 'list_spec_items' 'Model' item.project.id application.id item.default_val_set_id 'All_Domains' %}"
-                    title="Manage Behavioural Models">Mod</a>
-                <a class="btn btn-outline-dark btn-sm"
-                    href="{% url 'list_spec_items' 'VerItem' item.project.id application.id item.default_val_set_id 'All_Domains' %}"
-                    title="Manage Verification Items">Ver</a>
+                    {% for cat, value in configs.items %}        
+                        {% if value.access_from_index.level == 'Application' %}
+                         <a class="btn btn-outline-dark btn-sm" 
+                                href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'All_Domains' %}" 
+                                title="Manage {{ value.name }}s">{{ value.abbr }}</a>
+                        {% endif %}
+                    {% endfor %}
                 {% else %}
-                <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Req</a>
-                <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Mod</a>
-                <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">Ver</a>
+                {% for cat, value in configs.items %}        
+                    {% if value.access_from_index.level == 'Application' %}
+                     <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">{{ value.abbr }}</a>
+                    {% endif %}
+                {% endfor %}
                 {% endif %}
               </div>
             </td>

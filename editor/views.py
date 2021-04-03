@@ -61,7 +61,7 @@ def index(request):
                                'applications': list(applications),
                                'default_val_set_id': default_val_set_id,
                                'user_has_access': userHasAccess})
-    context = {'list_of_projects': listOfProjects, 'configs': configs, }
+    context = {'list_of_projects': listOfProjects, 'configs': configs['cats']}
     return render(request, 'index.html', context=context)
  
 
