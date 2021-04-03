@@ -45,7 +45,7 @@ configs = {'General': {'csv_sep': '|',
                                            'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                            'implementation':  {'label': 'Implementation', 'req_in_form': False, 'kind': 'ref_text'},
                                            'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
-                                           'p_link':    {'label': 'Parent Req', 'req_in_form': False, 'kind': 'plain_ref'},
+                                           'p_link':    {'label': 'Parent Req', 'req_in_form': False, 'kind': 'spec_item_ref'},
                                            'val_set':   {'label': 'ValSet',  'req_in_form': False, 'kind': 'plain_ref'},
                                            'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
                                           }
