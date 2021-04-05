@@ -17,7 +17,7 @@
 <div class="container-fluid bg-grey">
     <h3><a name="Overview">Overview</a></h3>
     <p>
-    The Cordet FW Editor provides an environment where users can define various kinds of specification items
+    The Cordet FW Editor provides an environment where users define various kinds of specification items
     for their applications.
     The specification information is stored in a database held on a server.
     The processing of the specification data is done by a back-end running on the server.
@@ -25,7 +25,7 @@
     </p><p>
     Distinctive features of the editor include:
     <ul>
-    <li>Design based on a <a href="#ModellingLevels">meta-modelling concept</a> to allow 
+    <li>Design based on a <a href="#ModellingLevels">meta-model</a> to allow 
         customization to meet user needs</li>
     <li>Distribution through a free and open licence </li>
     <li>Support for multiple versions of requirements through the <a href="#ValSets">ValSet</a> concept</li>
@@ -34,7 +34,7 @@
     <li><a href="#SpecItemRep">Rendering of requirements</a> either as hyperlinked html or as text in a form 
         suitable for import in documents</li>
     <li>Support for importing of and linking to <a href="ExtSpecRes">external specification resources</a></li>
-    <li>Provision of <a href="#ExpImp">import and export facilities</a> to csv formats for all requirements</li>
+    <li>Provision of <a href="#ExpImp">import and export facilities</a> to csv formats</li>
     <li>Support for <a href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
     <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
     </ul>
@@ -47,7 +47,7 @@
     <a href="https://github.com/pnp-software/cordetfw_editor">project home page</a>.
     </p><p>
     The editor is available in a default configuration which can be used "as is". 
-    However, projects normally have project-specific categories of requirements, or need to maintain
+    However, projects often have project-specific categories of requirements, or need to maintain
     project-specific relationships among their requirements, or need to generate
     project-specific artifacts from their requirements.
     The Cordet FW Editor cater to these needs by being built on 
@@ -60,11 +60,8 @@
     When users deploy the editor, they are expected to 
     <a href="Instantiation">configure</a> it to match their needs.
     The outcome of this configuration process is an <a href="#Model">editor model</a> which
-    defines the concrete categories of specification items and their mutual relationships.\
+    defines the concrete categories of specification items and their mutual relationships
     and the generators to process them.
-    </p><p>
-    when the editor is used, its model is instantiated to create a set of concrete
-    specification item instances which specify the applications in a project.
     </p>
     <img src="{% static 'images/ModelLevels.png' %}" width="600" height="400" class="center"> 
     </p><p>
@@ -195,18 +192,46 @@
      
     <h4><a name="SpecItems">Specification Items</a></h4>
     <p>
-    Specification items are defined by their attributes and by the behaviour associated to them
-    (i.e. by the way they are handled by the editor).
+    Specification items are defined by their <strong>attributes</strong> and by the <strong>operatons</strong> 
+    which may be performed upon them.
     Specification items are divided into <strong>categories</strong>. 
-    Specification items in the same category have the same behaviour associated to them (i.e. they are
+    Specification items in the same category have the same behaviour (i.e. they are
     treated in the same way by the editor).    
-    The specification item categories are defined at <a href="Model">editor model level</a>.
-    </p><p>
+    The specification item categories are defined at <a href="HowToUse">editor model level</a>.
+    </p><p>        
     Some specification item attributes (the <strong>core attributes</strong>) have a semantics which is
     independent of the specification item category.
-    Other specification item attributes have a category-specific semantics.
+    Other specification item attributes have a category-specific semantics (the <strong>category-specific
+    attributes</strong>).
     </p><p>
-    Within a project, a specification item is identified by the pair: <strong>domain:name</strong>. 
+        
+    <h4><a name="CoreAttr">Core Attributes</a></h4>
+    <p>
+    The core attributes of specification items are:    
+    <ul>
+    <li><i>Category(*)</i>: the category of the specification item (an enumeratd value; the range
+                            of enumerated values is defined when the editor is instantiated)</li>
+    <li><i>Domain(*)</i>: the domain to which the specification item belongs (a string consisting 
+                          of alphanumeric characters and underscores)</li>
+    <li><i>Name(*)</i>: the name of the specification item (a string consisting 
+                        of alphanumeric characters and underscores)</li>
+    <li><i>Project(*)</i>: the project to which the specification item belongs </li>
+    <li><i>Application</i>: the application to which the specification item belongs (empty if the specification
+                     item describes a project-level feature)</li>
+    <li><i>Title(*)</i>: a short description of the specification item</li>
+    <li><i>Description</i>: a long description of the specification item</li>
+    <li><i>Owner(*)</i>: the user who created or last updated the specification item</li>
+    <li><i>Status(*)</i>: the history status of the speecification item</li>
+    <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
+                              history status of the specification was last updated</li>
+    <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
+                                 (empty if the specification item has no history)</li>
+    <li><i>Rationale</i>: the rationale for the existence of the specification item or for its value</li>
+    <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
+    <li><i>Implementation</i>: information about how the specification item is implemented</li> 
+    <li><i>ValSet(*)</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
+    </ul>
+    Within a project, a specification item is uniquely identified by the pair: <strong>domain:name</strong>. 
     The domain is used to capture a set of logically related specification items and acts as a kind
     of name space.
     The name is unique within the domain.
@@ -217,63 +242,16 @@
     The history mechanism is supported by the 
     <strong>update time</strong> attribute representing the time when the specification time was last updated
     and by the <strong>previous</strong> attribute which points to the previous version of the specification item. 
-    </p><p>
-    Each specification item has an <strong>owner</strong>, which is the user who last updated the specification item.
-    </p><p>
-    Each specification item has a short description (its <strong>title</strong>) and it may have a long
-    description (its <strong>description</strong>). 
-    The short description cannot exceed a pre-defined length. 
-    Short and long description are intended to be edited together: the short description will often be the first
-    sentence of the complete (short+long) description. 
-    The short description is shown as a tip when hovering over an item in an HTML page.
-    </p><p>
-    The <strong>justification</strong> attribute holds information describing the rationale for the
-    existing of the specification item and the <strong>remarks</strong> attributes holds generic remarks.    
-    </p><p>
-    Thus, in summary, the core attributes of specification items are 
-    (asterisked attributes are mandatory; the others may be left empty):
-    <ul>
-    <li><i>Domain(*)</i>: the domain to which the specification item belongs (a string consisting 
-                          of alphanumeric characters and underscores)</li>
-    <li><i>Name(*)</i>: the name of the specification item (a string consisting 
-                        of alphanumeric characters and underscores)</li>
-    <li><i>Project(*)</i>: the project to which the specification item belongs </li>
-    <li><i>Application</i>: the application to which the specification item belongs (empty if the specification
-                     item describes a project-level feature)</li>
-    <li><i>Category(*)</i>: the category of the specification item</li>
-    <li><i>Title(*)</i>: a short description of the specification item</li>
-    <li><i>Description</i>: a long description of the specification item</li>
-    <li><i>Owner(*)</i>: the name of the user who created the specification item</li>
-    <li><i>Status(*)</i>: the history status of the speecification item</li>
-    <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
-                              history status of the specification was last updated</li>
-    <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
-                                 (empty if the specification item has no history)</li>
-    <li><i>Justification</i>: the rationale for the existence of the specification item or for its value</li>
-    <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
-    <li><i>Implementation</i>: information about how the specification item is implemented</li> 
-    <li><i>ValSet(*)</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
-    </ul>
-    </p><p>
+    </p>
+    
+    <h4><a name="CatSpecAttr">Category-Specific Attributes</a></h4>
+    <p>
     The category-specific specification items are used during the 
     <a href="#Instantiaton">instantiation of the editor meta-model</a>, when the concrete 
     specification item categories are defined.
     It is at this time that the category-specific attributes are given their meaning.
     </p><p>
-    Some categories of specification items may play different roles or may be of different kinds.
-    This is captured by the <strong>primary kind</strong> (<code>p_kind</code>) and 
-    <strong>secondary kind</strong> (<code>s_kind</code>) attributes.
-    </p><p>
-    Specification items may have up to three integer attributes which are called <strong>n1</strong>, 
-    <strong>n2</strong> and <strong>n3</strong> and up to six text attributes.
-    The primary text attribute is called the <strong>value</strong> and the others are called 
-    <strong>t1</strong> to <strong>t5</strong>.
-    </p><p>
-    Specification items may have up to two links to other specification items: 
-    the <strong>primary link</strong> (<code>p_link</code>)
-    and the <strong>secondary link</strong> (<code>s_link</code>).      
-    </p><p>
-    Thus, in summary, the category-specific attributes of specification items are:
+    The category-specific attributes of specification items are:
     <ul>
     <li><i>Primary and Secondary Kind</i>: enumerated values defining the role or kind of a 
         specification item</li>
@@ -367,7 +345,7 @@
     The internal reference is rendered in different ways depending 
     on the context within which the text field is used.
     </p><p>
-    In <strong>editing mode</strong>, the reference is introduced through the following syntaxt: 
+    In <strong>editing mode</strong>, the reference is introduced through the following syntax: 
     '#cat:dom:name'.
     Here, 'cat' is the category of the target specification item; 'dom' is the domain of the
     target specification item; and 'name' is its name.
@@ -393,22 +371,86 @@
     item with the reference to S.
     </p>
 
-    <h5><a name="SpecItemRep">Specification Item Representations</a></h5>
+    <h5><a name="SpecItemAttrRender">Rendering of Specification Item Attributes</a></h5>
     <p>
-    A specification item has multiple representations depending on the context in which it is used:
+    An attribute of a specification item has multiple representations which depend on the kind of content it
+    holds and on the context within which it is rendered.
+    The kind of content is one of the following:
     <ul>
-    <li><strong>Database Representation</strong> is the representation of the item in the database</li>
-    <li><strong>Display Representation</strong> is used when rendering the item in an HTML page</li>
-    <li><strong>Latex Representation</strong> is used when rendering the item for export to a csv format
+        <li>plain_text: text without <a href=""#IntRef">internal references</a></li>
+        <li>ref_text: text with <a href=""#IntRef">internal references</a></li>
+        <li>spec_item_ref: a reference to another specification item</li>
+        <li>plain_ref: a reference to a database model instance other than a specification item</li>
+        <li>eval_ref: a mathematical formula expressed in term of numerical values and/or of the
+            values of the same attribute of other specification items in the same category </li>
+        <li>image: an image data in svg format</li>
+        <li>int: an integer</li>
+    </ul>
+    </p><p>
+    The kind of content of an attribute is defined when the editor is instantiated.
+    </p><p>
+    The potential representations of the value of a specification item attribute are:
+    <ul>
+    <li><strong>Database Representation</strong> is the representation of the attribute in the database</li>
+    <li><strong>Display Representation</strong> is used when rendering the attribute in an HTML page</li>
+    <li><strong>Latex Representation</strong> is used when rendering the attribute for export to a csv format
         to be used in a latex document</li>
-    <li><strong>Edit Representation</strong> is used when rendering the item in a form for editing
+    <li><strong>Edit Representation</strong> is used when rendering the attribute in a form for editing
         by the user</li>
     <li><strong>Export Representation</strong> is used when rendering the item for 
                                                <a href="#ExpImp">plain export</a> to csv format</li>
-    <li><strong>Eval Representation</strong> is used to render the numerical value of a 
-        <a href="#DataItem">data item</a></li>
+    <li><strong>Eval Representation</strong> is used to render the numerical value of an attribute
+        with a content of eval_ref kind</li>
     </ul>
     <p></p>
+    The table shows how each kind of content is transformed when it is rendered in one of the above
+    representations.
+    <p></p>
+    <table class="table table-hover table-striped table-sm">
+      <thead>
+        <tr class="table-warning">
+            <th></th>
+            <th>Database</th>
+            <th>Display </th>
+            <th>Latex</th>
+            <th>Edit</th>
+            <th>Export</th>
+            <th>Eval</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+        <td><code>plain text</code></td>
+        <td>No change</td>
+        <td>No change</td>
+        <td>Latex special characters are escaped; CR is converted to <code>\newline</code></td>
+        <td>No change</td>
+        <td>No change</td>
+        <td>n.a.</td>
+        </tr>
+        <tr>
+        <td><code>ref text</code></td>
+        <td>Internal ref.s are rendered as '#iref:id' where 'id' is the identifier of the referenced item </td>
+        <td>Internal ref.s are rendered as 'domain:name' with a hyperlink to the referenced item</td>
+        <td>Internal ref.s are rendered as 'domain:name'; Latex special characters are escaped; 
+            CR is converted to <code>\newline</code></td>
+        <td>Internal ref.s are rendered as '#cat:domain:name'</td>
+        <td>Internal ref.s are rendered as '#cat:domain:name'</td>
+        <td>n.a.</td>
+        </tr>
+        <tr>
+        <td><code>spec item ref</code></td>
+        <td>The identifier of the referenced item </td>
+        <td>The string representation of the referenced item</td>
+        <td>The string representation of the referenced item; Latex special characters are escaped</td>
+        <td>Pull-down menu with list of potential targets for the link</td>
+        <td>The string representation of the referenced item</td>
+        <td>n.a.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p></p>
+    
     These representations primarily differ in their treatment of references to other specification items:
     <ul>
     <li><strong>Database Representation</strong>: internal references are rendered as '#iref:id' where
