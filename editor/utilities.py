@@ -167,8 +167,6 @@ def convert_db_to_display(s, n):
     Invalid references are replaced with: ERROR:ERROR.
     This function is called recursively to handle all references in string s.
     The argument n is the depth of recursion. 
-    The input string is first passed through escape() to sanitize any potentially
-    malicious html code entered by the user.
     """
     match = pattern_db.search(s)
     if match == None:
