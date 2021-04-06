@@ -330,13 +330,16 @@ def edit_val_set(request, project_id, val_set_id):
 @login_required         
 def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
     project = Project.objects.get(id=project_id)
-    val_set = ValSet.objects.get(id=val_set_id)
-    expand_id = request.GET.get('expand_id')
-    expand_link = request.GET.get('expand_link')
-    display = request.GET.get('display')
-    order_by = request.GET.get('order_by')
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
+
+    val_set = ValSet.objects.get(id=val_set_id)
+    val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
+    expand_id = request.GET.get('expand_id')
+    expand_link = request.GET.get('expand_link')
+    disp = 'disp_def' if (request.GET.get('disp') == None) else request.GET.get('disp')
+    order_by = request.GET.get('order_by')
+    domains = get_domains(cat, application_id, project_id) 
     
     if (application_id == 0):   # Items to be listed are 'project items'
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
@@ -359,31 +362,24 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     else:
         expand_items = None
     
+    disp_items = []
+    for disp in configs['cats'][cat][disp]:
+        disp_item = []
+        for attr in disp['attrs']:
+            kind = configs['cats'][cat][attr]['kind']
+            value = _for_display
+            disp_item.append({'label': configs['cats'][cat][attr]['label'],
+                              'value': 'TBD'
+                             })
+    
     item_ver_links = {}
     for item in items:
         item_ver_links[item.id] = list_ver_items_for_display(item)
-
-    display_list = list(configs['cats'][cat]['attrs'])
-    if (display == 'short') or (display == 'trac'):
-        try:
-            display_list.remove('desc')
-            display_list.remove('rationale')
-            display_list.remove('remarks')
-            display_list.remove('t1')
-            display_list.remove('t2')
-            display_list.remove('t3')
-        except ValueError:
-            pass
-    if (display == 'trac'):
-        display_list.append('trac')
-        display_list.remove('owner')
-    
-    domains = get_domains(cat, application_id, project_id) 
-    val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
+   
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set': val_set, 'val_sets': val_sets, 'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs['cats'][cat]['n_list_fields']-3),
-               'item_ver_links': item_ver_links, 'display_list': display_list, 'display': display, order_by: 'order_by'}
+               'item_ver_links': item_ver_links, 'disp': disp, 'disp_list':configs['cats'][cat][disp] }
     return render(request, 'list_spec_items.html', context)    
 
 

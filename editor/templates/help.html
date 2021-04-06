@@ -328,50 +328,7 @@
     items are imported from an external source and hence it is not possible for the editor to 
     maintain mutliple versions of the same instance).
     
-    <h5><a name="IntRef">Internal References</a></h5>
-    <p>
-    In the following text fields:
-    <ul>
-    <li>Description</li>
-    <li>Value</li>
-    <li>Justification</li>
-    <li>Remarks</li>
-    <li>t1 to t5</li>
-    </ul>
-    </p><p>
-    It is possible to include a reference to another specification item.
-    In the database, the internal reference is stored with a format like: '#iref:n' where 'n'
-    is the identifier of the specification item being referred.
-    The internal reference is rendered in different ways depending 
-    on the context within which the text field is used.
-    </p><p>
-    In <strong>editing mode</strong>, the reference is introduced through the following syntax: 
-    '#cat:dom:name'.
-    Here, 'cat' is the category of the target specification item; 'dom' is the domain of the
-    target specification item; and 'name' is its name.
-    When the reference is rendered in <strong>display mode</strong>, it is converted to a hyperlink; when
-    it is rendered in <strong>export mode</strong>, it is converted to '#dom:name'.
-    </p><p>
-    Internal references always point to the specification item in the Default ValSet.
-    It is not possible to have an internal reference to specification items in other ValSets.
-    </p><p>
-    In the special case of the 'value' field of data items, 
-    The internal references may be used to construct mathematical expressions 
-    which depend on the value of other specification items.
-    These expressions are evaluated when the specification item is rendered for display.
-    The intention is that the value of a specification item is expressed as a function of the value 
-    of other specification items.
-    <p></p>    
-    If specification item S is the target of an internal reference in another
-    specification item, then, if S is deleted, the internal reference will become
-    invalid. 
-    There is no protection against this situation in the function which deletes the
-    specification item.
-    Users will notice the hanging reference when they try to display or export the specification
-    item with the reference to S.
-    </p>
-
-    <h5><a name="SpecItemAttrRender">Rendering of Specification Item Attributes</a></h5>
+   <h5><a name="SpecItemAttrRender">Rendering of Specification Item Attributes</a></h5>
     <p>
     An attribute of a specification item has multiple representations which depend on the kind of content it
     holds and on the context within which it is rendered.
@@ -399,8 +356,6 @@
         by the user</li>
     <li><strong>Export Representation</strong> is used when rendering the item for 
                                                <a href="#ExpImp">plain export</a> to csv format</li>
-    <li><strong>Eval Representation</strong> is used to render the numerical value of an attribute
-        with a content of eval_ref kind</li>
     </ul>
     <p></p>
     The table shows how each kind of content is transformed when it is rendered in one of the above
@@ -415,7 +370,6 @@
             <th>Latex</th>
             <th>Edit</th>
             <th>Export</th>
-            <th>Eval</th>
         </tr>
       </thead>
       <tbody>
@@ -426,7 +380,6 @@
         <td>Latex special characters are escaped; CR is converted to <code>\newline</code></td>
         <td>No change</td>
         <td>No change</td>
-        <td>n.a.</td>
         </tr>
         <tr>
         <td><code>ref text</code></td>
@@ -436,7 +389,6 @@
             CR is converted to <code>\newline</code></td>
         <td>Internal ref.s are rendered as '#cat:domain:name'</td>
         <td>Internal ref.s are rendered as '#cat:domain:name'</td>
-        <td>n.a.</td>
         </tr>
         <tr>
         <td><code>spec item ref</code></td>
@@ -445,32 +397,135 @@
         <td>The string representation of the referenced item; Latex special characters are escaped</td>
         <td>Pull-down menu with list of potential targets for the link</td>
         <td>The string representation of the referenced item</td>
-        <td>n.a.</td>
+        </tr>
+        <tr>
+        <td><code>plain ref</code></td>
+        <td>The identifier of the referenced item </td>
+        <td>The string representation of the referenced item</td>
+        <td>The string representation of the referenced item; Latex special characters are escaped</td>
+        <td>Pull-down menu with list of potential targets for the link</td>
+        <td>The string representation of the referenced item</td>
+        </tr>
+        <tr>
+        <td><code>eval ref</code></td>
+        <td>Internal ref.s are rendered as '#iref:id' where 'id' is the identifier of the referenced item </td>
+        <td>Internal ref.s are rendered as 'domain:name' with a hyperlink to the referenced item; the numerical value
+            of the expression (if it can be computed) is added at the end of the expression </td>
+        <td>Internal ref.s are rendered as 'domain:name'; Latex special characters are escaped; the numerical value
+            of the expression (if it can be computed) is added at the end of the expression</td>
+        <td>Internal ref.s are rendered as '#cat:domain:name'</td>
+        <td>Internal ref.s are rendered as '#cat:domain:name'</td>
+        </tr>
+        <tr>
+        <td><code>image</code></td>
+        <td>Text representation of image file </td>
+        <td>Image rendering as done by the browser </td>
+        <td>Representation is defined at editor instantiation time</td>
+        <td>Not editable</td>
+        <td>Not included in plain export</td>
+        </tr>
+        <tr>
+        <td><code>int</code></td>
+        <td>No change </td>
+        <td>No change </td>
+        <td>No change</td>
+        <td>No change</td>
+        <td>No change</td>
         </tr>
       </tbody>
     </table>
     <p></p>
     
-    These representations primarily differ in their treatment of references to other specification items:
+    <h4><a name="SpecItemLinks">Links Between Specification Items</a></h4>
+    <p>
+    The editor models three kinds of links between specification items:
     <ul>
-    <li><strong>Database Representation</strong>: internal references are rendered as '#iref:id' where
-        'id' is the identifier of the referenced item; reference fields only contain the identifier
-        of the referenced item.</li>
-    <li><strong>Display Representation</strong>: references are rendered as 'domain:name'
-        with a hyperlink to the referenced item<./li>
-    <li><strong>Latex Representation</strong>: references are rendered as 'domain:name';
-        reference fields are rendered through the string representation of the referenced field;
-        "special characters" which are not accepted by Latex are escaped; carriage return is 
-        rendered as '\newline'. </li>
-    <li><strong>Edit Representation</strong>: internal references are rendered as '#cat:domain:name'</li>
-    <li><strong>Export Representation</strong>: internal references are rendered as '#cat:domain:name';
-        reference fields are rendered through the string representation of the referenced field;</li>
-    <li><strong>Eval Representation</strong>: the numerical value of the data item is evaluated by
-        recursively evaluating the numerical value of all referenced data items</li>
+    <li>Direct Links</li>
+    <li>internal References</li>
+    <li>Traceability Links</li>
     </ul>
     <p></p>
-
+    <strong>Direct links</strong> are implemented through the <code>p_link</code> and 
+    <code>s_link</code> attributes of a specification item.
+    They establish a one-to-one link between two specification items.
+    Direct links are robust to deletion: the target of a direct link cannot be deleted unless
+    the link is deleted first. 
+    <p></p>
+    Users create a direct link when they edit a specification item.
+    If, for instance, the editor has been configured to have a <code>p_link</code> attribute
+    for specification items of category C, then when an instance of category C is edited,
+    the edit form offers a pull-down menu with the potential choices for <code>p_link</code>.
+    The range of choice is generated by function <code>get_p_link_choices</code>. 
+    This function must be customized during the editor instantiation process.
+    Function <code>get_s_link_choices</code> serves a similar purpose for direct links
+    implemented through the <code>s_link</code> attribute and it, too, must be
+    customized by the user.
+    </p><p>  
+    As an example, in the default editor configuration, both data items and data item types are 
+    modelled as specification items.
+    A direct link is then used to link a data items to its type.
+    <p></p>
+    <strong>Internal references</strong> are embedded within the text of one of the following 
+    specification item attributes:
+    <ul>
+    <li>Description</li>
+    <li>Value</li>
+    <li>Justification</li>
+    <li>Remarks</li>
+    <li>t1 to t5</li>
+    </ul>
+    </p><p>
+    Users create the internal reference when they edit the attribute.
+    The internal reference is introduced through the following syntax: '#cat:domain:name'.
+    Here, 'cat' is the category of the target specification item; 'domain' is the domain of the
+    target specification item; and 'name' is its name.
+    The editor offers an auto-completion facility to facilitate the creation of an internal reference link. 
+    </p><p>  
+    When the reference is rendered in for disply in html page, it is converted to a hyperlink; when
+    it is rendered for export, it is converted to '#dom:name'.
+    </p><p>
+    If specification item S is the target of an internal reference in another
+    specification item, then, if S is deleted, the internal reference will become
+    invalid. 
+    There is no protection against this situation in the function which deletes the
+    specification item.
+    Users will notice the hanging reference when they try to display or export the specification
+    item with the reference to S.
+    </p><p>
+    <strong>Traceability links</strong> can be used to set up many-to-many relationships among
+    specification items.
+    In this case, the link itself is a specification item.
+    This has the advantage that it is possible to associate additional information
+    to it (to, for instance, describe the nature or the reason for the link) and to
+    track its evolution in time through the <a href="#Releases">history mechanism</a>.
+    </p><p>
+    If specification item S1 is to be linked to specification item S2, then a specification
+    item L is created such that its <code>p_link</code> points to S1 and its <code>s_link</code>
+    points to S2.
+    Users create a traceabiity link by creating an instance of L and by then editing
+    its <code>p_link</code> and <code>s_link</code> links to create the connection 
+    between S1 and S2.
+    As in the case of direct links, the potential values of the <code>p_link</code> and 
+    <code>s_link</code> attributes are provided by functions <code>get_p_link_choices</code>
+    and <code>get_s_link_choices</code> and users are responsible for customizing these 
+    functions during the editor instantiation process. 
+    </p><p>
+    As an example, in the default editor configuration, traceability links are used
+    to link specification items to their specification evidence.
+    Category VerItem is used to describe a piece of verification evidence (e.g. a test case
+    or the outcome of the review of a design document) and category VerLink is used to 
+    capture a verificaition link.
+    A traceability link is then establshed by creating an instance of VerLink and using it
+    to link a specification item of a category other than VerItem or VerLink to a specification
+    item of category VerItem.
+    </p><p>
+    Links always point to the specification item in the Default ValSet.
+    It is not possible to create a link to a specification items in other ValSets.
+    </p>
+    
+    
     <h4><a name="ValSets">ValSets</a></h4>
+    <p>
     A ValSet is a set of alternative values for the specification items in a project.
     The admin user defines the range of ValSets for each project. 
     The 'Default' ValSet is pre-defined for all projects. 

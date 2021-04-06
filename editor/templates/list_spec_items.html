@@ -11,7 +11,7 @@
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select ValSet</button>
         <div class="dropdown-menu">
             {% for val_set in val_sets %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">{{ val_set.name }}</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp={{disp}}">{{ val_set.name }}</a>
             {% endfor %}
         </div>
       </div>
@@ -19,7 +19,7 @@
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select Domain</button>
         <div class="dropdown-menu">
             {% for domain in domains %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id domain %}">{{ domain }}</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id domain %}?disp={{disp}}">{{ domain }}</a>
             {% endfor %}
         </div>
       </div>
@@ -37,11 +37,11 @@
       <div class="dropdown mr-sm-2 mt-4">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Display Format</button>
         <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}">
+            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_def">
                 Default</a>
-            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display=short">
+            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_short">
                 Short without Traceability Info</a>
-            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display=trac">
+            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_trac">
                 Short with Traceability Info</a>
         </div>
       </div>
@@ -54,190 +54,32 @@
     <table class="table table-hover table-striped table-sm">
       <thead>
         <tr class="table-warning">
-          <th>{{config.attrs.domain.label}}</th>
-          <th>{{config.attrs.name.label}}</th>
-          
-          <!-- Title and: description, rationale, remarks and implementation -->
-          {% if 'title' in display_list or 'desc' in display_list or 'rationale' in display_list or 'remarks' in display_list %}
-          <th>{{config.attrs.desc.label}}</th>
-          {% endif %}
-          
-          <!-- For data items: value, NValue, unit of measure and multiplicity -->
-          {% if cat == 'DataItem'  %}
-            {% if 'value' in display_list %}
-            <th>{{config.attrs.value.label}}</th>
-            <th>NVal</th>
-            {% endif %}
-            {% if 't2' in display_list %}
-            <th>{{config.attrs.t2.label}}</th>
-            {% endif %}
-            {% if 't1' in display_list %}
-            <th>{{config.attrs.t1.label}}</th>
-            {% endif %}
-          {% endif %}
-          
-          <!-- For non-data items: value and, underneath, the five text fields  -->          
-          {% if cat != 'DataItem' %}
-            {% if 'value' in display_list %}
-            <th>{{config.attrs.value.label}}</th>
-            {% endif %}
-          {% endif %}
-
-          <!-- The p_kind and s_kind  -->          
-          {% if 'p_kind' in display_list %}
-          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=p_kind" 
-                 title="List in alphabetical order">{{config.attrs.p_kind.label}}</a></th>
-          {% endif %}
-          {% if 's_kind' in display_list %}
-          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=s_kind" 
-                 title="List in alphabetical order">{{config.attrs.s_kind.label}}</a></th>
-          {% endif %}
-
-          <!-- The generic integer fields  -->          
-          {% if 'n1' in display_list %}
-          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=n1" 
-                 title="List in alphabetical order">{{config.attrs.n1.label}}</a></th>
-          {% endif %}
-          {% if 'n2' in display_list %}
-          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=n2" 
-                 title="List in alphabetical order">{{config.attrs.n2.label}}</a></th>
-          {% endif %}
-          {% if 'n3' in display_list %}
-          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=n3" 
-                 title="List in alphabetical order">{{config.attrs.n3.label}}</a></th>
-          {% endif %}
-
-          <!-- The p_link and s_link  -->          
-          {% if 'p_link' in display_list %}
-          <th>{{config.attrs.p_link.label}}</th>
-          {% endif %}
-          {% if 's_link' in display_list %}
-          <th>{{config.attrs.s_link.label}}</th>
-          {% endif %}
-          
-          <!-- Either the Owner or the traceability information  --> 
-          {% if 'owner' in display_list %}
-          <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?display={{display}}&order_by=owner" 
-                 title="List in alphabetical order">Owner</a></th>
-          {% endif %}
-          {% if 'trac' in display_list %}
-          <th>Verification Links</th>
-          {% endif %}
- 
-          <!-- The edit/copy/delete/split buttons  --> 
+          {% for disp in disp_list %}
+            <th>{{disp|get_dict_item:'header'}}</th>
+          {% endfor %}  
+           <!-- The edit/copy/delete/split buttons  --> 
           <th></th>
         </tr>
       </thead>
       <tbody>
-        {% for item in items %}
-           <tr>
-            <td><a name='{{item.domain}}:{{item.name}}'>{{item.domain}}</a></td>
-            <td>{{item.name}}</td>
-            
-            <!-- Title and: description, rationale, remarks and mplementation -->
-            {% if 'title' in display_list %}
-                {% if item.desc != '' and 'desc' in display_list %}
-                <td><strong>{{item.title}}</strong> 
-                {% else %}
-                <td>{{item.title}}
-                {% endif %}
-            {% endif  %}
-                {% if item.desc != '' and 'desc' in display_list %}
-                {{item.desc|filter_refs|linebreaksbr}}
-                {% endif %}
-                {% if item.rationale != '' and 'rationale' in display_list %}
-                <br><strong>Rationale</strong> {{item.rationale|filter_refs|linebreaksbr}}
-                {% endif %}
-                {% if item.remarks != '' and 'remarks' in display_list %}
-                <br><strong>Remarks</strong> {{item.remarks|filter_refs|linebreaksbr}}
-                {% endif %}
-                {% if item.implementation != '' and 'implementation' in display_list %}
-                <br><strong>Implementation</strong> {{item.implementation|filter_refs|linebreaksbr}}
-                {% endif %}
-            </td>
-            
-            <!-- For data items: value, NValue, unit of measure and multiplicity -->
-            {% if cat == 'DataItem' %}
-                {% if 'value' in display_list %}
-                <td>{{item.value|filter_refs|linebreaksbr}}</td>
-                <td>{{item.value|filter_di_value|linebreaksbr}}</td>
-                {% endif %}
-                {% if 't2' in display_list %}
-                <td>{{item.t2}}</td>
-                {% endif %}
-                {% if 't1' in display_list %}
-                <td>{{item.t1}}</td>
-                {% endif %}
-            {% endif %}
-            
-            <!-- For non-data items: value and, underneath, the five text fields  -->          
-            {% if cat != 'DataItem' %}
-                {% if 'value' in display_list %}
-                <td>{{item.value|filter_refs|linebreaksbr}}
-                {% endif  %}
-                {% if 't1' in display_list %}
-                <br><strong>{{config.attrs.t1.label}}</strong> {{item.t1|filter_refs|linebreaksbr}}
-                {% endif  %}
-                {% if 't2' in display_list %}
-                <br><strong>{{config.attrs.t2.label}}</strong> {{item.t2|filter_refs|linebreaksbr}}
-                {% endif  %}
-                {% if 't3' in display_list %}
-                <br><strong>{{config.attrs.t3.label}}</strong> {{item.t3|filter_refs|linebreaksbr}}
-                {% endif  %}
-                </td>
-            {% endif %}
-            
-            <!-- The p_kind and s_kind  -->          
-            {% if 'p_kind' in display_list %}
-            <td>{{item.p_kind}}</td>
-            {% endif %}
-            {% if 's_kind' in display_list %}
-            <td>{{item.s_kind}}</td>
-            {% endif %}
-            
-            <!-- The generic integer fields  -->          
-            {% if 'n1' in display_list %}
-            <td>{{item.n1}}</td>
-            {% endif %}
-            {% if 'n2' in display_list %}
-            <td>{{item.n2}}</td>
-            {% endif %}
-            {% if 'n3' in display_list %}
-            <td>{{item.n3}}</td>
-            {% endif %}
-
-            <!-- The p_link and s_link  -->          
-            {% if 'p_link' in display_list %}
-                {% if item.p_link != None %}            
-                <td><a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
-                    title="{{item.p_link.title}}: {{item.p_link.desc}}">
-                    {{item.p_link.domain}}:{{item.p_link.name}}
-                    </a>
-                </td>
-                {% else %}
-                <td></td>
-                {% endif %}
-            {% endif %}
-            {% if 's_link' in display_list %}
-                {% if item.s_link != None %}
-                <td><a href="{% url 'list_spec_items' item.s_link.cat project.id application_id val_set.id item.s_link.domain %}#{{item.s_link.domain}}:{{item.s_link.name}}" 
-                    title="{{item.s_link.title}}: {{item.s_link.desc}} ">
-                    {{item.s_link.domain}}:{{item.s_link.name}}
-                    </a>
-                </td>
-                {% else %}
-                <td></td>
-                {% endif %}
-            {% endif %}
-
-            <!-- Either the Owner or the traceability information  --> 
-            {% if 'owner' in display_list %}
-            <td>{{item.owner}}</td>
-            {% endif %}
-            {% if 'trac' in display_list %}
-            <td>{{item_ver_links|get_dict_item:item.id|safe}}</td>
-            {% endif %}
-            
+          {% for item in items %}
+            <tr><a name='{{item.domain}}:{{item.name}}'></a>  
+            {% for disp in disp_list %}
+              <td>
+              {% if disp.attrs|length > 1 %}    
+                  {% for attr in disp.attrs %}
+                    {% if forloop.first %}  
+                        <strong>{{config.attrs|get_label:attr}}</strong> {{item|get_model_field:attr}}
+                    {% else %}
+                        <br> <strong>{{config.attrs|get_label:attr}}</strong> {{item|get_model_field:attr}}
+                    {% endif %}
+                  {% endfor %}  
+              {% else %}
+                  {{item|get_model_field:disp.attrs.0}}
+              {% endif %}
+              </td>
+            {% endfor %}
+          
             <!-- The edit/copy/delete/split buttons  --> 
             <td>
               <div class="btn-group">
@@ -259,27 +101,27 @@
                    href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
                 {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&display={{display}}#{{item.domain}}:{{item.name}}" 
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
                    title="Show {{config.expand.s_label}} Children">Xs</a>
                 {% endif %}
                 {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&display={{display}}#{{item.domain}}:{{item.name}}" 
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
                    title="Show {{config.expand.p_label}} Children">Xp</a>
                 {% endif %}
                 {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}&display={{display}}" 
+                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
                    title="Add {{config.expand.s_label}} Child">As</a>
                 {% endif %}
                 {% if expand_link == 'p_link' and val_set.name == 'Default' and not 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}&display={{display}}" 
+                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}&disp={{disp}}" 
                    title="Add {{config.expand.p_label}} Child">Ap</a>
                 {% endif %}
                 {% if 'trac' in display_list %}
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_dom %}?s_parent_id={{item.id}}&display={{display}}" 
+                   href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
                    title="Add Verification Link">A</a>
                 {% endif %}
               </div> 

@@ -41,6 +41,16 @@ def get_dict_item(dict, key):
     return dict.get(key)
 
 @register.filter(is_safe=True)
+def get_model_field(instance, field_name):
+    """ Return the value of the model's instance field """
+    return getattr(instance, field_name)
+
+@register.filter(is_safe=True)
+def get_label(config, attr):
+    """ Return the [attrs]['label'] value of the configuration dictiornary """
+    return config[attr]['label']
+
+@register.filter(is_safe=True)
 def get_short_desc(spec_item):
     """ Return a short description of the specification item """
     if spec_item.cat == 'VerLink':
