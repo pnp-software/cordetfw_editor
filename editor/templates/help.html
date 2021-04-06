@@ -334,18 +334,141 @@
     holds and on the context within which it is rendered.
     The kind of content is one of the following:
     <ul>
-        <li>plain_text: text without <a href=""#IntRef">internal references</a></li>
-        <li>ref_text: text with <a href=""#IntRef">internal references</a></li>
-        <li>spec_item_ref: a reference to another specification item</li>
+        <li>plain_text: text without <a href="#SpecItemLinks">internal references</a></li>
+        <li>ref_text: text with <a href="#SpecItemLinks">internal references</a></li>
+        <li>spec_item_ref: a reference to another specification item 
+            (<a href="#SpecItemLinks">direct link</a>)</li>
         <li>plain_ref: a reference to a database model instance other than a specification item</li>
         <li>eval_ref: a mathematical formula expressed in term of numerical values and/or of the
             values of the same attribute of other specification items in the same category </li>
         <li>image: an image data in svg format</li>
         <li>int: an integer</li>
+        <li>int: a date</li>
     </ul>
     </p><p>
-    The kind of content of an attribute is defined when the editor is instantiated.
+    The table below shows which kind of content is allowed for which attribute.
+    With the exception of the 'value' attribute, all attributes have only one kind of
+    allowed content.
+    The definition of the kind of content of each attribute is done in the editor
+    <a href="#EditorConfig">configuration dictionary</a>.
     </p><p>
+    <table class="table table-hover table-striped table-sm">
+      <thead>
+        <tr class="table-warning">
+            <th></th>
+            <th><code>plain_text</code></th>
+            <th><code>ref_text</code></th>
+            <th><code>spec_item_ref</code></th>
+            <th><code>plain_ref</code></th>
+            <th><code>eval_ref</code></th>
+            <th><code>image</code></th>
+            <th><code>int</code></th>
+            <th><code>date</code></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+            <td>Domain & Name</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>Title, Description, Rationale, Remarks & Implementation </td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>Value</td>
+            <td>&#9989;</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>Owner, ValSet, Project & Application</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>Previous, Primary & Seconday Links</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>Status, Primary & Secondary Kind</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>Update Time</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
+        </tr>
+        <tr>
+            <td>t1 to t5</td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>n1 to n5</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
+            <td>&#10060;</td>
+        </tr>
+      </tbody>
+    </table>
+    <p></p>
     The potential representations of the value of a specification item attribute are:
     <ul>
     <li><strong>Database Representation</strong> is the representation of the attribute in the database</li>
@@ -432,11 +555,19 @@
         <td>No change</td>
         <td>No change</td>
         </tr>
+        <tr>
+        <td><code>date</code></td>
+        <td>No change </td>
+        <td>Converted to 'd-m-Y H:i' </td>
+        <td>No change</td>
+        <td>No change</td>
+        <td>No change</td>
+        </tr>
       </tbody>
     </table>
     <p></p>
     
-    <h4><a name="SpecItemLinks">Links Between Specification Items</a></h4>
+    <h5><a name="SpecItemLinks">Links Between Specification Items</a></h5>
     <p>
     The editor models three kinds of links between specification items:
     <ul>

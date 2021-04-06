@@ -91,7 +91,7 @@
                 {% endif %}
                 {% if config.ext_attrs|length != 0 %}  
                 <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_dom %}" title="Refresg {{config.name}}">R</a>
+                   href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_dom %}" title="Refresh {{config.name}}">R</a>
                 {% endif %}
                 <a class="btn btn-outline-dark btn-sm"
                    href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>

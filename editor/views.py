@@ -362,15 +362,15 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     else:
         expand_items = None
     
-    disp_items = []
-    for disp in configs['cats'][cat][disp]:
-        disp_item = []
-        for attr in disp['attrs']:
-            kind = configs['cats'][cat][attr]['kind']
-            value = _for_display
-            disp_item.append({'label': configs['cats'][cat][attr]['label'],
-                              'value': 'TBD'
-                             })
+#    disp_items = []
+#    for disp in configs['cats'][cat][disp]:
+#        disp_item = []
+#        for attr in disp['attrs']:
+#            kind = configs['cats'][cat][attr]['kind']
+#            value = _for_display
+#            disp_item.append({'label': configs['cats'][cat][attr]['label'],
+#                              'value': 'TBD'
+#                             })
     
     item_ver_links = {}
     for item in items:

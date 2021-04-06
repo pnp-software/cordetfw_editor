@@ -41,7 +41,7 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Text', 'attrs':['value']},
                                                {'header':'Kind', 'attrs':['p_kind']},
                                                {'header':'Ver', 'attrs':['s_kind']}
-                                               ]
+                                               ],
                                    'disp_trac': [{'header':'Verification Links', 'trac_cat':'VerLink', 'trac_from':'p_link'}]
                                  },
                    'AdaptPoint':{'name': 'Adaptation Point',
