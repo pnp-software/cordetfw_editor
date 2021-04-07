@@ -63,21 +63,21 @@
       </thead>
       <tbody>
           {% for item in items %}
-            <tr><a name='{{item.domain}}:{{item.name}}'></a>  
             {% for disp in disp_list %}
               <td>
-              {% if disp.attrs|length > 1 %}    
-                  {% for attr in disp.attrs %}
-                    {% conv_db_disp item attr %}
-                    {% if forloop.first %}  
-                        <strong>{{config.attrs|get_label:attr}}</strong> {{item|get_model_field:attr}}
-                    {% else %}
-                        <br> <strong>{{config.attrs|get_label:attr}}</strong> {{item|get_model_field:attr}}
+              {% if forloop.first %}<a name='{{item.domain}}:{{item.name}}'>{% endif %}
+                    {% if 'attrs' in disp %}
+                      {% conv_db_disp item disp.attrs.0  %}
+                      {% for attr in disp.attrs %}
+                        {% if not forloop.first %} 
+                            {% conv_db_disp item attr as attr_value %} 
+                            {% if attr_value != '' %}
+                            <br><strong>{{config.attrs|get_label:attr}}</strong> {{ attr_value }}
+                            {% endif %}
+                        {% endif %}
+                      {% endfor %}  
                     {% endif %}
-                  {% endfor %}  
-              {% else %}
-                  {{item|get_model_field:disp.attrs.0}}
-              {% endif %}
+              {% if forloop.first %}</a>{% endif %}    
               </td>
             {% endfor %}
           
@@ -133,7 +133,7 @@
             <tr class="table-active">
               <td><a name='expand:{{expand_item.domain}}:{{expand_item.name}}'>{{expand_item.domain}}</a></td>
               <td><a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
-                            title="{{expand_item.value|filter_di_value|linebreaksbr}}">
+                            title="{{expand_item.desc|filter_refs_for_tip|linebreaksbr}}">
                   {{expand_item.name}}
                   </a>
               </td>

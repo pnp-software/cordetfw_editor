@@ -335,11 +335,13 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
 
     val_set = ValSet.objects.get(id=val_set_id)
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     expand_id = request.GET.get('expand_id')
     expand_link = request.GET.get('expand_link')
     disp = 'disp_def' if (request.GET.get('disp') == None) else request.GET.get('disp')
     order_by = request.GET.get('order_by')
     domains = get_domains(cat, application_id, project_id) 
+    n_pad_fields = range(len(configs['cats'][cat][disp])-3)
     
     if (application_id == 0):   # Items to be listed are 'project items'
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
@@ -367,8 +369,9 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
         item_ver_links[item.id] = list_ver_items_for_display(item)
    
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
-               'val_set': val_set, 'val_sets': val_sets, 'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
-               'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': range(configs['cats'][cat]['n_list_fields']-3),
+               'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
+               'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
+               'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
                'item_ver_links': item_ver_links, 'disp': disp, 'disp_list':configs['cats'][cat][disp] }
     return render(request, 'list_spec_items.html', context)    
 

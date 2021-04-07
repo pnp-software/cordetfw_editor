@@ -13,7 +13,6 @@ from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
-from editor.utilities import frmt_string
 from editor.choices import SPEC_ITEM_CAT
                      
 # Regex pattern for internal references to specification items as they
@@ -32,6 +31,22 @@ for cat_desc in SPEC_ITEM_CAT:
 pattern_edit = re.compile('#('+s[:-1]+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 logger = logging.getLogger(__name__)
+
+
+def frmt_string(s):
+    """ Format string for output to a Latex text file. """
+    replacements = [['\r\n', ' \\newline '],
+                ['\r', ' \\newline '],
+                ['\n', ' \\newline '],
+                ['%', '\\%'],
+                ['&', '\\&'],
+                ['#', '\\#'],
+                ['^', "\\textasciicircum"],
+                ['~', "\\textasciitilde"],
+                ['_', "\\_"]]
+    for old, new in replacements:
+       s = s.replace(old, new)    
+    return s
 
 
 def convert_db_to_display(s, n):
@@ -54,7 +69,8 @@ def convert_db_to_display(s, n):
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'\list_spec_items'
-            s_mod = s[:match.start()]+'<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.domain+': '+item.title+'\">'+item.name+'</a>'
+            s_mod = s[:match.start()]+'<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
+                    item.domain+':'+item.name+'</a>'
         else:
             s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
     except ObjectDoesNotExist:
@@ -63,39 +79,63 @@ def convert_db_to_display(s, n):
     return s_mod + convert_db_to_display(s[match.end():], n+1)
 
 
-def conv_do_nothing(item, name, s):
-    """ Dummy representation conversion function """
-    return s
+def conv_do_nothing(context, item, name):
+    """ Returns the value of attribute 'name' of spec_item 'item' without change """
+    return getattr(item, name)
 
 
-def conv_db_disp_plain_ref(item, name, s):
-    """ TBD """
-    return s
-
-
-def conv_db_disp_date(item, name, s):
-    """ TBD """
-    return s
-
-
-def conv_db_disp_ref_text(item, name, s):
+def conv_db_disp_plain_ref(context, item, name):
     """ 
-    Convert attribute 'name' of spec_item 'item' from database to display representation 
-    when s contains internal references ('ref_text' content kind)
+    Convert attribute 'name' of spec_item 'item' from database to display representation
+    on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
+    return str(getattr(context, item, name))
+
+
+def conv_db_disp_date(context, item, name):
+    """ TBD """
+    return s
+
+
+def conv_db_disp_ref_text(context, item, name):
+    """ 
+    Convert attribute 'name' of spec_item 'item' from database to display representation
+    on the assumption that the attribute value contains internal references ('ref_text' content kind)
+    """
+    s = getattr(item, name)
     return convert_db_to_display(s, 1)
     
     
-def conv_db_disp_spec_item_ref(spec_item, s):
+def conv_db_disp_spec_item_ref(context, spec_item, name):
     """ 
-    Convert string s from database to display representation when s contains
-    a reference to another spec_item ('spec_item_ref' content kind)
+    Convert attribute 'name' of spec_item 'item' from database to display representation
+    on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind)
     """
-    return 
-#    <a href="{% url 'list_spec_items' item.p_link.cat project.id application_id val_set.id item.p_link.domain %}#{{item.p_link.domain}}:{{item.p_link.name}}" 
-#                    title="{{item.p_link.title}}: {{item.p_link.desc}}">
-#                    {{item.p_link.domain}}:{{item.p_link.name}}
-#                    </a>
+    application_id = context['application_id']
+    default_val_set_id = context['default_val_set_id']
+    sel_dom = context['sel_dom']
+    spec_item_link = getattr(spec_item, name)
+    
+    s_name = spec_item_link.domain + ':' + spec_item_link.name
+    s_href = '/editor/'+spec_item_link.cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
+             '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/list_spec_items#'+s_name
+    s_title = spec_item_link.title + ':' + spec_item_link.desc
+    
+    return '<a href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
+   
+ 
+def conv_db_disp_eval_ref(context, item, name):
+    """ 
+    Convert attribute 'name' of spec_item 'item' from database to display representation
+    on the assumption that the attribute value contains internal references ('ref_text' content kind)
+    """
+    s = getattr(item, name)
+    conv_s = convert_db_to_display(s, 1)
+    if conv_s != s:
+        nval = eval_di_value(s)
+        return conv_s + ' = ' + nval
+    else:
+        return s
    
    
 def convert_edit_to_db(project, s):
@@ -111,7 +151,7 @@ def convert_edit_to_db(project, s):
     ref = match.group().split(':')
     try:
         id = SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
-                get(project_id=project.id, cat=ref[0], domain=ref[1], name=ref[2]).id
+                get(project_id=project.id, cat=ref[0][1:], domain=ref[1], name=ref[2]).id
         s_mod = s[:match.start()] + '#iref:' + str(id)
     except ObjectDoesNotExist:
         logger.warning('Non-existent internal reference: '+str(ref))
@@ -189,7 +229,7 @@ def render_for_eval(s, n):
     specification item which is not a data item, it returns the string
     unchanged.
     """
-    if n > EVAL_MAX_REC:
+    if n > configs['General']['max_depth']:
         logger.warning('Exceeded recursion depth when evaluating '+s)
         return s
 

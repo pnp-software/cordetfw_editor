@@ -14,26 +14,12 @@ from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from editor.fwprofile_db import get_model
-from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
-                 MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
+from editor.convert import convert_db_to_edit, frmt_string
+from editor.choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
+                           MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
 
 
 logger = logging.getLogger(__name__)
-
-def frmt_string(s):
-    """ Format string for output to a Latex text file. """
-    replacements = [['\r\n', ' \\newline '],
-                ['\r', ' \\newline '],
-                ['\n', ' \\newline '],
-                ['%', '\\%'],
-                ['&', '\\&'],
-                ['#', '\\#'],
-                ['^', "\\textasciicircum"],
-                ['~', "\\textasciitilde"],
-                ['_', "\\_"]]
-    for old, new in replacements:
-       s = s.replace(old, new)    
-    return s
 
 
 def snake_to_camel(s):
