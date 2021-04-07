@@ -1,5 +1,5 @@
 from import_export import resources
-from editor.utilities import convert_db_to_edit
+from editor.convert import convert_db_to_edit
 from editor.models import Release, Project, ProjectUser, Application, \
                           SpecItem, ValSet
 

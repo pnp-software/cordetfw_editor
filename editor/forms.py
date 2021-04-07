@@ -7,10 +7,10 @@ from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_p_kind_choices, get_p_link_choices, \
-                       pattern_edit, pattern_db, convert_edit_to_db, get_s_kind_choices, \
-                       get_s_link_choices
+                       get_s_kind_choices, get_s_link_choices
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
+from editor.convert import pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import configs
 from editor.fwprofile_db import get_model

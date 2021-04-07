@@ -68,6 +68,7 @@
               <td>
               {% if disp.attrs|length > 1 %}    
                   {% for attr in disp.attrs %}
+                    {% conv_db_disp item attr %}
                     {% if forloop.first %}  
                         <strong>{{config.attrs|get_label:attr}}</strong> {{item|get_model_field:attr}}
                     {% else %}

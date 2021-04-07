@@ -4,7 +4,8 @@ import csv
 from django.contrib.auth.models import User
 from django.contrib import messages
 from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Application
-from editor.utilities import frmt_string, convert_edit_to_db
+from editor.utilities import frmt_string
+from editor.convert import convert_edit_to_db
 
 #--------------------------------------------------------------------------------
 def import_project_tables(request, imp_dir):
