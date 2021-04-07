@@ -364,15 +364,11 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     else:
         expand_items = None
     
-    item_ver_links = {}
-    for item in items:
-        item_ver_links[item.id] = list_ver_items_for_display(item)
-   
     context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
                'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
-               'item_ver_links': item_ver_links, 'disp': disp, 'disp_list':configs['cats'][cat][disp] }
+               'disp': disp, 'disp_list':configs['cats'][cat][disp] }
     return render(request, 'list_spec_items.html', context)    
 
 

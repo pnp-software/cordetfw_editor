@@ -5,6 +5,7 @@ from editor.models import SpecItem
 from .utilities import frmt_string
 
 #--------------------------------------------------------------------------------
+# TBD: This function should be removed!
 def list_ver_items_for_display(spec_item):
     """
     Return a string listing the verification items which have a verification link to the 

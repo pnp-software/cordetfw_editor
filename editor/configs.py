@@ -31,9 +31,9 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Name', 'attrs':['name']},
                                                {'header':'Title and Description', 'attrs':['title', 'rationale', 'remarks', 'implementation']},
                                                {'header':'Text', 'attrs':['value']},
-                                               {'header':'Kind', 'attrs':['p_kind']},
-                                               {'header':'Ver', 'attrs':['s_kind']},
-                                               {'header':'Owner', 'attrs':['owner']}
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Ver', 'attrs':['s_kind'], 'order_by':'s_kind'},
+                                               {'header':'Owner', 'attrs':['owner'], 'order_by':'owner'}
                                                ],
                                   'disp_short': [{'header':'Domain', 'attrs':['domain']},
                                                {'header':'Name', 'attrs':['name']},
@@ -48,7 +48,7 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Text', 'attrs':['value']},
                                                {'header':'Kind', 'attrs':['p_kind']},
                                                {'header':'Ver', 'attrs':['s_kind']},
-                                               {'header':'Ver', 'trac_cat':'VerLink', 'trac_from':'s_link'}
+                                               {'header':'Verification Links', 'trac_cat':'VerLink', 'trac_link':'s_link'}
                                                ]
                                  },
                    'AdaptPoint':{'name': 'Adaptation Point',

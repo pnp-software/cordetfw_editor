@@ -67,15 +67,19 @@
               <td>
               {% if forloop.first %}<a name='{{item.domain}}:{{item.name}}'>{% endif %}
                     {% if 'attrs' in disp %}
-                      {% conv_db_disp item disp.attrs.0  %}
+                      {% conv_db_disp item disp.attrs.0 as attr_value %}
+                      {{ attr_value|linebreaksbr }}
                       {% for attr in disp.attrs %}
                         {% if not forloop.first %} 
                             {% conv_db_disp item attr as attr_value %} 
                             {% if attr_value != '' %}
-                            <br><strong>{{config.attrs|get_label:attr}}</strong> {{ attr_value }}
+                            <br><strong>{{config.attrs|get_label:attr}}</strong> {{ attr_value|linebreaksbr }}
                             {% endif %}
                         {% endif %}
                       {% endfor %}  
+                    {% else %}  
+                      {% disp_trac item disp.trac_cat disp.trac_link as link_value %}
+                      {{ link_value|linebreaksbr }}
                     {% endif %}
               {% if forloop.first %}</a>{% endif %}    
               </td>

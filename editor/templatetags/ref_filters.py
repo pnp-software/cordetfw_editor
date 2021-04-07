@@ -1,5 +1,6 @@
 from django import template
 from django.utils.safestring import mark_safe
+from ..models import SpecItem
 from ..configs import configs
 from ..convert import conv_do_nothing, conv_db_disp_ref_text, conv_db_disp_plain_ref, \
                       conv_db_disp_spec_item_ref, conv_db_disp_date, eval_di_value, \
@@ -27,6 +28,44 @@ def conv_db_disp(context, spec_item, attr_name):
     conv_func = conv_db_disp_func[attr_content_kind]
     s = getattr(convert, conv_func)(context, spec_item, attr_name)
     return mark_safe(s)
+ 
+ 
+@register.simple_tag(takes_context=True)
+def disp_trac(context, spec_item, trac_cat, trac_link):
+    """ 
+    Generate the display representation of the traceability information for spec_item.
+    If S is spec_item, then this function assumes that the traceability link is stored
+    in category 'trac_cat' and that attribute 'trac_link' holds the link from trac_cat
+    to spec_item. trac_link is either 's_link' or 'p_link'.
+    Suppose that 'trac_link' is equal to 's_link'; in this case, the function proceeds 
+    in two steps:
+    - It extracts all the spec_items L1 to Ln which belong to category spec_cat and 
+      which point to S through s_link
+    - It returns a string holding a list of the spec_items which are pointed at by
+      L1 to Ln through p_link
+    """
+    if trac_link == 's_link':
+        trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                    s_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+    else:
+        trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                    p_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+    
+    s = ''
+    for link in trac_links:
+        if trac_link == 's_link':
+            target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+str(link.p_link.application_id)+\
+                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'\list_spec_items'
+            s = s + '<a href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
+                link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + ')'
+        else:
+            target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+str(link.s_link.application_id)+\
+                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'\list_spec_items'
+            s = s + '<a href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
+                link.s_link.desc+'\">' + link.s_link.domain + ':' + link.s_link.name + '</a> (' + link.s_link.title + ')'
+        s = s + '\n'    
+            
+    return mark_safe(s[:-1])    # The last '\n' is removed
  
  
 @register.filter(is_safe=True)
