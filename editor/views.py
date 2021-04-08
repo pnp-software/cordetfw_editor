@@ -22,6 +22,7 @@ from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist
 from django.forms.models import model_to_dict
 from django.http import FileResponse
+from django.utils.timezone import get_current_timezone
 
 from editor.configs import configs, make_obs_spec_item_copy, mark_spec_item_aliases_as_del, \
                            remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
@@ -116,11 +117,11 @@ def add_project(request):
         if form.is_valid():
             new_project = Project(name = form.cleaned_data['name'],
                                   desc = form.cleaned_data['description'],
-                                  updated_at = datetime.now(),
+                                  updated_at = datetime.now(tz=get_current_timezone()),
                                   owner = form.cleaned_data['owner'])
             new_release = Release(desc = "Initial release after project creation",
                                   release_author = get_user(request),
-                                  updated_at = datetime.now(),
+                                  updated_at = datetime.now(tz=get_current_timezone()),
                                   application_version = 0,
                                   project_version = 0,
                                   previous = None)
@@ -151,7 +152,7 @@ def edit_project(request, project_id):
     user_role = request.GET.get('role')
     if user_id != None:     
         if not ProjectUser.objects.filter(project_id=project_id, user_id=user_id).exists():
-            new_project_user = ProjectUser(updated_at = datetime.now(),
+            new_project_user = ProjectUser(updated_at = datetime.now(tz=get_current_timezone()),
                                            user = User.objects.get(id=user_id),
                                            project = project,
                                            role = user_role)
@@ -294,7 +295,7 @@ def add_val_set(request, project_id):
             new_val_set = ValSet(name = form.cleaned_data['name'],
                                  desc = form.cleaned_data['description'],
                                  project = project,
-                                 updated_at = datetime.now())
+                                 updated_at = datetime.now(tz=get_current_timezone()))
             new_val_set.save()
             return redirect(redirect_url)
     else:   
@@ -316,7 +317,7 @@ def edit_val_set(request, project_id, val_set_id):
         if form.is_valid():
             val_set.name = form.cleaned_data['name']
             val_set.desc = form.cleaned_data['description']
-            val_set.updated_at = datetime.now()
+            val_set.updated_at = datetime.now(tz=get_current_timezone())
             val_set.save()
             return redirect(redirect_url)
     else:   
@@ -393,7 +394,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
             new_spec_item.val_set = default_val_set
-            new_spec_item.updated_at = datetime.now()
+            new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
             new_spec_item.status = 'NEW'
             new_spec_item.project = project
@@ -436,7 +437,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
                 spec_item = make_obs_spec_item_copy(request, spec_item)
             for key, value in form.cleaned_data.items():    # Copy form inputs into spec_item
                 setattr(spec_item, key, value)    
-            spec_item.updated_at = datetime.now()
+            spec_item.updated_at = datetime.now(tz=get_current_timezone())
             spec_item.owner = get_user(request)
             spec_item.save()
             if (spec_item.val_set.name == 'Default') and (('name' in form.changed_data) or ('domain' in form.changed_data)):
@@ -467,7 +468,7 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom
         if spec_item.status == 'CNF':
             spec_item = make_obs_spec_item_copy(request, spec_item)
         spec_item.value = model_dict['svg_rep']
-        spec_item.updated_at = datetime.now()
+        spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()
     else:
@@ -500,7 +501,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
-            new_spec_item.updated_at = datetime.now()
+            new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
             new_spec_item.application = application
@@ -540,7 +541,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         if form.is_valid():
             new_spec_item = SpecItem(**form.cleaned_data)
             new_spec_item.cat = cat
-            new_spec_item.updated_at = datetime.now()
+            new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
             new_spec_item.application = application
@@ -682,7 +683,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     new_spec_item.cat = cat
                     export_to_spec_item(request, project, item, new_spec_item)   
                     new_spec_item.status = 'NEW'
-                    new_spec_item.updated_at = datetime.now()
+                    new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
                     new_spec_item.previous = None
                     new_spec_item.owner = get_user(request)
                     new_spec_item.project = project
@@ -692,12 +693,12 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     if q_cat[0].status == 'CNF':
                         overriden_item = q_cat[0]
                         spec_item = make_obs_spec_item_copy(request, overriden_item)
-                        spec_item.updated_at = datetime.now()
+                        spec_item.updated_at = datetime.now(tz=get_current_timezone())
                         spec_item.owner = get_user(request)
                         spec_item.save()
                     else:
                         export_to_spec_item(request, project, item, q_cat[0]) 
-                        q_cat[0].updated_at = datetime.now()
+                        q_cat[0].updated_at = datetime.now(tz=get_current_timezone())
                         q_cat[0].owner = get_user(request)
                         q_cat[0].save()
         except Exception as e:

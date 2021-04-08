@@ -333,7 +333,7 @@ def do_application_release(request, application, description, is_proj_release = 
     
     new_release = Release(desc = description,
                      release_author = get_user(request),
-                     updated_at = datetime.now(),
+                     updated_at = datetime.now(tz=get_current_timezone()),
                      application_version = new_application_version,
                      project_version = application.project.release.project_version,
                      previous = previous)
@@ -354,7 +354,7 @@ def do_project_release(request, project, description):
 
     new_release = Release(desc = description,
                      release_author = get_user(request),
-                     updated_at = datetime.now(),
+                     updated_at = datetime.now(tz=get_current_timezone()),
                      application_version = 0,
                      project_version = project.release.project_version+1,
                      previous = project.release)
