@@ -103,6 +103,13 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Native Type', 'attrs':['implementation']},
                                                {'header':'Size', 'attrs':['n1']}
                                                ],
+                                  'disp_trac': [{'header':'Domain', 'attrs':['domain']},
+                                               {'header':'Name', 'attrs':['name']},
+                                               {'header':'Description', 'attrs':['title']},
+                                               {'header':'Def. Val.', 'attrs':['value']},
+                                               {'header':'Native Type', 'attrs':['implementation']},
+                                               {'header':'Size', 'attrs':['n1']}
+                                               ],
                                  },
                        'EnumType': {'name': 'Enumerated Type',
                                   'abbr': 'ETyp',
