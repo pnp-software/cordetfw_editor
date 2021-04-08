@@ -152,7 +152,27 @@ configs = {'General': {'csv_sep': '|',
                                            'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
                                            'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
-                                          }
+                                          },
+                                  'disp_def': [{'header':'Domain', 'attrs':['domain']},
+                                               {'header':'Name', 'attrs':['name']},
+                                               {'header':'Title and Description', 'attrs':['title', 'description', 'rationale', 'remarks', 'implementation']},
+                                               {'header':'Diagram', 'attrs':['value']},
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Owner', 'attrs':['owner'], 'order_by':'owner'}
+                                               ],
+                                  'disp_short': [{'header':'Domain', 'attrs':['domain']},
+                                               {'header':'Name', 'attrs':['name']},
+                                               {'header':'Title', 'attrs':['title']},
+                                               {'header':'Diagram', 'attrs':['value']},
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'}
+                                               ],
+                                  'disp_trac': [{'header':'Domain', 'attrs':['domain']},
+                                               {'header':'Name', 'attrs':['name']},
+                                               {'header':'Title', 'attrs':['title']},
+                                               {'header':'Diagram', 'attrs':['value']},
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Verification Links', 'trac_cat':'VerLink', 'trac_link':'s_link'}
+                                               ]
                                  },
                        'Service': {'name': 'Service',
                                   'abbr': 'Serv',
