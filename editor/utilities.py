@@ -15,7 +15,7 @@ from editor.models import SpecItem, ProjectUser, Application, Release, Project, 
 from editor.configs import configs
 from editor.fwprofile_db import get_model
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
-                           convert_exp_to_db
+                           convert_exp_to_db, convert_db_to_latex, eval_di_value
 from editor.choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                            MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
 
@@ -72,14 +72,14 @@ def spec_item_to_latex(spec_item):
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
             dic[label] = frmt_string(str(getattr(spec_item, key)))
+        elif value['kind'] == 'eval_ref':
+            dic[label] = frmt_string(convert_db_to_latex(getattr(spec_item, key)))
+            dic['NVal'] = eval_di_value(spec_item.value)
         elif value['kind'] == 'image':
-            dic[label] = 'image data'
+            dic[label] = 'TBD image data'
         else:
             dic[label] = frmt_string(str(getattr(spec_item, key)))
     
-    if spec_item.cat == 'DataItem':
-        dic['NValue'] = eval_di_value(spec_item.value)
-
     dic['UpdatedAt'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')    
     dic['Owner'] = frmt_string(str(spec_item.owner))
     dic['Status'] = spec_item.status
@@ -366,7 +366,7 @@ def do_project_release(request, project, description):
     for application in applications:
        do_application_release(request, application, description, is_proj_release = True)
     
-
+    
 def make_temp_dir(dir_path, name):
     """ Create a directory 'name_<TimeStamp>' in the directory 'dir_path' and return 
         the dir name or an empty string if the creation failed
@@ -379,7 +379,7 @@ def make_temp_dir(dir_path, name):
         return ''
     return new_dir_path
 
-
+   
 def get_default_val_set_id(request, project):
     """ 
         Return the default ValSet id for the argument project. If the ValSet cannot
@@ -394,6 +394,7 @@ def get_default_val_set_id(request, project):
                        'Error message was: '+str(e))
         return 0
     
+
 def del_release(request, release, n):
     """ 
         Recursively delete a release and its previous releases. If the depth of recursion 
@@ -410,3 +411,33 @@ def del_release(request, release, n):
         del_release(request, previous_release, n+1)
     return True                                 
 
+
+def list_trac_items_for_latex(spec_item, trac_cat, trac_link):
+    """
+    Generate the latex representation of the traceability information for spec_item.
+    If S is spec_item, then this function assumes that the traceability link is stored
+    in category 'trac_cat' and that attribute 'trac_link' holds the link from trac_cat
+    to spec_item. trac_link is either 's_link' or 'p_link'.
+    To illustrate, suppose that 'trac_link' is equal to 's_link'; in this case, 
+    the function proceeds in two steps:
+    - It extracts all the spec_items L1, L2, ... Ln which belong to category spec_cat  
+      and which point to S through their s_link
+    - It returns a string holding a list of the spec_items which are pointed at by
+      L1, L2, ... Ln through p_link
+    """
+    if trac_link == 's_link':
+        trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                     s_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+    else:
+        trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                     p_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+    
+    s = ''
+    for link in trac_links:
+        if trac_link == 's_link':
+            s = s + link.p_link.domain+':' + link.p_link.name + ' ('+ link.p_link.title +')'
+        else:
+            s = s + link.s_link.domain+':' + link.s_link.name + ' ('+ link.s_link.title +')'
+        s = s + '\n'    
+    return frmt_string(s[:-1])    # The last '\n' is removed
+    

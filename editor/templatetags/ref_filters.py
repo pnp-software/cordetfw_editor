@@ -37,12 +37,12 @@ def disp_trac(context, spec_item, trac_cat, trac_link):
     If S is spec_item, then this function assumes that the traceability link is stored
     in category 'trac_cat' and that attribute 'trac_link' holds the link from trac_cat
     to spec_item. trac_link is either 's_link' or 'p_link'.
-    Suppose that 'trac_link' is equal to 's_link'; in this case, the function proceeds 
-    in two steps:
-    - It extracts all the spec_items L1 to Ln which belong to category spec_cat and 
-      which point to S through s_link
+    To illustrate, suppose that 'trac_link' is equal to 's_link'; in this case, the  
+    function proceeds in two steps:
+    - It extracts all the spec_items L1, L2, ... Ln which belong to category spec_cat  
+      and which point to S through s_link
     - It returns a string holding a list of the spec_items which are pointed at by
-      L1 to Ln through p_link
+      L1, L2, ... Ln through their p_link
     """
     if trac_link == 's_link':
         trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
@@ -124,12 +124,11 @@ def get_label(config, attr):
 @register.filter(is_safe=True)
 def get_short_desc(spec_item):
     """ Return a short description of the specification item """
-    if spec_item.cat == 'VerLink':
-        desc = spec_item.title + ': '+spec_item.value + ' (' + spec_item.p_link.domain + ':' + \
-               spec_item.p_link.name + ' -> ' + spec_item.s_link.domain + ':' + \
-               spec_item.s_link.name + ')'
-    else:
-        desc = spec_item.title + ':'  + spec_item.desc        
+    desc = spec_item.title
+    if spec_item.desc != '':
+        desc = desc + ':' + spec_item.desc
+    if spec_item.value:
+        desc = desc + ':' + spec_item.value
     if len(desc) > configs['General']['short_desc_len']:
         return desc[:configs['General']['short_desc_len']]+' ...'
     else:

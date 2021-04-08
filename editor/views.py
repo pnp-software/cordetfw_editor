@@ -31,10 +31,9 @@ from editor.utilities import get_domains, do_application_release, do_project_rel
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
-                             del_release
+                             del_release, list_trac_items_for_latex
 from editor.imports import import_project_tables
 from editor.fwprofile_db import get_model
-from editor.links import list_ver_items_for_display, list_ver_items_for_latex
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 
@@ -617,7 +616,8 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     for i, item in enumerate(items):
         if (export_type == 'latex_format'):
             item_dic = spec_item_to_latex(item)
-            item_dic['VerItem'] = list_ver_items_for_latex(item)
+            for trac in configs['cats'][cat]['tracs']:
+                item_dic[trac['trac_cat']] = list_trac_items_for_latex(item, trac['trac_cat'], trac['trac_link'])
         else:
             item_dic = spec_item_to_export(item)
         if i == 0:      # Open DictWriter and write header fields

@@ -532,20 +532,20 @@
         <tr>
         <td><code>eval ref</code></td>
         <td>Internal ref.s are rendered as '#iref:id' where 'id' is the identifier of the referenced item </td>
-        <td>Internal ref.s are rendered as 'domain:name' with a hyperlink to the referenced item; the numerical value
-            of the expression (if it can be computed) is added at the end of the expression </td>
-        <td>Internal ref.s are rendered as 'domain:name'; Latex special characters are escaped; the numerical value
-            of the expression (if it can be computed) is added at the end of the expression</td>
+        <td>Internal ref.s are rendered as 'domain:name' with a hyperlink to the referenced item; numerical value
+            of expression (if it can be computed) is added at the end </td>
+        <td>Internal ref.s are rendered as 'domain:name'; Latex special characters are escaped; numerical value
+            of expression (if it can be computed) is added in a dedicated field call 'NVal'</td>
         <td>Internal ref.s are rendered as '#cat:domain:name'</td>
         <td>Internal ref.s are rendered as '#cat:domain:name'</td>
         </tr>
         <tr>
         <td><code>image</code></td>
-        <td>Text representation of image file </td>
+        <td>SVG representation of image</td>
         <td>Image rendering as done by the browser </td>
         <td>Representation is defined at editor instantiation time</td>
         <td>Not editable</td>
-        <td>Not included in plain export</td>
+        <td>SVG representation of image</td>
         </tr>
         <tr>
         <td><code>int</code></td>
@@ -736,14 +736,21 @@
     <img src="{% static 'images/ImportSpecItem.png' %}"> 
     <p>
     The typical use case for the plain import/export functions is as follows.
-    A user needs to perform the same operation on a large number of data items (e.g.
+    A user needs to perform the same operation on a large number of specification items (e.g.
     update their names; capitalize their domain name; clear their values; etc).
     This kind of operation is awkward to do within the editor but would be easy to do 
     if the affected specification items were embedded in an excel spreadsheet.
     Hence, the user proceeds as follows: (a) perform a plain export; (b) edit the
     exported data (in excel or other similat environment); (c) perform a plain import
-    for the modified data.
+    for the modified data. 
     </p><p>
+    Note that, when an import operation is done for a specification item S which is in CNF state,
+    a new version of specification item S is created with status NEW. 
+    This is done even if the newly imported specification item is identical to the 
+    existing version S.
+    If this duplication is undesirable, users must delete the unchanged specification
+    items from the import file prior to importing it.    
+        
     <strong>Latex export</strong> is like plain export except for the following differences:    
     <ul>
     <li>In addition to the fields in the configuration dictionary, the following fields
@@ -751,6 +758,12 @@
         the names of these extra fields in the exported file are the same as the names
         of the fields in the database model converted to CamelCase</li>
     <li>Exported fields are converted from database to latex format</li>
+    <li>If the 'value' attribute has a content of the <a href="TBD"><code>eval_ref</code></a> kind
+        (i.e. if it containts a mathematical expression), then a new field called
+        'NVal' is also exported holding the result of a numerical evaluation of the
+        'value' attribute </li>
+    <li>If the category being exported has <a href="TBD">traceability links</a>, then the
+        traceability links are also exported in a dedicated field  </li>    
     </ul> 
     There is no import facility for latex formatted files.
     </p><p>
