@@ -14,7 +14,8 @@ from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from editor.fwprofile_db import get_model
-from editor.convert import convert_db_to_edit, frmt_string
+from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
+                           convert_exp_to_db
 from editor.choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                            MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
 
@@ -101,8 +102,6 @@ def spec_item_to_export(spec_item):
             dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
         elif value['kind'] == 'spec_item_ref':
             dic[cat_attrs[key]['label']] = str(getattr(spec_item, key)).split(' ')[0]
-        elif value['kind'] == 'image':
-            dic[cat_attrs[key]['label']] = 'image data'
         else:
             dic[cat_attrs[key]['label']] = str(getattr(spec_item, key))
     return dic
@@ -114,6 +113,8 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     plain import file.
     The function converts the dictionary entries to db format and uses them 
     to initialize the argument spec_item.
+    Only attributes listed in the 'attrs' field of the configuration dictionary
+    of the spec_item category are converted.
     Only attributes which are imported are initialized.
     The function will raise an exception if one of the fields expected
     in the dictionary is not found. 
@@ -122,10 +123,7 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
-        elif (key == 'value') and (spec_item.cat == 'Model'):
-            model_dict = get_model(request, imp_dict[cat_attrs['domain']['label']], imp_dict[cat_attrs['name']['label']]) 
-            spec_item.value = model_dict['svg_rep']
-        elif key == 'owner':
+        elif key == 'owner':    # Owner is overridden by import function
             continue
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
