@@ -690,7 +690,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     new_spec_item.save()
                 else:
                     if q_cat[0].status == 'CNF':
-                        overriden_item = q[0]
+                        overriden_item = q_cat[0]
                         spec_item = make_obs_spec_item_copy(request, overriden_item)
                         spec_item.updated_at = datetime.now()
                         spec_item.owner = get_user(request)
