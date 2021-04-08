@@ -45,7 +45,7 @@ def get_model_kind(json_rep):
 
 #--------------------------------------------------------------------------------
 def get_model(request, domain, name):
-    """ Return a dictionary describing the the FW Profile model of name 'name' in project 'domain' """
+    """ Return a dictionary describing the FW Profile model of name 'name' in project 'domain' """
     fw_db, fw_db_cur = connect(request)
     
     user_email = request.user.email
