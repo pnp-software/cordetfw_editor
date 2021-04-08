@@ -5,60 +5,78 @@
 {% block content %}
 <div class="col-11">
 <div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
-  <h2 class="display-6">List of {{config.name}}s in {{val_set.name}} ValSet</h2>  
-    <div class="form-inline">
-      <div class="dropdown mr-sm-2 mt-4">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select ValSet</button>
-        <div class="dropdown-menu">
-            {% for val_set in val_sets %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp={{disp}}">{{ val_set.name }}</a>
-            {% endfor %}
-        </div>
-      </div>
-      <div class="dropdown mr-sm-2 mt-4">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select Domain</button>
-        <div class="dropdown-menu">
-            {% for domain in domains %}
-                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id domain %}?disp={{disp}}">{{ domain }}</a>
-            {% endfor %}
-        </div>
-      </div>
-      <div class="dropdown mr-sm-2 mt-4">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Import/Export</button>
-        <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}">
-                Plain Export</a>
-            <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format">
-                Export for Latex</a>
-            <a class="dropdown-item" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">
-                Plain Import</a>
-        </div>
-      </div>
-      <div class="dropdown mr-sm-2 mt-4">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Display Format</button>
-        <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_def">
-                Default</a>
-            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_short">
-                Short without Traceability Info</a>
-            <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_trac">
-                Short with Traceability Info</a>
-        </div>
-      </div>
-      <div class="form-group mr-sm-2 mt-4">
-        <a class="btn btn-outline-secondary" href="{% url 'add_spec_item' cat project.id application_id sel_dom %}">Add {{config.name}}</a>
-      </div>
-    </div>
+    
+  {% if history %}       <!-- List 'items' holds history of a spec_item  -->
+    <h2 class="display-6">History of {{config.name}} {{items.0.domain}}:{{items.0.domain}}</h2>  
+  {% else %}
+    <h2 class="display-6">List of {{config.name}}s in {{val_set.name}} ValSet</h2>    
+  {% endif %}
+     {% if not history %}    
+       <div class="form-inline">
+          <!-- Pull-Down Menu for ValSet Choice  --> 
+          <div class="dropdown mr-sm-2 mt-4">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select ValSet</button>
+            <div class="dropdown-menu">
+                {% for val_set in val_sets %}
+                    <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp={{disp}}">{{ val_set.name }}</a>
+                {% endfor %}
+            </div>
+          </div>
+          <!-- Pull-Down Menu for Domain Choice  --> 
+          <div class="dropdown mr-sm-2 mt-4">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Select Domain</button>
+            <div class="dropdown-menu">
+                {% for domain in domains %}
+                    <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id domain %}?disp={{disp}}">{{ domain }}</a>
+                {% endfor %}
+            </div>
+          </div>
+          <!-- Pull-Down Menu for Export Choice  -->
+          <div class="dropdown mr-sm-2 mt-4">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Import/Export</button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}">
+                    Plain Export</a>
+                <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format">
+                    Export for Latex</a>
+                <a class="dropdown-item" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">
+                    Plain Import</a>
+            </div>
+          </div>
+          <!-- Pull-Down Menu for Display Choice  --> 
+          <div class="dropdown mr-sm-2 mt-4">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Display Format</button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_def">
+                    Default</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_short">
+                    Short without Traceability Info</a>
+                <a class="dropdown-item" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_trac">
+                    Short with Traceability Info</a>
+            </div>
+          </div>
+          <!-- Button to Add a New Item of the Category being Displayed  --> 
+          <div class="form-group mr-sm-2 mt-4">
+            <a class="btn btn-outline-secondary" href="{% url 'add_spec_item' cat project.id application_id sel_dom %}">Add {{config.name}}</a>
+          </div>
+       </div>
+    {% endif %}
+    
 </div>
 
     <table class="table table-hover table-striped table-sm">
       <thead>
+        <!-- The headers of the item list are read from disp_list  --> 
         <tr class="table-warning">
           {% for disp in disp_list %}
             <th>{{disp|get_dict_item:'header'}}</th>
           {% endfor %}  
-           <!-- The edit/copy/delete/split buttons  --> 
-          <th></th>
+          {% if history %}
+              <th>Change Log</th>  
+          {% else %}
+               <!-- The edit/copy/delete/split buttons  --> 
+              <th></th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -66,9 +84,11 @@
             {% for disp in disp_list %}
               <td>
               {% if forloop.first %}<a name='{{item.domain}}:{{item.name}}'>{% endif %}
-                    {% if 'attrs' in disp %}
+              
+                    {% if 'attrs' in disp %}    <!-- Display item attributes  --> 
                       {% conv_db_disp item disp.attrs.0 as attr_value %}
                       {{ attr_value|linebreaksbr }}
+                      <!-- Display item attributes which are stacked in the same field  --> 
                       {% for attr in disp.attrs %}
                         {% if not forloop.first %} 
                             {% conv_db_disp item attr as attr_value %} 
@@ -77,62 +97,70 @@
                             {% endif %}
                         {% endif %}
                       {% endfor %}  
-                    {% else %}  
+                    {% else %}                  <!-- Display traceability links  --> 
                       {% disp_trac item disp.trac_cat disp.trac_link as link_value %}
                       {{ link_value|linebreaksbr }}
                     {% endif %}
+
               {% if forloop.first %}</a>{% endif %}    
               </td>
             {% endfor %}
+            {% if history %}
+              <td>
+                    {{ item.status }} ({{ item.updated_at|date:'d-m-Y H:i' }})
+              </td>
+            {% endif %}
           
-            <!-- The edit/copy/delete/split buttons  --> 
-            <td>
-              <div class="btn-group">
-                {% if item.val_set.name == 'Default' and config.ext_attrs|length == 0 %}  
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'split_spec_item' cat project.id application_id item.id sel_dom %}" title="Split {{config.name}}">S</a>
-                {% endif %}
-                {% if config.ext_attrs|length != 0 %}  
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_dom %}" title="Refresh {{config.name}}">R</a>
-                {% endif %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
-                {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
-                   title="Show {{config.expand.s_label}} Children">Xs</a>
-                {% endif %}
-                {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
-                   title="Show {{config.expand.p_label}} Children">Xp</a>
-                {% endif %}
-                {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
-                   title="Add {{config.expand.s_label}} Child">As</a>
-                {% endif %}
-                {% if expand_link == 'p_link' and val_set.name == 'Default' and not 'trac' in display_list %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}&disp={{disp}}" 
-                   title="Add {{config.expand.p_label}} Child">Ap</a>
-                {% endif %}
-                {% if 'trac' in display_list %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
-                   title="Add Verification Link">A</a>
-                {% endif %}
-              </div> 
-            </td>
+            {% if not history %}
+                <!-- The edit/copy/delete/split buttons  --> 
+                <td>
+                  <div class="btn-group">
+                    {% if item.val_set.name == 'Default' and config.ext_attrs|length == 0 %}  
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}" title="Copy {{config.name}}">C</a>
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'split_spec_item' cat project.id application_id item.id sel_dom %}" title="Split {{config.name}}">S</a>
+                    {% endif %}
+                    {% if config.ext_attrs|length != 0 %}  
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_dom %}" title="Refresh {{config.name}}">R</a>
+                    {% endif %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}" title="Delete {{config.name}}">D</a>
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}" title="Edit {{config.name}}">E</a>
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}" title="{{config.name}} History">H</a>
+                    {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
+                       title="Show {{config.expand.s_label}} Children">Xs</a>
+                    {% endif %}
+                    {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
+                       title="Show {{config.expand.p_label}} Children">Xp</a>
+                    {% endif %}
+                    {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
+                       title="Add {{config.expand.s_label}} Child">As</a>
+                    {% endif %}
+                    {% if expand_link == 'p_link' and val_set.name == 'Default' and not 'trac' in display_list %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}&disp={{disp}}" 
+                       title="Add {{config.expand.p_label}} Child">Ap</a>
+                    {% endif %}
+                    {% if 'trac' in display_list %}
+                    <a class="btn btn-outline-dark btn-sm"
+                       href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
+                       title="Add Verification Link">A</a>
+                    {% endif %}
+                  </div> 
+                </td>
+            {% endif %}
           </tr>
-          {% if item.id == expand_id %}
+          {% if item.id == expand_id %}         <!-- Display expansion items for the current item  --> 
             {% for expand_item in expand_items %}
             <tr class="table-active">
               <td><a name='expand:{{expand_item.domain}}:{{expand_item.name}}'>{{expand_item.domain}}</a></td>

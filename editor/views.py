@@ -368,7 +368,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
                'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
-               'disp': disp, 'disp_list':configs['cats'][cat][disp] }
+               'disp': disp, 'disp_list':configs['cats'][cat][disp], 'history': False }
     return render(request, 'list_spec_items.html', context)    
 
 
@@ -820,8 +820,12 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
     
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+    disp_list = configs['cats'][cat]['disp_def']
+                                                    
     spec_item = SpecItem.objects.get(id=item_id)
-    
-    context = {'item': spec_item, 'items': get_previous_list(spec_item), 'project': project, \
-               'application_id': application_id,  'config':configs['cats'][cat], 'cat':cat, 'sel_dom': sel_dom}
-    return render(request, 'list_spec_item_history.html', context)    
+    items = get_previous_list(spec_item)
+    context = {'items': items, 'project': project, 'application_id': application_id, 'sel_dom': sel_dom,\
+               'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 
+               'default_val_set_id': default_val_set.id, 'disp_list': disp_list, 'history': True }
+    return render(request, 'list_spec_items.html', context)    
