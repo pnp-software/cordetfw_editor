@@ -33,10 +33,11 @@
     <li>Support for creating <a href="#IntRef">links between requirements</a> with auto-completion facilities</li>
     <li><a href="#SpecItemRep">Rendering of requirements</a> either as hyperlinked html or as text in a form 
         suitable for import in documents</li>
-    <li>Support for importing of and linking to <a href="ExtSpecRes">external specification resources</a></li>
-    <li>Provision of <a href="#ExpImp">import and export facilities</a> to csv formats</li>
+    <li>Support for importing of, and linking to, <a href="ExtSpecRes">external specification resources</a></li>
+    <li><a href="#ExpImp">import and export facilities</a> to/from csv formats</li>
     <li>Support for <a href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
     <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
+    <li>Interface to import <a href="TBD">external specification resources</a></li>
     </ul>
     </p><p>
 
@@ -47,23 +48,27 @@
     <a href="https://github.com/pnp-software/cordetfw_editor">project home page</a>.
     </p><p>
     The editor is available in a default configuration which can be used "as is". 
-    However, projects often have project-specific categories of requirements, or need to maintain
+    However, projects normally have project-specific categories of requirements, or need to maintain
     project-specific relationships among their requirements, or need to generate
     project-specific artifacts from their requirements.
     The Cordet FW Editor cater to these needs by being built on 
-    a <a href="#MetaModel">meta-model</a> which defines its basic concepts
-    and the operations which may be performed upon them.
-    The key concept at meta-modelling level is that of <a href="#SpecItems">specification item</a>.
+    a <a href="#MetaModel">meta-model</a> which users may configure to match their needs.
+    </p><p>
+    The key concept at meta-modelling level is that of <a href="#Specification_Items">specification item</a>.
     A specification item is a set of specification-related information which are manipulated as 
     a single unit.
-    </p><p>
+    The editor meta-model defines specification items as an abstract entities upon which certain
+    operations can be performed (adding a new specification item, editing an existing specification
+    item, etc). 
     When users deploy the editor, they are expected to 
-    <a href="Instantiation">configure</a> it to match their needs.
+    <a href="Editor_Instantiation">configure</a>.
     The outcome of this configuration process is an <a href="#Model">editor model</a> which
     defines the concrete categories of specification items and their mutual relationships
     and the generators to process them.
     </p>
-    <img src="{% static 'images/ModelLevels.png' %}" width="600" height="400" class="center"> 
+    The <a href+"">default editor configuration</a> can be used as a blue-print for user-specific 
+    configurations. 
+    <img src="{% static 'images/ModelLevels.png' %}" width="540" height="360" class="center"> 
     </p><p>
      
     
@@ -78,29 +83,12 @@
     <li><a href="#SpecItems">Specification Items</a></li>
     <li><a href="#ValSets">ValSets</a></li>
     </ul>
-    </p><p>
-    A <a href="#SpecItems"><strong>specification item</strong></a> is the lowest-level item managed 
-    by the editor.
-    It encapsulates a set of data which contribute to the specification of the project or its 
-    applications and which are manipulated by the editor as a single entity.
-    </p><p>
-    A <strong>ValSet</strong> is a set of values for the specification items within a project.
-    The "Default" ValSet is pre-defined.
-    A project may have additional ValSet representing alternative values for some of their specification items.
-    Each specification value is assigned to a ValSet.
-    To illustrate, let specification item S1 be assigned to the Default ValSet.
-    Suppose that there is a need to maintain a variant of specification item S1. This could, for instance,
-    be due to the fact that the system which is being specified in the editor exists in two slightly
-    dfferent variants, which differ from each other in having two different instances of specification item S1.
-    In such a scenario, a second ValSet is created to hold the specification items which have different
-    formulations for the alternative variant of the system.
     </p>
     
     <h4><a name="Users">Editor Users</a></h3>
     <p>
     The editor users are the entities which have access to the editor.
     There are two types of users: the <strong>admin user</strong> and the <strong>basic users</strong>.
-    </p><p>
     The <strong>admin user</strong> is responsible for: 
     <ul>
     <li>Creating and managing basic users</li>
@@ -109,9 +97,10 @@
     <li>Defining the <a href="#ValSets">ValSets</a> for the specification items of 
         a project</li>
     </ul>
-    The <strong>basic users</strong> (or just "users" for short) manage the project 
+    The <strong>basic users</strong> manage the project 
     and the specification items they contain in accordance with their roles.
     Within a project, a user has one of three roles:
+    <p>
     <ul>
     <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
     The project owner can: 
@@ -140,12 +129,14 @@
     </p>
  
     <h4><a name="ProjAndApp">Projects and Applications</a></h4>
+    <p>
     A <strong>project</strong> is the top-level container for a specification created by the editor users.
     It consists of a set of <strong>applications</strong>.
     Each specification item belongs either to a project (in which case it is common to all applications
     within the project) or it belongs to an application within a project.
     Specification items within the same project can reference each other but no references are possible
     across project boundaries.
+    </p>
      
     <h4><a name="Releases">Release Mechanism</a></h4>
     <p>
@@ -171,8 +162,10 @@
     in the project or application to be updated according to the editor's
     <strong>history mechanism</strong>. 
     </p><p>
-    Specification items carry history information through the following attributes:
-    (a) the owner; (b) the status; (c) the previous pointer; and (d) the update time.
+    Specification items carry history information through the following <a href+"Core_Attributes">core 
+    attributes</a>: (a) the owner (the user who last updated the specification item); 
+    (b) the status (see below); (c) the previous pointer (a pointer to the previous version of the 
+    specification item); and (d) the update time (the time when the specification item was last updated).
     The status is one of the following:
         <ul>
         <li><strong>New</strong>: the item has been created in the current release</li>
@@ -185,7 +178,7 @@
         <li><strong>Deleted</strong>: the item was created in a previous release and 
         has since been deleted</li>
         </ul>
-    The status information evolves according to the logic in the state diagram:
+    The status information evolves according to the logic in this state diagram:
     </p><p>
     <img src="{% static 'images/HistoryStatus.png' %}"> 
     </p>
@@ -197,7 +190,7 @@
     Specification items are divided into <strong>categories</strong>. 
     Specification items in the same category have the same behaviour (i.e. they are
     treated in the same way by the editor).    
-    The specification item categories are defined at <a href="HowToUse">editor model level</a>.
+    The specification item categories are defined during the <a href+"">editor instantiation process</a>.
     </p><p>        
     Some specification item attributes (the <strong>core attributes</strong>) have a semantics which is
     independent of the specification item category.
@@ -205,7 +198,7 @@
     attributes</strong>).
     </p><p>
         
-    <h4><a name="CoreAttr">Core Attributes</a></h4>
+    <h5><a name="CoreAttr">Core Attributes</a></h5>
     <p>
     The core attributes of specification items are:    
     <ul>
@@ -231,20 +224,13 @@
     <li><i>Implementation</i>: information about how the specification item is implemented</li> 
     <li><i>ValSet(*)</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
     </ul>
-    Within a project, a specification item is uniquely identified by the pair: <strong>domain:name</strong>. 
+    Within a project, a specification item is uniquely identified by the pair <strong>domain:name</strong>. 
     The domain is used to capture a set of logically related specification items and acts as a kind
     of name space.
     The name is unique within the domain.
-    </p><p>
-    The editor keeps track of the <a href="#Releases"><strong>history</strong></a> of specification 
-    items by maintaining different copies
-    of the specification item reflecting the temporal evolution of the specification item.
-    The history mechanism is supported by the 
-    <strong>update time</strong> attribute representing the time when the specification time was last updated
-    and by the <strong>previous</strong> attribute which points to the previous version of the specification item. 
     </p>
     
-    <h4><a name="CatSpecAttr">Category-Specific Attributes</a></h4>
+    <h5><a name="CatSpecAttr">Category-Specific Attributes</a></h5>
     <p>
     The category-specific specification items are used during the 
     <a href="#Instantiaton">instantiation of the editor meta-model</a>, when the concrete 
@@ -327,6 +313,18 @@
     External specification items may only belong to the default ValSet (because the specification 
     items are imported from an external source and hence it is not possible for the editor to 
     maintain mutliple versions of the same instance).
+    </p><p>
+    At meta-modelling level, the editor defines an <a href+"TBD">interface to access external specification 
+    items</a>.
+    During the <a href+"TBD">editor instantiation process</a>, users implement this interface for their
+    external specification items. 
+    </p>
+
+    <h5><a name="ExtSpecItemInterface">Interface to External Specification Items</a></h5>
+    <p>
+    TBD
+    </p>
+
     
    <h5><a name="SpecItemAttrRender">Rendering of Specification Item Attributes</a></h5>
     <p>
@@ -658,8 +656,17 @@
     <h4><a name="ValSets">ValSets</a></h4>
     <p>
     A ValSet is a set of alternative values for the specification items in a project.
-    The admin user defines the range of ValSets for each project. 
     The 'Default' ValSet is pre-defined for all projects. 
+    A project may have additional ValSet representing alternative values for some of their specification items.
+    Each specification value is assigned to a ValSet.
+    The admin user defines the range of ValSets for each project. 
+    </p><p>
+    To illustrate, let specification item S1 be assigned to the Default ValSet.
+    Suppose that there is a need to maintain a variant of specification item S1. This could, for instance,
+    be due to the fact that the system which is being specified in the editor exists in two slightly
+    dfferent variants, which differ from each other in having two different instances of specification item S1.
+    In such a scenario, a second ValSet is created to hold the specification items which have different
+    formulations for the alternative variant of the system.
     </p><p>
     The ValSet attribute of a specification item is used to manage the ValSets. 
     When a specification item is created, it is allocated to the Default ValSet.
