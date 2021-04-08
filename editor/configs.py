@@ -38,15 +38,15 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Name', 'attrs':['name']},
                                                {'header':'Title', 'attrs':['title']},
                                                {'header':'Text', 'attrs':['value']},
-                                               {'header':'Kind', 'attrs':['p_kind']},
-                                               {'header':'Ver', 'attrs':['s_kind']}
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Ver', 'attrs':['s_kind'], 'order_by':'s_kind'}
                                                ],
                                   'disp_trac': [{'header':'Domain', 'attrs':['domain']},
                                                {'header':'Name', 'attrs':['name']},
                                                {'header':'Title', 'attrs':['title']},
                                                {'header':'Text', 'attrs':['value']},
-                                               {'header':'Kind', 'attrs':['p_kind']},
-                                               {'header':'Ver', 'attrs':['s_kind']},
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Ver', 'attrs':['s_kind'], 'order_by':'s_kind'},
                                                {'header':'Verification Links', 'trac_cat':'VerLink', 'trac_link':'s_link'}
                                                ]
                                  },
@@ -94,7 +94,7 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Def. Val.', 'attrs':['value']},
                                                {'header':'Native Type', 'attrs':['implementation']},
                                                {'header':'Size', 'attrs':['n1']},
-                                               {'header':'Owner', 'attrs':['owner']}
+                                               {'header':'Owner', 'attrs':['owner'], 'order_by':'owner'}
                                                ],
                                   'disp_short': [{'header':'Domain', 'attrs':['domain']},
                                                {'header':'Name', 'attrs':['name']},
@@ -275,8 +275,8 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Value', 'attrs':['value']},
                                                {'header':'Unit', 'attrs':['t2']},
                                                {'header':'Mult', 'attrs':['t1']},
-                                               {'header':'Kind', 'attrs':['p_kind']},
-                                               {'header':'Type', 'attrs':['p_link']},
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Type', 'attrs':['p_link'], 'order_by':'p_link'},
                                                {'header':'Owner', 'attrs':['owner']}
                                                ],
                                   'disp_short': [{'header':'Domain', 'attrs':['domain']},
@@ -285,8 +285,8 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Value', 'attrs':['value']},
                                                {'header':'Unit', 'attrs':['t2']},
                                                {'header':'Mult', 'attrs':['t1']},
-                                               {'header':'Kind', 'attrs':['p_kind']},
-                                               {'header':'Type', 'attrs':['p_link']}
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Type', 'attrs':['p_link'], 'order_by':'p_link'}
                                                ],
                                   'disp_trac': [{'header':'Domain', 'attrs':['domain']},
                                                {'header':'Name', 'attrs':['name']},
@@ -294,8 +294,8 @@ configs = {'General': {'csv_sep': '|',
                                                {'header':'Value', 'attrs':['value']},
                                                {'header':'Unit', 'attrs':['t2']},
                                                {'header':'Mult', 'attrs':['t1']},
-                                               {'header':'Kind', 'attrs':['p_kind']},
-                                               {'header':'Type', 'attrs':['p_link']}
+                                               {'header':'Kind', 'attrs':['p_kind'], 'order_by':'p_kind'},
+                                               {'header':'Type', 'attrs':['p_link'], 'order_by':'p_link'}
                                                ]
                                  },
                        'VerItem': {'name': 'Verification Item',

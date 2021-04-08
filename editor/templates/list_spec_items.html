@@ -68,28 +68,33 @@
       <thead>
         <!-- The headers of the item list are read from disp_list  --> 
         <tr class="table-warning">
-          {% for disp in disp_list %}
-            <th>{{disp|get_dict_item:'header'}}</th>
+          {% for disp_item in disp_list %}
+            {% if disp_item.order_by and not history %}
+              <th><a href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp={{disp}}&order_by={{disp_item.order_by}}" 
+                 title="List in alphabetical order">{{disp_item|get_dict_item:'header'}}</a></th>  
+            {% else %}
+              <th>{{disp_item|get_dict_item:'header'}}</th>
+            {% endif %}
           {% endfor %}  
           {% if history %}
               <th>Change Log</th>  
           {% else %}
-               <!-- The edit/copy/delete/split buttons  --> 
-              <th></th>
+             <!-- The edit/copy/delete/split buttons  --> 
+             <th></th>
           {% endif %}
         </tr>
       </thead>
       <tbody>
           {% for item in items %}
-            {% for disp in disp_list %}
+            {% for disp_item in disp_list %}
               <td>
               {% if forloop.first %}<a name='{{item.domain}}:{{item.name}}'>{% endif %}
               
-                    {% if 'attrs' in disp %}    <!-- Display item attributes  --> 
-                      {% conv_db_disp item disp.attrs.0 as attr_value %}
+                    {% if 'attrs' in disp_item %}    <!-- Display item attributes  --> 
+                      {% conv_db_disp item disp_item.attrs.0 as attr_value %}
                       {{ attr_value|linebreaksbr }}
                       <!-- Display item attributes which are stacked in the same field  --> 
-                      {% for attr in disp.attrs %}
+                      {% for attr in disp_item.attrs %}
                         {% if not forloop.first %} 
                             {% conv_db_disp item attr as attr_value %} 
                             {% if attr_value != '' %}
@@ -98,7 +103,7 @@
                         {% endif %}
                       {% endfor %}  
                     {% else %}                  <!-- Display traceability links  --> 
-                      {% disp_trac item disp.trac_cat disp.trac_link as link_value %}
+                      {% disp_trac item disp_item.trac_cat disp_item.trac_link as link_value %}
                       {{ link_value|linebreaksbr }}
                     {% endif %}
 

@@ -821,11 +821,14 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
         return redirect(base_url)
     
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-    disp_list = configs['cats'][cat]['disp_def']
+    val_set = ValSet.objects.get(id=default_val_set.id)
+    disp = 'disp_def'
+    disp_list = configs['cats'][cat][disp]
                                                     
     spec_item = SpecItem.objects.get(id=item_id)
     items = get_previous_list(spec_item)
     context = {'items': items, 'project': project, 'application_id': application_id, 'sel_dom': sel_dom,\
-               'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 
-               'default_val_set_id': default_val_set.id, 'disp_list': disp_list, 'history': True }
+               'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 'val_set_id': val_set.id, \
+               'val_set': val_set, 'default_val_set_id': default_val_set.id, 'disp': disp, \
+               'disp_list': disp_list, 'history': True }
     return render(request, 'list_spec_items.html', context)    
