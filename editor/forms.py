@@ -6,13 +6,12 @@ from django.contrib.auth.models import User
 from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
-from .utilities import get_user_choices, get_p_kind_choices, get_p_link_choices, \
-                       get_s_kind_choices, get_s_link_choices
+from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.convert import pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
-from editor.configs import configs
+from editor.configs import configs, get_p_link_choices, get_s_link_choices
 from editor.fwprofile_db import get_model
 
 class ProjectForm(forms.Form):

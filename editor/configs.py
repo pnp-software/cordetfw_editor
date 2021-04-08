@@ -411,68 +411,48 @@ configs = {'General': {'csv_sep': '|',
             }
               
               
-def make_obs_spec_item_copy(request, spec_item):
+def get_p_link_choices(cat, project, application, p_parent_id):
     """ 
-    The argument spec_item must be made obsolete: the previous pointer of spec_item is reset;
-    a copy of the spec_item is created; its status is set to OBS; the spec_item copy is saved 
-    to the database; the status of the argument spec_item is set to MOD; its previous
-    pointer is set to point to the newly created OBS copy; the original spec_item instance
-    is returned to the caller 
+        If p_parent_id is different from None, the function returns the spec_items which 
+        have p_parent_id as their p_link parent. Otherwise, it returns the range of 
+        choices for the 'p_link' attribute of a spec_item of a given category 
     """
-    edited_spec_item_id = spec_item.id
-    previous = spec_item.previous
-    spec_item.previous = None
-    spec_item.save()            # Reset the previous pointer of the spec_item 
+    if p_parent_id != None:
+        return SpecItem.objects.filter(id=int(p_parent_id)) 
+    if cat == 'DataItem':
+        q1 = SpecItem.objects.filter(project_id=project.id, cat='DataItemType').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')        
+        q2 = SpecItem.objects.filter(project_id=project.id, cat='EnumType').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name') 
+        return q1 | q2
+    if cat == 'VerLink':
+        return SpecItem.objects.filter(project_id=project.id, cat='VerItem').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+    if cat == 'Packet':
+        return SpecItem.objects.filter(project_id=project.id, cat='Service').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+    if (cat == 'AdaptPoint') and (application != None):
+        return SpecItem.objects.filter(application_id=application.id, cat='Requirement').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+                        
+    return SpecItem.objects.none()
     
-    spec_item.status = 'OBS'
-    spec_item.previous = previous
-    spec_item.id = None
-    spec_item.save()            # Create new instance holding the OBS version of the spec_item
     
-    edited_spec_item = SpecItem.objects.get(id=edited_spec_item_id) # Retrieve original spec_item instance
-    edited_spec_item.previous = spec_item   # Now spec_item points to newly-created OBS copy 
-    edited_spec_item.status = 'MOD'
-    return edited_spec_item     # Return the modified instance of spec_item
-
-
-def remove_spec_item(request, spec_item):
-    """ Delete the spec_item from the database together with its category-specific items """
-    try:
-        spec_item.delete()
-    except Exception as e:
-        messages.error(request, 'Failure to delete ' + str(spec_item) + \
-                                ', possibly because other spec_items reference it: ' + str(e))
-        return
-     
-     
-def remove_spec_item_aliases(request, spec_item):
-    """ Remove spec_items attached to argument spec_items but in other ValSets """
-    if spec_item.p_children != None:    
-        for child in spec_item.p_children.all():
-            if child.val_set.name != 'Default':
-                remove_spec_item(request, child)
-  
-  
-def mark_spec_item_aliases_as_del(request, spec_item):
-    """ Set status of spec_items attached to argument spec_item but in other ValSet to DEL """           
-    if spec_item.p_children != None:    
-        for child in spec_item.p_children.all():
-            if child.val_set.name != 'Default':
-                child.status = 'DEL'
-                child.save()
-
-          
-def update_dom_name_in_val_set(spec_item):
+def get_s_link_choices(cat, project, application, s_parent_id):
     """ 
-    Propagate a change in domain:name in spec_item to spec_items in other ValSets.
-    This function assumes that spec_item is in the Default ValSet
+        If s_parent_id is different from None, the function returns the spec_items which 
+        have s_parent_id as their s_link parent. Otherwise, it returns the range of 
+        choices for the 's_link' attribute of a spec_item of a given category 
     """
-    if spec_item.p_children != None:    
-        for child in spec_item.p_children.all():
-            if child.val_set.name != 'Default':
-                child.name = spec_item.name
-                child.domain = spec_item.domain
-                child.save()
-    
-    
+    if s_parent_id != None:
+        return SpecItem.objects.filter(id=int(s_parent_id))
+    if cat == 'EnumValue':
+        return SpecItem.objects.filter(project_id=project.id, cat='EnumType'). \
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
+    if cat == 'VerLink':
+        return SpecItem.objects.filter(project_id=project.id).exclude(cat='VerItem').exclude(cat='VerLink'). \
+                        exclude(status='DEL').exclude(status='OBS').order_by('cat', 'domain', 'name')
+                        
+    return SpecItem.objects.none()
+
      

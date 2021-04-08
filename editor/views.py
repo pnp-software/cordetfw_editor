@@ -24,15 +24,16 @@ from django.forms.models import model_to_dict
 from django.http import FileResponse
 from django.utils.timezone import get_current_timezone
 
-from editor.configs import configs, make_obs_spec_item_copy, mark_spec_item_aliases_as_del, \
-                           remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
+from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
-                             del_release, list_trac_items_for_latex
+                             del_release, list_trac_items_for_latex, make_obs_spec_item_copy, \
+                             mark_spec_item_aliases_as_del, \
+                             remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
 from editor.imports import import_project_tables
 from editor.fwprofile_db import get_model
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
