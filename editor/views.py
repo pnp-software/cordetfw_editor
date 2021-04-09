@@ -32,10 +32,10 @@ from editor.utilities import get_domains, do_application_release, do_project_rel
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
                              del_release, list_trac_items_for_latex, make_obs_spec_item_copy, \
-                             mark_spec_item_aliases_as_del, \
+                             mark_spec_item_aliases_as_del, create_and_init_spec_item, \
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
 from editor.imports import import_project_tables
-from editor.fwprofile_db import get_model
+from editor.ext_cats import get_model
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 
@@ -392,7 +392,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     if request.method == 'POST':   
         form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, request.POST)
         if form.is_valid():
-            new_spec_item = SpecItem(**form.cleaned_data)
+            new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
             new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
@@ -500,7 +500,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, \
                             p_parent_id, request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
-            new_spec_item = SpecItem(**form.cleaned_data)
+            new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
@@ -540,7 +540,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                              request.POST, initial=spec_item_to_edit(spec_item))
         if form.is_valid():
-            new_spec_item = SpecItem(**form.cleaned_data)
+            new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)

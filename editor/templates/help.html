@@ -322,7 +322,17 @@
 
     <h5><a name="ExtSpecItemInterface">Interface to External Specification Items</a></h5>
     <p>
-    TBD
+    The interface to external specification items is in module <code>ext_spec_item_\<cat\></code>, where 
+    'cat' is the name of the category with the external specification items.
+    Users who wish the editor to access external specification items, must provide such a module
+    for each category of external specification items.
+    </p><p>
+    At meta-modelling level, the editor expects the external specification item module to
+    provide the following functions:
+    <ul>
+    <li><code>ext_spec_item_get_choices</code> to return the list of external items. This
+    function is used in the form through whcih users import an external specification item.</li>
+    </ul>
     </p>
 
     

@@ -13,7 +13,7 @@ from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
-from editor.fwprofile_db import get_model
+from editor.ext_cats import get_model
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
                            convert_exp_to_db, convert_db_to_latex, eval_di_value
 from editor.choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
@@ -418,6 +418,15 @@ def make_obs_spec_item_copy(request, spec_item):
     edited_spec_item.previous = spec_item   # Now spec_item points to newly-created OBS copy 
     edited_spec_item.status = 'MOD'
     return edited_spec_item     # Return the modified instance of spec_item
+
+
+def create_and_init_spec_item(request, cat, init_dict):
+    """ Create a spec_item of category 'cat' and initialize it with the values in init_dict """
+    new_spec_item = SpecItem()
+    for attr in configs['cats'][cat]['attrs']:
+        if attr in init_dict:
+            setattr(new_spec_item, attr, init_dict[attr])
+    return new_spec_item
 
 
 def remove_spec_item(request, spec_item):
