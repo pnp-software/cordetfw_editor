@@ -155,6 +155,7 @@ STATIC_URL = '/static/'
 
 # Redirect to home URL after login (default redirects to: /accounts/profile/)
 LOGIN_REDIRECT_URL = '/editor'
+LOGOUT_REDIRECT_URL = '/editor'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
