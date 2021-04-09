@@ -10,6 +10,7 @@ from django.contrib.auth import get_user
 from django.contrib.auth.models import User
 from django.forms.models import model_to_dict
 from django.db.models import ForeignKey
+from django.utils.timezone import get_current_timezone
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
@@ -326,7 +327,7 @@ def make_temp_dir(dir_path, name):
     """ Create a directory 'name_<TimeStamp>' in the directory 'dir_path' and return 
         the dir name or an empty string if the creation failed
     """
-    new_dir_path = os.path.join(dir_path,name+datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
+    new_dir_path = os.path.join(dir_path,name+datetime.now(tz=get_current_timezone()).strftime('%Y_%m_%d_%H_%M_%S'))
     try:  
         os.mkdir(new_dir_path)  
     except OSError as e:  

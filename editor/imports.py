@@ -77,9 +77,9 @@ def import_project_tables(request, imp_dir):
     user_name_2_user = {}    
     try:
         for project_user in project_users:
-            user_name_2_user[project_user[user]] = User.objects.get(username=project_user[user])
+            user_name_2_user[project_user['user']] = User.objects.get(username=project_user['user'])
     except Exception as e:
-        messages.error(request, 'The project user '+project_user[user]+' does not exist: '+str(e))
+        messages.error(request, 'The project user '+project_user['user']+' does not exist: '+str(e))
         return   
     user_name_2_user[project_owner.username] = project_owner 
         
@@ -170,6 +170,7 @@ def import_project_tables(request, imp_dir):
     spec_item_old_id_2_new = {}
     spec_item_new_id_2_old = {}
     for spec_item in spec_items:
+        import pdb; pdb.set_trace()
         new_spec_item = SpecItem(cat = spec_item['cat'],
                                  name = spec_item['name'],
                                  domain = spec_item['domain'],
