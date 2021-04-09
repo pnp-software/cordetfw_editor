@@ -27,15 +27,17 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=3
-FILE_NAME_0=763;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Futilities.py;0;4
-FILE_NAME_1=14661;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fviews.py;0;4
-FILE_NAME_2=19882;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Fhelp.html;0;4
-FILE_NAME_3=2873;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fconfigs.py;0;4
+current_page=1
+FILE_NAME_0=844;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Futilities.py;0;4
+FILE_NAME_1=19946;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fviews.py;0;4
+FILE_NAME_2=18455;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Fhelp.html;0;4
+FILE_NAME_3=12934;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fconfigs.py;0;4
 FILE_NAME_4=6225;HTML;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplates%2Flist_spec_items.html;0;4
-FILE_NAME_5=5099;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplatetags%2Fref_filters.py;0;4
+FILE_NAME_5=394;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Ftemplatetags%2Fref_filters.py;0;4
 FILE_NAME_6=440;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fconvert.py;0;4
-FILE_NAME_7=293;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Flinks.py;0;4
+FILE_NAME_7=12513;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fforms.py;0;4
+FILE_NAME_8=1547;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fchoices.py;0;4
+FILE_NAME_9=3882;Python;0;EUTF-8;0;1;0;%2Fhome%2Fap%2FProjects%2Fcordetfw_editor%2Feditor%2Fext_cats.py;0;4
 
 [VTE]
 last_dir=/home/ap
