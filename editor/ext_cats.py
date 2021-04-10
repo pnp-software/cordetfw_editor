@@ -38,51 +38,52 @@ def get_model_domain(json_rep):
     jsonObj = json.loads(json_rep)
     return jsonObj['globals']['fwprop']['smTags']
 
-#--------------------------------------------------------------------------------
-def get_model_kind(json_rep):
-    """ Return the model kind (SM or PR) """
-    jsonObj = json.loads(json_rep)
-    return jsonObj['globals']['fwprop']['editorType'].upper()
 
 #--------------------------------------------------------------------------------
-def get_model(request, domain, name):
-    """ Return a dictionary describing the FW Profile model of name 'name' in project 'domain' """
+def ext_model_refresh(request, spec_item):
+    """ 
+    Argument spec_item holds an external model which needs to be refreshed.
+    The function retrieves the model from the FW Profile Database. If the 
+    model cannot be extracted from the database, the function issues a warning
+    and returns 'NOT_FOUND'. 
+    If the model does exist in the FW Profile Database, the function checks 
+    whether its svg image is different from the one held in spec_item.
+    If it is different, it updates spec_item with the new model instance
+    and returns 'REFRESH'. If, instead, the svg image has not changed, the 
+    function return 'NO_CHANGE'.
+    """
     fw_db, fw_db_cur = connect(request)
-    
-    user_email = request.user.email
+
+    model_id = spec_item.n3
     try:
-        fw_db_cur.execute('SELECT * FROM users WHERE email = \''+str(user_email)+'\'')    
-        user = fw_db_cur.fetchall()
-    except Exception as e:
-        messages.error(request, 'User \"'+str(request.user)+'\" with e-mail \"'+user_email+\
-                            '\" not found in FW Profile DB: '+str(e))
-        return None
-    
-    try:
-        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])+' AND name = \''+name+'\'') 
+        fw_db_cur.execute('SELECT * FROM diagrams WHERE ID = '+str(model_id)) 
         diagrams = fw_db_cur.fetchall()
     except Exception as e:
-        messages.error(request, 'No model with name \"'+name+'\" for user \"'+user_email+\
-                            '\" found FW Profile DB: '+str(e))
-        return None
+        messages.error(request, 'Error while accessing model with ID \"'+str(model_id)+': '+str(e))
+        return 'NOT_FOUND'
+    
+    if len(diagrams) == 0:
+        messages.warning(request, 'Model not found in FW Profile Database (its ID is: '+str(model_id)+')')
+        return 'NOT_FOUND'
+        
+    if diagrams[0][7] == spec_item.value:
+        return 'NO_CHANGE'
+    
+    spec_item.domain = get_model_domain(diagrams[0][6])        
+    spec_item.name = diagrams[0][2]
+    if diagrams[0][4] == 'Procedure':
+        spec_item.p_kind = MODEL_KIND[1][0]
+    else:
+        spec_item.p_kind = MODEL_KIND[0][0]
+    spec_item.updated_at = diagrams[0][5]
+    spec_item.value = diagrams[0][7]     # svg representation of diagram
+    spec_item.n1 = diagrams[0][8]        # figure width
+    spec_item.n2 = diagrams[0][9]        # figure height
+    spec_item.n3 = diagrams[0][0]        # ID in FW Profile Database
 
-    for diagram in diagrams:
-        if get_model_domain(diagram[6]) == domain:
-            d = {}
-            d['name'] = diagram[2]
-            d['kind'] = diagram[4]
-            d['updated_at'] = diagram[5]
-            d['json_rep'] = diagram[6]
-            d['svg_rep'] = diagram[7]
-            d['width'] = diagram[8]
-            d['height'] = diagram[9]
-            d['domain'] = domain
-            fw_db.close()
-            return d
-   
-    messages.error(request, 'No model of name \"'+name+'\" exists in FW Project \"'+domain+'\" for user \"'+user_email+'\"')
     fw_db.close()
-    return None
+    return 'REFRESH'
+
 
 #--------------------------------------------------------------------------------
 def ext_model_get_choice(request, model_id):
@@ -100,7 +101,7 @@ def ext_model_get_choice(request, model_id):
         fw_db_cur.execute('SELECT * FROM diagrams WHERE ID = '+str(model_id)) 
         diagrams = fw_db_cur.fetchall()
     except Exception as e:
-        messages.error(request, 'No model with ID \"'+str(model_id)+': '+str(e))
+        messages.error(request, 'Error while accessing model with ID \"'+str(model_id)+': '+str(e))
         return None
 
     ext_item_dict = {}
@@ -115,6 +116,7 @@ def ext_model_get_choice(request, model_id):
     ext_item_dict['value'] = diagrams[0][7]     # svg representation of diagram
     ext_item_dict['n1'] = diagrams[0][8]        # figure width
     ext_item_dict['n2'] = diagrams[0][9]        # figure height
+    ext_item_dict['n3'] = diagrams[0][0]        # ID in FW Profile Database
  
     fw_db.close()
     return ext_item_dict
@@ -138,15 +140,15 @@ def ext_model_get_choices(request):
         return None
     
     try:
-        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])) 
+        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])+' ORDER BY name') 
         diagrams = fw_db_cur.fetchall()
     except Exception as e:
-        messages.error(request, 'Error trying to retrieve the models for for user \"'+user_email+':'+str(e))
+        messages.error(request, 'Error trying to retrieve the models for user \"'+user_email+':'+str(e))
         return None
     
     model_list = []
     for diagram in diagrams:
-        dom_name = (diagram[0], get_model_domain(diagram[6])+':'+diagram[2])
+        dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
         model_list.append(dom_name)
 
     fw_db.close()

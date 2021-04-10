@@ -14,7 +14,6 @@ from django.utils.timezone import get_current_timezone
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
-from editor.ext_cats import get_model
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
                            convert_exp_to_db, convert_db_to_latex, eval_di_value
 from editor.choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \

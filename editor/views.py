@@ -35,10 +35,9 @@ from editor.utilities import get_domains, do_application_release, do_project_rel
                              mark_spec_item_aliases_as_del, create_and_init_spec_item, \
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
 from editor.imports import import_project_tables
-from editor.ext_cats import get_model
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
-
+from editor.ext_cats import ext_model_refresh
 from editor.access import is_project_owner, has_read_access_to_project, \
                     can_create_project, can_add_val_set, has_write_access_to_project
 
@@ -464,17 +463,18 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom
         return redirect(base_url)
     
     spec_item = SpecItem.objects.get(id=item_id)
-    model_dict = get_model(request, spec_item.domain, spec_item.name)
-    if model_dict['svg_rep'] != spec_item.value:
+    refresh_outcome = ext_model_refresh(request, spec_item)
+    if refresh_outcome == 'REFRESH':
         if spec_item.status == 'CNF':
             spec_item = make_obs_spec_item_copy(request, spec_item)
-        spec_item.value = model_dict['svg_rep']
         spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()
-    else:
-        messages.warning(request,'Model has not changed -- no refresh needed')
-
+    elif refresh_outcome == 'NOT_FOUND':
+        messages.warning(request,'External spec_item no longer exists -- no refresh can be done')
+    elif refresh_outcome == 'NO_CHANGE':
+        messages.warning(request,'External spec_item has not changed -- no refresh needed')
+ 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+\
                     str(default_val_set.id)+'/'+sel_dom+'/list_spec_items#'+spec_item.domain+':'+spec_item.name
     return redirect(redirect_url)
