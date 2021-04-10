@@ -29,7 +29,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = config['SECURE_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = config['DEBUG']
 
 ALLOWED_HOSTS = ['localhost', '217.160.170.47', 'pnp-software.io', 'www.pnp-software.io']
 
@@ -154,7 +154,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static_editor/'
 
 # Redirect to home URL after login (default redirects to: /accounts/profile/)
-LOGIN_REDIRECT_URL = '/editor/editor'
+LOGIN_REDIRECT_URL = '/editor'
+LOGOUT_REDIRECT_URL = '/editor'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
