@@ -130,6 +130,8 @@ def ext_model_get_choices(request):
     """
     fw_db, fw_db_cur = connect(request)
     
+    empty_choice_list = [(0, 'No Model Found')]
+    
     user_email = request.user.email
     try:
         fw_db_cur.execute('SELECT * FROM users WHERE email = \''+str(user_email)+'\'')    
@@ -137,20 +139,25 @@ def ext_model_get_choices(request):
     except Exception as e:
         messages.error(request, 'User \"'+str(request.user)+'\" with e-mail \"'+user_email+\
                             '\" not found in FW Profile DB: '+str(e))
-        return None
+        return empty_choice_list
     
     try:
-        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])+' ORDER BY name') 
+        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])) 
         diagrams = fw_db_cur.fetchall()
     except Exception as e:
         messages.error(request, 'Error trying to retrieve the models for user \"'+user_email+':'+str(e))
-        return None
+        return empty_choice_list
     
     model_list = []
     for diagram in diagrams:
         dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
         model_list.append(dom_name)
 
-    fw_db.close()
-    return model_list
+    if model_list == []:
+        messages.error(request, 'No models found in FW Profile Database for user \"'+\
+                                str(request.user)+'\" with e-mail \"'+user_email)
+        return empty_choice_list
+        
 
+    fw_db.close()
+    return sorted(model_list, key=lambda tup: (tup[1].split(':')[0], tup[1].split(':')[1]))
