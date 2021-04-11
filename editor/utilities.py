@@ -123,7 +123,7 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
-        elif key == 'owner':    # Owner is overridden by import function
+        elif key == 'owner':    # Owner is overridden by import function: no need to copy it into spec_item
             continue
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))

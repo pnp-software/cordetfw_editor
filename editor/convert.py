@@ -89,7 +89,7 @@ def conv_db_disp_plain_ref(context, item, name):
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
-    return str(getattr(context, item, name))
+    return str(getattr(item, name))
 
 
 def conv_db_disp_date(context, item, name):
