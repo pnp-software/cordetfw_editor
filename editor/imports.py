@@ -1,10 +1,13 @@
 import re
 import os
 import csv
+import datetime
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.utils.timezone import make_aware
 from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Application
-from editor.utilities import frmt_string, convert_edit_to_db
+from editor.utilities import frmt_string
+from editor.convert import convert_edit_to_db
 
 #--------------------------------------------------------------------------------
 def import_project_tables(request, imp_dir):
@@ -76,9 +79,9 @@ def import_project_tables(request, imp_dir):
     user_name_2_user = {}    
     try:
         for project_user in project_users:
-            user_name_2_user[project_user[user]] = User.objects.get(username=project_user[user])
+            user_name_2_user[project_user['user']] = User.objects.get(username=project_user['user'])
     except Exception as e:
-        messages.error(request, 'The project user '+project_user[user]+' does not exist: '+str(e))
+        messages.error(request, 'The project user '+project_user['user']+' does not exist: '+str(e))
         return   
     user_name_2_user[project_owner.username] = project_owner 
         
@@ -150,7 +153,7 @@ def import_project_tables(request, imp_dir):
     for project_user in project_users:
         new_project_user = ProjectUser(updated_at = project_user['updated_at'],
                                        project = new_project,
-                                       user = user_name_2_user[project_user[user]])
+                                       user = user_name_2_user[project_user['user']])
         new_project_user.save()
         
     # Import the Applications
@@ -169,34 +172,45 @@ def import_project_tables(request, imp_dir):
     spec_item_old_id_2_new = {}
     spec_item_new_id_2_old = {}
     for spec_item in spec_items:
-        new_spec_item = SpecItem(cat = spec_item['cat'],
-                                 name = spec_item['name'],
-                                 domain = spec_item['domain'],
-                                 project = new_project,
-                                 application = application_old_id_2_new[spec_item['application']],
-                                 title = spec_item['title'],
-                                 desc = spec_item['desc'],
-                                 owner = user_name_2_user[spec_item['owner']],
-                                 val_set = val_set_old_id_2_new[spec_item['val_set']],
-                                 status = spec_item['status'],
-                                 updated_at = spec_item['updated_at'],
-                                 rationale = spec_item['rationale'],
-                                 remarks = spec_item['remarks'],
-                                 p_kind = spec_item['p_kind'],
-                                 s_kind = spec_item['s_kind'],
-                                 value = spec_item['value'],
-                                 t1 = spec_item['t1'],
-                                 t2 = spec_item['t2'],
-                                 t3 = spec_item['t3'],
-                                 t4 = spec_item['t4'],
-                                 t5 = spec_item['t5'],
-                                 n1 = spec_item['n1'],
-                                 n2 = spec_item['n2'],
-                                 n3 = spec_item['n3'])
-        new_spec_item.save()
-        spec_item_old_id_2_new[spec_item['id']] = new_spec_item
-        spec_item_new_id_2_old[new_spec_item.id] = spec_item
+        try:
+            new_spec_item = SpecItem(cat = spec_item['cat'],
+                                     name = spec_item['name'],
+                                     domain = spec_item['domain'],
+                                     project = new_project,
+                                     application = application_old_id_2_new[spec_item['application']],
+                                     title = spec_item['title'],
+                                     desc = spec_item['desc'],
+                                     owner = user_name_2_user[spec_item['owner']],
+                                     val_set = val_set_old_id_2_new[spec_item['val_set']],
+                                     status = spec_item['status'],
+                                     updated_at = make_aware(datetime.datetime.strptime(spec_item['updated_at'], "%Y-%m-%d %H:%M:%S")),
+                                     rationale = spec_item['rationale'],
+                                     implementation = spec_item['implementation'],
+                                     remarks = spec_item['remarks'],
+                                     p_kind = spec_item['p_kind'],
+                                     s_kind = spec_item['s_kind'],
+                                     value = spec_item['value'],
+                                     t1 = spec_item['t1'],
+                                     t2 = spec_item['t2'],
+                                     t3 = spec_item['t3'],
+                                     t4 = spec_item['t4'],
+                                     t5 = spec_item['t5'],
+                                     n1 = spec_item['n1'],
+                                     n2 = spec_item['n2'],
+                                     n3 = spec_item['n3'])
+            new_spec_item.save()
+            spec_item_old_id_2_new[spec_item['id']] = new_spec_item
+            spec_item_new_id_2_old[new_spec_item.id] = spec_item
+        except Exception as e:
+            spec_item_full_name = spec_item['cat']+':'+spec_item['domain']+':'+spec_item['name']+' (staus: '+spec_item['status']+')'
+            msg = 'Failure to import spec_item ' + spec_item_full_name + ' Probable causes are: ' +\
+                  '(a) application identifier (' + spec_item['application'] + ') is not recognized; ' +\
+                  '(b) spec_item owner '+ spec_item['owner'] +' is not a project user '+\
+                  '(c) ValSet identifier (' + spec_item['val_set'] + ') is not recognized; ' +\
+                  '(d) Update time (' + spec_item['updated_at'] + ') is not in format Y-m-d H-M-S; '
+            messages.error(request, msg + 'Error is: ' + repr(e))
         
+    # Extract all new items and then save again to force update of internal and direct links    
     new_spec_items = SpecItem.objects.filter(project_id=new_project.id)
     for new_spec_item in new_spec_items:
         old_spec_item = spec_item_new_id_2_old[new_spec_item.id] 
@@ -209,6 +223,7 @@ def import_project_tables(request, imp_dir):
 
         new_spec_item.desc = convert_edit_to_db(new_project, new_spec_item.desc)
         new_spec_item.rationale = convert_edit_to_db(new_project, new_spec_item.rationale)
+        new_spec_item.implementation = convert_edit_to_db(new_project, new_spec_item.implementation)
         new_spec_item.remarks = convert_edit_to_db(new_project, new_spec_item.remarks)
         new_spec_item.t1 = convert_edit_to_db(new_project, new_spec_item.t1)
         new_spec_item.t2 = convert_edit_to_db(new_project, new_spec_item.t2)

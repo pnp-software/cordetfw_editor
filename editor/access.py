@@ -1,34 +1,52 @@
 from django.core.exceptions import ObjectDoesNotExist
 from editor.models import ProjectUser
+from django.contrib import messages
 
 
-def is_project_owner(user, project):
+def is_project_owner(request, project):
     """ Return True if user owns the project """
-    return (user.id == project.owner.id) 
+    if request.user.id == project.owner.id:
+        return True
+    else:
+        messages.error(request, 'This operation is only accessible to the owner of project '+project.name)
+        return False
 
 
-def has_access_to_project(user, project):
+def has_read_access_to_project(request, project):
     """ Return True if user owns the project or is assigned to it """
-    return (user.id == project.owner.id) or (ProjectUser.objects.filter(user_id=user.id, project_id=project.id).exists())
-    
+    if (request.user.id == project.owner.id) or (ProjectUser.objects.\
+                filter(user_id=request.user.id, project_id=project.id).exists()):
+        return True
+    else:
+        messages.error(request, 'This operation requires read access to project '+project.name)
+        return False
 
-def has_access_to_application(user, application):
-    """ Return True if user is assigned to or owns the project to which the application belongs """
-    return (ProjectUser.objects.filter(user_id=user.id, project_id=application.project.id).exists()) or \
-           (application.project.owner == user)
-    
+def has_write_access_to_project(request, project):
+    """ Return True if user owns the project or is assigned to it with read/write access """
+    if (request.user.id == project.owner.id):
+        return True
+    try:
+        user = ProjectUser.objects.filter(user_id=request.user.id, project_id=project.id)  
+        if user.role == 'RW':
+            return True
+    except Exception as e:
+        messages.error(request, 'This operation requires read/write access to project '+project.name)
+        return False   
 
-def is_spec_item_owner(user, item):
-    """ Return True if user owns the specification item """
-    return (user == item.owner) 
-
-
-def can_create_project(user):
+def can_create_project(request):
     """ Return True if user is admin """
-    return (user.is_staff) 
+    if request.user.is_staff:
+        return True
+    else:
+        messages.error(request, 'This operation is only accessible to a staff user')
+        return False
 
 
-def can_add_val_set(user):
+def can_add_val_set(request):
     """ Return True if user is admin """
-    return (user.is_staff) 
+    if request.user.is_staff:
+        return True
+    else:
+        messages.error(request, 'This operation is only accessible to a staff user')
+        return False
 

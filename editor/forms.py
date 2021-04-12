@@ -6,23 +6,22 @@ from django.contrib.auth.models import User
 from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
-from .utilities import get_user_choices, get_p_kind_choices, get_p_link_choices, \
-                       pattern_edit, pattern_db, convert_edit_to_db, get_s_kind_choices, \
-                       get_s_link_choices
+from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
 from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
                      MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
+from editor.convert import pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
-from editor.configs import configs
-from editor.fwprofile_db import get_model
+from editor.configs import configs, get_p_link_choices, get_s_link_choices
+from editor import ext_cats
 
 class ProjectForm(forms.Form):
     name = forms.CharField()
     owner = forms.ChoiceField(choices=())
     description = forms.CharField(widget=forms.Textarea)
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
-        self.fields['owner'].choices = get_user_choices()
+        self.fields['owner'].choices = get_user_choices(project)
         self.helper = FormHelper(self)
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
@@ -84,6 +83,7 @@ class SpecItemForm(forms.Form):
     value = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     n1 = forms.IntegerField(min_value=0)
     rationale = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     p_kind = forms.ChoiceField(choices=())
     s_kind = forms.ChoiceField(choices=REQ_VER_METHOD)
@@ -97,6 +97,7 @@ class SpecItemForm(forms.Form):
     t3 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     t4 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     t5 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    ext_item = forms.ChoiceField(choices=())
    
     def __init__(self, mode, request, cat, project, application, config, s_parent_id, p_parent_id, *args, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
@@ -114,6 +115,7 @@ class SpecItemForm(forms.Form):
         self.fields['desc'].widget.attrs.update(rows = 1)
         self.fields['value'].widget.attrs.update(rows = 1)
         self.fields['rationale'].widget.attrs.update(rows = 1)
+        self.fields['implementation'].widget.attrs.update(rows = 1)
         self.fields['remarks'].widget.attrs.update(rows = 1)
         self.fields['t1'].widget.attrs.update(rows = 1)
         self.fields['t2'].widget.attrs.update(rows = 1)
@@ -122,8 +124,8 @@ class SpecItemForm(forms.Form):
         self.fields['t5'].widget.attrs.update(rows = 1)
         self.fields['p_kind'].choices = get_p_kind_choices(cat)
         self.fields['s_kind'].choices = get_s_kind_choices(cat)
-        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project.id, p_parent_id)
-        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project.id, s_parent_id)
+        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id)
+        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project, self.application, s_parent_id)
         self.fields['n1'].initial = 0
         self.fields['n2'].initial = 0
         self.fields['n3'].initial = 0
@@ -137,6 +139,14 @@ class SpecItemForm(forms.Form):
             self.fields[field].label = config['attrs'][field]['label']
             if not config['attrs'][field]['req_in_form']:
                 self.fields[field].required = False            
+        
+        # For external spec_item in add mode: load choices of external item
+        if (len(config['ext_attrs']) > 0) and (self.mode == 'add'):
+            get_choices_func_name = 'ext_' + cat.lower() + '_get_choices'
+            self.fields['ext_item'].widget = forms.Select()
+            self.fields['ext_item'].required = True
+            self.fields['ext_item'].label = cat
+            self.fields['ext_item'].choices = getattr(ext_cats, get_choices_func_name)(request)
         
         # In add mode, the ValSet is not visible
         if (self.mode == 'add'):
@@ -160,36 +170,38 @@ class SpecItemForm(forms.Form):
             self.fields['s_link'].widget = forms.HiddenInput()
                        
     def clean(self):
-        """ Verify that: 
-        (a) In add and copy modes, the domain:name pair is unique within non-deleted, non-obsolete spec_items 
-            in the project and ValSet;
-        (b) In edit mode, if the domain:name has been modified, it is unique within non-deleted, 
-            non-obsolete spec_items in the project and in the default ValSet;
-        (c) In split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete spec_items
-            of a project with the same domain:name 
-        (d) Deleted.
-        (e) In the value field of a data item, internal references may only point to other data items
-        (f) The value of a data item of enumerated type must be an internal reference to an enumerated value
-            of the data item's type
-        """
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
         
+        # when in add mode: load data for external attributes 1
+        if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
+            get_choice_func_name = 'ext_' + self.cat.lower() + '_get_choice'
+            ext_choice = getattr(ext_cats, get_choice_func_name)(self.request, cd['ext_item'])
+            for ext_attr in self.config['ext_attrs']:
+                cd[ext_attr] = ext_choice[ext_attr]
+            
+        # Verify that, in add and copy modes, the domain:name pair is unique within non-deleted, 
+        # non-obsolete spec_items in the project and ValSet
         if (self.mode == 'add') or (self.mode == 'copy'):
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
                 raise forms.ValidationError('Add or Copy Error: Domain:Name pair already exists in this project')
 
+        # Verify that, in edit mode, if the domain:name has been modified, it is unique within non-deleted, 
+        # non-obsolete spec_items in the project and in the default ValSet
         if (self.mode == 'edit') and (('name' in self.changed_data) or ('domain' in self.changed_data)):
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
                     raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
         
+        # Verify that, in split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete 
+        # spec_items of a project with the same domain:name 
         if (self.mode == 'split'):
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                      domain=cd['domain'], name=cd['name'], val_set_id=cd['val_set']).exists():
                 raise forms.ValidationError('Split Error: ValSet is already in use for this domain:name')
         
+        # Verify that, in the value field of a data item, internal references point to other data items
         if (self.cat == 'DataItem'):
             internal_refs = re.findall(pattern_edit, cd['value'])
             for ref in internal_refs:
@@ -197,6 +209,8 @@ class SpecItemForm(forms.Form):
                     raise forms.ValidationError('The value field of a data item cannot contain references to non-'+\
                                                 'data items: '+str(ref))
 
+        # Verify that tThe value of a data item of enumerated type is an internal reference to an enumerated 
+        # value of the data item's type
         if (self.cat == 'DataItem') and cd['p_link'].cat == 'EnumType':
             m = re.match(pattern_db, cd['value'].strip())
             if (m == None) or (m.span()[1] != len(cd['value'].strip())):
@@ -213,27 +227,34 @@ class SpecItemForm(forms.Form):
         return cd
  
     def clean_title(self):
-        return convert_edit_to_db(self.project, self.cleaned_data['title'])
+        if not 'title' in self.config['ext_attrs']:
+            return convert_edit_to_db(self.project, self.cleaned_data['title'])
+        return self.cleaned_data['title']
 
     def clean_desc(self):
-        return convert_edit_to_db(self.project, self.cleaned_data['desc'])
+        if not 'desc' in self.config['ext_attrs']:
+            return convert_edit_to_db(self.project, self.cleaned_data['desc'])
+        return self.cleaned_data['desc']
 
     def clean_value(self):
-        if self.config['ext_attrs'] != []:
-            fw_model = get_model(self.request, self.cleaned_data['domain'], self.cleaned_data['name'])
-            if fw_model == None:
-                raise forms.ValidationError('No FW Profile model with name '+self.cleaned_data['name']+\
-                                                                ' found in project '+self.cleaned_data['domain'])
-            else:
-                return fw_model['svg_rep']
-        else:
+        if not 'value' in self.config['ext_attrs']:
             return convert_edit_to_db(self.project, self.cleaned_data['value'])
+        return self.cleaned_data['value']
 
     def clean_rationale(self):
-        return convert_edit_to_db(self.project, self.cleaned_data['rationale'])
+        if not 'rationale' in self.config['ext_attrs']:
+            return convert_edit_to_db(self.project, self.cleaned_data['rationale'])
+        return self.cleaned_data['rationale']
+
+    def clean_implementation(self):
+        if not 'implementation' in self.config['ext_attrs']:
+            return convert_edit_to_db(self.project, self.cleaned_data['implementation'])
+        return self.cleaned_data['implementation']
 
     def clean_remarks(self):
-        return convert_edit_to_db(self.project, self.cleaned_data['remarks'])
+        if not 'remarks' in self.config['ext_attrs']:
+            return convert_edit_to_db(self.project, self.cleaned_data['remarks'])
+        return self.cleaned_data['remarks']
 
 
  

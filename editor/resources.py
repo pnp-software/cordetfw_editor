@@ -1,5 +1,5 @@
 from import_export import resources
-from editor.utilities import convert_db_to_edit
+from editor.convert import convert_db_to_edit
 from editor.models import Release, Project, ProjectUser, Application, \
                           SpecItem, ValSet
 
@@ -7,16 +7,16 @@ class ReleaseResource(resources.ModelResource):
     class Meta:
         model = Release
 
-    def dehydrate_release_author(self, spec_item):
-        return str(spec_item.release_author)
+    def dehydrate_release_author(self, release):
+        return str(release.release_author)
 
         
 class ProjectResource(resources.ModelResource):
     class Meta:
         model = Project
 
-    def dehydrate_owner(self, spec_item):
-        return str(spec_item.owner)
+    def dehydrate_owner(self, project):
+        return str(project.owner)
         
                 
 class ApplicationResource(resources.ModelResource):
@@ -27,8 +27,8 @@ class ProjectUserResource(resources.ModelResource):
     class Meta:
         model = ProjectUser        
         
-    def dehydrate_owner(self, spec_item):
-        return str(spec_item.owner)
+    def dehydrate_user(self, project_user):
+        return str(project_user.user)
 
         
 class ValSetResource(resources.ModelResource):

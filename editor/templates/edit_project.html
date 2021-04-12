@@ -3,7 +3,7 @@
 {% block content %}
 <div class="col-lg-10 col-xl-9">
 <div class="jumbotron jumbotron-fluid bg-transparent mt-n3 mb-n5">
-  <h2>{{ title }}</h2>
+  <h2>Add or Edit a Project</h2>
 </div>
 {% crispy form %}
 
@@ -23,20 +23,26 @@
 {% endif %}
 </div>
 
+<br/>
+
 <div class="col-4">
   <div class="form-inline">
-    <h5>Add User: </h5>
-      <div class="form-group ml-sm-2 mt-0 mb-2">
-        <form action='edit_project' method='GET'>
-        <select class="form-control" name="user_id" onChange="this.form.submit()">
-          {% for user in users %}
-          <option value="{{user.id}}">
-            {{user.username}} 
-          </option>
-          {% endfor %}
-        </select>
-        </form>
-      </div>
+     <div class="dropdown mr-sm-2 mt-2 mb-2">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Add R/W User</button>
+        <div class="dropdown-menu">
+            {% for user in users %}
+                <a class="dropdown-item" href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RW">{{user.username}}</a>
+            {% endfor %}
+        </div>
+     </div>
+     <div class="dropdown mr-sm-2 mt-2 mb-2">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Add R/O User</button>
+        <div class="dropdown-menu">
+            {% for user in users %}
+                <a class="dropdown-item" href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RO">{{user.username}}</a>
+            {% endfor %}
+        </div>
+     </div>
   </div> 
     <table class="table table-hover table-sm">
       <thead>
@@ -44,6 +50,7 @@
           <th>User Name</th>
           <th>Last Name</th>
           <th>First Name</th>
+          <th>Role</th>
           <th></th>
         </tr>
       </thead>
@@ -53,6 +60,7 @@
             <td>{{ project_user.user.username }}</td>
             <td>{{ project_user.user.last_name }}</td>
             <td>{{ project_user.user.first_name }}</td>
+            <td>{{ project_user.role }}</td>
             <td>
               <div class="btn-group">
                 <a class="btn btn-outline-dark btn-sm"
@@ -66,7 +74,7 @@
 </div>
 <div class="col-4">
   <div class="form-inline">
-    <a class="btn btn-outline-dark btn-sm mr-sm-2 mt-2 mb-2" href="{% url 'add_val_set' project.id %}">Add ValSet</a>
+    <a class="btn btn-outline-dark btn-sm mr-sm-2 mt-3 mb-2" href="{% url 'add_val_set' project.id %}">Add ValSet</a>
   </div> 
     <table class="table table-hover table-sm">
       <thead>
