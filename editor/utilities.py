@@ -67,13 +67,13 @@ def spec_item_to_latex(spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
-            dic[label] = frmt_string(convert_db_to_latex(getattr(spec_item, key)))
+            dic[label] = convert_db_to_latex(getattr(spec_item, key))
         elif value['kind'] == 'spec_item_ref':
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
             dic[label] = frmt_string(str(getattr(spec_item, key)))
         elif value['kind'] == 'eval_ref':
-            dic[label] = frmt_string(convert_db_to_latex(getattr(spec_item, key)))
+            dic[label] = convert_db_to_latex(getattr(spec_item, key))
             dic['NVal'] = eval_di_value(spec_item.value)
         elif value['kind'] == 'image':
             dic[label] = 'TBD image data'
