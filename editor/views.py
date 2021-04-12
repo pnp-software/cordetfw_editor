@@ -368,7 +368,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
                'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
-               'disp': disp, 'disp_list':configs['cats'][cat][disp], 'history': False }
+               'disp': disp, 'disp_list':configs['cats'][cat][disp], 'history': False, 'order_by': order_by }
     return render(request, 'list_spec_items.html', context)    
 
 
@@ -590,6 +590,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 @login_required         
 def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
     project = Project.objects.get(id=project_id)
+    order_by = request.GET.get('order_by')
     if application_id != 0:
         application = Application.objects.get(id=application_id)
     else:
@@ -612,6 +613,9 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         
     if (sel_dom != 'All_Domains'):
         items = items.filter(domain=sel_dom)
+
+    if order_by != None:
+        items = items.order_by(order_by, 'domain','name')
 
     csv_sep = configs['General']['csv_sep']
     fd = StringIO()
