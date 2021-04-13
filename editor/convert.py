@@ -89,7 +89,7 @@ def conv_db_disp_plain_ref(context, item, name):
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
-    return str(getattr(context, item, name))
+    return str(getattr(item, name))
 
 
 def conv_db_disp_date(context, item, name):
@@ -203,18 +203,18 @@ def convert_db_to_latex(s):
     """
     match = pattern_db.search(s)
     if match == None:
-        return s
+        return frmt_string(s)
     ref = match.group().split(':')
     try:
         if ref[0] == '#iref': 
             item = SpecItem.objects.get(id=ref[1])
-            s_mod = frmt_string(s[:match.start()] + item.domain+':'+item.name)
+            s_mod = s[:match.start()] + item.domain+':'+item.name
         else:
-            s_mod = frmt_string(s[:match.start()]+ref[0]+':'+ref[1])
+            s_mod = s[:match.start()]+ref[0]+':'+ref[1]
     except ObjectDoesNotExist:
         s_mod = s[:match.start()]+'ERROR:ERROR'
        
-    return s_mod + convert_db_to_latex(s[match.end():])
+    return frmt_string(s_mod) + convert_db_to_latex(s[match.end():])
  
 
 def render_for_eval(s, n):

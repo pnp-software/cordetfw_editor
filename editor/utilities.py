@@ -67,13 +67,13 @@ def spec_item_to_latex(spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
-            dic[label] = frmt_string(convert_db_to_latex(getattr(spec_item, key)))
+            dic[label] = convert_db_to_latex(getattr(spec_item, key))
         elif value['kind'] == 'spec_item_ref':
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
             dic[label] = frmt_string(str(getattr(spec_item, key)))
         elif value['kind'] == 'eval_ref':
-            dic[label] = frmt_string(convert_db_to_latex(getattr(spec_item, key)))
+            dic[label] = convert_db_to_latex(getattr(spec_item, key))
             dic['NVal'] = eval_di_value(spec_item.value)
         elif value['kind'] == 'image':
             dic[label] = 'TBD image data'
@@ -123,7 +123,7 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
-        elif key == 'owner':    # Owner is overridden by import function
+        elif key == 'owner':    # Owner is overridden by import function: no need to copy it into spec_item
             continue
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))

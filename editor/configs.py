@@ -24,7 +24,7 @@ configs = {'General': {'csv_sep': '|',
                                            'implementation':  {'label': 'Implementation', 'req_in_form': False, 'kind': 'ref_text'},
                                            'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
                                            'val_set':   {'label': 'ValSet',  'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'},
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'},
                                            's_kind':    {'label': 'Ver', 'req_in_form': True, 'kind': 'plain_text'}
                                            },
                                   'disp_def': [{'header':'Domain', 'attrs':['domain']},
@@ -69,7 +69,7 @@ configs = {'General': {'csv_sep': '|',
                                            'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
                                            'p_link':    {'label': 'Parent Req', 'req_in_form': False, 'kind': 'spec_item_ref'},
                                            'val_set':   {'label': 'ValSet',  'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'}
                                           }
                                  },
                        'DataItemType': {'name': 'Data Item Type',
@@ -88,7 +88,7 @@ configs = {'General': {'csv_sep': '|',
                                            'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                            'implementation': {'label': 'Native Type', 'req_in_form': False, 'kind': 'ref_text'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'},
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'},
                                            'n1':        {'label': 'Size', 'req_in_form': True, 'kind': 'int'}
                                           },
                                   'disp_def': [{'header':'Domain', 'attrs':['domain']},
@@ -130,7 +130,7 @@ configs = {'General': {'csv_sep': '|',
                                            'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                            'implementation': {'label': 'Native Type', 'req_in_form': False, 'kind': 'ref_text'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'},
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'},
                                            'n1':        {'label': 'Size', 'req_in_form': True, 'kind': 'int'}
                                           }
                                  },
@@ -155,7 +155,7 @@ configs = {'General': {'csv_sep': '|',
                                            'n2':        {'label': 'Height', 'req_in_form': False, 'kind': 'int'},
                                            'n3':        {'label': 'FW Prof DB ID', 'req_in_form': False, 'kind': 'int'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'}
                                           },
                                   'disp_def': [{'header':'Domain', 'attrs':['domain']},
                                                {'header':'Name', 'attrs':['name']},
@@ -194,7 +194,7 @@ configs = {'General': {'csv_sep': '|',
                                            'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                            'implementation': {'label': 'Implementation', 'req_in_form': False, 'kind': 'ref_text'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'}
                                           }
                                  },
                         'Packet': {'name': 'Packet',
@@ -216,7 +216,7 @@ configs = {'General': {'csv_sep': '|',
                                            't1':        {'label': 'Parameters', 'req_in_form': True, 'kind': 'ref_text'},
                                            't2':        {'label': 'Destination', 'req_in_form': True, 'kind': 'ref_text'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'}
                                           }
                                  },
                         'DerPacket': {'name': 'Derived Packet',
@@ -239,7 +239,7 @@ configs = {'General': {'csv_sep': '|',
                                            't1':        {'label': 'Parameters', 'req_in_form': True, 'kind': 'ref_text'},
                                            't2':        {'label': 'Destination', 'req_in_form': True, 'kind': 'ref_text'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'}
                                           }
                                  },
                         'PacketPar': {'name': 'Packet Parameter',
@@ -264,7 +264,7 @@ configs = {'General': {'csv_sep': '|',
                                            'n2':        {'label': 'Group Size', 'req_in_form': False, 'kind': 'int'},
                                            'n3':        {'label': 'Rep counter', 'req_in_form': False, 'kind': 'int'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'}
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'}
                                           }
                                  },
                       'EnumValue': {'name': 'Enumerated Value',
@@ -284,7 +284,7 @@ configs = {'General': {'csv_sep': '|',
                                            'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                            'implementation': {'label': 'Implementation', 'req_in_form': False, 'kind': 'ref_text'},
                                            's_link':    {'label': 'Type', 'req_in_form': True, 'kind': 'spec_item_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'},
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                           }
                                  },
@@ -308,7 +308,7 @@ configs = {'General': {'csv_sep': '|',
                                            'p_kind':    {'label': 'Kind', 'req_in_form': True, 'kind': 'plain_text'},
                                            't1':        {'label': 'Multiplicity', 'req_in_form': False, 'kind': 'ref_text'},
                                            't2':        {'label': 'Unit', 'req_in_form': False, 'kind': 'plain_text'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'},
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                            },
                                   'disp_def': [{'header':'Domain', 'attrs':['domain']},
@@ -361,7 +361,7 @@ configs = {'General': {'csv_sep': '|',
                                            't1':        {'label': 'PreCondition', 'req_in_form': False, 'kind': 'ref_text'},
                                            't2':        {'label': 'PostCondition', 'req_in_form': False, 'kind': 'ref_text'},
                                            't3':        {'label': 'Outcome', 'req_in_form': False, 'kind': 'ref_text'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'},
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                            },
                                   'disp_def': [{'header':'Domain', 'attrs':['domain']},
@@ -405,7 +405,7 @@ configs = {'General': {'csv_sep': '|',
                                            'remarks':   {'label': 'Remarks', 'req_in_form': False, 'kind': 'ref_text'},
                                            'p_link':    {'label': 'Ver Item', 'req_in_form': True, 'kind': 'spec_item_ref'},
                                            's_link':    {'label': 'Spec Item', 'req_in_form': True, 'kind': 'spec_item_ref'},
-                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_text'},
+                                           'owner':     {'label': 'Owner',  'req_in_form': False, 'kind': 'plain_ref'},
                                            'val_set':   {'label': 'ValSet', 'req_in_form': False, 'kind': 'plain_ref'}
                                            },
                                   'disp_def': [{'header':'Domain', 'attrs':['domain']},

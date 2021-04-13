@@ -37,8 +37,13 @@
             <div class="dropdown-menu">
                 <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}">
                     Plain Export</a>
+                {% if order_by != None %}
+                <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format&order_by={{order_by}}">
+                    Export for Latex</a>
+                {% else %}
                 <a class="dropdown-item" href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format">
                     Export for Latex</a>
+                {% endif %}
                 <a class="dropdown-item" href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">
                     Plain Import</a>
             </div>
