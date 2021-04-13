@@ -151,7 +151,7 @@ STATICFILES_FINDERS = [
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_URL = '/static_editor/'
+STATIC_URL = '/static/'
 
 # Redirect to home URL after login (default redirects to: /accounts/profile/)
 LOGIN_REDIRECT_URL = '/editor'
