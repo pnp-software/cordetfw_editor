@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <!-- <link rel="stylesheet"
+       href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+       integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+       crossorigin="anonymous"> -->
+
+  <link href="/static/bootstrap-suggest.css" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  {% load static %}
+  <link rel="stylesheet" href="{% static '/css/styles.css' %}">
+  {% block title %}<title>Cordet FW Editor</title>{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <header class="">
+        <nav class="mx-4 my-4 text-lg leading-5 text-blue-gray-500">
+            <ul class="flex items-center">
+                <li>
+                    <a class="px-4 py-2 flex items-center rounded-md
+                              hover:bg-blue-100 hover:text-blue-800
+                              focus:bg-blue-100 focus:text-blue-800
+                              hover:no-underline focus:outline-none"
+                       href="{% url 'index' %}">
+                        <svg class="h-6 w-6 mr-1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <a class="px-4 py-2 flex items-center rounded-md
+                              hover:bg-blue-100 hover:text-blue-800
+                              focus:bg-blue-100 focus:text-blue-800
+                              hover:no-underline focus:outline-none"
+                       href="{% url 'admin:index' %}">
+                        <svg class="h-6 w-6 mr-1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Admin
+                    </a>
+                </li>
+                <li>
+                    <a class="px-4 py-2 flex items-center rounded-md
+                              hover:bg-blue-100 hover:text-blue-800
+                              focus:bg-blue-100 focus:text-blue-800
+                              hover:no-underline focus:outline-none"
+                       href="{% url 'help' %}">
+                        <svg class="h-6 w-6 mr-1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Help
+                    </a>
+                </li>
+                {% if user.is_authenticated %}
+                <li class="font-bold flex-grow flex flex-col">
+                    <div class="self-center flex flex-center">
+                        Cordet FW Editor
+                        <svg class="h-5 w-5"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                  clip-rule="evenodd" />
+                        </svg>
+                        {% if project.name|length > 0 %}
+                        {{ project.name }}
+                        {% if config.name|length > 0 %}
+                        <svg class="h-5 w-5"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                  clip-rule="evenodd" />
+                        </svg>
+                        <b class="text-blue-gray-900">{{ config.name }}</b>
+                        {% elif title|length > 0 %}
+                        <svg class="h-5 w-5"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                  clip-rule="evenodd" />
+                        </svg>
+                        <b class="text-blue-gray-900">{{ title }}</b>
+                        {% endif %}
+                        {% else %}
+                        <b class="text-blue-gray-900">Projects</b>
+                        {% endif %}
+                    </div>
+                </li>
+                <li class="px-4 py-2 flex items-center rounded-md">
+                    {{ user.get_username }}
+                    <svg class="h-6 w-6 ml-1"
+                         xmlns="http://www.w3.org/2000/svg"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </li>
+                <li>
+                    <a class="px-4 py-2 flex items-center rounded-md
+                              hover:bg-blue-100 hover:text-blue-800
+                              focus:bg-blue-100 focus:text-blue-800
+                              hover:no-underline focus:outline-none"
+                       href="{% url 'logout' %}">
+                        Logout
+                        <svg class="h-6 w-6 ml-1"
+                             xmlns="http://www.w3.org/2000/svg"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </a>
+                </li>
+                {% endif %}
+                <!-- {% if user.is_authenticated and project.name != '' %}
+                     <span class="navbar-text">
+                     Logged in as <b>{{ user.get_username }}</b> / Project <b>{{ project.name }}</b>
+                     </span>
+                     {% endif %}
+                     {% if user.is_authenticated and project.name == '' %}
+                     <span class="navbar-text">
+                     Logged in as <b>{{ user.get_username }}</b>
+                     </span>
+                     {% endif %} -->
+            </ul>
+        </nav>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="my-4 flex flex-col items-center text-blue-gray-400">
+        <div>© 2021 
+            <a class="font-bold
+                      hover:text-blue-600 hover:no-underline
+                      focus:text-blue-600 focus:outline-none"
+               href="https://www.pnp-software.com"
+               target="_blank" >P&P Software GmbH</a>. All Rights Reserved.
+        </div>
+    </footer>
+
+
+</body>
+</html>
