@@ -1,4 +1,4 @@
-{% extends "base_generic.html" %}
+{% extends "base_generic_old.html" %}
 
 {% load static %}
 
@@ -34,7 +34,7 @@
     <li><a href="#SpecItemRep">Rendering of requirements</a> either as hyperlinked html or as text in a form 
         suitable for import in documents</li>
     <li>Support for importing of, and linking to, <a href="ExtSpecRes">external specification resources</a></li>
-    <li><a href="#ExpImp">import and export facilities</a> to/from csv formats</li>
+    <li><a href="#ExpImp">import/export facilities</a> to/from csv formats</li>
     <li>Support for <a href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
     <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
     <li>Interface to import <a href="TBD">external specification resources</a></li>
@@ -61,12 +61,12 @@
     operations can be performed (adding a new specification item, editing an existing specification
     item, etc). 
     When users deploy the editor, they are expected to 
-    <a href="Editor_Instantiation">configure</a>.
+    <a href="Editor_Instantiation">configure</a> it.
     The outcome of this configuration process is an <a href="#Model">editor model</a> which
     defines the concrete categories of specification items and their mutual relationships
     and the generators to process them.
     </p>
-    The <a href+"">default editor configuration</a> can be used as a blue-print for user-specific 
+    The <a href="TBD">default editor configuration</a> can be used as a blue-print for user-specific 
     configurations. 
     <img src="{% static 'images/ModelLevels.png' %}" width="540" height="360" class="center"> 
     </p><p>
@@ -190,7 +190,9 @@
     Specification items are divided into <strong>categories</strong>. 
     Specification items in the same category have the same behaviour (i.e. they are
     treated in the same way by the editor).    
-    The specification item categories are defined during the <a href+"">editor instantiation process</a>.
+    One specification item category (the <a href="#Specification_Item_Kinds">Kind Category</a>) is pre-defined 
+    at editor meta-model.
+    The other specification item categories are defined during the <a href+"">editor instantiation process</a>.
     </p><p>        
     Some specification item attributes (the <strong>core attributes</strong>) have a semantics which is
     independent of the specification item category.
@@ -661,6 +663,22 @@
     Links always point to the specification item in the Default ValSet.
     It is not possible to create a link to a specification items in other ValSets.
     </p>
+    
+    
+    <h5><a name="SpecItemKinds">Specification Item Kinds</a></h5>
+    <p>
+    The <a href+"#TBD">category-specific attributes</a> <code>p_kind</code> and <code>s_kind</code>
+    allow two enumerated values to be associated to specification items.
+    They are intended to capture information related to the status or role of a specification item.
+    The range of values that these two attributes can take is category-dependent and
+    is under the control of the user.
+    </p><p>
+    
+    
+    </p>
+    
+    
+    
     
     
     <h4><a name="ValSets">ValSets</a></h4>
