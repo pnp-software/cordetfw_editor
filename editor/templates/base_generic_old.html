@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+        crossorigin="anonymous">
+  
+  <link href="/static/bootstrap-suggest.css" rel="stylesheet">
+  {% block title %}<title>Cordet FW Editor</title>{% endblock %}
+</head>
+<body class="d-flex vh-100 flex-column">
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        
+  <nav class="navbar navbar-expand-sm navbar-light bg-light navbar-fixed-top">
+    <ul class="navbar-nav mr-auto">
+      {% if user.is_authenticated %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'index' %}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'index' %}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">Login</a>
+        </li>
+      {% endif %}
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'help' %}">Help</a>
+      </li>
+    </ul>
+    {% if user.is_authenticated and project.name != '' %}
+      <span class="navbar-text">
+        Logged in as <b>{{ user.get_username }}</b> / Project <b>{{ project.name }}</b>
+      </span>
+    {% endif %}
+    {% if user.is_authenticated and project.name == '' %}
+      <span class="navbar-text">
+        Logged in as <b>{{ user.get_username }}</b>
+      </span>
+    {% endif %}
+    
+  </nav>
+  <div class="container-fluid">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}" role="alert">
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    <div class="row justify-content-center">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+  
+  <div class="navbar mt-auto">
+    <div class="container">
+      <p class="navbar-text"><center>© 2020 
+          <a href="https://www.pnp-software.com" target="_blank" >P&P Software GmbH</a>. All Rights Reserved.</center>
+      </p>
+    </div>
+  </div>  
+  
+  
+</body>
+</html>
