@@ -707,7 +707,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                         q_cat[0].owner = get_user(request)
                         q_cat[0].save()
         except Exception as e:
-            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+1)+'; traceback: '+traceback.format_exc())
+            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+2)+'; traceback: '+traceback.format_exc())
     else:
         context = {'project': project, 'title': 'Upload CSV File'}
         return render(request, 'upload_file.html', context)
