@@ -217,11 +217,11 @@ class SpecItemForm(forms.Form):
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
             ref = cd['value'].strip().split(':')
             try:
-                enum_val = SpecItem.objects.get(id=ref[1], cat='DataItem')
+                enum_val = SpecItem.objects.get(id=ref[1], cat='EnumValue')
             except ObjectDoesNotExist:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type: '+\
                                             'The reference is invalid')
-            if enum_val.p_link.id != cd['p_link'].id:
+            if enum_val.s_link.id != cd['p_link'].id:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
  
         return cd
@@ -255,6 +255,11 @@ class SpecItemForm(forms.Form):
         if not 'remarks' in self.config['ext_attrs']:
             return convert_edit_to_db(self.project, self.cleaned_data['remarks'])
         return self.cleaned_data['remarks']
+
+    def clean_t1(self):
+        if not 't1' in self.config['ext_attrs']:
+            return convert_edit_to_db(self.project, self.cleaned_data['t1'])
+        return self.cleaned_data['t1']
 
 
  
