@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import cexprtk
 import logging
 from tablib import Dataset
@@ -13,7 +14,6 @@ from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
-from editor.choices import SPEC_ITEM_CAT
                      
 # Regex pattern for internal references to specification items as they
 # are stored in the database (e.g. '#iref:1234')
@@ -25,9 +25,11 @@ pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 # Regex pattern for internal references to specification items as they
 # rendered in edit representation (e.g. '#cat:dom:name')
+#with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
+#    configs = json.load(config_file)
 s = ''
-for cat_desc in SPEC_ITEM_CAT:
-    s = s+cat_desc[0]+'|'
+for cat in list(configs['cats'].keys()):
+    s = s+cat+'|'
 pattern_edit = re.compile('#('+s[:-1]+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 logger = logging.getLogger(__name__)
