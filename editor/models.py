@@ -1,9 +1,14 @@
+import json
 from django.db import models
 from django.contrib.auth.models import User
-from editor.choices import SPEC_ITEM_CAT, VER_STATUS, HISTORY_STATUS,\
-                           REQ_KIND, DI_KIND, MODEL_KIND, PCKT_KIND, \
-                           PCKT_PAR_KIND, PCKT_APP_KIND, VER_ITEM_KIND, \
-                           REQ_VER_METHOD, USER_ROLE 
+from django.conf import settings
+
+# Load the list of choices for the specification items
+with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
+    configs = json.load(config_file)
+spec_item_cat = []
+for cat, value in configs['cats'].items():
+    spec_item_cat.append((cat, value['name']))
 
 class Release(models.Model):
     release_author = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -28,7 +33,7 @@ class ProjectUser(models.Model):
     updated_at = models.DateField(auto_now=True)
     user = models.ForeignKey(User, related_name='used_projects', on_delete=models.PROTECT)
     project = models.ForeignKey(Project, related_name='project_users', on_delete=models.PROTECT)
-    role = models.CharField(max_length=24, choices=USER_ROLE, default = 'RO')
+    role = models.CharField(max_length=24, choices=(("RO","Read-Only"), ("RW","Read-Write")), default = 'RO')
     def __str__(self):
         return self.user.username + ' as user of: ' + self.project.name 
     
@@ -50,7 +55,7 @@ class ValSet(models.Model):
         return self.name
 
 class SpecItem(models.Model):    
-    cat = models.CharField(max_length=24, choices=SPEC_ITEM_CAT)
+    cat = models.CharField(max_length=24)
     name = models.CharField(max_length=255)
     domain = models.CharField(max_length=255)
     project = models.ForeignKey(Project, related_name='project_spec_items', on_delete=models.PROTECT)
@@ -59,7 +64,7 @@ class SpecItem(models.Model):
     title = models.CharField(max_length=255)
     desc = models.TextField(blank=True, default='')
     owner = models.ForeignKey(User, related_name='owned_spec_items', on_delete=models.PROTECT)
-    status = models.CharField(max_length=20, choices=HISTORY_STATUS, default='NEW')
+    status = models.CharField(max_length=20, default='NEW')
     updated_at = models.DateTimeField()  
     previous = models.OneToOneField('self', on_delete=models.SET_DEFAULT, null=True, default=None)
     rationale = models.TextField(blank=True, default='')
@@ -68,9 +73,8 @@ class SpecItem(models.Model):
     val_set = models.ForeignKey(ValSet, related_name='val_set_spec_items', on_delete=models.PROTECT)
     p_link = models.ForeignKey('self', related_name='p_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
     s_link = models.ForeignKey('self', related_name='s_children', on_delete=models.PROTECT, null=True, blank=True, default=None)
-    p_kind = models.CharField(max_length=24, choices=REQ_KIND+DI_KIND+MODEL_KIND+PCKT_KIND+\
-                                                     PCKT_PAR_KIND+PCKT_APP_KIND+VER_ITEM_KIND)
-    s_kind = models.CharField(max_length=24, choices=VER_STATUS)
+    p_kind = models.CharField(max_length=24)
+    s_kind = models.CharField(max_length=24)
     value = models.TextField(blank=True, default='')
     t1 = models.TextField(blank=True, default='')
     t2 = models.TextField(blank=True, default='')
@@ -84,9 +88,3 @@ class SpecItem(models.Model):
     def __str__(self):
         return self.domain + ':' + self.name + ' (' + self.title + ')'
   
-class VerItemToSpecItem(models.Model):
-    ver_item = models.ForeignKey(SpecItem, related_name='spec_item_links', on_delete=models.PROTECT) 
-    spec_item = models.ForeignKey(SpecItem, related_name='ver_item_links', on_delete=models.PROTECT)   
-    title = models.CharField(max_length=255)
-    desc = models.TextField(blank=True, default='')
-    

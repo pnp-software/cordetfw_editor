@@ -16,9 +16,6 @@ from editor.models import SpecItem, ProjectUser, Application, Release, Project, 
 from editor.configs import configs
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
                            convert_exp_to_db, convert_db_to_latex, eval_di_value
-from editor.choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
-                           MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
-
 
 logger = logging.getLogger(__name__)
 
@@ -170,28 +167,12 @@ def get_previous_list(item):
         
 def get_p_kind_choices(cat):
     """ Return the range of choices for the 'p_kind' attribute of a specification of a given category """
-    if cat == 'Requirement':
-       return REQ_KIND
-    elif cat == 'DataItem':
-       return DI_KIND
-    elif cat == 'Model':
-       return MODEL_KIND
-    elif cat == 'Packet':
-       return PCKT_KIND
-    elif cat == 'PacketPar':
-       return PCKT_PAR_KIND
-    elif cat == 'VerItem':
-       return VER_ITEM_KIND
-    return (("INV","Invalid"),)
+    return list(configs['cats'][cat]['p_kind_choices'].items())
 
 
 def get_s_kind_choices(cat):
     """ Return the range of choices for the 's_kind' attribute of a specification of a given category """
-    if cat == 'Requirement':
-       return REQ_VER_METHOD
-    if cat == 'VerItem':
-       return VER_STATUS
-    return (("INV","Invalid"),)
+    return list(configs['cats'][cat]['s_kind_choices'].items())
   
     
 def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
