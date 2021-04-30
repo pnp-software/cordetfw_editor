@@ -3,3 +3,4 @@
 /static/
 *~
 *.pyc
+/cordetfw_editor.geany

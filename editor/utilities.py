@@ -125,7 +125,7 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
         elif value['kind'] == 'spec_item_ref':
-            setattr(spec_item, key, convert_exp_to_db(imp_dict[cat_attrs[key]['label']]))
+            setattr(spec_item, key, convert_exp_to_db(project, imp_dict[cat_attrs[key]['label']]))
         else:
             setattr(spec_item, key, imp_dict[cat_attrs[key]['label']])
 
