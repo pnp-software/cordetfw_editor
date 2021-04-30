@@ -15,9 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('editor/', include('editor.urls')),
     path('pnpAdmin/', admin.site.urls),
-    path('admin/', include('admin_honeypot.urls', namespace='admin_honeypot'))
+    path('admin/', include('admin_honeypot.urls', namespace='admin_honeypot')),
+    path('', TemplateView.as_view(template_name='index_top.html')),
 ]
