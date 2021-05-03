@@ -211,7 +211,7 @@
                        border-b border-blue-gray-200
                        hover:bg-blue-gray-200">
                 {% for disp_item in disp_list %}
-                <td class="pl-6 py-2">
+                <td class="pl-6 py-2" {% if forloop.first %}id="{{item.domain}}:{{item.name}}"{% endif %}>
                     {% if 'attrs' in disp_item %} <!-- Display item attributes -->
                         {% conv_db_disp item disp_item.attrs.0 as attr_value %}
                         {{ attr_value|linebreaksbr }}
