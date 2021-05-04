@@ -27,7 +27,7 @@ def has_write_access_to_project(request, project):
         return True
     try:
         user = ProjectUser.objects.filter(user_id=request.user.id, project_id=project.id)  
-        if user.role == 'RW':
+        if user[0].role == 'RW':
             return True
     except Exception as e:
         messages.error(request, 'This operation requires read/write access to project '+project.name)
