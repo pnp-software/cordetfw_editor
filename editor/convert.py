@@ -117,7 +117,8 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
     default_val_set_id = context['default_val_set_id']
     sel_dom = context['sel_dom']
     spec_item_link = getattr(spec_item, name)
-    
+    if spec_item_link == None:
+        return ''
     s_name = spec_item_link.domain + ':' + spec_item_link.name
     s_href = '/editor/'+spec_item_link.cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
              '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/list_spec_items#'+s_name
@@ -162,7 +163,7 @@ def convert_edit_to_db(project, s):
     return s_mod + convert_edit_to_db(project, s[match.end():])
     
     
-def convert_exp_to_db(s):
+def convert_exp_to_db(project, s):
     """
     The argument is a plain reference field in export representation 
     (the reference is represented by the string domain:name). 
@@ -171,7 +172,8 @@ def convert_exp_to_db(s):
     """
     m = pattern_ref_exp.match(s)
     ref = m.group().split(':')
-    return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').get(domain=ref[0], name=ref[1])
+    return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
+                        get(project_id=project.id, domain=ref[0], name=ref[1])
     
 
 def convert_db_to_edit(s):

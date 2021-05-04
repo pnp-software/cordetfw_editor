@@ -386,7 +386,15 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
         title = 'Add '+configs['cats'][cat]['name']+' to Application '+application.name
     else:
         application = None
-        title = 'Add '+configs['cats'][cat]['name']+' to Project '+project.name
+        title = 'Add '+configs['cats'][cat]['name']
+        
+    sub_title = ''    
+    if (s_parent_id != None):
+        s_parent = SpecItem.objects.get(id=s_parent_id)
+        sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(s_parent)     
+    if (p_parent_id != None):
+        p_parent = SpecItem.objects.get(id=p_parent_id)
+        sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(p_parent)     
         
     if request.method == 'POST':   
         form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, request.POST)
@@ -408,7 +416,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
-    context = {'form': form, 'project': project, 'title': title, \
+    context = {'form': form, 'project': project, 'title': title, 'sub_title': sub_title, \
                'sel_dom': sel_dom, 'config': configs['cats'][cat], 'cat': cat, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context)  
 
