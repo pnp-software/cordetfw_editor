@@ -557,7 +557,7 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Description", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
-                                               {"header":"Checks and Actioss", "attrs":["value", "t1", "t2", "t3", "t4", "t5"]},
+                                               {"header":"Checks and Actions", "attrs":["value", "t1", "t2", "t3", "t4", "t5"]},
                                                {"header":"Packet", "attrs":["p_link"], "order_by":"p_link"},
                                                {"header":"Owner", "attrs":["owner"]}
                                                ],
