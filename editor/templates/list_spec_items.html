@@ -93,18 +93,20 @@
               <td>
               {% if forloop.first %}<a name='{{item.domain}}:{{item.name}}'>{% endif %}
               
+              
                     {% if 'attrs' in disp_item %}    <!-- Display item attributes  --> 
-                      {% conv_db_disp item disp_item.attrs.0 as attr_value %}
-                      {{ attr_value|linebreaksbr }}
-                      <!-- Display item attributes which are stacked in the same field  --> 
-                      {% for attr in disp_item.attrs %}
-                        {% if not forloop.first %} 
-                            {% conv_db_disp item attr as attr_value %} 
-                            {% if attr_value != '' %}
-                            <br><strong>{{config.attrs|get_label:attr}}</strong> {{ attr_value|linebreaksbr }}
-                            {% endif %}
-                        {% endif %}
-                      {% endfor %}  
+                      {% conv_db_disp item disp_item.attrs as attr_values %}
+                      {% if attr_values|length == 1 %}
+                            {{ attr_values.0.1|linebreaksbr }}                    
+                      {% else %}
+                            {% for attr_value in attr_values %}
+                                {% if forloop.first %}
+                                    <strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr }} 
+                                {% else %}
+                                    <br><strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr }} 
+                                {% endif %}
+                            {% endfor %}
+                      {% endif %}
                     {% else %}                  <!-- Display traceability links  --> 
                       {% disp_trac item disp_item.trac_cat disp_item.trac_link as link_value %}
                       {{ link_value|linebreaksbr }}

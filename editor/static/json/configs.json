@@ -306,7 +306,7 @@
                                                {"header":"Title and Description", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
                                                {"header":"Type", "attrs":["p_link"], "order_by":"p_link"},
                                                {"header":"Sub-Type", "attrs":["value"], "order_by":"value"},
-                                               {"header":"Parameters", "attrs":["t1", "t2", "s_link"]},
+                                               {"header":"Parameters", "attrs":["t1", "s_link"]},
                                                {"header":"Owner", "attrs":["owner"], "order_by":"owner"}
                                                ],
                                   "disp_short": [{"header":"Domain", "attrs":["domain"]},
@@ -550,7 +550,7 @@
                                            "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
                                            "title":     {"label": "Title", "req_in_form": true, "kind": "plain_text"},
                                            "desc":      {"label": "Description", "req_in_form": false, "kind": "ref_text"},
-                                           "value":     {"label": "Acceptance Check", "req_in_form": false, "kind": "ref_text"},
+                                           "value":     {"label": "Validity Check", "req_in_form": false, "kind": "ref_text"},
                                            "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation": {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
@@ -568,7 +568,7 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Description", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
-                                               {"header":"Acceptance Check", "attrs":["value", "t1", "t2", "t3", "t4", "t5"]},
+                                               {"header":"Validity Check", "attrs":["value", "t1", "t2", "t3", "t4", "t5"]},
                                                {"header":"Packet", "attrs":["p_link"], "order_by":"p_link"},
                                                {"header":"Owner", "attrs":["owner"]}
                                                ],
