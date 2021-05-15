@@ -353,10 +353,14 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     if (sel_val != "Sel_All"):
         items = items.filter(domain=sel_val)
         
-    if order_by != None:
-        items = items.order_by(order_by, 'domain','name')
-    else:
+    if order_by == None:    
         items = items.order_by('domain','name')
+    elif order_by in ('p_link', 's_link'):
+        items = items.order_by(order_by+'__domain',order_by+'__name')
+    elif order_by == 'owner':
+        items = items.order_by(order_by+'__username', 'domain','name')
+    else:
+        items = items.order_by(order_by, 'domain','name')
     
     if (expand_id != None) and (expand_link != 'None'):   # parent_id must be listed together with its children
         expand_items = get_expand_items(cat, project_id, val_set_id, expand_id, expand_link)     
