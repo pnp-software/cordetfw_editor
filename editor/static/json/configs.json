@@ -379,7 +379,7 @@
                                   "abbr": "PcktPar",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None",
-                                             "p_link": "Packet", "p_label": "Parent Packet"},
+                                             "p_link": "None"},
                                   "tracs": [{"trac_cat":"VerLink", "trac_link":"s_link"}],
                                   "access_from_index": {"level": "None"},           
                                   "attrs": {"domain":   {"label": "Domain", "req_in_form": true, "kind": "plain_text"},
