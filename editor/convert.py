@@ -119,7 +119,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
     cat = spec_item_link.cat
     application_id = context['application_id'] if configs['cats'][cat]['level'] == 'application' else 0
     default_val_set_id = context['default_val_set_id']
-    sel_dom = context['sel_dom']
+    sel_val = context['sel_val']
     s_name = spec_item_link.domain + ':' + spec_item_link.name
     s_href = '/editor/'+cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
              '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/list_spec_items#'+s_name
