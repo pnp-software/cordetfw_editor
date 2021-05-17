@@ -31,6 +31,13 @@ def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
         return SpecItem.objects.filter(project_id=project.id, cat='Service').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
 
+    if cat == 'InCommand':
+        q1 = SpecItem.objects.filter(project_id=project.id, cat='Packet').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+        q2 = SpecItem.objects.filter(project_id=project.id, cat='DerPacket').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+        return q1 | q2   
+
     if cat == 'PacketPar':
         q1 = SpecItem.objects.filter(project_id=project.id, cat='Packet').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    

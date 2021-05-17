@@ -85,7 +85,7 @@
                         {% if value.access_from_index.level == 'Project' %}
                         <a class="pl-4 pt-8 pr-0 pb-6 flex flex-row items-center
                                   hover:text-blue-600"
-                           href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'All_Domains' %}?disp=disp_def"
+                           href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'Sel_All' %}?disp=disp_def"
                            title="Manage {{ value.name }}s">
                             <svg class="h-5 w-5"
                                  xmlns="http://www.w3.org/2000/svg"
@@ -180,7 +180,7 @@
                         {% if value.access_from_index.level == 'Application' %}
                         <a class="pl-4 pt-0 pr-0 pb-4 flex flex-row items-center
                                   hover:text-blue-600"
-                           href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'All_Domains' %}?disp=disp_def"
+                           href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'Sel_All' %}?disp=disp_def"
                            title="Manage {{ value.name }}s">
                             <svg class="h-5 w-5"
                                  xmlns="http://www.w3.org/2000/svg"

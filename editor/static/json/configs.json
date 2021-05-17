@@ -5,6 +5,7 @@
                        "max_depth": 200
                        },
            "cats": {"Requirement":{"name": "Requirement",
+                                  "level": "application",
                                   "abbr": "Req",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None", 
@@ -54,6 +55,7 @@
                                                ]
                                  },
                    "AdaptPoint":{"name": "Adaptation Point",
+                                  "level": "application",
                                   "abbr": "AP",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None", 
@@ -101,6 +103,7 @@
                                                ]
                                  },
                        "DataItemType": {"name": "Data Item Type",
+                                  "level": "project",
                                   "abbr": "Typ",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None",
@@ -145,6 +148,7 @@
                                                ]
                                  },
                        "EnumType": {"name": "Enumerated Type",
+                                  "level": "project",
                                   "abbr": "ETyp",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "EnumValue", "s_label": "Enumerated Item",
@@ -186,6 +190,7 @@
                                                ]
                                  },
                        "Model": {"name": "Behavioural Model",
+                                  "level": "application",
                                   "abbr": "Mod",
                                   "ext_attrs": ["domain", "name", "value", "p_kind", "n1", "n2", "n3"],
                                   "expand": {"p_link": "None",
@@ -233,6 +238,7 @@
                                                ]
                                  },
                        "Service": {"name": "Service",
+                                  "level": "project",
                                   "abbr": "Serv",
                                   "ext_attrs": [],
                                   "expand": {"p_link": "Packet", "p_label": "Packet",
@@ -271,6 +277,7 @@
                                                ]
                                  },
                         "Packet": {"name": "Packet",
+                                  "level": "project",
                                   "abbr": "Pckt",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "DerPacket", "s_label": "Derived Packet",
@@ -299,8 +306,7 @@
                                                {"header":"Title and Description", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
                                                {"header":"Type", "attrs":["p_link"], "order_by":"p_link"},
                                                {"header":"Sub-Type", "attrs":["value"], "order_by":"value"},
-                                               {"header":"Discriminant", "attrs":["s_link"]},
-                                               {"header":"Parameters", "attrs":["t1", "t2"]},
+                                               {"header":"Parameters", "attrs":["t1", "s_link"]},
                                                {"header":"Owner", "attrs":["owner"], "order_by":"owner"}
                                                ],
                                   "disp_short": [{"header":"Domain", "attrs":["domain"]},
@@ -322,6 +328,7 @@
                                                ]
                                  },
                         "DerPacket": {"name": "Derived Packet",
+                                  "level": "project",
                                   "abbr": "DPckt",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None",
@@ -368,10 +375,11 @@
                                                ]
                                  },
                         "PacketPar": {"name": "Packet Parameter",
+                                  "level": "project",
                                   "abbr": "PcktPar",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None",
-                                             "p_link": "Packet", "p_label": "Parent Packet"},
+                                             "p_link": "None"},
                                   "tracs": [{"trac_cat":"VerLink", "trac_link":"s_link"}],
                                   "access_from_index": {"level": "None"},           
                                   "attrs": {"domain":   {"label": "Domain", "req_in_form": true, "kind": "plain_text"},
@@ -429,6 +437,7 @@
                                                ]
                                  },
                       "EnumValue": {"name": "Enumerated Value",
+                                  "level": "project",
                                   "abbr": "EVal",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None",
@@ -471,6 +480,7 @@
                                                ]
                                  },
                        "DataItem": {"name": "Data Item",
+                                  "level": "project",
                                   "abbr": "Di",
                                   "ext_attrs": [],
                                    "expand": {"s_link": "None",
@@ -528,6 +538,7 @@
                                                ]
                                  },
                        "InCommand": {"name": "Incoming Command",
+                                  "level": "application",
                                    "abbr": "InCmd",
                                    "ext_attrs": [],
                                    "expand": {"s_link": "None",
@@ -539,7 +550,7 @@
                                            "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
                                            "title":     {"label": "Title", "req_in_form": true, "kind": "plain_text"},
                                            "desc":      {"label": "Description", "req_in_form": false, "kind": "ref_text"},
-                                           "value":     {"label": "Acceptance Check", "req_in_form": false, "kind": "ref_text"},
+                                           "value":     {"label": "Validity Check", "req_in_form": false, "kind": "ref_text"},
                                            "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation": {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
@@ -557,7 +568,7 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Description", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
-                                               {"header":"Checks and Actioss", "attrs":["value", "t1", "t2", "t3", "t4", "t5"]},
+                                               {"header":"Validity Check", "attrs":["value", "t1", "t2", "t3", "t4", "t5"]},
                                                {"header":"Packet", "attrs":["p_link"], "order_by":"p_link"},
                                                {"header":"Owner", "attrs":["owner"]}
                                                ],
@@ -574,6 +585,7 @@
                                                ]
                                  },
                        "VerItem": {"name": "Verification Item",
+                                   "level": "application",
                                    "abbr": "Ver",
                                    "ext_attrs": [],
                                    "expand": {"s_link": "None",
@@ -598,10 +610,10 @@
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"}
                                            },
                                   "p_kind_choices": {"TST": "Test Case",
-                                  		       "REV": "Review Item",
-                                  		       "ANA": "Analysis Item"},         
+                                                     "REV": "Review Item",
+                                                     "ANA": "Analysis Item"},         
                                   "s_kind_choices": {"OPEN": "Verification Still Open",
-                                  		       "CLOSED": "Verification Closed"},
+                                                     "CLOSED": "Verification Closed"},
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title and Description", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
@@ -627,6 +639,7 @@
                                                ]
                                    },
                        "VerLink": {"name": "Verification Link",
+                                   "level": "project",
                                    "abbr": "VerL",
                                    "ext_attrs": [],
                                    "expand": {"s_link": "None",

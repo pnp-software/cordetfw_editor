@@ -35,7 +35,7 @@
                     {% for v_set in val_sets %}
                     {% if v_set.name != val_set.name %}
                     <a class="py-1 block hover:text-blue-600"
-                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp={{disp}}">
+                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}">
                         {{ v_set.name }}
                     </a>
                     {% endif %}
@@ -57,13 +57,13 @@
                  x-data="{ openSelDom: false }">
                 <button class="text-lg leading-5 font-bold text-blue-gray-900 relative hover:text-blue-600 focus:outline-none"
                         @click="openSelDom = true">
-                    {{ sel_dom }}
+                    {{ sel_val }}
                 </button>
                 <div class="z-10 absolute left-0 px-4 -ml-4 mt-1 py-1 text-blue-gray-500 bg-white rounded-md shadow-xl border-2 border-blue-gray-200"
                      x-show="openSelDom"
                      @click.away="openSelDom = false">
                     {% for domain in domains %}
-                    {% if domain != sel_dom %}
+                    {% if domain != sel_val %}
                     <a class="py-1 block hover:text-blue-600"
                        href="{% url 'list_spec_items' cat project.id application_id val_set.id domain %}?disp={{disp}}">
                         {{ domain }}
@@ -75,7 +75,7 @@
         </div>
         <!-- add new item -->
         <a class="ml-9 flex items-center hover:text-blue-600"
-           href="{% url 'add_spec_item' cat project.id application_id sel_dom %}">
+           href="{% url 'add_spec_item' cat project.id application_id sel_val %}">
             <svg xmlns="http://www.w3.org/2000/svg"
                  class="h-6 w-6 mr-1" fill="none"
                  viewBox="0 0 24 24" stroke="currentColor">
@@ -104,17 +104,17 @@
                      x-show="openExport"
                      @click.away="openExport = false">
                     <a class="py-1 block hover:text-blue-600"
-                       href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}">
+                       href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val %}">
                         plain
                     </a>
                     {% if order_by != None %}
                     <a class="py-1 block hover:text-blue-600"
-                       href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format&order_by={{order_by}}">
+                       href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val %}?export=latex_format&order_by={{order_by}}">
                         latex
                     </a>
                     {% else %}
                     <a class="py-1 block hover:text-blue-600"
-                       href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_dom %}?export=latex_format">
+                       href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val %}?export=latex_format">
                         latex
                     </a>
                     {% endif %}
@@ -123,7 +123,7 @@
         </button>
         <!-- import -->
         <a class="mx-9 flex items-center hover:text-blue-600"
-           href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_dom %}">
+           href="{% url 'import_spec_items' cat project.id application_id val_set.id sel_val %}">
             <svg xmlns="http://www.w3.org/2000/svg"
                  class="h-6 w-6 mr-1" fill="none"
                  viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +137,7 @@
         <!-- display format -->
         <div class="ml-auto flex items-center">
             <a class="{% if disp == 'disp_def' %}text-blue-600 bg-blue-100{% endif %} p-1 hover:text-blue-600 rounded-md"
-               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_def"
+               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp=disp_def"
                title="default view">
                 <svg xmlns="http://www.w3.org/2000/svg"
                      class="h-6 w-6" fill="none"
@@ -148,7 +148,7 @@
                 </svg>
             </a>
             <a class="{% if disp == 'disp_short' %}text-blue-600 bg-blue-100{% endif %} p-1 hover:text-blue-600 rounded-md"
-               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_short"
+               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp=disp_short"
                title="short without traceability info">
                 <svg xmlns="http://www.w3.org/2000/svg"
                      class="h-6 w-6" fill="none"
@@ -158,7 +158,7 @@
                 </svg>
             </a>
             <a class="{% if disp == 'disp_trac' %}text-blue-600 bg-blue-100{% endif %} p-1 hover:text-blue-600 rounded-md"
-               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp=disp_trac"
+               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp=disp_trac"
                title="short with traceability info">
                 <svg xmlns="http://www.w3.org/2000/svg"
                      class="h-6 w-6" fill="none"
@@ -179,7 +179,7 @@
                 {% if disp_item.order_by and not history %}
                 <th class="pl-6 py-4 font-normal">
                     <a class="{% if disp_item.order_by == order_by %}text-blue-600{% endif %} hover:text-blue-600 flex items-center"
-                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?disp={{disp}}&order_by={{disp_item.order_by}}"
+                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}&order_by={{disp_item.order_by}}"
                        title="List in alphabetical order">
                         {{disp_item|get_dict_item:'header'}}
                         <svg xmlns="http://www.w3.org/2000/svg"
@@ -213,17 +213,18 @@
                 {% for disp_item in disp_list %}
                 <td class="pl-6 py-2" {% if forloop.first %}id="{{item.domain}}:{{item.name}}"{% endif %}>
                     {% if 'attrs' in disp_item %} <!-- Display item attributes -->
-                        {% conv_db_disp item disp_item.attrs.0 as attr_value %}
-                        {{ attr_value|linebreaksbr }}
-                        <!-- Display item attributes which are stacked in the same field  -->
-                        {% for attr in disp_item.attrs %}
-                            {% if not forloop.first %}
-                                {% conv_db_disp item attr as attr_value %}
-                                {% if attr_value != '' %}
-                                    <br><strong>{{config.attrs|get_label:attr}}</strong> {{ attr_value|linebreaksbr }}
+                        {% conv_db_disp item disp_item.attrs as attr_values %}
+                        {% if attr_values|length == 1 %}
+                            {{ attr_values.0.1|linebreaksbr }}
+                        {% else %}
+                            {% for attr_value in attr_values %}
+                                {% if forloop.first %}
+                                    <strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr }}
+                                {% else %}
+                                    <br><strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr }}
                                 {% endif %}
-                            {% endif %}
-                        {% endfor %}
+                            {% endfor %}
+                        {% endif %}
                     {% else %} <!-- Display traceability links -->
                         {% disp_trac item disp_item.trac_cat disp_item.trac_link as link_value %}
                         {{ link_value|linebreaksbr }}
@@ -240,7 +241,7 @@
                 <td class="px-6 py-2 flex flex-row items-center">
                     {% if item.val_set.name == 'Default' and config.ext_attrs|length == 0 %}
                     <a class="mr-2"
-                       href="{% url 'copy_spec_item' cat project.id application_id item.id sel_dom %}"
+                       href="{% url 'copy_spec_item' cat project.id application_id item.id sel_val %}"
                        title="Copy {{config.name}}">
                         <svg class="h-5 w-5 text-blue-gray-400
                                     hover:text-blue-600"
@@ -251,7 +252,7 @@
                         </svg>
                     </a>
                     <a class="mr-2"
-                       href="{% url 'split_spec_item' cat project.id application_id item.id sel_dom %}"
+                       href="{% url 'split_spec_item' cat project.id application_id item.id sel_val %}"
                        title="Split {{config.name}}">
                         <svg class="h-5 w-5 text-blue-gray-400
                                     hover:text-blue-600"
@@ -263,7 +264,7 @@
                     {% endif %}
                     {% if config.ext_attrs|length != 0 %}
                     <a class="mr-2"
-                       href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_dom %}"
+                       href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_val %}"
                        title="Refresh {{config.name}}">
                         <svg xmlns="http://www.w3.org/2000/svg"
                              class="h-5 w-5 text-blue-gray-400
@@ -276,7 +277,7 @@
                     </a>
                     {% endif %}
                     <a class="mr-2"
-                       href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_dom %}"
+                       href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_val %}"
                        title="{{config.name}} History">
                         <svg class="h-5 w-5 text-blue-gray-400
                                     hover:text-blue-600"
@@ -289,7 +290,7 @@
                         </svg>
                     </a>
                     <a class="mr-2"
-                       href="{% url 'edit_spec_item' cat project.id application_id item.id sel_dom %}"
+                       href="{% url 'edit_spec_item' cat project.id application_id item.id sel_val %}"
                        title="Edit {{config.name}}">
                         <svg class="h-5 w-5 text-blue-gray-400
                                     hover:text-blue-600"
@@ -299,7 +300,7 @@
                         </svg>
                     </a>
                     <a class="mr-2"
-                       href="{% url 'del_spec_item' cat project.id application_id item.id sel_dom %}"
+                       href="{% url 'del_spec_item' cat project.id application_id item.id sel_val %}"
                        title="Delete {{config.name}}">
                         <svg class="h-5 w-5 text-blue-gray-400
                                     hover:text-red-600"
@@ -313,31 +314,31 @@
                     {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
+                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
                        title="Show {{config.expand.s_label}} Children">Xs</a>
                     {% endif %}
                     {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_dom %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
+                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}" 
                        title="Show {{config.expand.p_label}} Children">Xp</a>
                     {% endif %}
                     {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
+                       href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_val %}?s_parent_id={{item.id}}&disp={{disp}}" 
                        title="Add {{config.expand.s_label}} Child">As</a>
                     {% endif %}
                     {% if expand_link == 'p_link' and val_set.name == 'Default' and not 'trac' in display_list %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_dom %}?p_parent_id={{item.id}}&disp={{disp}}" 
+                       href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_val %}?p_parent_id={{item.id}}&disp={{disp}}" 
                        title="Add {{config.expand.p_label}} Child">Ap</a>
                     {% endif %}
                     {% if 'trac' in display_list %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_dom %}?s_parent_id={{item.id}}&disp={{disp}}" 
+                       href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_val %}?s_parent_id={{item.id}}&disp={{disp}}" 
                        title="Add Verification Link">A</a>
                     {% endif %}
                 </td>
@@ -363,40 +364,40 @@
                     {% if item.val_set.name == 'Default' %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
                        title="Copy {{config.expand.p_label}} Child">C</a>
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
                        title="Split {{config.expand.p_label}} Child">S</a>
                     {% endif %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
                        title="Delete {{config.expand.p_label}} Child">D</a>
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?p_parent_id={{item.id}}" 
+                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
                        title="Edit {{config.expand.p_label}} Child">E</a>
                     {% endif %}
                     {% if expand_link == 's_link' %}
                     {% if item.val_set.name == 'Default' %}  
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
                        title="Copy {{config.expand.s_label}} Child">C</a>
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
                        title="Split {{config.expand.s_label}} Child">S</a>
                     {% endif %}
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
                        title="Delete {{config.expand.s_label}} Child">D</a>
                     <a class="mr-2 h-5 w-5 text-blue-gray-400
                               hover:text-blue-600"
-                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_dom %}?s_parent_id={{item.id}}" 
+                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
                        title="Edit {{config.expand.s_label}} Child">E</a>
                     {% endif %}
                 </td>
