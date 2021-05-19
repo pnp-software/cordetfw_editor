@@ -22,7 +22,7 @@
                       stroke-linejoin="round"
                       stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            value set
+            Value Set:
             <div class="relative pl-1"
                  x-data="{ openValSet: false }">
                 <button class="text-lg leading-5 font-bold text-blue-gray-900 relative hover:text-blue-600 focus:outline-none"
@@ -52,7 +52,7 @@
                       stroke-linejoin="round"
                       stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            domain
+            Domain:
             <div class="relative pl-1"
                  x-data="{ openSelDom: false }">
                 <button class="text-lg leading-5 font-bold text-blue-gray-900 relative hover:text-blue-600 focus:outline-none"
@@ -84,7 +84,7 @@
                       stroke-width="2"
                       d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            add {{ config.name }}
+            Add {{ config.name }}
         </a>
         <!-- Dropdown export -->
         <button class="ml-9 flex items-center text-lg leading-5 font-bold hover:text-blue-600 focus:outline-none"
@@ -99,7 +99,7 @@
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
             </svg>
             <div class="relative">
-                export
+                Export
                 <div class="z-10 absolute left-0 px-4 -ml-4 mt-1 py-1 text-blue-gray-500 bg-white rounded-md shadow-xl border-2 border-blue-gray-200"
                      x-show="openExport"
                      @click.away="openExport = false">
@@ -132,7 +132,7 @@
                       stroke-width="2"
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            import
+            Import
         </a>
         <!-- display format -->
         <div class="ml-auto flex items-center">
