@@ -177,7 +177,7 @@
                        border-b-2 border-blue-gray-200">
                 {% for disp_item in disp_list %}
                 {% if disp_item.order_by and not history %}
-                <th class="pl-6 py-4 font-normal">
+                <th class="pl-6 py-4 font-bold">
                     <a class="{% if disp_item.order_by == order_by %}text-blue-600{% endif %} hover:text-blue-600 flex items-center"
                        href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}&order_by={{disp_item.order_by}}"
                        title="List in alphabetical order">
@@ -192,7 +192,7 @@
                     </a>
                 </th>
                 {% else %}
-                <th class="pl-6 py-4 font-normal {% if disp_item.header == 'Description' %}mr-auto{% endif %}">
+                <th class="pl-6 py-4 font-bold {% if disp_item.header == 'Description' %}mr-auto{% endif %}">
                     {{disp_item|get_dict_item:'header'}}
                 </th>
                 {% endif %}
