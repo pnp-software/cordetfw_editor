@@ -25,7 +25,7 @@
     </p><p>
     Distinctive features of the editor include:
     <ul>
-    <li>Design based on a <a href="#ModellingLevels">meta-model</a> to allow 
+    <li>HDesign based on a <a href="#ModellingLevels">meta-model</a> to allow 
         customization to meet user needs</li>
     <li>Distribution through a free and open licence </li>
     <li>Support for multiple versions of requirements through the <a href="#ValSets">ValSet</a> concept</li>
@@ -189,10 +189,8 @@
     which may be performed upon them.
     Specification items are divided into <strong>categories</strong>. 
     Specification items in the same category have the same behaviour (i.e. they are
-    treated in the same way by the editor).    
-    One specification item category (the <a href="#Specification_Item_Kinds">Kind Category</a>) is pre-defined 
-    at editor meta-model.
-    The other specification item categories are defined during the <a href+"">editor instantiation process</a>.
+    treated in the same way by the editor).  
+    The specification item categories are defined during the <a href+"">editor instantiation process</a>.
     </p><p>        
     Some specification item attributes (the <strong>core attributes</strong>) have a semantics which is
     independent of the specification item category.
@@ -213,7 +211,7 @@
     <li><i>Project(*)</i>: the project to which the specification item belongs </li>
     <li><i>Application</i>: the application to which the specification item belongs (empty if the specification
                      item describes a project-level feature)</li>
-    <li><i>Title(*)</i>: a short description of the specification item</li>
+    <li><i>Title</i>: a short description of the specification item</li>
     <li><i>Description</i>: a long description of the specification item</li>
     <li><i>Owner(*)</i>: the user who created or last updated the specification item</li>
     <li><i>Status(*)</i>: the history status of the speecification item</li>
@@ -234,24 +232,24 @@
     
     <h5><a name="CatSpecAttr">Category-Specific Attributes</a></h5>
     <p>
-    The category-specific specification items are used during the 
-    <a href="#Instantiaton">instantiation of the editor meta-model</a>, when the concrete 
+    The category-specific specification items are defined during the 
+    <a href="#Instantiaton">instantiation process</a>, when the concrete 
     specification item categories are defined.
     It is at this time that the category-specific attributes are given their meaning.
     </p><p>
-    The category-specific attributes of specification items are:
+    The category-specific attributes are:
     <ul>
-    <li><i>Primary and Secondary Kind</i>: enumerated values defining the role or kind of a 
+    <li><i>Primary and Secondary Kind</i> (p_kind and s_kind): enumerated values defining the role or kind of a 
         specification item</li>
-    <li><i>Primary and Secondary Links</i>: links to other specification items</li>
+    <li><i>Primary and Secondary Links</i> (p_link and s_link): links to other specification items</li>
     <li><i>n1 to n5</i>: integer attributes</li>
-    <li><i>Value</i>: a text attribute representing a value</li>
+    <li><i>Value</i>: a text attribute possibly representing a numerical value</li>
     <li><i>t1 to t5</i>: text attributes</li>
     </ul>
     </p><p>
     Depending on the category, some of these attributes are optional and others are mandatory.
     </p><p>
-    The default editor model provides an example of how specification items are defined 
+    The default editor provides an example of how specification items are defined 
     and of how the category-specific attributes are used to support their definition. 
     </p>
     
@@ -277,8 +275,8 @@
     the user.
     The validity check comprises: (a) generic checks and (b) category-specific checks.
     The generic checks are specified in the activity diagrams below.
-    The category-specific checks are defined as part of the 
-    <a href="#Instantiaton">instantiation of the editor meta-model</a>.
+    The category-specific checks are defined during the 
+    <a href="#Instantiaton">editor instantiation process</a>.
     </p><p>
     <img src="{% static 'images/AddSpecItem.png' %}"> 
     </p><p>
@@ -308,7 +306,8 @@
     <a href="#EditorConfig">configuration dictionary</a> of the editor.  
     </p><p>
     The distinction between internal and external specification items is at the level of specification
-    item categories. For instance, in the <a href="#DefEditorModel">default editor model</a>, 
+    item categories. 
+    For instance, in the <a href="#DefEditorModel">default editor model</a>, 
     the <a href="#BehaviouralModels">behavioural model</a> category contains only
     external specification items; all other categories only contain internal specification items.
     </p><p>
@@ -316,24 +315,23 @@
     items are imported from an external source and hence it is not possible for the editor to 
     maintain mutliple versions of the same instance).
     </p><p>
-    At meta-modelling level, the editor defines an <a href+"TBD">interface to access external specification 
-    items</a>.
+    At meta-modelling level, the editor defines an <a href+"ExtSpecItemInterface">interface to access 
+    external specification items</a>.
     During the <a href+"TBD">editor instantiation process</a>, users implement this interface for their
     external specification items. 
     </p>
 
     <h5><a name="ExtSpecItemInterface">Interface to External Specification Items</a></h5>
     <p>
-    The interface to external specification items is in module <code>ext_spec_item_\<cat\></code>, where 
-    'cat' is the name of the category with the external specification items.
-    Users who wish the editor to access external specification items, must provide such a module
-    for each category of external specification items.
-    </p><p>
-    At meta-modelling level, the editor expects the external specification item module to
-    provide the following functions:
+    The interface to external specification items is in module <code>ext_cats</code>.
+    Users who wish the editor to access external specification items, must populate this module,
+    for each category of external specification items, with the following functions:
     <ul>
-    <li><code>ext_spec_item_get_choices</code> to return the list of external items. This
-    function is used in the form through whcih users import an external specification item.</li>
+    <li><code>ext_spec_item_get_choices</code>: return the list of external items. This
+    function is used in the form through which users import an external specification item.</li>
+    <li><code>ext_spec_item_get_choice</code>: return the attributes of one particular external
+    item (i.e. an item in the list returned by <code>ext_spec_item_get_choices</code>).</li>
+    <li><code>ext_model_refresh</code>: refresh an external item.</li>
     </ul>
     </p>
 
@@ -353,7 +351,7 @@
             values of the same attribute of other specification items in the same category </li>
         <li>image: an image data in svg format</li>
         <li>int: an integer</li>
-        <li>int: a date</li>
+        <li>date: a date</li>
     </ul>
     </p><p>
     The table below shows which kind of content is allowed for which attribute.
@@ -478,7 +476,7 @@
         </tr>
       </tbody>
     </table>
-    <p></p>
+    <p>
     The potential representations of the value of a specification item attribute are:
     <ul>
     <li><strong>Database Representation</strong> is the representation of the attribute in the database</li>
@@ -490,10 +488,10 @@
     <li><strong>Export Representation</strong> is used when rendering the item for 
                                                <a href="#ExpImp">plain export</a> to csv format</li>
     </ul>
-    <p></p>
+    </p><p>
     The table shows how each kind of content is transformed when it is rendered in one of the above
     representations.
-    <p></p>
+   
     <table class="table table-hover table-striped table-sm">
       <thead>
         <tr class="table-warning">
@@ -575,7 +573,7 @@
         </tr>
       </tbody>
     </table>
-    <p></p>
+    </p>
     
     <h5><a name="SpecItemLinks">Links Between Specification Items</a></h5>
     <p>
@@ -605,6 +603,7 @@
     As an example, in the default editor configuration, both data items and data item types are 
     modelled as specification items.
     A direct link is then used to link a data items to its type.
+        
     <p></p>
     <strong>Internal references</strong> are embedded within the text of one of the following 
     specification item attributes:
@@ -622,7 +621,7 @@
     target specification item; and 'name' is its name.
     The editor offers an auto-completion facility to facilitate the creation of an internal reference link. 
     </p><p>  
-    When the reference is rendered in for disply in html page, it is converted to a hyperlink; when
+    When the reference is rendered for disply in an html page, it is converted to a hyperlink; when
     it is rendered for export, it is converted to '#dom:name'.
     </p><p>
     If specification item S is the target of an internal reference in another
@@ -635,7 +634,7 @@
     </p><p>
     <strong>Traceability links</strong> can be used to set up many-to-many relationships among
     specification items.
-    In this case, the link itself is a specification item.
+    In this case, the link is itself a specification item.
     This has the advantage that it is possible to associate additional information
     to it (to, for instance, describe the nature or the reason for the link) and to
     track its evolution in time through the <a href="#Releases">history mechanism</a>.
@@ -643,6 +642,8 @@
     If specification item S1 is to be linked to specification item S2, then a specification
     item L is created such that its <code>p_link</code> points to S1 and its <code>s_link</code>
     points to S2.
+    Thus specification item L holds references to both S1 and S2.
+    </p><p>
     Users create a traceabiity link by creating an instance of L and by then editing
     its <code>p_link</code> and <code>s_link</code> links to create the connection 
     between S1 and S2.
@@ -652,13 +653,19 @@
     functions during the editor instantiation process. 
     </p><p>
     As an example, in the default editor configuration, traceability links are used
-    to link specification items to their specification evidence.
+    to link specification items to their verification evidence.
     Category VerItem is used to describe a piece of verification evidence (e.g. a test case
     or the outcome of the review of a design document) and category VerLink is used to 
     capture a verificaition link.
     A traceability link is then establshed by creating an instance of VerLink and using it
     to link a specification item of a category other than VerItem or VerLink to a specification
     item of category VerItem.
+    </p><p>  
+    In another example, a user might have a need to maintain two sets of requirement: parent
+    requirements (representing, for instance, system-level specifications) and child requirements
+    (representing, for instance, the specification of unit within the system).
+    Traceability links can be used to capture the connections between parent requirements and
+    the child requirements derived from them.
     </p><p>
     Links always point to the specification item in the Default ValSet.
     It is not possible to create a link to a specification items in other ValSets.
