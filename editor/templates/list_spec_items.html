@@ -6,7 +6,7 @@
 {% if False %}<a class="link-table-list-spec">{% endif %} <!-- get purged otherwise -->
 <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
 
-<div class="mt-6">
+<div class="mt-6 w-11/12">
     {% if history %}
     <div class="mb-4 text-lg leading-5 font-bold text-blue-gray-500 flex items-center">
         History of {{items.0.domain}}:{{items.0.name}}
@@ -22,7 +22,7 @@
                       stroke-linejoin="round"
                       stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            value set
+            Value Set:
             <div class="relative pl-1"
                  x-data="{ openValSet: false }">
                 <button class="text-lg leading-5 font-bold text-blue-gray-900 relative hover:text-blue-600 focus:outline-none"
@@ -52,7 +52,7 @@
                       stroke-linejoin="round"
                       stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            domain
+            Domain:
             <div class="relative pl-1"
                  x-data="{ openSelDom: false }">
                 <button class="text-lg leading-5 font-bold text-blue-gray-900 relative hover:text-blue-600 focus:outline-none"
@@ -84,7 +84,7 @@
                       stroke-width="2"
                       d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            add {{ config.name }}
+            Add {{ config.name }}
         </a>
         <!-- Dropdown export -->
         <button class="ml-9 flex items-center text-lg leading-5 font-bold hover:text-blue-600 focus:outline-none"
@@ -99,7 +99,7 @@
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
             </svg>
             <div class="relative">
-                export
+                Export
                 <div class="z-10 absolute left-0 px-4 -ml-4 mt-1 py-1 text-blue-gray-500 bg-white rounded-md shadow-xl border-2 border-blue-gray-200"
                      x-show="openExport"
                      @click.away="openExport = false">
@@ -132,7 +132,7 @@
                       stroke-width="2"
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            import
+            Import
         </a>
         <!-- display format -->
         <div class="ml-auto flex items-center">
@@ -177,7 +177,7 @@
                        border-b-2 border-blue-gray-200">
                 {% for disp_item in disp_list %}
                 {% if disp_item.order_by and not history %}
-                <th class="pl-6 py-4 font-normal">
+                <th class="pl-6 py-4 font-bold">
                     <a class="{% if disp_item.order_by == order_by %}text-blue-600{% endif %} hover:text-blue-600 flex items-center"
                        href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}&order_by={{disp_item.order_by}}"
                        title="List in alphabetical order">
@@ -192,7 +192,7 @@
                     </a>
                 </th>
                 {% else %}
-                <th class="pl-6 py-4 font-normal {% if disp_item.header == 'Description' %}mr-auto{% endif %}">
+                <th class="pl-6 py-4 font-bold {% if disp_item.header == 'Description' %}mr-auto{% endif %}">
                     {{disp_item|get_dict_item:'header'}}
                 </th>
                 {% endif %}
@@ -359,46 +359,99 @@
                 {% for i in n_pad_fields %}
                 <td></td>
                 {% endfor %}
-                <td class="pl-6 py-2">
+                <td class="pl-6 py-2 flex flex-row items-center">
                     {% if expand_link == 'p_link' %}
                     {% if item.val_set.name == 'Default' %}
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
+                    <a class="mr-2"
                        href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
-                       title="Copy {{config.expand.p_label}} Child">C</a>
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
+                       title="Copy {{config.expand.p_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-blue-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z" />
+                            <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                        </svg>
+                    </a>
+                    <a class="mr-2"
                        href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
-                       title="Split {{config.expand.p_label}} Child">S</a>
+                       title="Split {{config.expand.p_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-blue-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                        </svg>
+                    </a>
                     {% endif %}
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
-                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
-                       title="Delete {{config.expand.p_label}} Child">D</a>
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
+                    <a class="mr-2"
                        href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
-                       title="Edit {{config.expand.p_label}} Child">E</a>
+                       title="Edit {{config.expand.p_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-blue-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                    </a>
+                    <a class="mr-2"
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}" 
+                       title="Delete {{config.expand.p_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-red-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                  clip-rule="evenodd" />
+                        </svg>
+                    </a>
                     {% endif %}
                     {% if expand_link == 's_link' %}
                     {% if item.val_set.name == 'Default' %}  
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
+                    <a class="mr-2"
                        href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
-                       title="Copy {{config.expand.s_label}} Child">C</a>
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
+                       title="Copy {{config.expand.s_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-blue-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z" />
+                            <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                        </svg></a>
+                    <a class="mr-2"
                        href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
-                       title="Split {{config.expand.s_label}} Child">S</a>
+                       title="Split {{config.expand.s_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-blue-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                        </svg>
+                    </a>
                     {% endif %}
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
-                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
-                       title="Delete {{config.expand.s_label}} Child">D</a>
-                    <a class="mr-2 h-5 w-5 text-blue-gray-400
-                              hover:text-blue-600"
+                    <a class="mr-2"
                        href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
-                       title="Edit {{config.expand.s_label}} Child">E</a>
+                       title="Edit {{config.expand.s_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-blue-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                    </a>
+                    <a class="mr-2"
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}" 
+                       title="Delete {{config.expand.s_label}} Child">
+                        <svg class="h-5 w-5 text-blue-gray-400
+                                    hover:text-red-600"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                  clip-rule="evenodd" />
+                        </svg>
+                    </a>
                     {% endif %}
                 </td>
             </tr>
