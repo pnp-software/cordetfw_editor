@@ -678,7 +678,8 @@
     allow two enumerated values to be associated to specification items.
     They are intended to capture information related to the status or role of a specification item.
     The range of values that these two attributes can take is category-dependent and
-    is under the control of the user.
+    is under the control of the user (it is defined through the <code>p_kind_choices</code> and
+    <code>s_kind_choices</code> elements in the <a href="TBD">editor configuration dictionary</a>).
     </p><p>
     
     
@@ -826,12 +827,33 @@
    
     <h4><a name="Generators">Generators</a></h4>
     <p>
-    The editor supports the embedding of generators which process the specification items of a project to, for instance,
+    Users can process data in the editor by first <a href="Export_and_Import">exporting</a> them
+    and then putting them through their processin applications.
+    Alternatively, the editor also supports the embedding of generators which process 
+    the specification items of a project to, for instance,
     generate code or inputs for documents.
-    No generators are defined at meta-model levels. 
     They are defined as part of the <a href="#Instantiaton">instantiation of the editor</a>.
+    No generators are defined at meta-model levels. 
     </p><p>    
-    TBD
+    This part of the editor is still TBD.
+    </p><p>    
+
+    <h4><a name="Data Input Restrictions"></a></h4>
+    <p>
+    User data can enter the database through three channels:
+    
+    <ul>
+    <li>Through an input form as direct input by the user</li>
+    <li>Through the <a href="Export_and_Import">data import</a> facility</li>
+    <li>Through the import facility for 
+    <a href="#Internal_and_External_Specification_Items">external data items</a></li>
+    </ul>
+
+    For the first two channels, in order to enhance security and robustness, the editor imposes
+    two restrictions: all input data are escaped and only ASCII characters are allowed.
+    The last channel is under the control of the user who is responsible for defining the 
+    functions which import the data from the external specification repository.
+    </p><p>    
 
 
     <h3><a name="Instantiation">Editor Instantiation</a></h3>
@@ -844,52 +866,117 @@
     <li>The categories of specification items and their mutual relationships are defined</li>
     <li>The generators are defined</li>
     </ul>
+    </p><p>  
+    These tasks are performed by: 
+    <ul>
+    <li>The <a href="#Editor_Configuration_Dictionary">editor configuration dictionary</a> 
+        (file <code>configs.json</code>) is populated
+        to define the static characteristics of the specification item categories</li>
+    <li>Functions <code>get_p_link_choices</code> and <code>get_s_link_choices</code> in 
+        module <code>configs.py</code> to define the <a href="#Links_Between_Specification_Items">direct
+        links</a> between specification item categories</li>
+    <li>If <a href="TBD">external specification items</a> are used, then, for each category of 
+        external specification item, the corresponding <code>ext_*</code> functions in module
+        <code>ext_cats.py</code> are defined
+        </li>
+    <li>TBD for generators</li>
+    </ul>
     </p><p>    
-    These tasks are performed by: (a) filling out the configuration dictionary of the editor and (b)
-    implementing the configuration module TBD. 
     
    
     <h4><a name="EditorConfig">Editor Configuration Dictionary</a></h4>
     <p>
-    Configuration information for the editor is held in the <strong>configuration dictionary</strong>.
-    The 'General' key in the dictionary holds general configuration information.
-    Additionally, for each specification item, a 'Category' key is present whose
-    value is another dictionary with configuration information for that category, including:
+    The <a href="#Editor_Configuration_Dictionary">editor configuration dictionary</a> 
+    is held in json format in file <code>configs.json</code>.
+    The example in the editor delivery file can be used as a template for the 
+    creation of project-specific configuration dictionaries.
+    Additional information about its content are provided below.
+    </p><p> 
+    Its two top-level elements are <code>General</code> and <code>cats</code>.
+    Element <code>General</code> defines general purpose items:
     <ul>
-    <li>The name of the category</li>
-    <li>The list of external attributes for the category (i.e. the specification items whose content
-        originates outside the editor, see also <a href="#IntExtSpecItems">here</a>)</li>
-    <li>The number of fields when the specification items of the given categories are displayed
-        in list form</li>
+    <li>The separator for the csv files exported by the editor</li>
+    <li>The end-of-line charater for text files exported by the editor</li>
+    <li>The back-end directory where zip files exported by the editor are created</li>
+    <li>The maximum length of short description used in hovering tips</li>
+    <li>The maximum depth of recursion when evaluating formulas in the <code>value</code> 
+        attribute of a specification item</li>
     </ul>
-    The 'expand' item in the configuration dictionary determines whether a specification item can be
-    'expanded' when it is displayed by the editor.
-    Specification items refer to each other through their s_link and p_link attributes.
-    When a specification item is expanded, the items which are linked to it either through their
-    s_link or through p_link are listed.
-    The 'expand' item in the configuration dictionary dete
-    </p><p>
-    The 'attrs' item in the configuration dictionary 
-    lists the editable fields for that category and, for each, it provides the 
-    following information:
+    The <code>cats</code> element defines the specification item category.
+    Each category is defined in terms of:
     <ul>
-    <li>label: the label used when the field is displayed or exported</li>
-    <li>req_in_form: true if the field is mandatory</li>
-    <li>kind: the kind of field, namely one of:</li>
+    <li><code>name</code>: The name of the category</li>
+    <li><code>level</code>: Either 'application' or 'project', depending on whether the
+        category is attached to a project or to an application within a project</li>
+    <li><code>abbr</code>: The abbreviation used in the index page of the editor for the category</li>
+    <li><code>ext_attrs</code>: For external specification items, this is the list of attributes
+        which are populated with information from the external specification repository
+        (and which therefore cannot be edited by the user)</li>
+    <li><code>expand</code>: If spec_items of category C1 are targets of <code>p_links</code> 
+        of category C2 and
+        it is desired that, when C1 items are displayed, the user may click on a C1 item to get 
+        a list of its <code>p_link</code> children, then <code>expand|p_link</code> must
+        be set equal to the name of category C2 and <code>expand|p_label</code> is the label
+        that appears on the expansion link. The same holds for the <code>expan|s_link</code>
+        element</li>
+    <li><code>tracs</code>: If category C1 has a <a href="#Links_Between_Specification_Items">
+        traceability link</a> to category C2 and if the traceability link is held in category CL,
+        then:
         <ul>
-        <li>plain_text: a text field without <a href=""#IntRef">internal references</a></li>
-        <li>ref_text: a text field with <a href=""#IntRef">internal references</a></li>
-        <li>spec_item_ref: a field with a reference to another specification item</li>
-        <li>eval_ref: a field holding a mathematical expression
-            which depends on the value of the same field of other specification items of the same category </li>
-        <li>plain_ref: a field with a reference to a database model instance other than a specification item</li>
-        <li>image: a field holding image data</li>
-        <li>int: an integer field</li>
+        <li><code>tracs|trac_cat</code> for C1 is set to the name of category CL</li>
+        <li><code>tracs|trac_link</code> for C1 is set to <code>p_link</code></li>
+        <li><code>tracs|trac_cat</code> for C2 is set to the name of category CL</li>
+        <li><code>tracs|trac_link</code> for C1 is set to <code>s_link</code></li>
         </ul>
+        </li>
+    <li><code>access_from_index</code>: Either 'application' or 'project', depending on whether,
+        in the editor index page, the category is accessible from a project or from an
+        application</li>
+    <li><code>attrs</code>: The attributes of the category and, for each attribute:
+        <ul>
+        <li><code>label</code>: the label (the name) used for attribute</li>
+        <li><code>req_in_form</code>: either 'True' or 'false' depending on whether the attribute
+            is mandatory or optional</li>
+        <li><code>kind</code>: the <a href="#Rendering_of_Specification_Item_Attributes">kind</a>
+            of specification item attribute</li>
+        </ul>
+        </li>
+    <li><code>p_kind_choices</code>: The range of enumerated values of the <code>p_kind</code>
+        attribute</li>
+    <li><code>s_kind_choices</code>: The range of enumerated values of the <code>s_kind</code>
+        attribute</li>
+    <li><code>disp_def</code>: The items displayed in default display mode. Each element
+        of the list defines one column in the display table in terms of:
+        <ul>
+        <li><code>header</code>: The header over the column</li>
+        <li><code>attrs</code>: The names of the attributes to be listed in the column</li>
+        <li><code>order_by</code>: If this element is present, then the items in this column can be 
+            ordered alphabetically </li>
+        </ul>        
+        </li>
+    <li><code>disp_short</code>: Same as the <code>disp_def</code> element but for the
+        short display mode</li>
+    <li><code>disp_trac</code>: Same elements as the <code>disp_def</code> element and,
+        additionally, for the last element the <code>trac_cat</code> and 
+        <code>trac_link</code> sub-elements must be provided, which represent the name of the traceabiity
+        link category and the  name of the traceability link (either <code>p_link</code> 
+        or <code>s_link</code></li>
     </ul>
-    </p><p>
-   
     </p><p>    
+
+    <h4><a name="ConfigModule">Configuration Module</a></h4>
+    <p>
+    TBD
+    
+    <h4><a name="ExtCatModule">External Categories Module</a></h4>
+    <p>
+    TBD
+    
+    <h4><a name="GenModule">Generator Module</a></h4>
+    <p>
+    TBD
+
+
 
 
     <h3><a name="DefModel">Default Editor Model</a></h3>
