@@ -966,36 +966,56 @@
 
     <h4><a name="ConfigModule">Configuration Module</a></h4>
     <p>
-    TBD
+    When a user asks to edit an existing specification item of a given category or create 
+    a new one, he is presented with a form where he can enter the values of all the
+    attributes defined for that category.
+    If the <code>p_link</code> and <code>s_link</code> attributes are defined for that category,
+    the form includes a pull-down menu where all legal options for the two attributes are 
+    defined and where the user can select the option he desires for the new or edited
+    specification item.
+    The items in the pull-down list are obtained by calling functions
+    <code>get_p_link_choices</code> and <code>get_s_link_choices</code> in module
+    <code>configs.py</code>.
+    These two functions must be provided by the user as part of the editor configuration.
+    They encapsulate the <a href="#Links_Between_Specification_Items">direct
+    links</a> between specification item categories.
+    </p><p> 
     
     <h4><a name="ExtCatModule">External Categories Module</a></h4>
     <p>
-    TBD
+    Module <code>ext_cats.py</code> provides the functions which define the
+    <a href="#Interface_to_External_Specification_Items">interface to external 
+    specification items</a>.
+    This module must be provided by the user if there is a need for the editor to
+    access an external specification item repository. 
+    </p><p> 
     
     <h4><a name="GenModule">Generator Module</a></h4>
     <p>
     TBD
-
-
-
+    </p><p> 
 
     <h3><a name="DefModel">Default Editor Model</a></h3>
-
-
-
-   
-   
-   
-   
-   
+    <p>
+    The Cordet FW Editor is delivered with a default configuration which includes a fair
+    number of specification item categories with very different characteristics and which
+    can therefore serve as a blueprint for user who wish to define their editor model.
+    The default editor configuration has been used to model the requirements of the
+    PUS Extension of the <a href="https://www.pnp-software.com/cordetfw">Cordet Framework</a>.
+    Among other things, the default editor model demonstrates the following features
+    of the editor:
+    <ul>
+    <li>Use of External Specification Items</li>
+    <li>Use of Traceability Links between Specification Items</li>
+    </ul>
+    </p><p> 
     
     
-
 
     <h4><a name="SpecItemCat">Specification Item Categories</a></h4>
     <p>
-    The specification item categories are listed below together with the semantics of their
-    non-core attributes. 
+    The specification item categories in the default configuration of the Cordet FW Editor 
+    are listed below together with the semantics of their non-core attributes. 
     <ul>
     <li><i>Requirement</i>: specification of a feature of an application</li>
         <ul>
@@ -1039,6 +1059,9 @@
         <ul>
         <li>Value: the svg representation of the model</li>
         <li>Primary Kind: the kind of model (a state machine or a procedure)</li>
+        <li>n1: width of the figure representing the behavioural model</li>
+        <li>n2: length of the figure representing the behavioural model</li>
+        <li>n3: identifier of behavioural model in the FW Profile Database</li>
         </ul>
     <li><i>Service</i>: specification of a service in a project</li>
         <ul>
@@ -1114,40 +1137,19 @@
         <li>Secondary Link: the pointer to the verified item</li>
         </ul>
     </ul>
-    The figure shows how categories are linked to each other through their p_link and s_link attributes.
-    The three boxes gruped together to the right of the figure ("Application Cmd/Rep") are the categories
-    representing: incoming commands, incomint reports and out-going commands/reports.
+    The figure shows how categories are linked to each other through their <code>p_link</code> 
+    and <code>s_link</code> attributes.
+    The three boxes grouped together to the right of the figure ("Application Cmd/Rep") are the categories
+    representing: incoming commands, incoming reports and out-going commands/reports.
     <a href="#SpecItems">here</a>.
     </p><p>
     <img src="{% static 'images/CatLinks.png' %}"> 
     </p>
-     <ul>
-    <li><strong>Data Items</strong>: <a href="#IntRef">Internal reference</a> in the value field may 
-                                     only point to other data items</li>
-    <li><strong>Data Items</strong>: The value of of a data item of enumerated kind must be an
-                                     <a href="#IntRef">Internal reference</a> to an enumerated value of the
-                                     the same type as the data item</li>
-    <li><strong>Behavioural Model</strong>: neither the domain nor the name can be be modified in editing mode</li>
-    <li><strong>Behavioural Model</strong>: during an add operation, a model with the specified domain and name
-                                            must exist in the FW Profile Database</li>
-    </ul>
    
-
- 
- 
- 
-         
     
-    
-    
-    
-    
-    
-    
-    
-    
-    <h4><a name="BehaviouralModels">Behavioural Models</a></h4>
+    <h5><a name="BehaviouralModels">Behavioural Models</a></h5>
     <p>
+    This is the only external specification item in the default editor configuration.
     Behavioural models are implemented as state machine or procedure models generated with the 
     <a href="https://www.pnp-software.com/fwprofile/editor">FW Profile Editor</a>.
     The FW Profile Editor stores models in a database (the <i>FW Profile Editor Database</i>).
@@ -1161,60 +1163,29 @@
     A model is imported through the <a href="#SpecItemOper">'add' operation</a>.
     </p><p>
     
-    <h4><a name="DataItems">Data Items</a></h4>
-    TBD
-    </p><p>
-    
-    <h4><a name="Packets">Packets</a></h4>
-    TBD
-    </p><p>
-        
-    <h4><a name="VerItems">Verification Items</a></h4> 
-    
-    TBD
-    </p><p>    
+    <h5><a name="VerItems">Verification Items</a></h5> 
+    Verification items hold verification information (e.g. a test case or the outcome
+    of a review or analysis) for other specification items.
+    The editor captures the links between a specification item and the verification items
+    which verify it.
+    This is an example of a <a href="#Links_Between_Specification_Items">traceability link</a>
+    because it captures a many-to-many relationship.
+    A dedicated category (<i>Verification Link</i> or VerLink) has been defined to 
+    hold an instance of a verification link between a specification item and 
+    a verification item. 
+    </p><p>   
+    The figure illustrates the way the traceabiity links are set up.
+    In the figure, the yellow boxes represent the specification items to be verified,
+    the red boxes represent the verification items which verify them and the green
+    boxes are the traceability links.
+    Thus, for instance, the figure indicates that verification item V1 verifies specification
+    item S1 whereas verification item V2 verifies items S1, S2 and S3.   
+    </p><p>   
+
+    <img src="{% static 'images/TracLinks.png' %}"> 
+    </p> 
 
 
-
-    
-    <h3><a name="EditorExtension">Editor Extension</a></h4>
-    The Cordet FW Editor is distributed through an open and free licence.
-    Users therefore have the option to modify it to match their specific needs.
-    Some kinds of extension are especially common and are discussed below.
-    </p><p>
-    The <strong>labels</strong> appearing on the header when specification items are listed can be modified by editing the 
-    <a href="#EditorConfig">configuration dictionary</a>. Similarly, the set of <strong>mandatory attributes</strong> of a
-    specification item category can also be modified by editing the <a href="#EditorConfig">configuration dictionary</a>.
-    </p><p>
-    The range of values for the <code>p_kind</code> and <code>s_kind</code> attributes of a specification item can
-    be modified by editing the corresponding data structures in <code>choices.py</code>.
-    </p><p>
-    The editor offers a wide range of pre-defined <a href="SpecItemCat">specification item categories</a> but
-    some users may need specification items with a special semantics which warrants the definition of a dedicated category.
-    The process for <strong>creating a new specification item category</strong> is:
-    <ul>
-    <li>The name of the newly defined category is added to the data structure <code>SPEC_ITEM_CAT</code> in <code>choices.py</code></li>
-    <li>The descriptor for the new category is added to the <a href="#EditorConfig">configuration dictionary</a>
-        in file <code>configs.py</code></li>
-    <li>If specification items of the new category are to be accessed from the index page, then a button or other
-        trigger is set up in file <code>template/index.html</code></li>    
-    <li>If the new specification item category includes links the <code>p_link</code>
-        or the <code>s_link</code> attributes, then functions <code>get_p_link_choices</code> and/or <code>get_s_link_choices</code>
-        are expanded accordingly</li>
-    <li>If the new specification item category includes the <code>p_kind</code>
-        or the <code>s_kind</code> attributes, then functions <code>get_p_kind_choices</code> and/or <code>get_s_kind_choices</code>
-        are expanded accordingly</li>
-    </ul>
-    Note that no change in the database is required.
-    </p><p>
-    The editor supports the embedding of <a href="#EditorGen">generators</a> which process the specification items of a project to, for instance,
-    generate code.
-    The editor offers TBD pre-defined generators. Users may need to add their own generators.
-    The process for doing so is: TBD.
-    
-     
-    </p><p>    
-   
     
 <!-- 
     JS to create table of contents at top of page 
