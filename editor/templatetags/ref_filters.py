@@ -22,13 +22,24 @@ conv_db_disp_func = {"plain_text": "conv_do_nothing",
 
 
 @register.simple_tag(takes_context=True)
-def conv_db_disp(context, spec_item, attr_name):
-    """ Convert value of attribute 'attr_name' of spec_item 'item' from db to display representation """
-    attr_content_kind = configs['cats'][spec_item.cat]['attrs'][attr_name]['kind']
-    conv_func = conv_db_disp_func[attr_content_kind]
-    s = getattr(convert, conv_func)(context, spec_item, attr_name)
-    return mark_safe(s)
- 
+def conv_db_disp(context, spec_item, attr_names):
+    """ 
+    For each attribute 'attr_name' in 'attr_names', derive the value of 'attr_name' of
+    spec_item 'spec_item' and convert it from db to display format.
+    The function returns a list of tuples (name, value) where 'name' is the
+    label corresponding to the attribute 'attr_name' and 'value' is the converted
+    value of the attribute.
+    Only non-empty attributes are returned. 
+    """
+    values = []
+    for attr_name in attr_names:
+        attr_content_kind = configs['cats'][spec_item.cat]['attrs'][attr_name]['kind']
+        conv_func = conv_db_disp_func[attr_content_kind]
+        s = getattr(convert, conv_func)(context, spec_item, attr_name)
+        if s != '':
+            values.append((context['config']['attrs'][attr_name]['label'], mark_safe(s)))
+    return values
+
  
 @register.simple_tag(takes_context=True)
 def disp_trac(context, spec_item, trac_cat, trac_link):

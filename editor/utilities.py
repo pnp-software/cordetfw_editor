@@ -207,7 +207,7 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
    
 
 def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
-                     sel_dom, s_parent_id, p_parent_id, target_spec_item):
+                     sel_val, s_parent_id, p_parent_id, target_spec_item):
     """
     Compute the url to which the user is re-directed after having added/copied/edited
     a spec_item. If s_parent_id or p_parent_id are different from 'None', then the 
@@ -218,16 +218,16 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
         s_parent = SpecItem.objects.get(id=s_parent_id)
         target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
+                           '/'+sel_val+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
     if (p_parent_id != None):
         p_parent = SpecItem.objects.get(id=p_parent_id)
         target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
+                           '/'+sel_val+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
     
     target = '#'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
     return '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items'+target
+                           '/'+sel_val+'/list_spec_items'+target
       
          
 def get_domains(cat, application_id, project_id):
@@ -235,7 +235,7 @@ def get_domains(cat, application_id, project_id):
     Return the list of domains for the specification items in the argument category. If application_id is zero,
     then the model are filtered by project; otherwise they are filter by application.
     """           
-    domains = ['All_Domains']
+    domains = ['Sel_All']
     if application_id == 0:
        for domain in SpecItem.objects.filter(project_id=project_id).filter(cat=cat).exclude(status='DEL'). \
                                 exclude(status='OBS').order_by('domain').values_list('domain').distinct():

@@ -71,7 +71,7 @@ def convert_db_to_display(s, n):
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'\list_spec_items'
-            s_mod = s[:match.start()]+'<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
+            s_mod = s[:match.start()]+'<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
                     item.domain+':'+item.name+'</a>'
         else:
             s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
@@ -113,18 +113,19 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind)
     """
-    application_id = context['application_id']
-    default_val_set_id = context['default_val_set_id']
-    sel_dom = context['sel_dom']
     spec_item_link = getattr(spec_item, name)
     if spec_item_link == None:
         return ''
+    cat = spec_item_link.cat
+    application_id = context['application_id'] if configs['cats'][cat]['level'] == 'application' else 0
+    default_val_set_id = context['default_val_set_id']
+    sel_val = context['sel_val']
     s_name = spec_item_link.domain + ':' + spec_item_link.name
-    s_href = '/editor/'+spec_item_link.cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
+    s_href = '/editor/'+cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
              '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/list_spec_items#'+s_name
     s_title = spec_item_link.title + ':' + spec_item_link.desc
     
-    return '<a href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
+    return '<a class="link-table-list-spec" href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
    
  
 def conv_db_disp_eval_ref(context, item, name):
