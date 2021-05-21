@@ -678,21 +678,24 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             file_data = csv_file.read().decode('utf-8')
             f = StringIO(file_data)
             items = csv.DictReader(f, delimiter=configs['General']['csv_sep'])
+            csv_domain = configs['cats'][cat]['attrs']['domain']['label']
+            csv_name = configs['cats'][cat]['attrs']['name']['label']
+            csv_val_set = configs['cats'][cat]['attrs']['val_set']['label']
             for i, item in enumerate(items):
-                if (sel_val != 'Sel_All') and (item['Domain'] != sel_val):
-                    messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_val+' but found '+item['Domain'])
+                if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
+                    messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_val+' but found '+item[csv_domain])
                     continue
-                if item['ValSet'] != val_set.name:
-                    messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item['Domain'])
+                if item[csv_val_set] != val_set.name:
+                    messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item[csv_val_set])
                     continue
                 q_all_cat = SpecItem.objects.filter(project_id=project_id, \
-                            name=item['Name'], domain=item['Domain']).exclude(status='DEL').exclude(status='OBS')    
+                            name=item[csv_name], domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')    
                 if q_all_cat.exclude(cat=cat).exists():
-                    messages.error(request, ' '+str(i+1)+': '+item['Domain']+':'+item['Name']+' already in use outside selected category')
+                    messages.error(request, ' '+str(i+1)+': '+item[csv_domain]+':'+item[csv_name]+' already in use outside selected category')
                     continue
                 if val_set.name != 'Default':
                     if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
-                        messages.error(request, ' '+str(i+1)+': '+item['Domain']+':'+item['Name']+' missing from Default ValSet')
+                        messages.error(request, ' '+str(i+1)+': '+item[csv_domain]+':'+item[csv_name]+' missing from Default ValSet')
                         continue
                 q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
                 if not bool(q_cat):     # The domain:name is new in selected category

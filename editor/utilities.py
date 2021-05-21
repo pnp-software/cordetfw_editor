@@ -94,7 +94,7 @@ def spec_item_to_export(spec_item):
     """
     cat_attrs = configs['cats'][spec_item.cat]['attrs']
     dic = {}
-    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
+    for key, value in cat_attrs.items():
         if value['kind'] == 'ref_text':
             dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
         elif value['kind'] == 'spec_item_ref':
@@ -120,7 +120,7 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
-        elif key == 'owner':    # Owner is overridden by import function: no need to copy it into spec_item
+        elif key == 'owner' or key == 'status':    # These are overridden by import function: no need to copy them into spec_item
             continue
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
