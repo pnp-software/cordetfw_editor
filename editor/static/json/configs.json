@@ -32,8 +32,8 @@
                                                      "REV": "Verification By Review"},
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
-                                               {"header":"Title and Description", "attrs":["title", "rationale", "remarks", "implementation"]},
-                                               {"header":"Text", "attrs":["value"]},
+                                               {"header":"Title", "attrs":["title"]},
+                                               {"header":"Requirement", "attrs":["value", "rationale", "remarks", "implementation"]},
                                                {"header":"Kind", "attrs":["p_kind"], "order_by":"p_kind"},
                                                {"header":"Ver", "attrs":["s_kind"], "order_by":"s_kind"},
                                                {"header":"Owner", "attrs":["owner"], "order_by":"owner"}
@@ -41,14 +41,14 @@
                                   "disp_short": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Text", "attrs":["value"]},
+                                               {"header":"Requirement", "attrs":["value"]},
                                                {"header":"Kind", "attrs":["p_kind"], "order_by":"p_kind"},
                                                {"header":"Ver", "attrs":["s_kind"], "order_by":"s_kind"}
                                                ],
                                   "disp_trac": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Text", "attrs":["value"]},
+                                               {"header":"Requirement", "attrs":["value"]},
                                                {"header":"Kind", "attrs":["p_kind"], "order_by":"p_kind"},
                                                {"header":"Ver", "attrs":["s_kind"], "order_by":"s_kind"},
                                                {"header":"Verification Links", "trac_cat":"VerLink", "trac_link":"s_link"}
