@@ -1,12 +1,16 @@
 import json
+import re
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user
 from django.contrib import messages
 from django.conf import settings
 from editor.models import SpecItem, ValSet
+from editor.convert import pattern_edit, pattern_db
 
 with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
     configs = json.load(config_file)
 
+#-------------------------------------------------------------------------------------------------    
 def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
     """ 
         If p_parent_id is different from None, the function returns the spec_items which 
@@ -60,7 +64,7 @@ def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
                         
     return SpecItem.objects.none()
     
-    
+#-------------------------------------------------------------------------------------------------    
 def get_s_link_choices(cat, project, application, s_parent_id, p_parent_id):
     """ 
         If s_parent_id is different from None, the function returns the spec_items which 
@@ -92,4 +96,32 @@ def get_s_link_choices(cat, project, application, s_parent_id, p_parent_id):
                         
     return SpecItem.objects.none()
 
-     
+#-------------------------------------------------------------------------------------------------    
+def do_cat_specific_checks(form):
+    """ Perform the category-specific checks for data items """
+    cd = form.cleaned_data
+    
+    # Verify that, in the value field of a data item, internal references point to other data items
+    if form.cat == 'DataItem':
+        internal_refs = re.findall(pattern_edit, cd['value'])
+        for ref in internal_refs:
+            if ref[0:8] != 'DataItem#':
+                return 'The value field of a data item cannot contain references to non-'+\
+                       'data items: '+str(ref)
+    
+    # Verify that the value of a data item of enumerated type is an internal reference to an enumerated 
+    # value of the data item's type
+    if (form.cat == 'DataItem') and (cd['p_link'].cat == 'EnumType'):
+        m = re.match(pattern_db, cd['value'].strip())
+        if (m == None) or (m.span()[1] != len(cd['value'].strip())):
+            return 'Data item value must be a reference to an enumerated value of the item type'
+        ref = cd['value'].strip().split(':')
+        try:
+            enum_val = SpecItem.objects.get(id=ref[1], cat='EnumValue')
+        except ObjectDoesNotExist:
+            return 'Data item value must be a reference to an enumerated value of the item type: '+\
+                   'The reference is invalid'
+        if enum_val.s_link.id != cd['p_link'].id:
+            return 'Data item value must be a reference to an enumerated value of the item type'
+    
+    return ''
