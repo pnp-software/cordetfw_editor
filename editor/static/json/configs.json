@@ -26,6 +26,7 @@
                                            },
                                   "p_kind_choices": {"STD": "Standard Requirement",
                                                      "CNS": "Constraint Requirement",
+                                                     "DEF": "Definition Requirement",
                                                      "AP": "Adaptation Point"},
                                   "s_kind_choices": {"TST": "Verification By Test",
                                                      "ANA": "Verification By Anaysis",
