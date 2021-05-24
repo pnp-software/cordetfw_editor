@@ -18,7 +18,8 @@ General description of the editor is still TBD.
 - Navigate to: `http://localhost:8000/editor/`
 
 ### Implementation Notes
-NB: STATICFILES_DIRS in `settings.py` contains an absolute path!
+- STATICFILES_DIRS in `settings.py` contains an absolute path!
+- For the customization of the auto-completion list (e.g. changing number of entries): see issue #6
 
 ### Deployment
 The `requirement.txt` file contains the exact library versions.
