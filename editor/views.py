@@ -820,7 +820,7 @@ def export_project(request, project_id):
     with open(os.path.join(exp_dir,'applications.csv'),'w') as fd:
         fd.write(applications_exp.csv)
 
-    zip_file_path = os.path.join(exp_dir,'cordetfw_editor.zip')
+    zip_file_path = os.path.join(exp_dir,'cordetfw_editor_'+project.name+'.zip')
     zip_obj = ZipFile(zip_file_path, 'w')
     zip_obj.write(os.path.join(exp_dir,'project.csv'), 'project.csv')
     zip_obj.write(os.path.join(exp_dir,'applications.csv'), 'applications.csv')
