@@ -7,12 +7,13 @@ from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
-from .choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
-                     MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD
 from editor.convert import pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import configs, get_p_link_choices, get_s_link_choices
 from editor import ext_cats
+
+# Regex pattern for 'domain' and 'name' (alphanumeric characters and underscores)
+pattern_name = re.compile('[a-zA-Z0-9_]+$')     
 
 class ProjectForm(forms.Form):
     name = forms.CharField()
@@ -86,10 +87,10 @@ class SpecItemForm(forms.Form):
     implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     p_kind = forms.ChoiceField(choices=())
-    s_kind = forms.ChoiceField(choices=REQ_VER_METHOD)
+    s_kind = forms.ChoiceField(choices=())
     val_set = forms.ModelChoiceField(queryset=None, empty_label=None)
-    p_link = forms.ModelChoiceField(queryset=None, empty_label=None)
-    s_link = forms.ModelChoiceField(queryset=None, empty_label=None)
+    p_link = forms.ModelChoiceField(queryset=None, empty_label='')
+    s_link = forms.ModelChoiceField(queryset=None, empty_label='')
     n2 = forms.IntegerField(min_value=0)
     n3 = forms.IntegerField(min_value=0)
     t1 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
@@ -124,8 +125,8 @@ class SpecItemForm(forms.Form):
         self.fields['t5'].widget.attrs.update(rows = 1)
         self.fields['p_kind'].choices = get_p_kind_choices(cat)
         self.fields['s_kind'].choices = get_s_kind_choices(cat)
-        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id)
-        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project, self.application, s_parent_id)
+        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id, s_parent_id)
+        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project, self.application, s_parent_id, p_parent_id)
         self.fields['n1'].initial = 0
         self.fields['n2'].initial = 0
         self.fields['n3'].initial = 0
@@ -173,6 +174,20 @@ class SpecItemForm(forms.Form):
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
         
+        # Check that domain and name only contain alphanumeric characters and underscores
+        if not pattern_name.match(self.cleaned_data['name']):
+            raise ValidationError({'name':'Name may contain only alphanumeric characters and underscores'})
+        if not pattern_name.match(self.cleaned_data['domain']):
+            raise ValidationError({'domain':'Domain may contain only alphanumeric characters and underscores'})
+ 
+        # Fields of kind 'ref_text' or 'eval_ref' are converted from 'edit' to 'db' representation
+        # (but external attribute fields are left untouched because they are loaded from an
+        #  external resource) 
+        for field in self.fields:  
+            if (field in self.config['attrs']) and (not field in self.config['ext_attrs']):
+                if (self.config['attrs'][field]['kind'] == 'ref_text') or  (self.config['attrs'][field]['kind'] == 'eval_ref'):
+                    cd[field] = convert_edit_to_db(self.project, cd[field])
+        
         # when in add mode: load data for external attributes 1
         if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
             get_choice_func_name = 'ext_' + self.cat.lower() + '_get_choice'
@@ -217,44 +232,13 @@ class SpecItemForm(forms.Form):
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
             ref = cd['value'].strip().split(':')
             try:
-                enum_val = SpecItem.objects.get(id=ref[1], cat='DataItem')
+                enum_val = SpecItem.objects.get(id=ref[1], cat='EnumValue')
             except ObjectDoesNotExist:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type: '+\
                                             'The reference is invalid')
-            if enum_val.p_link.id != cd['p_link'].id:
+            if enum_val.s_link.id != cd['p_link'].id:
                 raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
  
         return cd
  
-    def clean_title(self):
-        if not 'title' in self.config['ext_attrs']:
-            return convert_edit_to_db(self.project, self.cleaned_data['title'])
-        return self.cleaned_data['title']
-
-    def clean_desc(self):
-        if not 'desc' in self.config['ext_attrs']:
-            return convert_edit_to_db(self.project, self.cleaned_data['desc'])
-        return self.cleaned_data['desc']
-
-    def clean_value(self):
-        if not 'value' in self.config['ext_attrs']:
-            return convert_edit_to_db(self.project, self.cleaned_data['value'])
-        return self.cleaned_data['value']
-
-    def clean_rationale(self):
-        if not 'rationale' in self.config['ext_attrs']:
-            return convert_edit_to_db(self.project, self.cleaned_data['rationale'])
-        return self.cleaned_data['rationale']
-
-    def clean_implementation(self):
-        if not 'implementation' in self.config['ext_attrs']:
-            return convert_edit_to_db(self.project, self.cleaned_data['implementation'])
-        return self.cleaned_data['implementation']
-
-    def clean_remarks(self):
-        if not 'remarks' in self.config['ext_attrs']:
-            return convert_edit_to_db(self.project, self.cleaned_data['remarks'])
-        return self.cleaned_data['remarks']
-
-
  

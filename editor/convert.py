@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import cexprtk
 import logging
 from tablib import Dataset
@@ -13,7 +14,6 @@ from django.db.models import ForeignKey
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
-from editor.choices import SPEC_ITEM_CAT
                      
 # Regex pattern for internal references to specification items as they
 # are stored in the database (e.g. '#iref:1234')
@@ -25,9 +25,11 @@ pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 # Regex pattern for internal references to specification items as they
 # rendered in edit representation (e.g. '#cat:dom:name')
+#with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
+#    configs = json.load(config_file)
 s = ''
-for cat_desc in SPEC_ITEM_CAT:
-    s = s+cat_desc[0]+'|'
+for cat in list(configs['cats'].keys()):
+    s = s+cat+'|'
 pattern_edit = re.compile('#('+s[:-1]+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 logger = logging.getLogger(__name__)
@@ -69,7 +71,7 @@ def convert_db_to_display(s, n):
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'\list_spec_items'
-            s_mod = s[:match.start()]+'<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
+            s_mod = s[:match.start()]+'<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
                     item.domain+':'+item.name+'</a>'
         else:
             s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
@@ -111,17 +113,19 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind)
     """
-    application_id = context['application_id']
-    default_val_set_id = context['default_val_set_id']
-    sel_dom = context['sel_dom']
     spec_item_link = getattr(spec_item, name)
-    
+    if spec_item_link == None:
+        return ''
+    cat = spec_item_link.cat
+    application_id = context['application_id'] if configs['cats'][cat]['level'] == 'application' else 0
+    default_val_set_id = context['default_val_set_id']
+    sel_val = context['sel_val']
     s_name = spec_item_link.domain + ':' + spec_item_link.name
-    s_href = '/editor/'+spec_item_link.cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
+    s_href = '/editor/'+cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
              '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/list_spec_items#'+s_name
     s_title = spec_item_link.title + ':' + spec_item_link.desc
     
-    return '<a href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
+    return '<a class="link-table-list-spec" href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
    
  
 def conv_db_disp_eval_ref(context, item, name):
@@ -160,7 +164,7 @@ def convert_edit_to_db(project, s):
     return s_mod + convert_edit_to_db(project, s[match.end():])
     
     
-def convert_exp_to_db(s):
+def convert_exp_to_db(project, s):
     """
     The argument is a plain reference field in export representation 
     (the reference is represented by the string domain:name). 
@@ -169,7 +173,8 @@ def convert_exp_to_db(s):
     """
     m = pattern_ref_exp.match(s)
     ref = m.group().split(':')
-    return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').get(domain=ref[0], name=ref[1])
+    return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
+                        get(project_id=project.id, domain=ref[0], name=ref[1])
     
 
 def convert_db_to_edit(s):

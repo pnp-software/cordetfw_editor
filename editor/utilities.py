@@ -16,9 +16,6 @@ from editor.models import SpecItem, ProjectUser, Application, Release, Project, 
 from editor.configs import configs
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
                            convert_exp_to_db, convert_db_to_latex, eval_di_value
-from editor.choices import HISTORY_STATUS, SPEC_ITEM_CAT, REQ_KIND, DI_KIND, \
-                           MODEL_KIND, PCKT_KIND, VER_ITEM_KIND, REQ_VER_METHOD, VER_STATUS
-
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +94,7 @@ def spec_item_to_export(spec_item):
     """
     cat_attrs = configs['cats'][spec_item.cat]['attrs']
     dic = {}
-    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
+    for key, value in cat_attrs.items():
         if value['kind'] == 'ref_text':
             dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
         elif value['kind'] == 'spec_item_ref':
@@ -123,12 +120,12 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
-        elif key == 'owner':    # Owner is overridden by import function: no need to copy it into spec_item
+        elif key == 'owner' or key == 'status':    # These are overridden by import function: no need to copy them into spec_item
             continue
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
         elif value['kind'] == 'spec_item_ref':
-            setattr(spec_item, key, convert_exp_to_db(imp_dict[cat_attrs[key]['label']]))
+            setattr(spec_item, key, convert_exp_to_db(project, imp_dict[cat_attrs[key]['label']]))
         else:
             setattr(spec_item, key, imp_dict[cat_attrs[key]['label']])
 
@@ -170,28 +167,12 @@ def get_previous_list(item):
         
 def get_p_kind_choices(cat):
     """ Return the range of choices for the 'p_kind' attribute of a specification of a given category """
-    if cat == 'Requirement':
-       return REQ_KIND
-    elif cat == 'DataItem':
-       return DI_KIND
-    elif cat == 'Model':
-       return MODEL_KIND
-    elif cat == 'Packet':
-       return PCKT_KIND
-    elif cat == 'PacketPar':
-       return PCKT_PAR_KIND
-    elif cat == 'VerItem':
-       return VER_ITEM_KIND
-    return (("INV","Invalid"),)
+    return list(configs['cats'][cat]['p_kind_choices'].items())
 
 
 def get_s_kind_choices(cat):
     """ Return the range of choices for the 's_kind' attribute of a specification of a given category """
-    if cat == 'Requirement':
-       return REQ_VER_METHOD
-    if cat == 'VerItem':
-       return VER_STATUS
-    return (("INV","Invalid"),)
+    return list(configs['cats'][cat]['s_kind_choices'].items())
   
     
 def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
@@ -226,7 +207,7 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
    
 
 def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
-                     sel_dom, s_parent_id, p_parent_id, target_spec_item):
+                     sel_val, s_parent_id, p_parent_id, target_spec_item):
     """
     Compute the url to which the user is re-directed after having added/copied/edited
     a spec_item. If s_parent_id or p_parent_id are different from 'None', then the 
@@ -237,16 +218,16 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
         s_parent = SpecItem.objects.get(id=s_parent_id)
         target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
+                           '/'+sel_val+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
     if (p_parent_id != None):
         p_parent = SpecItem.objects.get(id=p_parent_id)
         target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
+                           '/'+sel_val+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
     
     target = '#'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
     return '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items'+target
+                           '/'+sel_val+'/list_spec_items'+target
       
          
 def get_domains(cat, application_id, project_id):
@@ -254,7 +235,7 @@ def get_domains(cat, application_id, project_id):
     Return the list of domains for the specification items in the argument category. If application_id is zero,
     then the model are filtered by project; otherwise they are filter by application.
     """           
-    domains = ['All_Domains']
+    domains = ['Sel_All']
     if application_id == 0:
        for domain in SpecItem.objects.filter(project_id=project_id).filter(cat=cat).exclude(status='DEL'). \
                                 exclude(status='OBS').order_by('domain').values_list('domain').distinct():

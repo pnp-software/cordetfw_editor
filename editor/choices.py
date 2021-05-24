@@ -1,3 +1,6 @@
+# This file is no longer used and should be deleted!
+
+
 # The status of an item with a history
 HISTORY_STATUS = (
     ("DEL","Deleted"),
@@ -7,25 +10,7 @@ HISTORY_STATUS = (
     ("NEW","New"),
 )
 
-# The specification item categories
-SPEC_ITEM_CAT = (
-    ("Requirement","An application requirement"),
-    ("AdaptPoint","An adaptation point"),
-    ("DataItemType","A non-enumerated data item type"),
-    ("EnumType","An enumerated data item type"),
-    ("EnumValue","An enumerated item"),
-    ("DataItem","A data item"),
-    ("Model","A behavioural model for an application feature"),
-    ("Service","A cordet service"),
-    ("Packet","A packet implementing a service command or report"),
-    ("DerPacket","A derived packet"),
-    ("PacketPar","A parameter in a packet"),
-    ("InCommand","The behaviour associated to an incoming service command"),
-    ("InReport","The behaviour associated to an incoming service report"),
-    ("OutComponent","The behaviour associated to an out-going service command or report"),
-    ("VerItem","A verification item"),
-    ("VerLink","A verification link"),
-)
+
 
 # The kind of a requirement
 REQ_KIND = (
