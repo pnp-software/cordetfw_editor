@@ -619,7 +619,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         application = Application.objects.get(id=application_id)
         items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                     order_by('domain','name') 
-        fdName = application.name.replace(' ','_') + cat + '.csv'
+        fdName = application.name.replace(' ','') + cat + '.csv'
         
     items = items.exclude(status='DEL').exclude(status='OBS')  
         
