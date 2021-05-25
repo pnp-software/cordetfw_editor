@@ -347,10 +347,12 @@
             {% if item.id == expand_id %} <!-- Display expansion items for the current item  -->
             {% for expand_item in expand_items %}
             <tr class="text-blue-gray-900 align-top
-                       border-b border-blue-gray-200">
+                       border-b border-blue-gray-200
+                       hover:bg-blue-gray-200">
                 <td class="pl-6 py-2">{{expand_item.domain}}</td>
                 <td class="pl-6 py-2">
-                    <a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
+                    <a class="link-table-list-spec"
+                       href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
                        title="{{expand_item.desc|filter_refs_for_tip|linebreaksbr}}">
                         {{expand_item.name}}
                     </a>
