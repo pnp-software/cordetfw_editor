@@ -174,11 +174,11 @@ class SpecItemForm(forms.Form):
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
         
-        # Check that domain and name only contain alphanumeric characters and underscores
-        if not 'name' in self.config['ext_attrs']:
+        # Check that domain and name (if they have been defined) only contain alphanumeric characters and underscores
+        if cd['name'] != '':
             if not pattern_name.match(self.cleaned_data['name']):
                 raise ValidationError({'name':'Name may contain only alphanumeric characters and underscores'})
-        if not 'domain' in self.config['ext_attrs']:
+        if cd['domain'] != '':
             if not pattern_name.match(self.cleaned_data['domain']):
                 raise ValidationError({'domain':'Domain may contain only alphanumeric characters and underscores'})
  
