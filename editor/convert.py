@@ -11,10 +11,13 @@ from django.contrib.auth import get_user
 from django.contrib.auth.models import User
 from django.forms.models import model_to_dict
 from django.db.models import ForeignKey
+from django.conf import settings
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
-from editor.configs import configs
-                     
+       
+with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
+    configs = json.load(config_file)
+      
 # Regex pattern for internal references to specification items as they
 # are stored in the database (e.g. '#iref:1234')
 pattern_db = re.compile('#(iref):([0-9]+)')     
@@ -171,6 +174,8 @@ def convert_exp_to_db(project, s):
     The function converts it to database representation.
     Invalid references raise an exception which must be handled by the caller.
     """
+    if s == '':
+        return None
     m = pattern_ref_exp.match(s)
     ref = m.group().split(':')
     return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\

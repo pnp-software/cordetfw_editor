@@ -37,7 +37,8 @@
     <li><a href="#ExpImp">import/export facilities</a> to/from csv formats</li>
     <li>Support for <a href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
     <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
-    <li>Interface to import <a href="TBD">external specification resources</a></li>
+    <li>Interface to import <a href="#Internal_and_External_Specification_Items">external specification 
+        resources</a></li>
     </ul>
     </p><p>
 
@@ -66,8 +67,8 @@
     defines the concrete categories of specification items and their mutual relationships
     and the generators to process them.
     </p>
-    The <a href="TBD">default editor configuration</a> can be used as a blue-print for user-specific 
-    configurations. 
+    The <a href="#Default_Editor_Model">default editor configuration</a> can be used as a 
+    blue-print for user-specific configurations. 
     <img src="{% static 'images/ModelLevels.png' %}" width="540" height="360" class="center"> 
     </p><p>
      
@@ -317,8 +318,8 @@
     </p><p>
     At meta-modelling level, the editor defines an <a href+"ExtSpecItemInterface">interface to access 
     external specification items</a>.
-    During the <a href+"TBD">editor instantiation process</a>, users implement this interface for their
-    external specification items. 
+    During the <a href+"#Editor_Instantiation">editor instantiation process</a>, users implement 
+    this interface for their external specification items. 
     </p>
 
     <h5><a name="ExtSpecItemInterface">Interface to External Specification Items</a></h5>
@@ -674,12 +675,14 @@
     
     <h5><a name="SpecItemKinds">Specification Item Kinds</a></h5>
     <p>
-    The <a href+"#TBD">category-specific attributes</a> <code>p_kind</code> and <code>s_kind</code>
+    The <a href+"#Category-Specific_Attributes">category-specific 
+    attributes</a> <code>p_kind</code> and <code>s_kind</code>
     allow two enumerated values to be associated to specification items.
     They are intended to capture information related to the status or role of a specification item.
     The range of values that these two attributes can take is category-dependent and
     is under the control of the user (it is defined through the <code>p_kind_choices</code> and
-    <code>s_kind_choices</code> elements in the <a href="TBD">editor configuration dictionary</a>).
+    <code>s_kind_choices</code> elements in the <a href="#Editor_Configuration_Dictionary">editor 
+    configuration dictionary</a>).
     </p><p>
     
     
@@ -801,11 +804,13 @@
         the names of these extra fields in the exported file are the same as the names
         of the fields in the database model converted to CamelCase</li>
     <li>Exported fields are converted from database to latex format</li>
-    <li>If the 'value' attribute has a content of the <a href="TBD"><code>eval_ref</code></a> kind
+    <li>If the 'value' attribute has a content of the 
+        <a href="#Rendering_of_Specification_Item_Attributes"><code>eval_ref</code></a> kind
         (i.e. if it containts a mathematical expression), then a new field called
         'NVal' is also exported holding the result of a numerical evaluation of the
         'value' attribute </li>
-    <li>If the category being exported has <a href="TBD">traceability links</a>, then the
+    <li>If the category being exported has <a href="#Links_Between_Specification_Items">traceability
+        links</a>, then the
         traceability links are also exported in a dedicated field  </li>    
     </ul> 
     There is no import facility for latex formatted files.
@@ -844,7 +849,7 @@
     
     <ul>
     <li>Through an input form as direct input by the user</li>
-    <li>Through the <a href="Export_and_Import">data import</a> facility</li>
+    <li>Through the <a href="#Export_and_Import">data import</a> facility</li>
     <li>Through the import facility for 
     <a href="#Internal_and_External_Specification_Items">external data items</a></li>
     </ul>
@@ -860,7 +865,8 @@
     <p>
     The Cordet FW Editor is built on a meta-model which users are expected to instantiate when they deploy the
     editor.
-    The <a href="#DefModel">default instantiation</a> can be used as a blue-print for the user-specific instantiation.
+    The <a href="#Default_Editor_Model">default instantiation</a> can be used as a blue-print 
+    for the user-specific instantiation. 
     During the instantiation process: 
     <ul>
     <li>The categories of specification items and their mutual relationships are defined</li>
@@ -872,12 +878,17 @@
     <li>The <a href="#Editor_Configuration_Dictionary">editor configuration dictionary</a> 
         (file <code>configs.json</code>) is populated
         to define the static characteristics of the specification item categories</li>
-    <li>Functions <code>get_p_link_choices</code> and <code>get_s_link_choices</code> in 
+    <li>Functions <code>get_p_link_choices</code> and <code>get_s_link_choices</code> are
+        implemented in
         module <code>configs.py</code> to define the <a href="#Links_Between_Specification_Items">direct
         links</a> between specification item categories</li>
-    <li>If <a href="TBD">external specification items</a> are used, then, for each category of 
+    <li>If category-specific checks are needed on the data entered by user through a specification
+        item editing form, function <code>do_cat_specific_checks</code> is implemented in
+        module <code>configs.py</code></li>
+    <li>If <a href="#Internal_and_External_Specification_Items">external specification 
+        items</a> are used, then, for each category of 
         external specification item, the corresponding <code>ext_*</code> functions in module
-        <code>ext_cats.py</code> are defined
+        <code>ext_cats.py</code> are implemented
         </li>
     <li>TBD for generators</li>
     </ul>
@@ -992,7 +1003,7 @@
     
     <h4><a name="GenModule">Generator Module</a></h4>
     <p>
-    TBD
+    Generators are still TBD.
     </p><p> 
 
     <h3><a name="DefModel">Default Editor Model</a></h3>
@@ -1139,9 +1150,11 @@
     </ul>
     The figure shows how categories are linked to each other through their <code>p_link</code> 
     and <code>s_link</code> attributes.
-    The three boxes grouped together to the right of the figure ("Application Cmd/Rep") are the categories
+    The three boxes grouped together ("Application Cmd/Rep") are the categories
     representing: incoming commands, incoming reports and out-going commands/reports.
-    <a href="#SpecItems">here</a>.
+    The three vertically aligned boxes to the far right represent the verification links: 
+    a verification link captures a link between any other specification item and the
+    verification item which verifies it.  
     </p><p>
     <img src="{% static 'images/CatLinks.png' %}"> 
     </p>
@@ -1160,7 +1173,8 @@
     The Cordet FW Editor has a connection to the FW Profile Editor Database, which allows a user to import 
     selected models. 
     A user can only import FW Profile modes which belong to him.
-    A model is imported through the <a href="#SpecItemOper">'add' operation</a>.
+    A model is imported through the <a href="#Operations_Performed_on_Specification_Items">'add' 
+    operation</a>.
     </p><p>
     
     <h5><a name="VerItems">Verification Items</a></h5> 
