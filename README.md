@@ -1,6 +1,12 @@
 ## Cordet FW Editor
 
-General description of the editor is still TBD.
+ The Cordet FW Editor provides an environment where users define various kinds of specification items
+ for their applications.
+ The specification information is stored in a database held on a server.
+ The processing of the specification data is done by a back-end running on the server.
+ The access to the editor data is through a browser on a client machine.
+ 
+ The Cordet FW Editor is currently available as an **alpha version**.
 
 ### Start-Up
 - Install Django `python3 -m pip install Django`
@@ -41,8 +47,8 @@ The `requirement.txt` file contains the exact library versions.
 7. `sudo systemctl reload apache2.service`
 
 #### Update `css`
-The CSS is tailored for the editor. It is created using the TBD tool according to the following procedure:
-- TBD
+The CSS for the editor is created in an external tool and is tailored for the editor. 
+The description of the creation and customization procedure for the CSS is still TBD.
 
 #### Security
 
