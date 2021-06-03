@@ -1,11 +1,11 @@
 {
-     "editorVersion": "5.25",
+     "editorVersion": "5.27",
      "states": [
           {
-               "id": 26,
+               "id": 684,
                "attrs": {
-                    "x": 455,
-                    "y": 84,
+                    "x": 640,
+                    "y": 91,
                     "width": 30,
                     "height": 30,
                     "r": 15,
@@ -24,10 +24,10 @@
                "selected": false
           },
           {
-               "id": 27,
+               "id": 685,
                "attrs": {
                     "x": 379,
-                    "y": 154,
+                    "y": 78,
                     "width": 182,
                     "height": 56,
                     "r": 10,
@@ -63,10 +63,10 @@
                "selected": false
           },
           {
-               "id": 29,
+               "id": 687,
                "attrs": {
                     "x": 132,
-                    "y": 258,
+                    "y": 309,
                     "width": 196,
                     "height": 56,
                     "r": 10,
@@ -102,10 +102,10 @@
                "selected": false
           },
           {
-               "id": 31,
+               "id": 689,
                "attrs": {
                     "x": 121,
-                    "y": 359,
+                    "y": 410,
                     "width": 218,
                     "height": 92,
                     "r": 10,
@@ -141,10 +141,10 @@
                "selected": false
           },
           {
-               "id": 33,
+               "id": 691,
                "attrs": {
                     "x": 457,
-                    "y": 462,
+                    "y": 513,
                     "width": 26,
                     "height": 26,
                     "r": 13,
@@ -163,35 +163,12 @@
                "selected": false
           },
           {
-               "id": 34,
+               "id": 692,
                "attrs": {
-                    "x": 581,
-                    "y": 106,
-                    "width": 200,
-                    "height": 80,
-                    "r": 0,
-                    "rx": 0,
-                    "ry": 0,
-                    "fill": "#ccccff",
-                    "stroke": "#666",
-                    "stroke-width": 1,
-                    "fill-opacity": 100,
-                    "stroke-dasharray": "--"
-               },
-               "fwprop": {
-                    "autoid": 1,
-                    "type": "note",
-                    "note": "The form is valid if the domain:name\nof the edited spec_item are unique within\nnon-deleted, non-obsolete items with\nDefault ValSet "
-               },
-               "selected": false
-          },
-          {
-               "id": 36,
-               "attrs": {
-                    "x": 140,
-                    "y": 77,
-                    "width": 252,
-                    "height": 44,
+                    "x": 184,
+                    "y": 20,
+                    "width": 474,
+                    "height": 32,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -204,37 +181,15 @@
                "fwprop": {
                     "autoid": 2,
                     "type": "note",
-                    "note": "Operation to edit a new spec_item (only possible\non spec_items with status CNF, MOD or NEW) "
+                    "note": "Operation to edit a new spec_item (only possible on spec_items with status CNF, MOD or NEW) "
                },
                "selected": false
           },
           {
-               "id": 38,
-               "attrs": {
-                    "x": 554,
-                    "y": 231,
-                    "width": 6,
-                    "height": 6,
-                    "r": 6,
-                    "rx": 6,
-                    "ry": 6,
-                    "fill": "#000",
-                    "stroke": "#666",
-                    "stroke-width": 1,
-                    "fill-opacity": 100
-               },
-               "fwprop": {
-                    "autoid": 1,
-                    "type": "notedot",
-                    "note": ""
-               },
-               "selected": false
-          },
-          {
-               "id": 39,
+               "id": 694,
                "attrs": {
                     "x": 458,
-                    "y": 274,
+                    "y": 325,
                     "width": 24,
                     "height": 24,
                     "r": 0,
@@ -255,10 +210,10 @@
                "selected": false
           },
           {
-               "id": 40,
+               "id": 695,
                "attrs": {
                     "x": 562,
-                    "y": 252,
+                    "y": 303,
                     "width": 218,
                     "height": 68,
                     "r": 10,
@@ -294,11 +249,11 @@
                "selected": false
           },
           {
-               "id": 42,
+               "id": 697,
                "attrs": {
-                    "x": 140,
-                    "y": 142,
-                    "width": 214,
+                    "x": 138,
+                    "y": 65,
+                    "width": 220,
                     "height": 80,
                     "r": 0,
                     "rx": 0,
@@ -317,10 +272,10 @@
                "selected": false
           },
           {
-               "id": 45,
+               "id": 699,
                "attrs": {
                     "x": 377,
-                    "y": 179,
+                    "y": 103,
                     "width": 6,
                     "height": 6,
                     "r": 6,
@@ -339,10 +294,10 @@
                "selected": false
           },
           {
-               "id": 46,
+               "id": 700,
                "attrs": {
                     "x": 458,
-                    "y": 393,
+                    "y": 444,
                     "width": 24,
                     "height": 24,
                     "r": 0,
@@ -363,10 +318,10 @@
                "selected": false
           },
           {
-               "id": 47,
+               "id": 701,
                "attrs": {
                     "x": 575,
-                    "y": 453,
+                    "y": 504,
                     "width": 216,
                     "height": 44,
                     "r": 10,
@@ -400,6 +355,68 @@
                     "embedSmId": null
                },
                "selected": false
+          },
+          {
+               "id": 703,
+               "attrs": {
+                    "x": 316,
+                    "y": 178,
+                    "width": 308,
+                    "height": 92,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 5,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N6",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Perform validity checks on spec_item attributes:\n(a) domain:name pair is unique within non-deleted, non-obsolete\nspec_items in the Default ValSet of the project\n(b) domain and name only contain alphanumeric characters and\nunderscores\n(c) category-specific validity checks are passed",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 705,
+               "attrs": {
+                    "x": 636,
+                    "y": 202,
+                    "width": 158,
+                    "height": 44,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#ccccff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "stroke-dasharray": "--"
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "note",
+                    "note": "If a validity check fails, the\nform is re-submitted to the user"
+               },
+               "selected": false
           }
      ],
      "connections": [
@@ -410,13 +427,13 @@
                     "path": [
                          [
                               "M",
-                              470,
-                              119
+                              635,
+                              106
                          ],
                          [
                               "L",
-                              470,
-                              146
+                              569,
+                              106
                          ]
                     ],
                     "stroke-width": 2,
@@ -441,8 +458,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 26,
-               "stateToID": 27,
+               "stateFromID": 684,
+               "stateToID": 685,
                "selected": false
           },
           {
@@ -453,12 +470,12 @@
                          [
                               "M",
                               470,
-                              215
+                              139
                          ],
                          [
                               "L",
                               470,
-                              256
+                              170
                          ]
                     ],
                     "stroke-width": 2,
@@ -475,7 +492,7 @@
                     "actionType": "call function",
                     "guardCode": "",
                     "actionCode": "",
-                    "guardDesc": "Form is posted\nand is valid ",
+                    "guardDesc": "",
                     "guardAp": false,
                     "actionDesc": "",
                     "actionAp": false,
@@ -488,8 +505,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 27,
-               "stateToID": 39,
+               "stateFromID": 685,
+               "stateToID": 703,
                "selected": false
           },
           {
@@ -500,12 +517,12 @@
                          [
                               "M",
                               230,
-                              319
+                              370
                          ],
                          [
                               "L",
                               230,
-                              351
+                              402
                          ]
                     ],
                     "stroke-width": 2,
@@ -530,8 +547,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 29,
-               "stateToID": 31,
+               "stateFromID": 687,
+               "stateToID": 689,
                "selected": false
           },
           {
@@ -542,12 +559,12 @@
                          [
                               "M",
                               344,
-                              405
+                              456
                          ],
                          [
                               "L",
                               440,
-                              405
+                              456
                          ]
                     ],
                     "stroke-width": 2,
@@ -572,61 +589,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 31,
-               "stateToID": 46,
-               "selected": false
-          },
-          {
-               "attrs": {
-                    "fill": "none",
-                    "stroke": "#000",
-                    "path": [
-                         [
-                              "M",
-                              681,
-                              191
-                         ],
-                         [
-                              "L",
-                              681,
-                              234
-                         ],
-                         [
-                              "L",
-                              568,
-                              234
-                         ]
-                    ],
-                    "stroke-width": 2,
-                    "stroke-linecap": "round",
-                    "stroke-linejoin": "round",
-                    "stroke-dasharray": "-"
-               },
-               "fwprop": {
-                    "order": 1,
-                    "identifier": "",
-                    "guardFunc": "",
-                    "actionFunc": "",
-                    "guardType": "call function",
-                    "actionType": "call function",
-                    "guardCode": "",
-                    "actionCode": ""
-               },
-               "shiftx": 0,
-               "shifty": 0,
-               "vertexes": [
-                    {
-                         "x": 681,
-                         "y": 234,
-                         "hasMoved": true
-                    }
-               ],
-               "shiftxy": {
-                    "x": 0,
-                    "y": 0
-               },
-               "stateFromID": 34,
-               "stateToID": 38,
+               "stateFromID": 689,
+               "stateToID": 700,
                "selected": false
           },
           {
@@ -637,12 +601,12 @@
                          [
                               "M",
                               443,
-                              286
+                              337
                          ],
                          [
                               "L",
                               336,
-                              286
+                              337
                          ]
                     ],
                     "stroke-width": 2,
@@ -672,8 +636,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 39,
-               "stateToID": 29,
+               "stateFromID": 694,
+               "stateToID": 687,
                "selected": false
           },
           {
@@ -684,12 +648,12 @@
                          [
                               "M",
                               497,
-                              286
+                              337
                          ],
                          [
                               "L",
                               554,
-                              286
+                              337
                          ]
                     ],
                     "stroke-width": 2,
@@ -719,8 +683,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 39,
-               "stateToID": 40,
+               "stateFromID": 694,
+               "stateToID": 695,
                "selected": false
           },
           {
@@ -731,22 +695,22 @@
                          [
                               "M",
                               671,
-                              325
+                              376
                          ],
                          [
                               "L",
                               671,
-                              348
+                              399
                          ],
                          [
                               "L",
                               470,
-                              348
+                              399
                          ],
                          [
                               "L",
                               470,
-                              375
+                              426
                          ]
                     ],
                     "stroke-width": 2,
@@ -769,12 +733,12 @@
                "vertexes": [
                     {
                          "x": 671,
-                         "y": 348,
+                         "y": 399,
                          "hasMoved": true
                     },
                     {
                          "x": 470,
-                         "y": 348,
+                         "y": 399,
                          "hasMoved": true
                     }
                ],
@@ -782,8 +746,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 40,
-               "stateToID": 46,
+               "stateFromID": 695,
+               "stateToID": 700,
                "selected": false
           },
           {
@@ -793,13 +757,13 @@
                     "path": [
                          [
                               "M",
-                              359,
-                              182
+                              363,
+                              105.87121212121205
                          ],
                          [
                               "L",
                               369,
-                              182
+                              105.91666666666669
                          ]
                     ],
                     "stroke-width": 2,
@@ -824,8 +788,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 42,
-               "stateToID": 45,
+               "stateFromID": 697,
+               "stateToID": 699,
                "selected": false
           },
           {
@@ -836,17 +800,17 @@
                          [
                               "M",
                               497,
-                              405
+                              456
                          ],
                          [
                               "L",
                               681,
-                              405
+                              456
                          ],
                          [
                               "L",
                               682.1428571428571,
-                              445
+                              496
                          ]
                     ],
                     "stroke-width": 2,
@@ -874,7 +838,7 @@
                "vertexes": [
                     {
                          "x": 681,
-                         "y": 405,
+                         "y": 456,
                          "hasMoved": true
                     }
                ],
@@ -882,8 +846,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 46,
-               "stateToID": 47,
+               "stateFromID": 700,
+               "stateToID": 701,
                "selected": false
           },
           {
@@ -894,12 +858,12 @@
                          [
                               "M",
                               470,
-                              432
+                              483
                          ],
                          [
                               "L",
                               470,
-                              454
+                              505
                          ]
                     ],
                     "stroke-width": 2,
@@ -929,8 +893,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 46,
-               "stateToID": 33,
+               "stateFromID": 700,
+               "stateToID": 691,
                "selected": false
           },
           {
@@ -941,12 +905,12 @@
                          [
                               "M",
                               570,
-                              475
+                              526
                          ],
                          [
                               "L",
                               491,
-                              475
+                              526
                          ]
                     ],
                     "stroke-width": 2,
@@ -971,8 +935,50 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 47,
-               "stateToID": 33,
+               "stateFromID": 701,
+               "stateToID": 691,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              275
+                         ],
+                         [
+                              "L",
+                              470,
+                              307
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 703,
+               "stateToID": 694,
                "selected": false
           }
      ],
@@ -982,8 +988,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1247,
-               "height": 630,
+               "width": 1243,
+               "height": 682,
                "r": 0,
                "rx": 0,
                "ry": 0,

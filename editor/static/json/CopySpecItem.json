@@ -1,11 +1,11 @@
 {
-     "editorVersion": "5.25",
+     "editorVersion": "5.27",
      "states": [
           {
-               "id": 29,
+               "id": 202,
                "attrs": {
-                    "x": 455,
-                    "y": 69,
+                    "x": 246,
+                    "y": 166,
                     "width": 30,
                     "height": 30,
                     "r": 15,
@@ -24,11 +24,11 @@
                "selected": false
           },
           {
-               "id": 30,
+               "id": 203,
                "attrs": {
-                    "x": 378,
-                    "y": 154,
-                    "width": 184,
+                    "x": 375,
+                    "y": 153,
+                    "width": 190,
                     "height": 56,
                     "r": 10,
                     "rx": 10,
@@ -52,7 +52,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Create a form and populate\nit with the content of the spec_item\nto be copied and ask the user to fill it",
+                    "entryDesc": "Create a form and populate\nit with the content of the spec_item\nto be copied and ask the user to edit it",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -63,10 +63,10 @@
                "selected": false
           },
           {
-               "id": 32,
+               "id": 205,
                "attrs": {
                     "x": 363,
-                    "y": 267,
+                    "y": 383,
                     "width": 214,
                     "height": 104,
                     "r": 10,
@@ -102,10 +102,10 @@
                "selected": false
           },
           {
-               "id": 34,
+               "id": 207,
                "attrs": {
-                    "x": 262,
-                    "y": 306,
+                    "x": 263,
+                    "y": 422,
                     "width": 26,
                     "height": 26,
                     "r": 13,
@@ -124,11 +124,11 @@
                "selected": false
           },
           {
-               "id": 35,
+               "id": 208,
                "attrs": {
-                    "x": 195,
-                    "y": 68,
-                    "width": 234,
+                    "x": 203,
+                    "y": 83,
+                    "width": 560,
                     "height": 56,
                     "r": 0,
                     "rx": 0,
@@ -142,17 +142,56 @@
                "fwprop": {
                     "autoid": 2,
                     "type": "note",
-                    "note": "Operation to copy a spec_item (only possible\non spec_items in the Default ValSet with status\nCNF, MOD or NEW) "
+                    "note": "Operation to copy a spec_item (only possible on spec_items in the Default ValSet with status CNF, MOD or NEW) \n\nNB: If the spec_item being copied had aliases in non-default ValSets, these are not copied"
                },
                "selected": false
           },
           {
-               "id": 37,
+               "id": 239,
                "attrs": {
-                    "x": 510,
-                    "y": 68,
-                    "width": 254,
-                    "height": 56,
+                    "x": 316,
+                    "y": 250,
+                    "width": 308,
+                    "height": 92,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 4,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N4",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Perform validity checks on spec_item attributes:\n(a) domain:name pair is unique within non-deleted, non-obsolete\nspec_items in the Default ValSet of the project\n(b) domain and name only contain alphanumeric characters and\nunderscores\n(c) category-specific validity checks are passed",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 253,
+               "attrs": {
+                    "x": 590,
+                    "y": 413,
+                    "width": 170,
+                    "height": 44,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -163,17 +202,17 @@
                     "stroke-dasharray": "--"
                },
                "fwprop": {
-                    "autoid": 4,
+                    "autoid": 1,
                     "type": "note",
-                    "note": "Validity requires that: the domain:name pair \nmust be unique within the non-deleted, non-obsolete \nspec_items of the project in the Default ValSet"
+                    "note": "If a validity check fails, the form\nis re-submitted to the user"
                },
                "selected": false
           },
           {
-               "id": 39,
+               "id": 259,
                "attrs": {
-                    "x": 556,
-                    "y": 237,
+                    "x": 622,
+                    "y": 293,
                     "width": 6,
                     "height": 6,
                     "r": 6,
@@ -185,19 +224,19 @@
                     "fill-opacity": 100
                },
                "fwprop": {
-                    "autoid": 3,
+                    "autoid": 1,
                     "type": "notedot",
                     "note": ""
                },
                "selected": false
           },
           {
-               "id": 52,
+               "id": 283,
                "attrs": {
-                    "x": 196,
-                    "y": 153,
-                    "width": 172,
-                    "height": 56,
+                    "x": 602,
+                    "y": 147,
+                    "width": 170,
+                    "height": 68,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -208,9 +247,31 @@
                     "stroke-dasharray": "--"
                },
                "fwprop": {
-                    "autoid": 5,
+                    "autoid": 6,
                     "type": "note",
-                    "note": "If the spec_item being copied\nhad aliases in non=Default ValSet,\nthese are not copied"
+                    "note": "ChangeLog attribute is only \ndisplayed for editing if the status\nof the spec_item is CNF or MOD\n(otherwise, it remains unchanged)"
+               },
+               "selected": false
+          },
+          {
+               "id": 286,
+               "attrs": {
+                    "x": 562,
+                    "y": 178,
+                    "width": 6,
+                    "height": 6,
+                    "r": 6,
+                    "rx": 6,
+                    "ry": 6,
+                    "fill": "#000",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 2,
+                    "type": "notedot",
+                    "note": ""
                },
                "selected": false
           }
@@ -223,13 +284,13 @@
                     "path": [
                          [
                               "M",
-                              470,
-                              104
+                              281,
+                              181
                          ],
                          [
                               "L",
-                              470,
-                              146
+                              367,
+                              181
                          ]
                     ],
                     "stroke-width": 2,
@@ -254,8 +315,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 29,
-               "stateToID": 30,
+               "stateFromID": 202,
+               "stateToID": 203,
                "selected": false
           },
           {
@@ -266,12 +327,12 @@
                          [
                               "M",
                               470,
-                              215
+                              214
                          ],
                          [
                               "L",
                               470,
-                              259
+                              242
                          ]
                     ],
                     "stroke-width": 2,
@@ -288,7 +349,7 @@
                     "actionType": "call function",
                     "guardCode": "",
                     "actionCode": "",
-                    "guardDesc": "Form is posted\nand is valid ",
+                    "guardDesc": "",
                     "guardAp": false,
                     "actionDesc": "",
                     "actionAp": false,
@@ -301,8 +362,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 30,
-               "stateToID": 32,
+               "stateFromID": 203,
+               "stateToID": 239,
                "selected": false
           },
           {
@@ -313,12 +374,12 @@
                          [
                               "M",
                               358,
-                              319
+                              435
                          ],
                          [
                               "L",
-                              296,
-                              319
+                              297,
+                              435
                          ]
                     ],
                     "stroke-width": 2,
@@ -343,8 +404,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 32,
-               "stateToID": 34,
+               "stateFromID": 205,
+               "stateToID": 207,
                "selected": false
           },
           {
@@ -354,18 +415,18 @@
                     "path": [
                          [
                               "M",
-                              637,
-                              129
+                              675,
+                              408
                          ],
                          [
                               "L",
-                              637,
-                              240
+                              675,
+                              296
                          ],
                          [
                               "L",
-                              570,
-                              240
+                              636,
+                              296
                          ]
                     ],
                     "stroke-width": 2,
@@ -378,8 +439,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "call function",
-                    "actionType": "call function",
+                    "guardType": "function",
+                    "actionType": "function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -387,8 +448,8 @@
                "shifty": 0,
                "vertexes": [
                     {
-                         "x": 637,
-                         "y": 240,
+                         "x": 675,
+                         "y": 296,
                          "hasMoved": true
                     }
                ],
@@ -396,8 +457,92 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 37,
-               "stateToID": 39,
+               "stateFromID": 253,
+               "stateToID": 259,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              470,
+                              347
+                         ],
+                         [
+                              "L",
+                              470,
+                              375
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 239,
+               "stateToID": 205,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              597,
+                              181
+                         ],
+                         [
+                              "L",
+                              576,
+                              181
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": "-"
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 283,
+               "stateToID": 286,
                "selected": false
           }
      ],
@@ -407,8 +552,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1247,
-               "height": 630,
+               "width": 1243,
+               "height": 682,
                "r": 0,
                "rx": 0,
                "ry": 0,
