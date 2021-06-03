@@ -21,6 +21,7 @@
                                            "implementation":  {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
                                            "p_kind":    {"label": "Kind", "req_in_form": true, "kind": "plain_text"},
                                            "val_set":   {"label": "ValSet",  "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
                                            "s_kind":    {"label": "Ver", "req_in_form": true, "kind": "plain_text"}
                                            },
@@ -75,6 +76,7 @@
                                            "p_kind":    {"label": "Kind", "req_in_form": true, "kind": "plain_text"},
                                            "p_link":    {"label": "Parent Req", "req_in_form": false, "kind": "spec_item_ref"},
                                            "val_set":   {"label": "ValSet",  "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"}
                                           },
                                   "p_kind_choices": {"SPC": "Specification Level",
@@ -121,6 +123,7 @@
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation": {"label": "Native Type", "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
                                            "n1":        {"label": "Size", "req_in_form": true, "kind": "int"}
                                           },
@@ -166,6 +169,7 @@
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation": {"label": "Native Type", "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
                                            "n1":        {"label": "Size", "req_in_form": true, "kind": "int"}
                                           },
@@ -213,6 +217,7 @@
                                            "n2":        {"label": "Height", "req_in_form": false, "kind": "int"},
                                            "n3":        {"label": "FW Prof DB ID", "req_in_form": false, "kind": "int"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"}
                                           },
                                   "p_kind_choices": {"SM": "State Machine", 
@@ -256,6 +261,7 @@
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation": {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"}
                                           },
                                   "p_kind_choices": {"INV": "Invalid"},
@@ -299,6 +305,7 @@
                                            "t1":        {"label": "Parameters", "req_in_form": true, "kind": "ref_text"},
                                            "t2":        {"label": "Destination", "req_in_form": true, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"}
                                           },
                                   "p_kind_choices": {"INV": "Invalid"},
@@ -348,6 +355,7 @@
                                            "p_link":    {"label": "Discriminant", "req_in_form": true, "kind": "spec_item_ref"},
                                            "t1":        {"label": "Parameters", "req_in_form": true, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"}
                                           },
                                   "p_kind_choices": {"INV": "Invalid"},
@@ -399,6 +407,7 @@
                                            "n2":        {"label": "Group Size", "req_in_form": false, "kind": "int"},
                                            "n3":        {"label": "Rep counter", "req_in_form": false, "kind": "int"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"}
                                           },
                                   "p_kind_choices": {"DISC": "Discriminant",
@@ -457,6 +466,7 @@
                                            "implementation": {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
                                            "s_link":    {"label": "Type", "req_in_form": true, "kind": "spec_item_ref"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"}
                                           },
                                   "p_kind_choices": {"INV": "Invalid"},
@@ -503,6 +513,7 @@
                                            "t1":        {"label": "Multiplicity", "req_in_form": false, "kind": "ref_text"},
                                            "t2":        {"label": "Unit", "req_in_form": false, "kind": "plain_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"}
                                            },
                                   "p_kind_choices": {"CNS": "Constant",
@@ -563,6 +574,7 @@
                                            "t5":        {"label": "Abort Action", "req_in_form": false, "kind": "ref_text"},
                                            "p_link":    {"label": "Packet", "req_in_form": true, "kind": "spec_item_ref"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"}
                                            },
                                   "p_kind_choices": {"INV": "Invalid"},
@@ -608,6 +620,7 @@
                                            "t2":        {"label": "PostCondition", "req_in_form": false, "kind": "ref_text"},
                                            "t3":        {"label": "Outcome", "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"}
                                            },
                                   "p_kind_choices": {"TST": "Test Case",
@@ -658,6 +671,7 @@
                                            "p_link":    {"label": "Ver Item", "req_in_form": true, "kind": "spec_item_ref"},
                                            "s_link":    {"label": "Spec Item", "req_in_form": true, "kind": "spec_item_ref"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
+                                           "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"}
                                            },
                                   "p_kind_choices": {"INV": "Invalid"},
