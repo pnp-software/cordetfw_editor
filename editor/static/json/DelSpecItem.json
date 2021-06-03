@@ -1,8 +1,8 @@
 {
-     "editorVersion": "5.25",
+     "editorVersion": "5.27",
      "states": [
           {
-               "id": 90,
+               "id": 750,
                "attrs": {
                     "x": 403,
                     "y": 184,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 91,
+               "id": 751,
                "attrs": {
                     "x": 204,
                     "y": 432,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 93,
+               "id": 753,
                "attrs": {
                     "x": 405,
                     "y": 435,
@@ -85,9 +85,9 @@
                "selected": false
           },
           {
-               "id": 94,
+               "id": 754,
                "attrs": {
-                    "x": 444,
+                    "x": 126,
                     "y": 177,
                     "width": 262,
                     "height": 44,
@@ -108,7 +108,7 @@
                "selected": false
           },
           {
-               "id": 96,
+               "id": 756,
                "attrs": {
                     "x": 406,
                     "y": 274,
@@ -132,7 +132,7 @@
                "selected": false
           },
           {
-               "id": 97,
+               "id": 757,
                "attrs": {
                     "x": 470,
                     "y": 433.5,
@@ -171,7 +171,7 @@
                "selected": false
           },
           {
-               "id": 99,
+               "id": 759,
                "attrs": {
                     "x": 182,
                     "y": 503.5,
@@ -194,7 +194,7 @@
                "selected": false
           },
           {
-               "id": 101,
+               "id": 761,
                "attrs": {
                     "x": 264,
                     "y": 463,
@@ -216,7 +216,7 @@
                "selected": false
           },
           {
-               "id": 102,
+               "id": 762,
                "attrs": {
                     "x": 203,
                     "y": 350,
@@ -255,7 +255,7 @@
                "selected": false
           },
           {
-               "id": 104,
+               "id": 764,
                "attrs": {
                     "x": 487,
                     "y": 350,
@@ -294,7 +294,7 @@
                "selected": false
           },
           {
-               "id": 135,
+               "id": 766,
                "attrs": {
                     "x": 255,
                     "y": 274,
@@ -318,7 +318,7 @@
                "selected": false
           },
           {
-               "id": 169,
+               "id": 767,
                "attrs": {
                     "x": 553,
                     "y": 274,
@@ -338,6 +338,51 @@
                     "type": "choice",
                     "note": "",
                     "identifier": "DECISION3"
+               },
+               "selected": false
+          },
+          {
+               "id": 805,
+               "attrs": {
+                    "x": 451,
+                    "y": 183.5,
+                    "width": 228,
+                    "height": 56,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#ccccff",
+                    "stroke": "#6599FF",
+                    "stroke-width": 2,
+                    "fill-opacity": 100,
+                    "stroke-dasharray": "--"
+               },
+               "fwprop": {
+                    "autoid": 4,
+                    "type": "note",
+                    "note": "In this case, users are given the option to\nmake a change_log entry to explain the reason\nfor the deletion"
+               },
+               "selected": true
+          },
+          {
+               "id": 808,
+               "attrs": {
+                    "x": 501,
+                    "y": 283,
+                    "width": 6,
+                    "height": 6,
+                    "r": 6,
+                    "rx": 6,
+                    "ry": 6,
+                    "fill": "#000",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 2,
+                    "type": "notedot",
+                    "note": ""
                },
                "selected": false
           }
@@ -381,8 +426,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 90,
-               "stateToID": 96,
+               "stateFromID": 750,
+               "stateToID": 756,
                "selected": false
           },
           {
@@ -428,8 +473,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 96,
-               "stateToID": 135,
+               "stateFromID": 756,
+               "stateToID": 766,
                "selected": false
           },
           {
@@ -475,8 +520,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 96,
-               "stateToID": 169,
+               "stateFromID": 756,
+               "stateToID": 767,
                "selected": false
           },
           {
@@ -517,8 +562,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 99,
-               "stateToID": 101,
+               "stateFromID": 759,
+               "stateToID": 761,
                "selected": false
           },
           {
@@ -559,8 +604,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 102,
-               "stateToID": 91,
+               "stateFromID": 762,
+               "stateToID": 751,
                "selected": false
           },
           {
@@ -601,8 +646,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 97,
-               "stateToID": 93,
+               "stateFromID": 757,
+               "stateToID": 753,
                "selected": false
           },
           {
@@ -648,8 +693,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 135,
-               "stateToID": 102,
+               "stateFromID": 766,
+               "stateToID": 762,
                "selected": false
           },
           {
@@ -716,8 +761,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 135,
-               "stateToID": 91,
+               "stateFromID": 766,
+               "stateToID": 751,
                "selected": false
           },
           {
@@ -763,8 +808,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 169,
-               "stateToID": 104,
+               "stateFromID": 767,
+               "stateToID": 764,
                "selected": false
           },
           {
@@ -831,8 +876,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 169,
-               "stateToID": 97,
+               "stateFromID": 767,
+               "stateToID": 757,
                "selected": false
           },
           {
@@ -861,8 +906,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -873,8 +918,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 91,
-               "stateToID": 93,
+               "stateFromID": 751,
+               "stateToID": 753,
                "selected": false
           },
           {
@@ -903,6 +948,48 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 764,
+               "stateToID": 757,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              537.979865771812,
+                              244.5
+                         ],
+                         [
+                              "L",
+                              513.006711409396,
+                              275
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": "-"
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
                     "guardType": "function",
                     "actionType": "function",
                     "guardCode": "",
@@ -915,8 +1002,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 104,
-               "stateToID": 97,
+               "stateFromID": 805,
+               "stateToID": 808,
                "selected": false
           }
      ],
@@ -926,8 +1013,8 @@
           "attrs": {
                "x": 0,
                "y": 120,
-               "width": 1247,
-               "height": 656,
+               "width": 1243,
+               "height": 682,
                "r": 0,
                "rx": 0,
                "ry": 0,
