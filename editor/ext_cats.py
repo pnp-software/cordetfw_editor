@@ -93,7 +93,7 @@ def ext_model_get_choice(request, model_id):
     the external attributes for the chosen model instance (or None if the model
     instance cannot be found).
     (NB: The external attributes are those listed at the 'ext_att' key in the
-         'configus' dictionary).
+         'configs' dictionary).
     """
     fw_db, fw_db_cur = connect(request)
     
