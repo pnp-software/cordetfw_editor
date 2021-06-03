@@ -461,9 +461,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
-    spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
-                        exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
-    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
+    context = {'form': form, 'project': project, 'title': title}
     return render(request, 'basic_form.html', context) 
 
 
@@ -581,6 +579,12 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+        title = 'Delete '+configs['cats'][cat]['name']+' in Application '+application.name
+    else:
+        application = None
+        title = 'Delete '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
 
@@ -588,17 +592,30 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         if spec_item.val_set.name == 'Default':
             remove_spec_item_aliases(request, spec_item)
         remove_spec_item(request, spec_item)
-    else:
-        if spec_item.val_set.name == 'Default':
-            mark_spec_item_aliases_as_del(request, spec_item)
-        spec_item.status = 'DEL' 
-        spec_item.save() 
-    
-    redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_val, s_parent_id, p_parent_id, None)
-    return redirect(redirect_url)
+        redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                                sel_val, s_parent_id, p_parent_id, None)
+        return redirect(redirect_url)
+  
+    if request.method == 'POST':   
+        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
+                            request.POST, initial=spec_item_to_edit(spec_item))
+        if form.is_valid():
+            if spec_item.val_set.name == 'Default':
+                mark_spec_item_aliases_as_del(request, spec_item)
+            spec_item.status = 'DEL' 
+            spec_item.change_log = form.cleaned_data['change_log']
+            spec_item.save() 
+            redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                                    sel_val, s_parent_id, p_parent_id, None)
+            return redirect(redirect_url)
+    else:   
+        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item))
 
+    context = {'form': form, 'project': project, 'title': title}
+    return render(request, 'basic_form.html', context) 
 
+        
 @login_required         
 def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)

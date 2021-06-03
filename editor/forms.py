@@ -113,7 +113,10 @@ class SpecItemForm(forms.Form):
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-8'
-        self.helper.add_input(Submit('submit', 'Submit'))
+        if mode == 'del':
+            self.helper.add_input(Submit('submit', 'Delete'))
+        else:
+            self.helper.add_input(Submit('submit', 'Submit'))
         self.fields['desc'].widget.attrs.update(rows = 1)
         self.fields['value'].widget.attrs.update(rows = 1)
         self.fields['rationale'].widget.attrs.update(rows = 1)
@@ -173,7 +176,15 @@ class SpecItemForm(forms.Form):
             self.fields['p_link'].widget = forms.HiddenInput()
             self.fields['s_link'].disabled = True
             self.fields['s_link'].widget = forms.HiddenInput()
-                       
+            
+        # In delete mode, all fields but the change_log are visible but not editable
+        if (self.mode == 'del'):
+            for field in self.fields:  
+                if (field in config['attrs']) and (field != 'change_log'):
+                    self.fields[field].disabled = True
+            val_set_id = self.initial['val_set']
+            self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
+                    
     def clean(self):
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
@@ -226,5 +237,4 @@ class SpecItemForm(forms.Form):
             raise forms.ValidationError(check_msg)
  
         return cd
- 
  
