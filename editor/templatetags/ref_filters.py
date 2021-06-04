@@ -9,7 +9,7 @@ from .. import convert
 
 register = template.Library()
 
-# The key is name of a kind of specification item attribute content; the value
+# The key is the name of a kind of specification item attribute content; the value
 # is the function which transforms that content from database to display representation  
 conv_db_disp_func = {"plain_text": "conv_do_nothing",
                      'ref_text': "conv_db_disp_ref_text",
