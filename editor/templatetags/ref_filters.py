@@ -105,7 +105,7 @@ def filter_refs(s):
     The input should be passed through escape() before being filtered to ensure that any html code entered 
     by the (possibly malicious) user has been sanitized.
     """
-    return mark_safe(convert_db_to_display(s, 1))
+    return mark_safe(convert_db_to_display(s))
 
 
 @register.filter(is_safe=True)

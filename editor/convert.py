@@ -54,35 +54,29 @@ def frmt_string(s):
     return s
 
 
-def convert_db_to_display(s, n):
+def convert_db_to_display(s):
     """
     The string s is a text field read from the database. It
     contains internal references in the form #iref:n. References in
     the argument string are replaced with <domain>:<name> and hyperlinks.
-    Invalid references are replaced with: ERROR:ERROR.
-    This function is called recursively to handle all references in string s.
-    The argument n is the depth of recursion. 
+    Invalid references are replaced with: ERROR:n.
     """
-    match = pattern_db.search(s)
-    if match == None:
-        return s
-    ref = match.group().split(':')
-    try:
-        if ref[0] == '#iref': 
-            item = SpecItem.objects.get(id=ref[1])
-            project_id = str(item.project.id) if item.project != None else '0'
-            application_id = str(item.application.id) if item.application != None else '0'
-            target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
-                    item.domain+'\list_spec_items'
-            s_mod = s[:match.start()]+'<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
-                    item.domain+':'+item.name+'</a>'
-        else:
-            s_mod = s[:match.start()]+ref[0]+':'+ref[1]  
-    except ObjectDoesNotExist:
-        s_mod = s[:match.start()]+ref[0]+':'+'ERROR:ERROR'
-        
-    return s_mod + convert_db_to_display(s[match.end():], n+1)
-
+    matches = pattern_db.findall(s)
+    for match in matches:
+        if match[0] == 'iref':
+            try:
+                item = SpecItem.objects.get(id=match[1])
+                project_id = str(item.project.id) if item.project != None else '0'
+                application_id = str(item.application.id) if item.application != None else '0'
+                target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
+                        item.domain+'\list_spec_items'
+                iref_html = '<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
+                        item.domain+':'+item.name+'</a>'
+                s = s.replace('#iref:'+match[1], iref_html)
+            except ObjectDoesNotExist:
+                s = s.replace('#iref:'+match[1], 'ERROR:'+match[1])
+    return s
+    
 
 def conv_do_nothing(context, item, name):
     """ Returns the value of attribute 'name' of spec_item 'item' without change """
@@ -108,7 +102,7 @@ def conv_db_disp_ref_text(context, item, name):
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
     s = getattr(item, name)
-    return convert_db_to_display(s, 1)
+    return convert_db_to_display(s)
     
     
 def conv_db_disp_spec_item_ref(context, spec_item, name):
@@ -137,7 +131,7 @@ def conv_db_disp_eval_ref(context, item, name):
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
     s = getattr(item, name)
-    conv_s = convert_db_to_display(s, 1)
+    conv_s = convert_db_to_display(s)
     if conv_s != s:
         nval = eval_di_value(s)
         return conv_s + ' = ' + nval
