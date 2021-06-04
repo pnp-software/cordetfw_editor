@@ -461,7 +461,10 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
-    context = {'form': form, 'project': project, 'title': title}
+    # Generate list of items for the auto-completion list
+    spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
+                        exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context) 
 
 
@@ -525,6 +528,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
@@ -566,6 +570,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
@@ -612,7 +617,10 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
-    context = {'form': form, 'project': project, 'title': title}
+    # Generate list of items for the auto-completion list
+    spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
+                        exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context) 
 
         
