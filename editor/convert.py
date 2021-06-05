@@ -14,6 +14,7 @@ from django.db.models import ForeignKey
 from django.conf import settings
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
+from editor.markdown import markdown_to_html, markdown_to_latex
        
 with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
     configs = json.load(config_file)
@@ -57,25 +58,27 @@ def frmt_string(s):
 def convert_db_to_display(s):
     """
     The string s is a text field read from the database. It
-    contains internal references in the form #iref:n. References in
-    the argument string are replaced with <domain>:<name> and hyperlinks.
+    contains markdown text and internal references in the form #iref:n. 
+    Internal references are replaced with <domain>:<name> and hyperlinks.
     Invalid references are replaced with: ERROR:n.
+    Markdown text is converted to html.
     """
-    matches = pattern_db.findall(s)
-    for match in matches:
-        if match[0] == 'iref':
-            try:
-                item = SpecItem.objects.get(id=match[1])
-                project_id = str(item.project.id) if item.project != None else '0'
-                application_id = str(item.application.id) if item.application != None else '0'
-                target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
-                        item.domain+'\list_spec_items'
-                iref_html = '<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
-                        item.domain+':'+item.name+'</a>'
-                s = s.replace('#iref:'+match[1], iref_html)
-            except ObjectDoesNotExist:
-                s = s.replace('#iref:'+match[1], 'ERROR:'+match[1])
-    return s
+    def iref_to_html(match):
+        """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
+        try:
+            item = SpecItem.objects.get(id=match.group(2))
+            project_id = str(item.project.id) if item.project != None else '0'
+            application_id = str(item.application.id) if item.application != None else '0'
+            target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
+                    item.domain+'\list_spec_items'
+            iref_html = '<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
+                    item.domain+':'+item.name+'</a>'
+            return iref_html
+        except ObjectDoesNotExist:
+            return 'ERROR:'+match.group(2)
+    
+    s_iref = pattern_db.sub(iref_to_html, s)
+    return markdown_to_html(s_iref)
     
 
 def conv_do_nothing(context, item, name):
@@ -144,21 +147,21 @@ def convert_edit_to_db(project, s):
     The argument is a text field in edit representation (with internal
     references in the format '#cat:domain:name'). The function converts
     it to database representation (internal references become: iref:<id>).
-    Invalid references are replaced with: ERROR:ERROR.
+    Invalid references are left unchanged but an entry is made
+    in the logger.
     """
-    match = pattern_edit.search(s)
-    if match == None:
-        return s
-    ref = match.group().split(':')
-    try:
-        id = SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
-                get(project_id=project.id, cat=ref[0][1:], domain=ref[1], name=ref[2]).id
-        s_mod = s[:match.start()] + '#iref:' + str(id)
-    except ObjectDoesNotExist:
-        logger.warning('Non-existent internal reference: '+str(ref))
-        s_mod = s[:match.start()] + ref[0] + ':' + ref[1] + ':' + ref[2]
+    def edit_to_iref(match):
+        """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
+        try:
+            id = SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
+                    get(project_id=project.id, cat=match.group(1), domain=match.group(2), name=match.group(3)).id
+            return '#iref:' + str(id)
+        except ObjectDoesNotExist:
+            logger.warning('Non-existent internal reference: '+str(match.group()))
+            return '#' + match.group(1) + ':' + match.group(2) + ':' + match.group(3)
     
-    return s_mod + convert_edit_to_db(project, s[match.end():])
+    s_db = pattern_edit.sub(edit_to_iref, s)
+    return s_db
     
     
 def convert_exp_to_db(project, s):
@@ -181,44 +184,39 @@ def convert_db_to_edit(s):
     The argument string is a text field read from the database. It
     contains internal references in the format #iref:n.
     The internal references are replaced with: #<cat>:<domain>:<name>.
-    Invalid references are replaced with: ERROR:ERROR.
+    Invalid references are replaced with: ERROR:n.
     """
-    match = pattern_db.search(s)
-    if match == None:
-      return s
-    ref = match.group().split(':')
-    try:
-      if ref[0] == '#iref': 
-        item = SpecItem.objects.get(id=ref[1]) 
-        s_mod = s[:match.start()]+'#'+item.cat+':'+item.domain+':'+item.name
-      else:
-        s_mod = s[:match.start()]+ref[0]+':'+ref[1]
-    except ObjectDoesNotExist:
-      s_mod = s[:match.start()]+'ERROR:ERROR'
-    return s_mod + convert_db_to_edit(s[match.end():])
+    def iref_to_edit(match):
+        """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
+        try:
+            item = SpecItem.objects.get(id=match.group(2))
+            return '#'+item.cat+':'+item.domain+':'+item.name
+        except ObjectDoesNotExist:
+            return 'ERROR:'+match.group(2)
+    
+    return pattern_db.sub(iref_to_edit, s)
 
 
 def convert_db_to_latex(s):
     """ 
-    The argument string is a text field read from the database. 
+    The argument string is a text field read from the database which 
+    contains markdown text and internal references.
     Internal references in the form #iref:n are converted to the
     for: <domain>:<name> and special latex characters are escaped.
-    Invalid references are replaced with: ERROR:ERROR.
+    Invalid references are replaced with: ERROR:n.
+    Markdown text is converted to latex.
     """
-    match = pattern_db.search(s)
-    if match == None:
-        return frmt_string(s)
-    ref = match.group().split(':')
-    try:
-        if ref[0] == '#iref': 
-            item = SpecItem.objects.get(id=ref[1])
-            s_mod = s[:match.start()] + item.domain+':'+item.name
-        else:
-            s_mod = s[:match.start()]+ref[0]+':'+ref[1]
-    except ObjectDoesNotExist:
-        s_mod = s[:match.start()]+'ERROR:ERROR'
-       
-    return frmt_string(s_mod) + convert_db_to_latex(s[match.end():])
+    def iref_to_latex(match):
+        """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
+        try:
+            item = SpecItem.objects.get(id=match.group(2))
+            return item.domain+':'+item.name
+        except ObjectDoesNotExist:
+            return 'ERROR:'+match.group(2)
+    
+    s_iref = pattern_db.sub(iref_to_latex, s)
+    s_md = markdown_to_latex(s_iref)
+    return frmt_string(s_md)
  
 
 def render_for_eval(s, n):

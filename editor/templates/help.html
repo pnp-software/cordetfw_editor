@@ -338,6 +338,23 @@
     </ul>
     </p>
 
+
+    <h5><a name="Markdown">Markdown Language</a></h5>
+    <p>
+    A simple markdown language is supported to let users emphasize text:
+    <ul>
+    <li>'**...**' is redendered as <b>bolded text</b></li>
+    <li>'++...++' is redendered as <u>underlined text</u></li>
+    <li>'__...__' is redendered as <i>italicized text</i></li>
+    <li>'``...``' is redendered as <code>teletype text</code></li>
+    </ul>
+    </p><p>
+    Markdown can be used in attributes of <a href=#Rendering_of_Specification_Item_Attributes>kind</a>
+    <code>plain_text</code> and <code>ref_text</code>.    
+    </p><p>
+    Markdown support for bulleted lists and code listing is still TBD.
+    </p>    
+
     
    <h5><a name="SpecItemAttrRender">Rendering of Specification Item Attributes</a></h5>
     <p>
@@ -345,8 +362,10 @@
     holds and on the context within which it is rendered.
     The kind of content is one of the following:
     <ul>
-        <li>plain_text: text without <a href="#SpecItemLinks">internal references</a></li>
-        <li>ref_text: text with <a href="#SpecItemLinks">internal references</a></li>
+        <li>plain_text: text with <a href=#Markdown_Language>markdown</a> 
+                        but without <a href="#SpecItemLinks">internal references</a></li>
+        <li>ref_text: text with <a href=#Markdown_Language>markdown</a> 
+                      and with <a href="#SpecItemLinks">internal references</a></li>
         <li>spec_item_ref: a reference to another specification item 
             (<a href="#SpecItemLinks">direct link</a>)</li>
         <li>plain_ref: a reference to a database model instance other than a specification item</li>
