@@ -339,7 +339,7 @@
     </p>
 
 
-    <h5><a name="Markdown">Markdown Language</a></h5>
+    <h5><a name="Markdown">Markdown Tags</a></h5>
     <p>
     A simple markdown language is supported to let users emphasize text:
     <ul>
@@ -350,7 +350,9 @@
     </ul>
     </p><p>
     Markdown can be used in attributes of <a href=#Rendering_of_Specification_Item_Attributes>kind</a>
-    <code>plain_text</code> and <code>ref_text</code>.    
+    <code>plain_text</code> and <code>ref_text</code>.   
+    It is not possible to nest markdown tags (e.g. it is not possible to have a 
+    word which is both underlined and bolded. 
     </p><p>
     Markdown support for bulleted lists and code listing is still TBD.
     </p>    
@@ -362,9 +364,9 @@
     holds and on the context within which it is rendered.
     The kind of content is one of the following:
     <ul>
-        <li>plain_text: text with <a href=#Markdown_Language>markdown</a> 
+        <li>plain_text: text with <a href=#Markdown_Tags>markdown tags</a> 
                         but without <a href="#SpecItemLinks">internal references</a></li>
-        <li>ref_text: text with <a href=#Markdown_Language>markdown</a> 
+        <li>ref_text: text with <a href=#Markdown_Language>markdown tags</a> 
                       and with <a href="#SpecItemLinks">internal references</a></li>
         <li>spec_item_ref: a reference to another specification item 
             (<a href="#SpecItemLinks">direct link</a>)</li>
