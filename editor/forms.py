@@ -9,7 +9,7 @@ from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
 from editor.convert import pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
-from editor.configs import configs, get_p_link_choices, get_s_link_choices
+from editor.configs import configs, get_p_link_choices, get_s_link_choices, do_cat_specific_checks
 from editor import ext_cats
 
 # Regex pattern for 'domain' and 'name' (alphanumeric characters and underscores)
@@ -86,6 +86,7 @@ class SpecItemForm(forms.Form):
     rationale = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    change_log = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     p_kind = forms.ChoiceField(choices=())
     s_kind = forms.ChoiceField(choices=())
     val_set = forms.ModelChoiceField(queryset=None, empty_label=None)
@@ -112,12 +113,16 @@ class SpecItemForm(forms.Form):
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-8'
-        self.helper.add_input(Submit('submit', 'Submit'))
+        if mode == 'del':
+            self.helper.add_input(Submit('submit', 'Delete'))
+        else:
+            self.helper.add_input(Submit('submit', 'Submit'))
         self.fields['desc'].widget.attrs.update(rows = 1)
         self.fields['value'].widget.attrs.update(rows = 1)
         self.fields['rationale'].widget.attrs.update(rows = 1)
         self.fields['implementation'].widget.attrs.update(rows = 1)
         self.fields['remarks'].widget.attrs.update(rows = 1)
+        self.fields['change_log'].widget.attrs.update(rows = 1)
         self.fields['t1'].widget.attrs.update(rows = 1)
         self.fields['t2'].widget.attrs.update(rows = 1)
         self.fields['t3'].widget.attrs.update(rows = 1)
@@ -149,9 +154,10 @@ class SpecItemForm(forms.Form):
             self.fields['ext_item'].label = cat
             self.fields['ext_item'].choices = getattr(ext_cats, get_choices_func_name)(request)
         
-        # In add mode, the ValSet is not visible
+        # In add mode, the ValSet and ChangeLog are not visible
         if (self.mode == 'add'):
             self.fields['val_set'].widget = forms.HiddenInput()      
+            self.fields['change_log'].widget = forms.HiddenInput()      
 
         # In all modes but copy and edit mode, the ValSet cannot be edited but is visible
         if (self.mode == 'copy') or (self.mode == 'edit'):     
@@ -159,21 +165,37 @@ class SpecItemForm(forms.Form):
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
     
-        # In split mode, the ValSet can be edited but domain, name and pointer fields must remain unchanged
-        # Parent field  must remain hidden
+        # In split mode, the ValSet can be edited but domain, name, and change_log  
+        # must remain unchanged. The s_link and p_link fields must remain hidden.
         if (self.mode == 'split'):     
             self.fields['val_set'].queryset = ValSet.objects.filter(project_id=project.id).order_by('name')
             self.fields['domain'].disabled = True
             self.fields['name'].disabled = True
+            self.fields['change_log'].disabled = True
             self.fields['p_link'].disabled = True
             self.fields['p_link'].widget = forms.HiddenInput()
             self.fields['s_link'].disabled = True
             self.fields['s_link'].widget = forms.HiddenInput()
-                       
+            
+        # In delete mode, all fields but the change_log are visible but not editable
+        if (self.mode == 'del'):
+            for field in self.fields:  
+                if (field in config['attrs']) and (field != 'change_log'):
+                    self.fields[field].disabled = True
+            val_set_id = self.initial['val_set']
+            self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
+                    
     def clean(self):
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
         
+        # When in add mode: load data for external attributes
+        if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
+            get_choice_func_name = 'ext_' + self.cat.lower() + '_get_choice'
+            ext_choice = getattr(ext_cats, get_choice_func_name)(self.request, cd['ext_item'])
+            for ext_attr in self.config['ext_attrs']:
+                cd[ext_attr] = ext_choice[ext_attr]
+            
         # Check that domain and name only contain alphanumeric characters and underscores
         if not pattern_name.match(self.cleaned_data['name']):
             raise ValidationError({'name':'Name may contain only alphanumeric characters and underscores'})
@@ -188,13 +210,6 @@ class SpecItemForm(forms.Form):
                 if (self.config['attrs'][field]['kind'] == 'ref_text') or  (self.config['attrs'][field]['kind'] == 'eval_ref'):
                     cd[field] = convert_edit_to_db(self.project, cd[field])
         
-        # when in add mode: load data for external attributes 1
-        if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
-            get_choice_func_name = 'ext_' + self.cat.lower() + '_get_choice'
-            ext_choice = getattr(ext_cats, get_choice_func_name)(self.request, cd['ext_item'])
-            for ext_attr in self.config['ext_attrs']:
-                cd[ext_attr] = ext_choice[ext_attr]
-            
         # Verify that, in add and copy modes, the domain:name pair is unique within non-deleted, 
         # non-obsolete spec_items in the project and ValSet
         if (self.mode == 'add') or (self.mode == 'copy'):
@@ -216,29 +231,10 @@ class SpecItemForm(forms.Form):
                      domain=cd['domain'], name=cd['name'], val_set_id=cd['val_set']).exists():
                 raise forms.ValidationError('Split Error: ValSet is already in use for this domain:name')
         
-        # Verify that, in the value field of a data item, internal references point to other data items
-        if (self.cat == 'DataItem'):
-            internal_refs = re.findall(pattern_edit, cd['value'])
-            for ref in internal_refs:
-                if ref[0:8] != 'DataItem#':
-                    raise forms.ValidationError('The value field of a data item cannot contain references to non-'+\
-                                                'data items: '+str(ref))
-
-        # Verify that tThe value of a data item of enumerated type is an internal reference to an enumerated 
-        # value of the data item's type
-        if (self.cat == 'DataItem') and cd['p_link'].cat == 'EnumType':
-            m = re.match(pattern_db, cd['value'].strip())
-            if (m == None) or (m.span()[1] != len(cd['value'].strip())):
-                raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
-            ref = cd['value'].strip().split(':')
-            try:
-                enum_val = SpecItem.objects.get(id=ref[1], cat='EnumValue')
-            except ObjectDoesNotExist:
-                raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type: '+\
-                                            'The reference is invalid')
-            if enum_val.s_link.id != cd['p_link'].id:
-                raise forms.ValidationError('Data item value must be a reference to an enumerated value of the item type')
+        # Perform category-specific checks
+        check_msg = do_cat_specific_checks(self)
+        if check_msg != '':
+            raise forms.ValidationError(check_msg)
  
         return cd
- 
  

@@ -1,10 +1,10 @@
 {
-     "editorVersion": "5.25",
+     "editorVersion": "5.27",
      "states": [
           {
                "id": 1,
                "attrs": {
-                    "x": 305,
+                    "x": 273,
                     "y": 73,
                     "width": 30,
                     "height": 30,
@@ -66,7 +66,7 @@
                "id": 4,
                "attrs": {
                     "x": 397,
-                    "y": 170,
+                    "y": 363,
                     "width": 170,
                     "height": 44,
                     "r": 10,
@@ -105,9 +105,9 @@
                "id": 6,
                "attrs": {
                     "x": 378,
-                    "y": 269,
+                    "y": 446,
                     "width": 208,
-                    "height": 80,
+                    "height": 92,
                     "r": 10,
                     "rx": 10,
                     "ry": 10,
@@ -130,7 +130,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "(a) Set status of spec_item to NEW\n(b) Set previous pointer to None\n(c) Set ValSet to the default ValSet\n(d) Set owner to the current user\n(e) Set update time to the current time",
+                    "entryDesc": "(a) Set status of spec_item to NEW\n(b) Set previous pointer to None\n(c) Set ValSet to the default ValSet\n(d) Set owner to the current user\n(e) Set update time to the current time\n(f) Leave ChangeLog empty",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -143,8 +143,8 @@
           {
                "id": 8,
                "attrs": {
-                    "x": 307,
-                    "y": 296,
+                    "x": 275,
+                    "y": 479,
                     "width": 26,
                     "height": 26,
                     "r": 13,
@@ -165,10 +165,10 @@
           {
                "id": 9,
                "attrs": {
-                    "x": 589,
-                    "y": 164,
-                    "width": 194,
-                    "height": 68,
+                    "x": 588,
+                    "y": 175,
+                    "width": 170,
+                    "height": 44,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -181,14 +181,14 @@
                "fwprop": {
                     "autoid": 1,
                     "type": "note",
-                    "note": "The form is valid if the domain:name\nof the new spec_item are unique within\nnon-deleted, non-obsolete spec_items\nin the Default ValSet of the project"
+                    "note": "If a validity check fails, the form\nis re-submitted to the user"
                },
                "selected": false
           },
           {
                "id": 11,
                "attrs": {
-                    "x": 595,
+                    "x": 582,
                     "y": 71.5,
                     "width": 182,
                     "height": 33,
@@ -211,8 +211,8 @@
           {
                "id": 13,
                "attrs": {
-                    "x": 566,
-                    "y": 137,
+                    "x": 634,
+                    "y": 283,
                     "width": 6,
                     "height": 6,
                     "r": 6,
@@ -229,6 +229,108 @@
                     "note": ""
                },
                "selected": false
+          },
+          {
+               "id": 42,
+               "attrs": {
+                    "x": 470,
+                    "y": 165,
+                    "width": 24,
+                    "height": 24,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "transform": "r45"
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "choice",
+                    "note": "",
+                    "identifier": "DECISION1"
+               },
+               "selected": false
+          },
+          {
+               "id": 47,
+               "attrs": {
+                    "x": 182,
+                    "y": 155,
+                    "width": 118,
+                    "height": 44,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 4,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N4",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Load content of\nexternal attributes",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 71,
+               "attrs": {
+                    "x": 328,
+                    "y": 240,
+                    "width": 308,
+                    "height": 92,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
+                    "stroke": "#6599FF",
+                    "stroke-width": 2,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 5,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N5",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Perform validity checks on spec_item attributes:\n(a) domain:name pair is unique within non-deleted, non-obsolete\nspec_items in the Default ValSet of the project\n(b) domain and name only contain alphanumeric characters and\nunderscores\n(c) category-specific validity checks are passed",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": true
           }
      ],
      "connections": [
@@ -239,7 +341,7 @@
                     "path": [
                          [
                               "M",
-                              340,
+                              308,
                               88
                          ],
                          [
@@ -287,7 +389,7 @@
                          [
                               "L",
                               482,
-                              162
+                              147
                          ]
                     ],
                     "stroke-width": 2,
@@ -304,7 +406,7 @@
                     "actionType": "call function",
                     "guardCode": "",
                     "actionCode": "",
-                    "guardDesc": "Form is posted\nand is valid ",
+                    "guardDesc": "",
                     "guardAp": false,
                     "actionDesc": "",
                     "actionAp": false,
@@ -318,7 +420,7 @@
                     "y": 0
                },
                "stateFromID": 2,
-               "stateToID": 4,
+               "stateToID": 42,
                "selected": false
           },
           {
@@ -329,12 +431,12 @@
                          [
                               "M",
                               482,
-                              219
+                              412
                          ],
                          [
                               "L",
                               482,
-                              261
+                              438
                          ]
                     ],
                     "stroke-width": 2,
@@ -371,12 +473,12 @@
                          [
                               "M",
                               373,
-                              309
+                              492
                          ],
                          [
                               "L",
-                              341,
-                              309
+                              309,
+                              492
                          ]
                     ],
                     "stroke-width": 2,
@@ -412,18 +514,18 @@
                     "path": [
                          [
                               "M",
-                              686,
-                              159
+                              673,
+                              224
                          ],
                          [
                               "L",
-                              686,
-                              140
+                              673,
+                              286
                          ],
                          [
                               "L",
-                              580,
-                              140
+                              648,
+                              286
                          ]
                     ],
                     "stroke-width": 2,
@@ -445,8 +547,8 @@
                "shifty": 0,
                "vertexes": [
                     {
-                         "x": 686,
-                         "y": 140,
+                         "x": 673,
+                         "y": 286,
                          "hasMoved": true
                     }
                ],
@@ -457,6 +559,195 @@
                "stateFromID": 9,
                "stateToID": 13,
                "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              455,
+                              177
+                         ],
+                         [
+                              "L",
+                              308,
+                              177
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "1",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "The spec_item being added\nis an external spec_item ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": 11,
+               "shifty": -9,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 42,
+               "stateToID": 47,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              482,
+                              204
+                         ],
+                         [
+                              "L",
+                              482,
+                              232
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": "2",
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "call function",
+                    "actionType": "call function",
+                    "guardCode": "",
+                    "actionCode": "",
+                    "guardDesc": "Else ",
+                    "guardAp": false,
+                    "actionDesc": "",
+                    "actionAp": false,
+                    "note": ""
+               },
+               "shiftx": -26,
+               "shifty": 1,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 42,
+               "stateToID": 71,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              241,
+                              204
+                         ],
+                         [
+                              "L",
+                              241,
+                              286
+                         ],
+                         [
+                              "L",
+                              320,
+                              286
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [
+                    {
+                         "x": 241,
+                         "y": 286,
+                         "hasMoved": true
+                    }
+               ],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 47,
+               "stateToID": 71,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              482,
+                              337
+                         ],
+                         [
+                              "L",
+                              482,
+                              355
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": ""
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 71,
+               "stateToID": 4,
+               "selected": false
           }
      ],
      "globals": {
@@ -465,8 +756,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1247,
-               "height": 630,
+               "width": 1243,
+               "height": 682,
                "r": 0,
                "rx": 0,
                "ry": 0,
@@ -488,7 +779,7 @@
                "smNotes": "",
                "memalloc": "dynamic",
                "displayInfo": 0,
-               "displayOrder": 1,
+               "displayOrder": 0,
                "smTags": "CordetFwEditor"
           }
      }

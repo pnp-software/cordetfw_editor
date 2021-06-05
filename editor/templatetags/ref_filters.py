@@ -9,7 +9,7 @@ from .. import convert
 
 register = template.Library()
 
-# The key is name of a kind of specification item attribute content; the value
+# The key is the name of a kind of specification item attribute content; the value
 # is the function which transforms that content from database to display representation  
 conv_db_disp_func = {"plain_text": "conv_do_nothing",
                      'ref_text': "conv_db_disp_ref_text",
@@ -22,13 +22,24 @@ conv_db_disp_func = {"plain_text": "conv_do_nothing",
 
 
 @register.simple_tag(takes_context=True)
-def conv_db_disp(context, spec_item, attr_name):
-    """ Convert value of attribute 'attr_name' of spec_item 'item' from db to display representation """
-    attr_content_kind = configs['cats'][spec_item.cat]['attrs'][attr_name]['kind']
-    conv_func = conv_db_disp_func[attr_content_kind]
-    s = getattr(convert, conv_func)(context, spec_item, attr_name)
-    return mark_safe(s)
- 
+def conv_db_disp(context, spec_item, attr_names):
+    """ 
+    For each attribute 'attr_name' in 'attr_names', derive the value of 'attr_name' of
+    spec_item 'spec_item' and convert it from db to display format.
+    The function returns a list of tuples (name, value) where 'name' is the
+    label corresponding to the attribute 'attr_name' and 'value' is the converted
+    value of the attribute.
+    Only non-empty attributes are returned. 
+    """
+    values = []
+    for attr_name in attr_names:
+        attr_content_kind = configs['cats'][spec_item.cat]['attrs'][attr_name]['kind']
+        conv_func = conv_db_disp_func[attr_content_kind]
+        s = getattr(convert, conv_func)(context, spec_item, attr_name)
+        if s != '':
+            values.append((context['config']['attrs'][attr_name]['label'], mark_safe(s)))
+    return values
+
  
 @register.simple_tag(takes_context=True)
 def disp_trac(context, spec_item, trac_cat, trac_link):
@@ -53,13 +64,17 @@ def disp_trac(context, spec_item, trac_cat, trac_link):
     
     s = ''
     for link in trac_links:
+        application_id = str(link.p_link.application_id)
+        if application_id == 'None':
+            application_id = '0'
+
         if trac_link == 's_link':
-            target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+str(link.p_link.application_id)+\
+            target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+application_id+\
                     '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'\list_spec_items'
             s = s + '<a href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
                 link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + ')'
         else:
-            target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+str(link.s_link.application_id)+\
+            target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+application_id+\
                     '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'\list_spec_items'
             s = s + '<a href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
                 link.s_link.desc+'\">' + link.s_link.domain + ':' + link.s_link.name + '</a> (' + link.s_link.title + ')'
@@ -90,7 +105,7 @@ def filter_refs(s):
     The input should be passed through escape() before being filtered to ensure that any html code entered 
     by the (possibly malicious) user has been sanitized.
     """
-    return mark_safe(convert_db_to_display(s, 1))
+    return mark_safe(convert_db_to_display(s))
 
 
 @register.filter(is_safe=True)

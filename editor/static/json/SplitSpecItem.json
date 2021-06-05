@@ -1,11 +1,11 @@
 {
-     "editorVersion": "5.25",
+     "editorVersion": "5.27",
      "states": [
           {
-               "id": 155,
+               "id": 503,
                "attrs": {
-                    "x": 455,
-                    "y": 69,
+                    "x": 612,
+                    "y": 126,
                     "width": 30,
                     "height": 30,
                     "r": 15,
@@ -24,10 +24,10 @@
                "selected": false
           },
           {
-               "id": 156,
+               "id": 504,
                "attrs": {
                     "x": 378,
-                    "y": 154,
+                    "y": 113,
                     "width": 184,
                     "height": 56,
                     "r": 10,
@@ -63,12 +63,12 @@
                "selected": false
           },
           {
-               "id": 158,
+               "id": 506,
                "attrs": {
                     "x": 363,
-                    "y": 261,
+                    "y": 323,
                     "width": 214,
-                    "height": 128,
+                    "height": 140,
                     "r": 10,
                     "rx": 10,
                     "ry": 10,
@@ -91,7 +91,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update time to the current time\n(e) parent atribute to point to the spec_item\nwhich was split\n(f) other pointer attributes to None",
+                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update time to the current time\n(e) parent atribute to point to the spec_item\nwhich was split\n(f) other pointer attributes to None\n(g) leave change_log unchanged",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -102,18 +102,18 @@
                "selected": false
           },
           {
-               "id": 160,
+               "id": 508,
                "attrs": {
                     "x": 266,
-                    "y": 312,
+                    "y": 380,
                     "width": 26,
                     "height": 26,
                     "r": 13,
                     "rx": 13,
                     "ry": 13,
                     "fill": "#000",
-                    "stroke": "#6599FF",
-                    "stroke-width": 2,
+                    "stroke": "#666",
+                    "stroke-width": 1,
                     "fill-opacity": 100
                },
                "fwprop": {
@@ -121,15 +121,15 @@
                     "type": "final",
                     "note": ""
                },
-               "selected": true
+               "selected": false
           },
           {
-               "id": 161,
+               "id": 509,
                "attrs": {
-                    "x": 195,
-                    "y": 68,
-                    "width": 232,
-                    "height": 56,
+                    "x": 118,
+                    "y": 69,
+                    "width": 592,
+                    "height": 32,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -142,61 +142,16 @@
                "fwprop": {
                     "autoid": 2,
                     "type": "note",
-                    "note": "Operation to split a spec_item (only possible\non spec_items in the default ValSet with status\n CNF, MOD or NEW) "
+                    "note": "Operation to split a spec_item (only possible on internal spec_items in the default ValSet with status CNF, MOD or NEW) "
                },
                "selected": false
           },
           {
-               "id": 163,
+               "id": 514,
                "attrs": {
-                    "x": 510,
-                    "y": 72,
-                    "width": 270,
-                    "height": 44,
-                    "r": 0,
-                    "rx": 0,
-                    "ry": 0,
-                    "fill": "#ccccff",
-                    "stroke": "#666",
-                    "stroke-width": 1,
-                    "fill-opacity": 100,
-                    "stroke-dasharray": "--"
-               },
-               "fwprop": {
-                    "autoid": 4,
-                    "type": "note",
-                    "note": "Validity requires that: the ValSet be updated and that\nthe new ValSet not be already in use for the spec_item"
-               },
-               "selected": false
-          },
-          {
-               "id": 165,
-               "attrs": {
-                    "x": 556,
-                    "y": 237,
-                    "width": 6,
-                    "height": 6,
-                    "r": 6,
-                    "rx": 6,
-                    "ry": 6,
-                    "fill": "#000",
-                    "stroke": "#666",
-                    "stroke-width": 1,
-                    "fill-opacity": 100
-               },
-               "fwprop": {
-                    "autoid": 3,
-                    "type": "notedot",
-                    "note": ""
-               },
-               "selected": false
-          },
-          {
-               "id": 166,
-               "attrs": {
-                    "x": 197,
-                    "y": 160,
-                    "width": 124,
+                    "x": 162,
+                    "y": 119,
+                    "width": 184,
                     "height": 44,
                     "r": 0,
                     "rx": 0,
@@ -210,29 +165,69 @@
                "fwprop": {
                     "autoid": 5,
                     "type": "note",
-                    "note": "The domain and name\ncannot be changed"
+                    "note": "The domain, name, change_log\nand the link fields cannot be changed"
                },
                "selected": false
           },
           {
-               "id": 168,
+               "id": 574,
                "attrs": {
-                    "x": 375,
-                    "y": 179,
-                    "width": 6,
-                    "height": 6,
-                    "r": 6,
-                    "rx": 6,
-                    "ry": 6,
-                    "fill": "#000",
+                    "x": 304,
+                    "y": 207,
+                    "width": 332,
+                    "height": 80,
+                    "r": 10,
+                    "rx": 10,
+                    "ry": 10,
+                    "fill": "#fff",
                     "stroke": "#666",
                     "stroke-width": 1,
                     "fill-opacity": 100
                },
                "fwprop": {
-                    "autoid": 4,
-                    "type": "notedot",
-                    "note": ""
+                    "autoid": 5,
+                    "type": "state",
+                    "note": "",
+                    "identifier": "N5",
+                    "entryFunc": "",
+                    "doFunc": "",
+                    "exitFunc": "",
+                    "entryType": "call function",
+                    "doType": "call function",
+                    "exitType": "call function",
+                    "entryCode": "",
+                    "doCode": "",
+                    "exitCode": "",
+                    "entryDesc": "Perform validity checks on spec_item attributes:\n(a) val_set name must be unique within non-deleted, non-obsolete \nspec_items of a project with the same domain:name as the spec_item\nbeing split\n(b) category-specific validity checks are passed",
+                    "doDesc": "",
+                    "exitDesc": "",
+                    "entryAp": false,
+                    "doAp": false,
+                    "exitAp": false,
+                    "embedSmId": null
+               },
+               "selected": false
+          },
+          {
+               "id": 622,
+               "attrs": {
+                    "x": 123,
+                    "y": 225,
+                    "width": 170,
+                    "height": 44,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#ccccff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "stroke-dasharray": "--"
+               },
+               "fwprop": {
+                    "autoid": 1,
+                    "type": "note",
+                    "note": "If a validity check fails, the form\nis re-submitted to the user"
                },
                "selected": false
           }
@@ -245,13 +240,13 @@
                     "path": [
                          [
                               "M",
-                              470,
-                              104
+                              607,
+                              141
                          ],
                          [
                               "L",
-                              470,
-                              146
+                              570,
+                              141
                          ]
                     ],
                     "stroke-width": 2,
@@ -276,8 +271,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 155,
-               "stateToID": 156,
+               "stateFromID": 503,
+               "stateToID": 504,
                "selected": false
           },
           {
@@ -288,12 +283,12 @@
                          [
                               "M",
                               470,
-                              215
+                              174
                          ],
                          [
                               "L",
                               470,
-                              253
+                              199
                          ]
                     ],
                     "stroke-width": 2,
@@ -310,7 +305,7 @@
                     "actionType": "call function",
                     "guardCode": "",
                     "actionCode": "",
-                    "guardDesc": "Form is posted\nand is valid ",
+                    "guardDesc": "",
                     "guardAp": false,
                     "actionDesc": "",
                     "actionAp": false,
@@ -323,8 +318,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 156,
-               "stateToID": 158,
+               "stateFromID": 504,
+               "stateToID": 574,
                "selected": false
           },
           {
@@ -335,12 +330,12 @@
                          [
                               "M",
                               358,
-                              325
+                              393
                          ],
                          [
                               "L",
                               300,
-                              325
+                              393
                          ]
                     ],
                     "stroke-width": 2,
@@ -365,8 +360,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 158,
-               "stateToID": 160,
+               "stateFromID": 506,
+               "stateToID": 508,
                "selected": false
           },
           {
@@ -376,80 +371,27 @@
                     "path": [
                          [
                               "M",
-                              645,
-                              121
+                              470,
+                              292
                          ],
                          [
                               "L",
-                              645,
-                              240
-                         ],
-                         [
-                              "L",
-                              570,
-                              240
+                              470,
+                              315
                          ]
                     ],
                     "stroke-width": 2,
                     "stroke-linecap": "round",
                     "stroke-linejoin": "round",
-                    "stroke-dasharray": "-"
+                    "stroke-dasharray": ""
                },
                "fwprop": {
                     "order": 1,
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "call function",
-                    "actionType": "call function",
-                    "guardCode": "",
-                    "actionCode": ""
-               },
-               "shiftx": 0,
-               "shifty": 0,
-               "vertexes": [
-                    {
-                         "x": 645,
-                         "y": 240,
-                         "hasMoved": true
-                    }
-               ],
-               "shiftxy": {
-                    "x": 0,
-                    "y": 0
-               },
-               "stateFromID": 163,
-               "stateToID": 165,
-               "selected": false
-          },
-          {
-               "attrs": {
-                    "fill": "none",
-                    "stroke": "#000",
-                    "path": [
-                         [
-                              "M",
-                              326,
-                              182
-                         ],
-                         [
-                              "L",
-                              367,
-                              182
-                         ]
-                    ],
-                    "stroke-width": 2,
-                    "stroke-linecap": "round",
-                    "stroke-linejoin": "round",
-                    "stroke-dasharray": "-"
-               },
-               "fwprop": {
-                    "order": 1,
-                    "identifier": "",
-                    "guardFunc": "",
-                    "actionFunc": "",
-                    "guardType": "call function",
-                    "actionType": "call function",
+                    "guardType": "function",
+                    "actionType": "function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -460,8 +402,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 166,
-               "stateToID": 168,
+               "stateFromID": 574,
+               "stateToID": 506,
                "selected": false
           }
      ],
@@ -471,8 +413,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1247,
-               "height": 630,
+               "width": 1243,
+               "height": 682,
                "r": 0,
                "rx": 0,
                "ry": 0,

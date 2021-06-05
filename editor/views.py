@@ -328,7 +328,7 @@ def edit_val_set(request, project_id, val_set_id):
 
 
 @login_required         
-def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
+def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
@@ -350,13 +350,17 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
         items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                     exclude(status='DEL').exclude(status='OBS')
     
-    if (sel_dom != "All_Domains"):
-        items = items.filter(domain=sel_dom)
+    if (sel_val != "Sel_All"):
+        items = items.filter(domain=sel_val)
         
-    if order_by != None:
-        items = items.order_by(order_by, 'domain','name')
-    else:
+    if order_by == None:    
         items = items.order_by('domain','name')
+    elif order_by in ('p_link', 's_link'):
+        items = items.order_by(order_by+'__domain',order_by+'__name')
+    elif order_by == 'owner':
+        items = items.order_by(order_by+'__username', 'domain','name')
+    else:
+        items = items.order_by(order_by, 'domain','name')
     
     if (expand_id != None) and (expand_link != 'None'):   # parent_id must be listed together with its children
         expand_items = get_expand_items(cat, project_id, val_set_id, expand_id, expand_link)     
@@ -364,7 +368,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
     else:
         expand_items = None
     
-    context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_dom': sel_dom,\
+    context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_val': sel_val,\
                'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
@@ -373,7 +377,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_do
 
 
 @login_required         
-def add_spec_item(request, cat, project_id, application_id, sel_dom):
+def add_spec_item(request, cat, project_id, application_id, sel_val):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
@@ -409,7 +413,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
             new_spec_item.application = application
             new_spec_item.save()
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_dom, s_parent_id, p_parent_id, new_spec_item)
+                                            sel_val, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id)
@@ -417,12 +421,12 @@ def add_spec_item(request, cat, project_id, application_id, sel_dom):
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'sub_title': sub_title, \
-               'sel_dom': sel_dom, 'config': configs['cats'][cat], 'cat': cat, 'spec_items': spec_items}
+               'sel_val': sel_val, 'config': configs['cats'][cat], 'cat': cat, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context)  
 
 
 @login_required         
-def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
@@ -451,12 +455,13 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
             if (spec_item.val_set.name == 'Default') and (('name' in form.changed_data) or ('domain' in form.changed_data)):
                 update_dom_name_in_val_set(spec_item)
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_dom, s_parent_id, p_parent_id, spec_item)
+                                            sel_val, s_parent_id, p_parent_id, spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
@@ -464,7 +469,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 
 
 @login_required         
-def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     if not has_write_access_to_project(request, project):
@@ -484,12 +489,12 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_dom
         messages.warning(request,'External spec_item has not changed -- no refresh needed')
  
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+\
-                    str(default_val_set.id)+'/'+sel_dom+'/list_spec_items#'+spec_item.domain+':'+spec_item.name
+                    str(default_val_set.id)+'/'+sel_val+'/list_spec_items#'+spec_item.domain+':'+spec_item.name
     return redirect(redirect_url)
     
 
 @login_required         
-def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     spec_item = SpecItem.objects.get(id=item_id)
@@ -517,19 +522,20 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
             new_spec_item.status = 'NEW'
             new_spec_item.save()
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_dom, s_parent_id, p_parent_id, new_spec_item)
+                                            sel_val, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
     return render(request, 'basic_form.html', context) 
 
 @login_required         
-def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     spec_item = SpecItem.objects.get(id=item_id)
@@ -558,12 +564,13 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
             new_spec_item.status = 'NEW'
             new_spec_item.save()
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_dom, s_parent_id, p_parent_id, new_spec_item)
+                                            sel_val, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
@@ -571,12 +578,18 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
 
 
 @login_required         
-def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
+def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     spec_item = SpecItem.objects.get(id=item_id)
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+        title = 'Delete '+configs['cats'][cat]['name']+' in Application '+application.name
+    else:
+        application = None
+        title = 'Delete '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
 
@@ -584,19 +597,35 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_dom):
         if spec_item.val_set.name == 'Default':
             remove_spec_item_aliases(request, spec_item)
         remove_spec_item(request, spec_item)
-    else:
-        if spec_item.val_set.name == 'Default':
-            mark_spec_item_aliases_as_del(request, spec_item)
-        spec_item.status = 'DEL' 
-        spec_item.save() 
-    
-    redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_dom, s_parent_id, p_parent_id, None)
-    return redirect(redirect_url)
+        redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                                sel_val, s_parent_id, p_parent_id, None)
+        return redirect(redirect_url)
+  
+    if request.method == 'POST':   
+        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
+                            request.POST, initial=spec_item_to_edit(spec_item))
+        if form.is_valid():
+            if spec_item.val_set.name == 'Default':
+                mark_spec_item_aliases_as_del(request, spec_item)
+            spec_item.status = 'DEL' 
+            spec_item.change_log = form.cleaned_data['change_log']
+            spec_item.save() 
+            redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                                    sel_val, s_parent_id, p_parent_id, None)
+            return redirect(redirect_url)
+    else:   
+        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
+    spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
+                        exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
+    return render(request, 'basic_form.html', context) 
 
+        
 @login_required         
-def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
+def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
     order_by = request.GET.get('order_by')
     if application_id != 0:
@@ -615,12 +644,12 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         application = Application.objects.get(id=application_id)
         items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                     order_by('domain','name') 
-        fdName = application.name.replace(' ','_') + cat + '.csv'
+        fdName = application.name.replace(' ','') + cat + '.csv'
         
     items = items.exclude(status='DEL').exclude(status='OBS')  
         
-    if (sel_dom != 'All_Domains'):
-        items = items.filter(domain=sel_dom)
+    if (sel_val != 'Sel_All'):
+        items = items.filter(domain=sel_val)
 
     if order_by != None:
         items = items.order_by(order_by, 'domain','name')
@@ -647,7 +676,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     return response            
 
 
-def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_dom):
+def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
     val_set = ValSet.objects.filter(project_id=project.id).get(id=val_set_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
@@ -659,7 +688,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         return redirect(base_url)
 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(val_set_id)+\
-                           '/'+sel_dom+'/list_spec_items'    
+                           '/'+sel_val+'/list_spec_items'    
   
     if request.method == 'POST':   
         try:
@@ -674,21 +703,24 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             file_data = csv_file.read().decode('utf-8')
             f = StringIO(file_data)
             items = csv.DictReader(f, delimiter=configs['General']['csv_sep'])
+            csv_domain = configs['cats'][cat]['attrs']['domain']['label']
+            csv_name = configs['cats'][cat]['attrs']['name']['label']
+            csv_val_set = configs['cats'][cat]['attrs']['val_set']['label']
             for i, item in enumerate(items):
-                if (sel_dom != 'All_Domains') and (item['Domain'] != sel_dom):
-                    messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_dom+' but found '+item['Domain'])
+                if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
+                    messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_val+' but found '+item[csv_domain])
                     continue
-                if item['ValSet'] != val_set.name:
-                    messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item['Domain'])
+                if item[csv_val_set] != val_set.name:
+                    messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item[csv_val_set])
                     continue
                 q_all_cat = SpecItem.objects.filter(project_id=project_id, \
-                            name=item['Name'], domain=item['Domain']).exclude(status='DEL').exclude(status='OBS')    
+                            name=item[csv_name], domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')    
                 if q_all_cat.exclude(cat=cat).exists():
-                    messages.error(request, ' '+str(i+1)+': '+item['Domain']+':'+item['Name']+' already in use outside selected category')
+                    messages.error(request, ' '+str(i+1)+': '+item[csv_domain]+':'+item[csv_name]+' already in use outside selected category')
                     continue
                 if val_set.name != 'Default':
                     if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
-                        messages.error(request, ' '+str(i+1)+': '+item['Domain']+':'+item['Name']+' missing from Default ValSet')
+                        messages.error(request, ' '+str(i+1)+': '+item[csv_domain]+':'+item[csv_name]+' missing from Default ValSet')
                         continue
                 q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
                 if not bool(q_cat):     # The domain:name is new in selected category
@@ -813,7 +845,7 @@ def export_project(request, project_id):
     with open(os.path.join(exp_dir,'applications.csv'),'w') as fd:
         fd.write(applications_exp.csv)
 
-    zip_file_path = os.path.join(exp_dir,'cordetfw_editor.zip')
+    zip_file_path = os.path.join(exp_dir,'cordetfw_editor_'+project.name+'.zip')
     zip_obj = ZipFile(zip_file_path, 'w')
     zip_obj.write(os.path.join(exp_dir,'project.csv'), 'project.csv')
     zip_obj.write(os.path.join(exp_dir,'applications.csv'), 'applications.csv')
@@ -828,7 +860,7 @@ def export_project(request, project_id):
 
 
 @login_required         
-def list_spec_item_history(request, cat, project_id, application_id, item_id, sel_dom):
+def list_spec_item_history(request, cat, project_id, application_id, item_id, sel_val):
     # If application_id is zero, then the items to be listed are 'project items'; otherwise they are 'application items'
     project = Project.objects.get(id=project_id)
     if not has_read_access_to_project(request, project):
@@ -841,7 +873,7 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
                                                     
     spec_item = SpecItem.objects.get(id=item_id)
     items = get_previous_list(spec_item)
-    context = {'items': items, 'project': project, 'application_id': application_id, 'sel_dom': sel_dom,\
+    context = {'items': items, 'project': project, 'application_id': application_id, 'sel_val': sel_val,\
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 'val_set_id': val_set.id, \
                'val_set': val_set, 'default_val_set_id': default_val_set.id, 'disp': disp, \
                'disp_list': disp_list, 'history': True }

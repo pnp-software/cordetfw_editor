@@ -1,6 +1,6 @@
 asgiref==3.2.10
 cexprtk==0.3.4
-Django==3.1.1
+django>=3.1.8
 django-admin-honeypot==1.1.0
 django-appconf==1.0.4
 django-axes==5.5.0
@@ -12,3 +12,4 @@ pytz==2020.1
 setuptools==50.0.0
 sqlparse==0.3.1
 tablib==3.0.0
+#django-tailwind==1.1.1
