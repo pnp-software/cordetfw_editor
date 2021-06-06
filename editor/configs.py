@@ -101,14 +101,6 @@ def do_cat_specific_checks(form):
     """ Perform the category-specific checks for data items """
     cd = form.cleaned_data
     
-    # Verify that, in the value field of a data item, internal references point to other data items
-    if form.cat == 'DataItem':
-        internal_refs = re.findall(pattern_edit, cd['value'])
-        for ref in internal_refs:
-            if ref[0:8] != 'DataItem#':
-                return 'The value field of a data item cannot contain references to non-'+\
-                       'data items: '+str(ref)
-    
     # Verify that the value of a data item of enumerated type is an internal reference to an enumerated 
     # value of the data item's type
     if (form.cat == 'DataItem') and (cd['p_link'].cat == 'EnumType'):
