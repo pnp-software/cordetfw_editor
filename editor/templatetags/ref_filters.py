@@ -149,9 +149,9 @@ def get_short_desc(spec_item):
     if spec_item.title != '':
         desc = desc + spec_item.title
     if spec_item.desc != '':
-        desc = desc + ':' + spec_item.desc
+        desc = desc + ': ' + spec_item.desc
     if spec_item.value:
-        desc = desc + ':' + spec_item.value
+        desc = desc + ': ' + spec_item.value
     if len(desc) > configs['General']['short_desc_len']:
         return desc[:configs['General']['short_desc_len']]+' ...'
     else:
