@@ -39,17 +39,6 @@ def emphasis_to_html(match):
         return '<code>'+match.group(11)+'</code>'
 
 # ----------------------------------------------------------------------
-def bulleted_list_to_html(match):
-    s1 = match.group(1).replace('\n','')
-    s2 = s1.replace('\r','')
-    bullet_items = s2.split('- ')
-    s_html = '<ul>'
-    for i, bullet_item in enumerate(bullet_items): 
-        if i>0:
-            s_html = s_html + '<li>'+bullet_item+'</li>'
-    return s_html + '</ul>'
-
-# ----------------------------------------------------------------------
 def emphasis_to_latex(match):
     if match.group(1) != None:
         return '\\textbf{'+match.group(2)+'}'
@@ -61,6 +50,28 @@ def emphasis_to_latex(match):
         return '\\texttt{'+match.group(11)+'}'
 
 # ----------------------------------------------------------------------
+def bulleted_list_to_html(match):
+    s1 = match.group(1).replace('\n','')
+    s2 = s1.replace('\r','')
+    bullet_items = s2.split('- ')
+    s_html = '<ul>'
+    for i, bullet_item in enumerate(bullet_items): 
+        if i>0:
+            s_html = s_html + '<li>'+bullet_item+'</li>'
+    return s_html + '</ul>'
+
+# ----------------------------------------------------------------------
+def bulleted_list_to_latex(match):
+    s1 = match.group(1).replace('\n','')
+    s2 = s1.replace('\r','')
+    bullet_items = s2.split('- ')
+    s_html = '\\begin{itemize}'
+    for i, bullet_item in enumerate(bullet_items): 
+        if i>0:
+            s_html = s_html + '\\item '+bullet_item
+    return s_html + '\\end{itemize}'+' \ ' # Backslash adds a space
+
+# ----------------------------------------------------------------------
 def markdown_to_html(s):
     s_emph = pattern_emphasis.sub(emphasis_to_html, s)
     s_bullets = pattern_bullets.sub(bulleted_list_to_html, s_emph)
@@ -68,4 +79,6 @@ def markdown_to_html(s):
 
 # ----------------------------------------------------------------------
 def markdown_to_latex(s):
-    return pattern_emphasis.sub(emphasis_to_latex, s)
+    s_emph = pattern_emphasis.sub(emphasis_to_latex, s)
+    s_bullets = pattern_bullets.sub(bulleted_list_to_latex, s_emph)
+    return s_bullets
