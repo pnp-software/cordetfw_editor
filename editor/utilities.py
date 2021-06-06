@@ -47,7 +47,7 @@ def spec_item_to_edit(spec_item):
     """
     dic = model_to_dict(spec_item)
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
-        if value['kind'] == 'ref_text':
+        if value['kind'] == 'ref_text' or value['kind'] == 'eval_ref':
             dic[key] = convert_db_to_edit(dic[key])
     return dic
     
