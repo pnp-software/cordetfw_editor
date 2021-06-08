@@ -33,6 +33,10 @@ DEBUG = config['DEBUG']
 
 ALLOWED_HOSTS = ['localhost', '217.160.170.47', 'pnp-software.io', 'www.pnp-software.io']
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
 # https
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
