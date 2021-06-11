@@ -374,7 +374,7 @@
                         {{expand_item.name}}
                     </a>
                 </td>
-                <td class="pl-6 py-2">{{expand_item|get_short_desc}}</td>
+                <td class="pl-6 py-2" colspan="{{n_pad_fields|length}}">{{expand_item|get_short_desc}}</td>
                 {% for i in n_pad_fields %}
                 <td></td>
                 {% endfor %}
