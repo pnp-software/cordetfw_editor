@@ -796,14 +796,25 @@
     <li>The update time is set to the current time</li>
     <li>If there is no item with the same domain:name in the selected category and ValSet,
         the status is set to NEW and the previous pointer is set to 'None'</li>
-    <li>If there is an item with the same domain:name in the selected category and ValSet,
+    <li>If there is a non-obsolete and non-deleted item with the same domain:name in the 
+        selected category and ValSet,
         a copy is made of the existing item. the status of the new item is set to MOD and
         its previous pointer is set to the newly-copied item</li>
     </ul>
-    Each imported specification item is processed according to the following activity diagram:
+    With respect to the last bullet, it is noted that the copy of the spec_item is made even
+    if the imported spec_item is identical to the spec_item with the same domain:name
+    in the database.
     <p></p>
-    <img src="{% static 'images/ImportSpecItem.png' %}"> 
+    The change_log attribute is defined for all spec_items and should be used to record the
+    reason for a change in the content of a spec_item.
+    The change_log attribute is imported alongside other attributes.
+    It is the responsibility of the user to enter an appropriate text in this field in the
+    import file.
+    <p></p>
+    Each imported specification item is processed according to the following activity diagram:
     <p>
+    <img src="{% static 'images/ImportSpecItem.png' %}"> 
+    </p>
     The typical use case for the plain import/export functions is as follows.
     A user needs to perform the same operation on a large number of specification items (e.g.
     update their names; capitalize their domain name; clear their values; etc).
