@@ -1,5 +1,5 @@
 {
-     "editorVersion": "5.25.1",
+     "editorVersion": "5.27",
      "states": [
           {
                "id": 1,
@@ -66,7 +66,7 @@
                "id": 4,
                "attrs": {
                     "x": 612,
-                    "y": 442,
+                    "y": 453,
                     "width": 196,
                     "height": 56,
                     "r": 10,
@@ -105,7 +105,7 @@
                "id": 6,
                "attrs": {
                     "x": 612,
-                    "y": 526,
+                    "y": 537,
                     "width": 196,
                     "height": 92,
                     "r": 10,
@@ -167,7 +167,7 @@
                "id": 10,
                "attrs": {
                     "x": 458,
-                    "y": 458,
+                    "y": 469,
                     "width": 24,
                     "height": 24,
                     "r": 0,
@@ -310,7 +310,7 @@
                "id": 17,
                "attrs": {
                     "x": 372,
-                    "y": 543,
+                    "y": 554,
                     "width": 196,
                     "height": 80,
                     "r": 10,
@@ -370,8 +370,8 @@
           {
                "id": 20,
                "attrs": {
-                    "x": 151,
-                    "y": 520,
+                    "x": 153,
+                    "y": 531,
                     "width": 170,
                     "height": 104,
                     "r": 10,
@@ -410,7 +410,7 @@
                "id": 22,
                "attrs": {
                     "x": 457,
-                    "y": 662,
+                    "y": 673,
                     "width": 26,
                     "height": 26,
                     "r": 13,
@@ -429,7 +429,7 @@
                "selected": false
           },
           {
-               "id": 71,
+               "id": 23,
                "attrs": {
                     "x": 852,
                     "y": 166,
@@ -446,6 +446,51 @@
                "fwprop": {
                     "autoid": 3,
                     "type": "final",
+                    "note": ""
+               },
+               "selected": false
+          },
+          {
+               "id": 113,
+               "attrs": {
+                    "x": 557,
+                    "y": 383,
+                    "width": 286,
+                    "height": 44,
+                    "r": 0,
+                    "rx": 0,
+                    "ry": 0,
+                    "fill": "#ccccff",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100,
+                    "stroke-dasharray": "--"
+               },
+               "fwprop": {
+                    "autoid": 4,
+                    "type": "note",
+                    "note": "The spec_item is over-written and marked as \"modified\"\neven if imported item is identical to the existing spec_item"
+               },
+               "selected": false
+          },
+          {
+               "id": 116,
+               "attrs": {
+                    "x": 537,
+                    "y": 442.5,
+                    "width": 6,
+                    "height": 6,
+                    "r": 6,
+                    "rx": 6,
+                    "ry": 6,
+                    "fill": "#000",
+                    "stroke": "#666",
+                    "stroke-width": 1,
+                    "fill-opacity": 100
+               },
+               "fwprop": {
+                    "autoid": 2,
+                    "type": "notedot",
                     "note": ""
                },
                "selected": false
@@ -502,12 +547,12 @@
                          [
                               "M",
                               710,
-                              503
+                              514
                          ],
                          [
                               "L",
                               710,
-                              518
+                              529
                          ]
                     ],
                     "stroke-width": 2,
@@ -842,7 +887,7 @@
                          [
                               "L",
                               470,
-                              440
+                              451
                          ]
                     ],
                     "stroke-width": 2,
@@ -866,7 +911,7 @@
                     "note": ""
                },
                "shiftx": -94,
-               "shifty": 2,
+               "shifty": 5,
                "vertexes": [],
                "shiftxy": {
                     "x": 0,
@@ -884,12 +929,12 @@
                          [
                               "M",
                               497,
-                              470
+                              481
                          ],
                          [
                               "L",
                               604,
-                              470
+                              481
                          ]
                     ],
                     "stroke-width": 2,
@@ -931,12 +976,12 @@
                          [
                               "M",
                               470,
-                              497
+                              508
                          ],
                          [
                               "L",
                               470,
-                              535
+                              546
                          ]
                     ],
                     "stroke-width": 2,
@@ -1040,8 +1085,8 @@
                          ],
                          [
                               "L",
-                              236,
-                              512
+                              237.433962264151,
+                              523
                          ]
                     ],
                     "stroke-width": 2,
@@ -1064,8 +1109,8 @@
                     "actionAp": false,
                     "note": ""
                },
-               "shiftx": 155,
-               "shifty": -2,
+               "shiftx": 159,
+               "shifty": -5,
                "vertexes": [
                     {
                          "x": 236,
@@ -1089,17 +1134,17 @@
                          [
                               "M",
                               710,
-                              623
+                              634
                          ],
                          [
                               "L",
                               710,
-                              673
+                              684
                          ],
                          [
                               "L",
                               491,
-                              674.8249999999999
+                              685.8249999999999
                          ]
                     ],
                     "stroke-width": 2,
@@ -1122,7 +1167,7 @@
                "vertexes": [
                     {
                          "x": 710,
-                         "y": 673,
+                         "y": 684,
                          "hasMoved": true
                     }
                ],
@@ -1142,12 +1187,12 @@
                          [
                               "M",
                               470,
-                              628
+                              639
                          ],
                          [
                               "L",
                               470,
-                              654
+                              665
                          ]
                     ],
                     "stroke-width": 2,
@@ -1183,18 +1228,18 @@
                     "path": [
                          [
                               "M",
-                              236,
-                              629
+                              238,
+                              640
                          ],
                          [
                               "L",
-                              236,
-                              673
+                              238,
+                              684
                          ],
                          [
                               "L",
                               449,
-                              674.8205128205128
+                              685.8189655172414
                          ]
                     ],
                     "stroke-width": 2,
@@ -1216,8 +1261,8 @@
                "shifty": 0,
                "vertexes": [
                     {
-                         "x": 236,
-                         "y": 673,
+                         "x": 238,
+                         "y": 684,
                          "hasMoved": true
                     }
                ],
@@ -1255,8 +1300,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -1268,18 +1313,71 @@
                     "y": 0
                },
                "stateFromID": 2,
-               "stateToID": 71,
+               "stateToID": 23,
+               "selected": false
+          },
+          {
+               "attrs": {
+                    "fill": "none",
+                    "stroke": "#000",
+                    "path": [
+                         [
+                              "M",
+                              552,
+                              405
+                         ],
+                         [
+                              "L",
+                              540,
+                              405
+                         ],
+                         [
+                              "L",
+                              540,
+                              434.5
+                         ]
+                    ],
+                    "stroke-width": 2,
+                    "stroke-linecap": "round",
+                    "stroke-linejoin": "round",
+                    "stroke-dasharray": "-"
+               },
+               "fwprop": {
+                    "order": 1,
+                    "identifier": "",
+                    "guardFunc": "",
+                    "actionFunc": "",
+                    "guardType": "function",
+                    "actionType": "function",
+                    "guardCode": "",
+                    "actionCode": ""
+               },
+               "shiftx": 0,
+               "shifty": 0,
+               "vertexes": [
+                    {
+                         "x": 540,
+                         "y": 405,
+                         "hasMoved": true
+                    }
+               ],
+               "shiftxy": {
+                    "x": 0,
+                    "y": 0
+               },
+               "stateFromID": 113,
+               "stateToID": 116,
                "selected": false
           }
      ],
      "globals": {
           "paperPanX": 0,
-          "paperPanY": 0,
+          "paperPanY": 60,
           "attrs": {
                "x": 0,
-               "y": 0,
-               "width": 1548,
-               "height": 842,
+               "y": 60,
+               "width": 1243,
+               "height": 685,
                "r": 0,
                "rx": 0,
                "ry": 0,

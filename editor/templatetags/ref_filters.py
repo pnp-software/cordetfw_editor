@@ -109,13 +109,19 @@ def filter_refs(s):
 
 
 @register.filter(is_safe=True)
-def filter_refs_for_tip(s):
+def filter_expand_tip(spec_item):
     """
-    The argument is a string which contains references and must be rendered in the tip field of an html page.
+    The argument is a spec_item which appears in an "expand" list.
+    The function returns the hovering tip for the spec_item.
     The input should be passed through escape() before being filtered to ensure that any html code entered 
     by the (possibly malicious) user has been sanitized.
     """
-    return mark_safe(convert_db_to_edit(s))
+    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_text']
+    s = ''
+    for attr in attrs:
+        s = s + configs['cats'][spec_item.cat]['attrs'][attr]['label'] +': '+\
+                convert_db_to_edit(getattr(spec_item, attr)) + '&#13;'
+    return mark_safe(s)
 
 
 @register.filter(is_safe=True)
@@ -139,11 +145,13 @@ def get_label(config, attr):
 @register.filter(is_safe=True)
 def get_short_desc(spec_item):
     """ Return a short description of the specification item """
-    desc = spec_item.title
+    desc = ''
+    if spec_item.title != '':
+        desc = desc + spec_item.title
     if spec_item.desc != '':
-        desc = desc + ':' + spec_item.desc
+        desc = desc + ': ' + spec_item.desc
     if spec_item.value:
-        desc = desc + ':' + spec_item.value
+        desc = desc + ': ' + spec_item.value
     if len(desc) > configs['General']['short_desc_len']:
         return desc[:configs['General']['short_desc_len']]+' ...'
     else:

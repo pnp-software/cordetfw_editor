@@ -370,7 +370,7 @@
                 <td class="pl-6 py-2">
                     <a class="link-table-list-spec"
                        href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
-                       title="{{expand_item.desc|filter_refs_for_tip|linebreaksbr}}">
+                       title="{{expand_item|filter_expand_tip|linebreaksbr}}">
                         {{expand_item.name}}
                     </a>
                 </td>
