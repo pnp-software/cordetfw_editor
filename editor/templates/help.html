@@ -960,10 +960,18 @@
     <li><code>expand</code>: If spec_items of category C1 are targets of <code>p_links</code> 
         of category C2 and
         it is desired that, when C1 items are displayed, the user may click on a C1 item to get 
-        a list of its <code>p_link</code> children, then <code>expand|p_link</code> must
+        a list of its <code>p_link</code> children (<i>expand list</i>), then <code>expand|p_link</code> must
         be set equal to the name of category C2 and <code>expand|p_label</code> is the label
         that appears on the expansion link. The same holds for the <code>expan|s_link</code>
         element</li>
+    <li><code>short_desc</code>: Description of the attributes used in the short description of a
+        spec_item:
+        <ul>
+        <li><code>expand_text</code>: attributes displayed when a spec_item appears in an expand_list</li>
+        <li><code>expand_tip</code>: attributes displayed in the hovering tip over the name of a spec_item in an expand_list</li>
+        <li><code>href_tip</code>: attributes displayed in the hovering tip over a link to a spec_item</li>
+        </ul>
+        </li>
     <li><code>tracs</code>: If category C1 has a <a href="#Links_Between_Specification_Items">
         traceability link</a> to category C2 and if the traceability link is held in category CL,
         then:
