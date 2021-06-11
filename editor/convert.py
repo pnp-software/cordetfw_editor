@@ -71,7 +71,12 @@ def convert_db_to_display(s):
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'\list_spec_items'
-            iref_html = '<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+item.title+'\">'+\
+            title_attrs = configs['cats'][item.cat]['short_desc']['href_tip']
+            title = ''
+            for title_attr in title_attrs:
+                title = title + configs['cats'][item.cat]['attrs'][title_attr]['label'] +': '+\
+                        convert_db_to_edit(getattr(item, title_attr)) + '&#13;'
+            iref_html = '<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+title+'\">'+\
                     item.domain+':'+item.name+'</a>'
             return iref_html
         except ObjectDoesNotExist:
@@ -123,7 +128,12 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
     s_name = spec_item_link.domain + ':' + spec_item_link.name
     s_href = '/editor/'+cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
              '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/list_spec_items#'+s_name
-    s_title = spec_item_link.title + ':' + spec_item_link.desc
+
+    title_attrs = configs['cats'][spec_item_link.cat]['short_desc']['href_tip']
+    s_title = ''
+    for title_attr in title_attrs:
+        s_title = s_title + configs['cats'][spec_item_link.cat]['attrs'][title_attr]['label'] +': '+\
+                convert_db_to_edit(getattr(spec_item_link, title_attr)) + '&#13;'
     
     return '<a class="link-table-list-spec" href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
    

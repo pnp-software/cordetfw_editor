@@ -71,15 +71,15 @@ def disp_trac(context, spec_item, trac_cat, trac_link):
         if trac_link == 's_link':
             target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+application_id+\
                     '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'\list_spec_items'
-            s = s + '<a href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
+            s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
                 link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + ')'
         else:
             target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+application_id+\
                     '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'\list_spec_items'
-            s = s + '<a href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
+            s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
                 link.s_link.desc+'\">' + link.s_link.domain + ':' + link.s_link.name + '</a> (' + link.s_link.title + ')'
         s = s + '\n'    
-            
+        
     return mark_safe(s[:-1])    # The last '\n' is removed
  
  
@@ -116,7 +116,7 @@ def filter_expand_tip(spec_item):
     The input should be passed through escape() before being filtered to ensure that any html code entered 
     by the (possibly malicious) user has been sanitized.
     """
-    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_text']
+    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_tip']
     s = ''
     for attr in attrs:
         s = s + configs['cats'][spec_item.cat]['attrs'][attr]['label'] +': '+\
@@ -145,14 +145,12 @@ def get_label(config, attr):
 @register.filter(is_safe=True)
 def get_short_desc(spec_item):
     """ Return a short description of the specification item """
+    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_text']
     desc = ''
-    if spec_item.title != '':
-        desc = desc + spec_item.title
-    if spec_item.desc != '':
-        desc = desc + ': ' + spec_item.desc
-    if spec_item.value:
-        desc = desc + ': ' + spec_item.value
+    for attr in attrs:
+        desc = desc + getattr(spec_item, attr) + ': '
+
     if len(desc) > configs['General']['short_desc_len']:
         return desc[:configs['General']['short_desc_len']]+' ...'
     else:
-        return desc
+        return desc[:-2]
