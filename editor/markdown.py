@@ -21,7 +21,7 @@ with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file
 # Underline is: '++...++'
 # Italicize is: '__...__'
 # Teletype is: '``...``'
-pattern_emphasis = re.compile('(\*\*)(.+)(\*\*)|(\+\+)(.+)(\+\+)|(__)(.+)(__)|(``)(.+)(``)')     
+pattern_emphasis = re.compile('(\*\*)(.+?)(\*\*)|(\+\+)(.+?)(\+\+)|(__)(.+?)(__)|(``)(.+?)(``)')     
 
 pattern_bullets = re.compile('((\n^-\s.+$)+)', re.MULTILINE)    
 
