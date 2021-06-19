@@ -373,7 +373,9 @@
         <li>plain_ref: a reference to a database model instance other than a specification item</li>
         <li>eval_ref: a mathematical formula expressed in term of numerical values and/or of the
             values of the same attribute of other specification items in the same category </li>
-        <li>image: an image data in svg format</li>
+        <li>table: a table in csv format with <a href="#SpecItemLinks">internal references</a> and 
+                   makrdown in its entries</li>    
+        <li>image: an image in svg format</li>
         <li>int: an integer</li>
         <li>date: a date</li>
     </ul>
@@ -396,6 +398,7 @@
             <th><code>image</code></th>
             <th><code>int</code></th>
             <th><code>date</code></th>
+            <th><code>table</code></th>
         </tr>
       </thead>
       <tbody>
@@ -409,11 +412,13 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
+            <td>&#10060;</td>
         </tr>
         <tr>
-            <td>Title, Desc., Rationale, Remarks, Impl. & ChangeLog </td>
+            <td>Title, Desc., Rat., Rem., Impl. & ChangeLog </td>
             <td>&#10060;</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -431,6 +436,7 @@
             <td>&#9989;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
+            <td>&#9989;</td>
         </tr>
         <tr>
             <td>Owner, ValSet, Project & Application</td>
@@ -442,10 +448,12 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
+            <td>&#10060;</td>
         </tr>
         <tr>
             <td>Previous, Primary & Seconday Links</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -464,6 +472,7 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
+            <td>&#10060;</td>
         </tr>
         <tr>
             <td>Update Time</td>
@@ -475,11 +484,13 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
         </tr>
         <tr>
             <td>t1 to t5</td>
             <td>&#10060;</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -496,6 +507,7 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
         </tr>
       </tbody>
@@ -531,7 +543,7 @@
         <tr>
         <td><code>plain text</code></td>
         <td>No change</td>
-        <td>No change</td>
+        <td>Markdown tags are converted to html tags</td>
         <td>Latex special characters are escaped; CR is converted to <code>\newline</code></td>
         <td>No change</td>
         <td>No change</td>
@@ -539,9 +551,10 @@
         <tr>
         <td><code>ref text</code></td>
         <td>Internal ref.s are rendered as '#iref:id' where 'id' is the identifier of the referenced item </td>
-        <td>Internal ref.s are rendered as 'domain:name' with a hyperlink to the referenced item</td>
+        <td>Internal ref.s are rendered as 'domain:name' with a hyperlink to the referenced item; 
+            markdown tags are converted to html tags</td>
         <td>Internal ref.s are rendered as 'domain:name'; Latex special characters are escaped; 
-            CR is converted to <code>\newline</code></td>
+            CR is converted to <code>\newline</code>; markdown tags are converted to latex tags</td>
         <td>Internal ref.s are rendered as '#cat:domain:name'</td>
         <td>Internal ref.s are rendered as '#cat:domain:name'</td>
         </tr>
@@ -575,9 +588,18 @@
         <td><code>image</code></td>
         <td>SVG representation of image</td>
         <td>Image rendering as done by the browser </td>
-        <td>Representation is defined at editor instantiation time</td>
+        <td>TBD</td>
         <td>Not editable</td>
         <td>SVG representation of image</td>
+        </tr>
+        <tr>
+        <td><code>table</code></td>
+        <td>Internal ref.s are rendered as '#iref:id' where 'id' is the identifier of the referenced item </td>
+        <td>Internal ref.s are rendered as 'domain:name' with a hyperlink to the referenced item</td>
+        <td>Internal ref.s are rendered as 'domain:name'; Latex special characters are escaped; 
+            CR is converted to <code>\newline</code>; table is saved to a csv file called <code>DomainName.csv</code></td>
+        <td>Internal ref.s are rendered as '#cat:domain:name'</td>
+        <td>Internal ref.s are rendered as '#cat:domain:name'</td>
         </tr>
         <tr>
         <td><code>int</code></td>
