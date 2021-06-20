@@ -2,7 +2,10 @@ import os
 import re
 import cexprtk
 import logging
+import string
+import random
 from tablib import Dataset
+from zipfile import ZipFile 
 from django.contrib import messages
 from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,6 +21,13 @@ from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, 
                            convert_exp_to_db, convert_db_to_latex, eval_di_value
 
 logger = logging.getLogger(__name__)
+
+
+
+def gen_random_string(size):
+    """ Generate a random string of 'size' characters of length """
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
 def snake_to_camel(s):
@@ -303,18 +313,24 @@ def do_project_release(request, project, description):
        do_application_release(request, application, description, is_proj_release = True)
     
     
-def make_temp_dir(dir_path, name):
-    """ Create a directory 'name_<TimeStamp>' in the directory 'dir_path' and return 
-        the dir name or an empty string if the creation failed
+def make_temp_dir(request, dir_name):
+    """ Create a temporary directory 'dir_name_<TimeStamp>_<random_string>' 
+        in the temporary directory location specified by the configuration file.
+        The function returns the fully qualified name of the created directory 
+        or an empty string if the directory could not be created
     """
-    new_dir_path = os.path.join(dir_path,name+datetime.now(tz=get_current_timezone()).strftime('%Y_%m_%d_%H_%M_%S'))
+    temp_dir = configs['General']['temp_dir']
+    dir_name_date = datetime.now(tz=get_current_timezone()).strftime('%Y_%m_%d_%H_%M_%S')
+    dir_name_random = gen_random_string(6)
+    full_dir_name = dir_name + dir_name_date + dir_name_random
+    dir_path = os.path.join(temp_dir, full_dir_name)
     try:  
-        os.mkdir(new_dir_path)  
+        os.mkdir(dir_path)  
+        return dir_path
     except OSError as e:  
-        messages.error(request, 'Failure to create export directory at '+exp_dir+': '+str(e))
-        return ''
-    return new_dir_path
-
+        messages.error(request, 'Failure to create temporary directory at '+dir_path+': '+str(e))
+        return ''  
+    
    
 def get_default_val_set_id(request, project):
     """ 
@@ -450,3 +466,41 @@ def update_dom_name_in_val_set(spec_item):
                 child.save()
     
     
+def upload_small_zip_file(request, dir_name):
+    """
+    Handle a request which carries a "small" zip file and unpack it in
+    a temporary directory.
+    The location of the temporary directory is taken from the configuration
+    file; its name is given by argument 'dir_name' plus a random string
+    (GitHub 40).
+    The function returns one of:
+    - 'None' if an error was encountered
+    - The name of the temporary directory 
+    If en error is encountered, a message is generated 
+    """  
+    try:
+        zip_file = request.FILES['upload_file']
+    except Exception as e:
+        messages.error(request,'Unable to upload file: '+repr(e))
+        return None
+    if zip_file.multiple_chunks():
+        messages.error(request,'Uploaded file '+zip_file.name+' is too big, size in MB is: '+str(zip_file.size/(1000*1000)))
+        return None
+
+    # Create temporary directory where uploaded file is to be unzipped
+    dir_path = make_temp_dir(request, dir_name)
+    if dir_path == '':   # There was an error in the creation of the temp dir
+        return None
+        
+    # Unzip uploaded file    
+    upl_file = os.path.join(dir_path,'upload_file.zip')
+    try:
+        with open(upl_file, 'wb') as fd:
+            fd.write(zip_file.read())
+    except Exception as e:
+        messages.error(request,'Unable to open zip file in write mode: '+repr(e))
+        return None
+    zip_obj = ZipFile(upl_file, 'r')
+    zip_obj.extractall(dir_path)
+    zip_obj.close()
+    return dir_path

@@ -27,10 +27,10 @@ from django.utils.timezone import get_current_timezone
 from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
-from editor.utilities import get_domains, do_application_release, do_project_release, \
+from editor.utilities import get_domains, do_application_release, do_project_release, make_temp_dir, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
-                             get_redirect_url, make_temp_dir, get_default_val_set_id, \
+                             get_redirect_url, get_default_val_set_id, upload_small_zip_file, \
                              del_release, list_trac_items_for_latex, make_obs_spec_item_copy, \
                              mark_spec_item_aliases_as_del, create_and_init_spec_item, \
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
@@ -761,33 +761,11 @@ def import_project(request):
         return redirect(base_url)
   
     if request.method == 'POST':   
-        try:
-            zip_file = request.FILES['upload_file']
-        except Exception as e:
-            messages.error(request,'Unable to upload file: '+repr(e))
-            return redirect(base_url)
-        if zip_file.multiple_chunks():
-            messages.error(request,'Uploaded file '+zip_file.name+' is too big, size in MB is: '+str(zip_file.size/(1000*1000)))
-            return redirect(base_url)
-
-        # Create directory where import file is unzipped
-        temp_dir = configs['General']['temp_dir']
-        csv_sep = configs['General']['csv_sep']
-        imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
-        if imp_dir == '':
-            return redirect(base_url)
-            
-        # Unzip import file    
-        imp_project = os.path.join(imp_dir,'import_project.zip')
-        with open(imp_project, 'wb') as fd:
-            fd.write(zip_file.read())
-        zip_obj = ZipFile(imp_project, 'r')
-        zip_obj.extractall(imp_dir)
-        zip_obj.close()
-
-        import_project_tables(request, imp_dir)
+        imp_dir = upload_small_zip_file(request, 'cordetfw_editor_') 
+        if imp_dir != None:
+            import_project_tables(request, imp_dir)
     else:
-        context = {'title': 'Upload Zip File'}
+        context = {'title': 'Upload Zip File Holding Import Project'}
         return render(request, 'upload_file.html', context)
 
     return redirect(base_url)
@@ -799,9 +777,8 @@ def export_project(request, project_id):
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
 
-    temp_dir = configs['General']['temp_dir']
     csv_sep = configs['General']['csv_sep']
-    exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
+    exp_dir = make_temp_dir(request, 'cordetfw_editor_')
     if exp_dir == '':
         return redirect(base_url)
     
