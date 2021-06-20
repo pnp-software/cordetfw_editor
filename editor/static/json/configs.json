@@ -592,7 +592,7 @@
                                                  "href_tip": ["title", "desc"],
                                                  "expand_tip": ["title", "desc"]},
                                   "tracs": [],
-                                  "access_from_index": {"level": "Applicsation"},           
+                                  "access_from_index": {"level": "Application"},           
                                   "attrs": {"domain":   {"label": "Domain", "req_in_form": true, "kind": "plain_text"},
                                            "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
                                            "title":     {"label": "Caption", "req_in_form": false, "kind": "plain_text"},
