@@ -25,7 +25,7 @@
     </p><p>
     Distinctive features of the editor include:
     <ul>
-    <li>Design based on a <a href="#ModellingLevels">meta-model</a> to allow 
+    <li>Design based on a <a href="#ModellingLevels">framework</a> to allow 
         customization to meet user needs</li>
     <li>Distribution through a free and open licence </li>
     <li>Support for multiple versions of requirements through the <a href="#ValSets">ValSet</a> concept</li>
@@ -52,13 +52,13 @@
     However, projects normally have project-specific categories of requirements, or need to maintain
     project-specific relationships among their requirements, or need to generate
     project-specific artifacts from their requirements.
-    The Cordet FW Editor cater to these needs by being built on 
-    a <a href="#MetaModel">meta-model</a> which users may configure to match their needs.
+    The Cordet FW Editor caters to these needs by being built as 
+    a <a href="#The_Editor_Framework">framework</a> which users may configure to match their needs.
     </p><p>
-    The key concept at meta-modelling level is that of <a href="#Specification_Items">specification item</a>.
+    The key concept at framework level is that of <a href="#Specification_Items">specification item</a>.
     A specification item is a set of specification-related information which are manipulated as 
     a single unit.
-    The editor meta-model defines specification items as an abstract entities upon which certain
+    At framework level, specification items are defined as an abstract entities upon which certain
     operations can be performed (adding a new specification item, editing an existing specification
     item, etc). 
     When users deploy the editor, they are expected to 
@@ -73,9 +73,9 @@
     </p><p>
      
     
-    <h3><a name="MetaModel">The Editor Meta-Model</a></h3>
+    <h3><a name="MetaModel">The Editor Framework</a></h3>
     <p>
-    The editor meta-model is built on the following concepts:
+    The editor framework is built on the following concepts:
     <ul>
     <li><a href="#Users">Users</a></li>
     <li><a href="#ProjAndApp">Projects</a></li>
@@ -318,7 +318,7 @@
     items are imported from an external source and hence it is not possible for the editor to 
     maintain mutliple versions of the same instance).
     </p><p>
-    At meta-modelling level, the editor defines an <a href+"ExtSpecItemInterface">interface to access 
+    At framework level, the editor defines an <a href+"ExtSpecItemInterface">interface to access 
     external specification items</a>.
     During the <a href+"#Editor_Instantiation">editor instantiation process</a>, users implement 
     this interface for their external specification items. 
@@ -872,7 +872,7 @@
     the specification items of a project to, for instance,
     generate code or inputs for documents.
     They are defined as part of the <a href="#Instantiaton">instantiation of the editor</a>.
-    No generators are defined at meta-model levels. 
+    No generators are defined at framework levels. 
     </p><p>    
     This part of the editor is still TBD.
     </p><p>    
@@ -897,7 +897,7 @@
 
     <h3><a name="Instantiation">Editor Instantiation</a></h3>
     <p>
-    The Cordet FW Editor is built on a meta-model which users are expected to instantiate when they deploy the
+    The Cordet FW Editor is built as a framework which users are expected to instantiate when they deploy the
     editor.
     The <a href="#Default_Editor_Model">default instantiation</a> can be used as a blue-print 
     for the user-specific instantiation. 
