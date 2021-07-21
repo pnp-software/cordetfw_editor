@@ -18,7 +18,12 @@ pattern_name = re.compile('[a-zA-Z0-9_]+$')
 class ProjectForm(forms.Form):
     name = forms.CharField()
     owner = forms.ChoiceField(choices=())
+    cats = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
+    predefined_cats = ''
+    for item in configs['cats'].keys():
+        predefined_cats = predefined_cats + item + ', '
+    predefined_cats = predefined_cats[:-2] if len(predefined_cats)>2 else predefined_cats
     
     def __init__(self, project, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
@@ -29,10 +34,23 @@ class ProjectForm(forms.Form):
         self.helper.field_class = 'col-md-8'
         self.helper.add_input(Submit('submit', 'Submit'))
         self.fields['description'].widget.attrs.update(rows = 2)
+        self.fields['cats'].label = 'Categories'
+        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
 
     def clean_owner(self):    
         owner_id = self.cleaned_data['owner']
         return User.objects.get(id=owner_id)
+        
+    def clean_cats(self):
+        cats = self.cleaned_data['cats']
+        cat_list = cats.split(',')
+        err_msg = 'Must contain a comma-separated list of categories from: ' + self.predefined_cats
+        if len(cat_list) == 0:
+            raise forms.ValidationError(err_msg)
+        for cat_item in cat_list:
+            if not cat_item.strip() in configs['cats']:
+                raise forms.ValidationError(err_msg)
+        return cats
 
 
 class ApplicationForm(forms.Form):

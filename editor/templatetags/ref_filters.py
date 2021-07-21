@@ -150,7 +150,7 @@ def get_short_desc(spec_item):
     for attr in attrs:
         desc = desc + getattr(spec_item, attr) + ': '
 
-    if len(desc) > configs['General']['short_desc_len']:
-        return desc[:configs['General']['short_desc_len']]+' ...'
+    if len(desc) > configs['general']['short_desc_len']:
+        return desc[:configs['general']['short_desc_len']]+' ...'
     else:
         return desc[:-2]

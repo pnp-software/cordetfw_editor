@@ -3,13 +3,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
-# Load the list of choices for the specification items
-with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
-    configs = json.load(config_file)
-spec_item_cat = []
-for cat, value in configs['cats'].items():
-    spec_item_cat.append((cat, value['name']))
-
 class Release(models.Model):
     release_author = models.ForeignKey(User, on_delete=models.PROTECT)
     desc = models.TextField()
@@ -23,6 +16,7 @@ class Release(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=255)
     desc = models.TextField()
+    cats = models.TextField()
     updated_at= models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, related_name='owned_projects', on_delete=models.PROTECT)
     release = models.ForeignKey(Release, on_delete=models.PROTECT)

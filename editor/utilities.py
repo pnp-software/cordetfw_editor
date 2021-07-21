@@ -336,7 +336,7 @@ def del_release(request, release, n):
         Recursively delete a release and its previous releases. If the depth of recursion 
         exceeds max_depth, an error is declared and False is returned.
     """
-    if n > configs['General']['max_depth']:
+    if n > configs['general']['max_depth']:
         messages.error(request, 'Attempt to delete a release has reached the limit '+\
                                     'on the depth of recursion: '+str(n))
         return False

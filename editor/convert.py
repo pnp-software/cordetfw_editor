@@ -27,10 +27,8 @@ pattern_db = re.compile('#(iref):([0-9]+)')
 # rendered in export representation (e.g. 'dom:name')
 pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')     
 
-# Regex pattern for internal references to specification items as they
+# Regex pattern for internal references to specification items as they are
 # rendered in edit representation (e.g. '#cat:dom:name')
-#with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
-#    configs = json.load(config_file)
 s = ''
 for cat in list(configs['cats'].keys()):
     s = s+cat+'|'
@@ -241,7 +239,7 @@ def render_for_eval(s, n):
     specification item which is not a data item, it returns the string
     unchanged.
     """
-    if n > configs['General']['max_depth']:
+    if n > configs['general']['max_depth']:
         logger.warning('Exceeded recursion depth when evaluating '+s)
         return s
 

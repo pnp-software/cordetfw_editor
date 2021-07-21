@@ -57,11 +57,18 @@ def index(request):
          
         applications = project.applications.all().order_by('name') 
         default_val_set_id = get_default_val_set_id(request, project)
+        
+        # Create iterable holding the names of the categories for this project
+        project_cats = list(map(lambda x: x.strip(), project.cats.split(',')))
+        # Create a subset of configs['cats'] holding only the project categories
+        project_configs = {key: value for key, value in configs['cats'].items() if key in project_cats}
+        
         listOfProjects.append({'project': project, 
                                'applications': list(applications),
                                'default_val_set_id': default_val_set_id,
+                               'project_configs': project_configs,
                                'user_has_access': userHasAccess})
-    context = {'list_of_projects': listOfProjects, 'configs': configs['cats']}
+    context = {'list_of_projects': listOfProjects}
     return render(request, 'index.html', context=context)
  
 
@@ -117,6 +124,7 @@ def add_project(request):
         if form.is_valid():
             new_project = Project(name = form.cleaned_data['name'],
                                   desc = form.cleaned_data['description'],
+                                  cats = form.cleaned_data['cats'],
                                   updated_at = datetime.now(tz=get_current_timezone()),
                                   owner = form.cleaned_data['owner'])
             new_release = Release(desc = "Initial release after project creation",
@@ -178,11 +186,13 @@ def edit_project(request, project_id):
             project.name = form.cleaned_data['name']
             project.desc = form.cleaned_data['description']
             project.owner = form.cleaned_data['owner']
+            project.cats = form.cleaned_data['cats']
             project.save()
             return redirect(base_url)
     else:   
         form = ProjectForm(project, initial={'name': project.name, 
                                              'description': project.desc, 
+                                             'cats': project.cats,
                                              'owner': project.owner})
     
     users = User.objects.all().exclude(username=project.owner).order_by('username').values()
@@ -654,7 +664,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     if order_by != None:
         items = items.order_by(order_by, 'domain','name')
 
-    csv_sep = configs['General']['csv_sep']
+    csv_sep = configs['general']['csv_sep']
     fd = StringIO()
     for i, item in enumerate(items):
         if (export_type == 'latex_format'):
@@ -702,7 +712,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         try:
             file_data = csv_file.read().decode('utf-8')
             f = StringIO(file_data)
-            items = csv.DictReader(f, delimiter=configs['General']['csv_sep'])
+            items = csv.DictReader(f, delimiter=configs['general']['csv_sep'])
             csv_domain = configs['cats'][cat]['attrs']['domain']['label']
             csv_name = configs['cats'][cat]['attrs']['name']['label']
             csv_val_set = configs['cats'][cat]['attrs']['val_set']['label']
@@ -771,8 +781,8 @@ def import_project(request):
             return redirect(base_url)
 
         # Create directory where import file is unzipped
-        temp_dir = configs['General']['temp_dir']
-        csv_sep = configs['General']['csv_sep']
+        temp_dir = configs['general']['temp_dir']
+        csv_sep = configs['general']['csv_sep']
         imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
         if imp_dir == '':
             return redirect(base_url)
@@ -799,8 +809,8 @@ def export_project(request, project_id):
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
 
-    temp_dir = configs['General']['temp_dir']
-    csv_sep = configs['General']['csv_sep']
+    temp_dir = configs['general']['temp_dir']
+    csv_sep = configs['general']['csv_sep']
     exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
     if exp_dir == '':
         return redirect(base_url)
