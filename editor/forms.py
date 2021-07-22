@@ -18,7 +18,12 @@ pattern_name = re.compile('[a-zA-Z0-9_]+$')
 class ProjectForm(forms.Form):
     name = forms.CharField()
     owner = forms.ChoiceField(choices=())
+    cats = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
+    predefined_cats = ''
+    for item in configs['cats'].keys():
+        predefined_cats = predefined_cats + item + ', '
+    predefined_cats = predefined_cats[:-2] if len(predefined_cats)>2 else predefined_cats
     
     def __init__(self, project, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
@@ -29,10 +34,23 @@ class ProjectForm(forms.Form):
         self.helper.field_class = 'col-md-8'
         self.helper.add_input(Submit('submit', 'Submit'))
         self.fields['description'].widget.attrs.update(rows = 2)
+        self.fields['cats'].label = 'Categories'
+        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
 
     def clean_owner(self):    
         owner_id = self.cleaned_data['owner']
         return User.objects.get(id=owner_id)
+        
+    def clean_cats(self):
+        cats = self.cleaned_data['cats']
+        cat_list = cats.split(',')
+        err_msg = 'Must contain a comma-separated list of categories from: ' + self.predefined_cats
+        if len(cat_list) == 0:
+            raise forms.ValidationError(err_msg)
+        for cat_item in cat_list:
+            if not cat_item.strip() in configs['cats']:
+                raise forms.ValidationError(err_msg)
+        return cats
 
 
 class ApplicationForm(forms.Form):
@@ -86,6 +104,7 @@ class SpecItemForm(forms.Form):
     rationale = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    change_log = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     p_kind = forms.ChoiceField(choices=())
     s_kind = forms.ChoiceField(choices=())
     val_set = forms.ModelChoiceField(queryset=None, empty_label=None)
@@ -112,12 +131,16 @@ class SpecItemForm(forms.Form):
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-8'
-        self.helper.add_input(Submit('submit', 'Submit'))
+        if mode == 'del':
+            self.helper.add_input(Submit('submit', 'Delete'))
+        else:
+            self.helper.add_input(Submit('submit', 'Submit'))
         self.fields['desc'].widget.attrs.update(rows = 1)
         self.fields['value'].widget.attrs.update(rows = 1)
         self.fields['rationale'].widget.attrs.update(rows = 1)
         self.fields['implementation'].widget.attrs.update(rows = 1)
         self.fields['remarks'].widget.attrs.update(rows = 1)
+        self.fields['change_log'].widget.attrs.update(rows = 1)
         self.fields['t1'].widget.attrs.update(rows = 1)
         self.fields['t2'].widget.attrs.update(rows = 1)
         self.fields['t3'].widget.attrs.update(rows = 1)
@@ -149,9 +172,10 @@ class SpecItemForm(forms.Form):
             self.fields['ext_item'].label = cat
             self.fields['ext_item'].choices = getattr(ext_cats, get_choices_func_name)(request)
         
-        # In add mode, the ValSet is not visible
+        # In add mode, the ValSet and ChangeLog are not visible
         if (self.mode == 'add'):
             self.fields['val_set'].widget = forms.HiddenInput()      
+            self.fields['change_log'].widget = forms.HiddenInput()      
 
         # In all modes but copy and edit mode, the ValSet cannot be edited but is visible
         if (self.mode == 'copy') or (self.mode == 'edit'):     
@@ -159,36 +183,29 @@ class SpecItemForm(forms.Form):
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
     
-        # In split mode, the ValSet can be edited but domain, name and pointer fields must remain unchanged
-        # Parent field  must remain hidden
+        # In split mode, the ValSet can be edited but domain, name, and change_log  
+        # must remain unchanged. The s_link and p_link fields must remain hidden.
         if (self.mode == 'split'):     
             self.fields['val_set'].queryset = ValSet.objects.filter(project_id=project.id).order_by('name')
             self.fields['domain'].disabled = True
             self.fields['name'].disabled = True
+            self.fields['change_log'].disabled = True
             self.fields['p_link'].disabled = True
             self.fields['p_link'].widget = forms.HiddenInput()
             self.fields['s_link'].disabled = True
             self.fields['s_link'].widget = forms.HiddenInput()
-                       
+            
+        # In delete mode, all fields but the change_log are visible but not editable
+        if (self.mode == 'del'):
+            for field in self.fields:  
+                if (field in config['attrs']) and (field != 'change_log'):
+                    self.fields[field].disabled = True
+            val_set_id = self.initial['val_set']
+            self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
+                    
     def clean(self):
         cd = self.cleaned_data
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
-        
-        # Check that domain and name (if they have been defined) only contain alphanumeric characters and underscores
-        if cd['name'] != '':
-            if not pattern_name.match(self.cleaned_data['name']):
-                raise ValidationError({'name':'Name may contain only alphanumeric characters and underscores'})
-        if cd['domain'] != '':
-            if not pattern_name.match(self.cleaned_data['domain']):
-                raise ValidationError({'domain':'Domain may contain only alphanumeric characters and underscores'})
- 
-        # Fields of kind 'ref_text' or 'eval_ref' are converted from 'edit' to 'db' representation
-        # (but external attribute fields are left untouched because they are loaded from an
-        #  external resource) 
-        for field in self.fields:  
-            if (field in self.config['attrs']) and (not field in self.config['ext_attrs']):
-                if (self.config['attrs'][field]['kind'] == 'ref_text') or  (self.config['attrs'][field]['kind'] == 'eval_ref'):
-                    cd[field] = convert_edit_to_db(self.project, cd[field])
         
         # When in add mode: load data for external attributes
         if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
@@ -197,6 +214,31 @@ class SpecItemForm(forms.Form):
             for ext_attr in self.config['ext_attrs']:
                 cd[ext_attr] = ext_choice[ext_attr]
             
+        # Check that domain and name only contain alphanumeric characters and underscores
+        if not pattern_name.match(self.cleaned_data['name']):
+            raise ValidationError({'name':'Name may contain only alphanumeric characters and underscores'})
+        if not pattern_name.match(self.cleaned_data['domain']):
+            raise ValidationError({'domain':'Domain may contain only alphanumeric characters and underscores'})
+ 
+        # Fields of kind 'eval_ref' may only contain internal references to spec_items of the same category
+        for field in self.fields:  
+            if (field in self.config['attrs']) and (not field in self.config['ext_attrs']):
+                if self.config['attrs'][field]['kind'] == 'eval_ref':
+                    internal_refs = re.findall(pattern_edit, cd[field])
+                    for ref in internal_refs:
+                        if ref[0] != self.cat:
+                            err_msg = 'The field '+field+' of a '+self.cat+' cannot contain internal references to '+\
+                                      'internal_ref_cat of a different category: '+str(ref)
+                            raise forms.ValidationError(err_msg)
+         
+        # Fields of kind 'ref_text' or 'eval_ref' are converted from 'edit' to 'db' representation
+        # (but external attribute fields are left untouched because they are loaded from an
+        #  external resource) 
+        for field in self.fields:  
+            if (field in self.config['attrs']) and (not field in self.config['ext_attrs']):
+                if (self.config['attrs'][field]['kind'] == 'ref_text') or  (self.config['attrs'][field]['kind'] == 'eval_ref'):
+                    cd[field] = convert_edit_to_db(self.project, cd[field])
+        
         # Verify that, in add and copy modes, the domain:name pair is unique within non-deleted, 
         # non-obsolete spec_items in the project and ValSet
         if (self.mode == 'add') or (self.mode == 'copy'):
@@ -224,5 +266,4 @@ class SpecItemForm(forms.Form):
             raise forms.ValidationError(check_msg)
  
         return cd
- 
  

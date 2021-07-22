@@ -57,11 +57,18 @@ def index(request):
          
         applications = project.applications.all().order_by('name') 
         default_val_set_id = get_default_val_set_id(request, project)
+        
+        # Create iterable holding the names of the categories for this project
+        project_cats = list(map(lambda x: x.strip(), project.cats.split(',')))
+        # Create a subset of configs['cats'] holding only the project categories
+        project_configs = {key: value for key, value in configs['cats'].items() if key in project_cats}
+        
         listOfProjects.append({'project': project, 
                                'applications': list(applications),
                                'default_val_set_id': default_val_set_id,
+                               'project_configs': project_configs,
                                'user_has_access': userHasAccess})
-    context = {'list_of_projects': listOfProjects, 'configs': configs['cats']}
+    context = {'list_of_projects': listOfProjects}
     return render(request, 'index.html', context=context)
  
 
@@ -117,6 +124,7 @@ def add_project(request):
         if form.is_valid():
             new_project = Project(name = form.cleaned_data['name'],
                                   desc = form.cleaned_data['description'],
+                                  cats = form.cleaned_data['cats'],
                                   updated_at = datetime.now(tz=get_current_timezone()),
                                   owner = form.cleaned_data['owner'])
             new_release = Release(desc = "Initial release after project creation",
@@ -178,11 +186,13 @@ def edit_project(request, project_id):
             project.name = form.cleaned_data['name']
             project.desc = form.cleaned_data['description']
             project.owner = form.cleaned_data['owner']
+            project.cats = form.cleaned_data['cats']
             project.save()
             return redirect(base_url)
     else:   
         form = ProjectForm(project, initial={'name': project.name, 
                                              'description': project.desc, 
+                                             'cats': project.cats,
                                              'owner': project.owner})
     
     users = User.objects.all().exclude(username=project.owner).order_by('username').values()
@@ -461,6 +471,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
@@ -527,6 +538,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
@@ -568,6 +580,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
@@ -581,6 +594,12 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
+    if application_id != 0:
+        application = Application.objects.get(id=application_id)
+        title = 'Delete '+configs['cats'][cat]['name']+' in Application '+application.name
+    else:
+        application = None
+        title = 'Delete '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
 
@@ -588,17 +607,33 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         if spec_item.val_set.name == 'Default':
             remove_spec_item_aliases(request, spec_item)
         remove_spec_item(request, spec_item)
-    else:
-        if spec_item.val_set.name == 'Default':
-            mark_spec_item_aliases_as_del(request, spec_item)
-        spec_item.status = 'DEL' 
-        spec_item.save() 
-    
-    redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_val, s_parent_id, p_parent_id, None)
-    return redirect(redirect_url)
+        redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                                sel_val, s_parent_id, p_parent_id, None)
+        return redirect(redirect_url)
+  
+    if request.method == 'POST':   
+        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
+                            request.POST, initial=spec_item_to_edit(spec_item))
+        if form.is_valid():
+            if spec_item.val_set.name == 'Default':
+                mark_spec_item_aliases_as_del(request, spec_item)
+            spec_item.status = 'DEL' 
+            spec_item.change_log = form.cleaned_data['change_log']
+            spec_item.save() 
+            redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
+                                                    sel_val, s_parent_id, p_parent_id, None)
+            return redirect(redirect_url)
+    else:   
+        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item))
 
+    # Generate list of items for the auto-completion list
+    spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
+                        exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
+    return render(request, 'basic_form.html', context) 
 
+        
 @login_required         
 def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
@@ -629,7 +664,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     if order_by != None:
         items = items.order_by(order_by, 'domain','name')
 
-    csv_sep = configs['General']['csv_sep']
+    csv_sep = configs['general']['csv_sep']
     fd = StringIO()
     for i, item in enumerate(items):
         if (export_type == 'latex_format'):
@@ -677,7 +712,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         try:
             file_data = csv_file.read().decode('utf-8')
             f = StringIO(file_data)
-            items = csv.DictReader(f, delimiter=configs['General']['csv_sep'])
+            items = csv.DictReader(f, delimiter=configs['general']['csv_sep'])
             csv_domain = configs['cats'][cat]['attrs']['domain']['label']
             csv_name = configs['cats'][cat]['attrs']['name']['label']
             csv_val_set = configs['cats'][cat]['attrs']['val_set']['label']
@@ -713,6 +748,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     if q_cat[0].status == 'CNF':
                         overriden_item = q_cat[0]
                         spec_item = make_obs_spec_item_copy(request, overriden_item)
+                        export_to_spec_item(request, project, item, spec_item)
                         spec_item.updated_at = datetime.now(tz=get_current_timezone())
                         spec_item.owner = get_user(request)
                         spec_item.save()
@@ -745,8 +781,8 @@ def import_project(request):
             return redirect(base_url)
 
         # Create directory where import file is unzipped
-        temp_dir = configs['General']['temp_dir']
-        csv_sep = configs['General']['csv_sep']
+        temp_dir = configs['general']['temp_dir']
+        csv_sep = configs['general']['csv_sep']
         imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
         if imp_dir == '':
             return redirect(base_url)
@@ -773,8 +809,8 @@ def export_project(request, project_id):
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
 
-    temp_dir = configs['General']['temp_dir']
-    csv_sep = configs['General']['csv_sep']
+    temp_dir = configs['general']['temp_dir']
+    csv_sep = configs['general']['csv_sep']
     exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
     if exp_dir == '':
         return redirect(base_url)

@@ -9,7 +9,7 @@ from .. import convert
 
 register = template.Library()
 
-# The key is name of a kind of specification item attribute content; the value
+# The key is the name of a kind of specification item attribute content; the value
 # is the function which transforms that content from database to display representation  
 conv_db_disp_func = {"plain_text": "conv_do_nothing",
                      'ref_text': "conv_db_disp_ref_text",
@@ -71,15 +71,15 @@ def disp_trac(context, spec_item, trac_cat, trac_link):
         if trac_link == 's_link':
             target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+application_id+\
                     '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'\list_spec_items'
-            s = s + '<a href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
+            s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
                 link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + ')'
         else:
             target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+application_id+\
                     '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'\list_spec_items'
-            s = s + '<a href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
+            s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
                 link.s_link.desc+'\">' + link.s_link.domain + ':' + link.s_link.name + '</a> (' + link.s_link.title + ')'
         s = s + '\n'    
-            
+        
     return mark_safe(s[:-1])    # The last '\n' is removed
  
  
@@ -105,17 +105,23 @@ def filter_refs(s):
     The input should be passed through escape() before being filtered to ensure that any html code entered 
     by the (possibly malicious) user has been sanitized.
     """
-    return mark_safe(convert_db_to_display(s, 1))
+    return mark_safe(convert_db_to_display(s))
 
 
 @register.filter(is_safe=True)
-def filter_refs_for_tip(s):
+def filter_expand_tip(spec_item):
     """
-    The argument is a string which contains references and must be rendered in the tip field of an html page.
+    The argument is a spec_item which appears in an "expand" list.
+    The function returns the hovering tip for the spec_item.
     The input should be passed through escape() before being filtered to ensure that any html code entered 
     by the (possibly malicious) user has been sanitized.
     """
-    return mark_safe(convert_db_to_edit(s))
+    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_tip']
+    s = ''
+    for attr in attrs:
+        s = s + configs['cats'][spec_item.cat]['attrs'][attr]['label'] +': '+\
+                convert_db_to_edit(getattr(spec_item, attr)) + '&#13;'
+    return mark_safe(s)
 
 
 @register.filter(is_safe=True)
@@ -139,12 +145,12 @@ def get_label(config, attr):
 @register.filter(is_safe=True)
 def get_short_desc(spec_item):
     """ Return a short description of the specification item """
-    desc = spec_item.title
-    if spec_item.desc != '':
-        desc = desc + ':' + spec_item.desc
-    if spec_item.value:
-        desc = desc + ':' + spec_item.value
-    if len(desc) > configs['General']['short_desc_len']:
-        return desc[:configs['General']['short_desc_len']]+' ...'
+    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_text']
+    desc = ''
+    for attr in attrs:
+        desc = desc + getattr(spec_item, attr) + ': '
+
+    if len(desc) > configs['general']['short_desc_len']:
+        return desc[:configs['general']['short_desc_len']]+' ...'
     else:
-        return desc
+        return desc[:-2]

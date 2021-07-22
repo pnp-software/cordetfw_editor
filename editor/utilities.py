@@ -47,7 +47,7 @@ def spec_item_to_edit(spec_item):
     """
     dic = model_to_dict(spec_item)
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
-        if value['kind'] == 'ref_text':
+        if value['kind'] == 'ref_text' or value['kind'] == 'eval_ref':
             dic[key] = convert_db_to_edit(dic[key])
     return dic
     
@@ -209,9 +209,9 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
 def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
                      sel_val, s_parent_id, p_parent_id, target_spec_item):
     """
-    Compute the url to which the user is re-directed after having added/copied/edited
+    Compute the url to which the user is re-directed after having added/copied/edited/delete
     a spec_item. If s_parent_id or p_parent_id are different from 'None', then the 
-    add/copy/edit operation is being done on a spec_item in an expansion list and
+    add/copy/edit /del operation is being done on a spec_item in an expansion list and
     hence the re-direct is to the list_spec_items view with an expand_id. 
     """
     if (s_parent_id != None):
@@ -233,7 +233,7 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
 def get_domains(cat, application_id, project_id):
     """ 
     Return the list of domains for the specification items in the argument category. If application_id is zero,
-    then the model are filtered by project; otherwise they are filter by application.
+    then the model are filtered by project; otherwise they are filtered by application.
     """           
     domains = ['Sel_All']
     if application_id == 0:
@@ -336,7 +336,7 @@ def del_release(request, release, n):
         Recursively delete a release and its previous releases. If the depth of recursion 
         exceeds max_depth, an error is declared and False is returned.
     """
-    if n > configs['General']['max_depth']:
+    if n > configs['general']['max_depth']:
         messages.error(request, 'Attempt to delete a release has reached the limit '+\
                                     'on the depth of recursion: '+str(n))
         return False

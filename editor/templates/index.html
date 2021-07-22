@@ -81,7 +81,7 @@
                     </td>
                     <td class="flex text-blue-gray-500 place-content-end p-0">
                         {% if item.user_has_access or request.user == item.project.owner %}
-                        {% for cat, value in configs.items %}
+                        {% for cat, value in item.project_configs.items %}
                         {% if value.access_from_index.level == 'Project' %}
                         <a class="pl-4 pt-8 pr-0 pb-6 flex flex-row items-center
                                   hover:text-blue-600"
@@ -176,7 +176,7 @@
                     </td>
                     <td class="flex text-blue-gray-500 place-content-end p-0">
                         {% if item.user_has_access or request.user == item.project.owner %}
-                        {% for cat, value in configs.items %}
+                        {% for cat, value in item.project_configs.items %}
                         {% if value.access_from_index.level == 'Application' %}
                         <a class="pl-4 pt-0 pr-0 pb-4 flex flex-row items-center
                                   hover:text-blue-600"

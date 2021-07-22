@@ -25,7 +25,7 @@
     </p><p>
     Distinctive features of the editor include:
     <ul>
-    <li>Design based on a <a href="#ModellingLevels">meta-model</a> to allow 
+    <li>Design based on a <a href="#ModellingLevels">framework</a> to allow 
         customization to meet user needs</li>
     <li>Distribution through a free and open licence </li>
     <li>Support for multiple versions of requirements through the <a href="#ValSets">ValSet</a> concept</li>
@@ -52,13 +52,13 @@
     However, projects normally have project-specific categories of requirements, or need to maintain
     project-specific relationships among their requirements, or need to generate
     project-specific artifacts from their requirements.
-    The Cordet FW Editor cater to these needs by being built on 
-    a <a href="#MetaModel">meta-model</a> which users may configure to match their needs.
+    The Cordet FW Editor caters to these needs by being built as 
+    a <a href="#The_Editor_Framework">framework</a> which users may configure to match their needs.
     </p><p>
-    The key concept at meta-modelling level is that of <a href="#Specification_Items">specification item</a>.
+    The key concept at framework level is that of <a href="#Specification_Items">specification item</a>.
     A specification item is a set of specification-related information which are manipulated as 
     a single unit.
-    The editor meta-model defines specification items as an abstract entities upon which certain
+    At framework level, specification items are defined as an abstract entities upon which certain
     operations can be performed (adding a new specification item, editing an existing specification
     item, etc). 
     When users deploy the editor, they are expected to 
@@ -73,9 +73,9 @@
     </p><p>
      
     
-    <h3><a name="MetaModel">The Editor Meta-Model</a></h3>
+    <h3><a name="MetaModel">The Editor Framework</a></h3>
     <p>
-    The editor meta-model is built on the following concepts:
+    The editor framework is built on the following concepts:
     <ul>
     <li><a href="#Users">Users</a></li>
     <li><a href="#ProjAndApp">Projects</a></li>
@@ -224,6 +224,8 @@
     <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
     <li><i>Implementation</i>: information about how the specification item is implemented</li> 
     <li><i>ValSet(*)</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
+    <li><i>ChangeLog(*)</i>: the reason for a change in a specification item whose status is either
+                             'confirmed' or 'modified'</li> 
     </ul>
     Within a project, a specification item is uniquely identified by the pair <strong>domain:name</strong>. 
     The domain is used to capture a set of logically related specification items and acts as a kind
@@ -316,7 +318,7 @@
     items are imported from an external source and hence it is not possible for the editor to 
     maintain mutliple versions of the same instance).
     </p><p>
-    At meta-modelling level, the editor defines an <a href+"ExtSpecItemInterface">interface to access 
+    At framework level, the editor defines an <a href+"ExtSpecItemInterface">interface to access 
     external specification items</a>.
     During the <a href+"#Editor_Instantiation">editor instantiation process</a>, users implement 
     this interface for their external specification items. 
@@ -336,6 +338,25 @@
     </ul>
     </p>
 
+
+    <h5><a name="Markdown">Markdown Tags</a></h5>
+    <p>
+    A simple markdown language is supported to let users emphasize text:
+    <ul>
+    <li>'**...**' is redendered as <b>bolded text</b></li>
+    <li>'++...++' is redendered as <u>underlined text</u></li>
+    <li>'__...__' is redendered as <i>italicized text</i></li>
+    <li>'``...``' is redendered as <code>teletype text</code></li>
+    </ul>
+    </p><p>
+    Markdown can be used in attributes of <a href=#Rendering_of_Specification_Item_Attributes>kind</a>
+    <code>plain_text</code> and <code>ref_text</code>.   
+    It is not possible to nest markdown tags (e.g. it is not possible to have a 
+    word which is both underlined and bolded. 
+    </p><p>
+    Markdown support for bulleted lists and code listing is still TBD.
+    </p>    
+
     
    <h5><a name="SpecItemAttrRender">Rendering of Specification Item Attributes</a></h5>
     <p>
@@ -343,8 +364,10 @@
     holds and on the context within which it is rendered.
     The kind of content is one of the following:
     <ul>
-        <li>plain_text: text without <a href="#SpecItemLinks">internal references</a></li>
-        <li>ref_text: text with <a href="#SpecItemLinks">internal references</a></li>
+        <li>plain_text: text with <a href=#Markdown_Tags>markdown tags</a> 
+                        but without <a href="#SpecItemLinks">internal references</a></li>
+        <li>ref_text: text with <a href=#Markdown_Language>markdown tags</a> 
+                      and with <a href="#SpecItemLinks">internal references</a></li>
         <li>spec_item_ref: a reference to another specification item 
             (<a href="#SpecItemLinks">direct link</a>)</li>
         <li>plain_ref: a reference to a database model instance other than a specification item</li>
@@ -388,7 +411,7 @@
             <td>&#10060;</td>
         </tr>
         <tr>
-            <td>Title, Description, Rationale, Remarks & Implementation </td>
+            <td>Title, Desc., Rationale, Remarks, Impl. & ChangeLog </td>
             <td>&#10060;</td>
             <td>&#9989;</td>
             <td>&#10060;</td>
@@ -773,14 +796,25 @@
     <li>The update time is set to the current time</li>
     <li>If there is no item with the same domain:name in the selected category and ValSet,
         the status is set to NEW and the previous pointer is set to 'None'</li>
-    <li>If there is an item with the same domain:name in the selected category and ValSet,
+    <li>If there is a non-obsolete and non-deleted item with the same domain:name in the 
+        selected category and ValSet,
         a copy is made of the existing item. the status of the new item is set to MOD and
         its previous pointer is set to the newly-copied item</li>
     </ul>
-    Each imported specification item is processed according to the following activity diagram:
+    With respect to the last bullet, it is noted that the copy of the spec_item is made even
+    if the imported spec_item is identical to the spec_item with the same domain:name
+    in the database.
     <p></p>
-    <img src="{% static 'images/ImportSpecItem.png' %}"> 
+    The change_log attribute is defined for all spec_items and should be used to record the
+    reason for a change in the content of a spec_item.
+    The change_log attribute is imported alongside other attributes.
+    It is the responsibility of the user to enter an appropriate text in this field in the
+    import file.
+    <p></p>
+    Each imported specification item is processed according to the following activity diagram:
     <p>
+    <img src="{% static 'images/ImportSpecItem.png' %}"> 
+    </p>
     The typical use case for the plain import/export functions is as follows.
     A user needs to perform the same operation on a large number of specification items (e.g.
     update their names; capitalize their domain name; clear their values; etc).
@@ -838,7 +872,7 @@
     the specification items of a project to, for instance,
     generate code or inputs for documents.
     They are defined as part of the <a href="#Instantiaton">instantiation of the editor</a>.
-    No generators are defined at meta-model levels. 
+    No generators are defined at framework levels. 
     </p><p>    
     This part of the editor is still TBD.
     </p><p>    
@@ -863,7 +897,7 @@
 
     <h3><a name="Instantiation">Editor Instantiation</a></h3>
     <p>
-    The Cordet FW Editor is built on a meta-model which users are expected to instantiate when they deploy the
+    The Cordet FW Editor is built as a framework which users are expected to instantiate when they deploy the
     editor.
     The <a href="#Default_Editor_Model">default instantiation</a> can be used as a blue-print 
     for the user-specific instantiation. 
@@ -926,10 +960,18 @@
     <li><code>expand</code>: If spec_items of category C1 are targets of <code>p_links</code> 
         of category C2 and
         it is desired that, when C1 items are displayed, the user may click on a C1 item to get 
-        a list of its <code>p_link</code> children, then <code>expand|p_link</code> must
+        a list of its <code>p_link</code> children (<i>expand list</i>), then <code>expand|p_link</code> must
         be set equal to the name of category C2 and <code>expand|p_label</code> is the label
         that appears on the expansion link. The same holds for the <code>expan|s_link</code>
         element</li>
+    <li><code>short_desc</code>: Description of the attributes used in the short description of a
+        spec_item:
+        <ul>
+        <li><code>expand_text</code>: attributes displayed when a spec_item appears in an expand_list</li>
+        <li><code>expand_tip</code>: attributes displayed in the hovering tip over the name of a spec_item in an expand_list</li>
+        <li><code>href_tip</code>: attributes displayed in the hovering tip over a link to a spec_item</li>
+        </ul>
+        </li>
     <li><code>tracs</code>: If category C1 has a <a href="#Links_Between_Specification_Items">
         traceability link</a> to category C2 and if the traceability link is held in category CL,
         then:
