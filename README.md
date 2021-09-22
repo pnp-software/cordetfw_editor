@@ -40,10 +40,11 @@ The `requirement.txt` file contains the exact library versions.
 3. `ssh pnp@pnp-software.io`
 4. `cd cordetfw_editor`
 5. `git pull origin`
-6. Import static resources and (if required) run the mirgration
+6. Import static resources and (if required) run the migration
   - `source python-app-venv/bin/activate`
   - `python3 manage.py migrate`
   - `python3 manage.py collectstatic`
+  - `deactivate`
 7. `sudo systemctl reload apache2.service`
 
 #### Update `css`
