@@ -135,6 +135,14 @@ class SpecItemForm(forms.Form):
             self.helper.add_input(Submit('submit', 'Delete'))
         else:
             self.helper.add_input(Submit('submit', 'Submit'))
+            
+        default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+        application_id = 0 if application==None else application.id
+        cancel_location = 'http://localhost:8000/editor/'+cat+'/'+str(project.id)+'/'+str(application_id)+\
+                          '/'+str(default_val_set.id)+'/Sel_All/list_spec_items'
+        self.helper.add_input(Button('cancel', 'Cancel', onclick="location.href='"+cancel_location+"';", \
+                                     css_class='btn btn-danger'))
+        
         self.fields['desc'].widget.attrs.update(rows = 1)
         self.fields['value'].widget.attrs.update(rows = 1)
         self.fields['rationale'].widget.attrs.update(rows = 1)
