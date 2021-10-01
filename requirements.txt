@@ -12,4 +12,3 @@ pytz==2020.1
 setuptools==50.0.0
 sqlparse==0.3.1
 tablib==3.0.0
-#django-tailwind==2.0.1
