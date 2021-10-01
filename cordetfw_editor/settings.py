@@ -57,8 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'admin_honeypot',
     'axes',
-    'import_export',
-    #'tailwind',
+    'import_export'
 ]
 
 MIDDLEWARE = [
@@ -101,8 +100,6 @@ TEMPLATES = [
         },
     },
 ]
-
-#TAILWIND_APP_NAME = 'editor'
 
 WSGI_APPLICATION = 'cordetfw_editor.wsgi.application'
 

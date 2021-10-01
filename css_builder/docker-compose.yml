@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  tailwind:
+    container_name: tailwind
+    build: .
+    volumes:
+      - type: bind
+        source: ../templates
+        target: /work/templates
+        read_only: true
+      - type: bind
+        source: ../editor
+        target: /work/editor
+        read_only: true
+      - type: bind
+        source: ./tailwind.config.js
+        target: /work/tailwind.config.js
+        read_only: true
+      - type: bind
+        source: ./src
+        target: /work/src
+        read_only: true
+      - type: bind
+        source: ../editor/static/css
+        target: /work/static
+    stdin_open: true
+    tty: true
