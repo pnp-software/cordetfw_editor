@@ -48,8 +48,76 @@ The `requirement.txt` file contains the exact library versions.
 7. `sudo systemctl reload apache2.service`
 
 #### Update `css`
-The CSS for the editor is created in an external tool and is tailored for the editor. 
-The description of the creation and customization procedure for the CSS is still TBD.
+Cordet FW Editor uses [tailwindcss](https://tailwindcss.com/) for its
+UI design. Tailwind CSS is:
+
+> A utility-first CSS framework packed with classes like `flex`,
+> `pt-4`, `text-center` and `rotate-90` that can be composed to build
+> any design, directly in your markup.
+
+A purged and minimized styles.css version for this editor can be found
+under `editor/static/css/styles.css`. Any changes to the design
+requires a recreation of `styles.css` otherwise previously not used
+classes will not be present.
+
+To simplify this build process a docker file and a docker-compose file
+is provided -> no need to install anything (except `docker` and
+`docker-compose`).
+
+##### Build Command
+The following commands will automatically build the required
+tailwindcss container, will bind all relevant folder and will start
+the build process.
+
+```sh
+cd css_builder
+docker-compose up --build
+```
+
+Example output:
+
+```sh
+Creating network "css_builder_default" with the default driver
+Building tailwind
+Step 1/6 : FROM node:16.10.0
+ ---> 9c23a8242f8b
+Step 2/6 : WORKDIR /work
+ ---> Using cache
+ ---> 80a983426e68
+Step 3/6 : RUN npm install tailwindcss@2.2.16                 @tailwindcss/typography@0.4.1 @tailwindcss/forms@0.3.4                 @tailwindcss/line-clamp@0.2.1 @tailwindcss/aspect-ratio@0.2.1                 postcss@8.3.8                 autoprefixer@10.3.6
+ ---> Using cache
+ ---> 054edc1ef873
+Step 4/6 : ENV NODE_ENV=production
+ ---> Using cache
+ ---> 74412c4ab3a3
+Step 5/6 : VOLUME ["/work/templates", "/work/editor", "/work/src"]
+ ---> Using cache
+ ---> d34e89b5d8b1
+Step 6/6 : CMD ["npx", "tailwindcss", "-i", "./src/styles.css", "-o", "./static/styles.css", "--minify", "-w"]
+ ---> Using cache
+ ---> 0e57bccbe9f4
+
+Successfully built 0e57bccbe9f4
+Successfully tagged css_builder_tailwind:latest
+Creating tailwind ... done
+Attaching to tailwind
+tailwind    |
+tailwind    | warn - You have enabled the JIT engine which is currently in preview.
+tailwind    | warn - Preview features are not covered by semver, may introduce breaking changes, and can change at any time.
+tailwind    |
+tailwind    | Rebuilding...
+tailwind    | Done in 603ms.
+```
+
+As long as this is not stopped with `Ctrl-c` changes to template HTML
+files will trigger a rebuild of the `styles.css` file.
+
+##### Teardown
+The build stack can be removed with:
+
+```sh
+docker-compose down
+```
 
 #### Security
 
