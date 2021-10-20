@@ -415,7 +415,7 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Requirement", "attrs":["value", "implementation", "rationale", "remarks", "t1"]},
+                                               {"header":"Requirement", "attrs":["value", "implementation", "rationale", "remarks", "t1", "t2"]},
                                                {"header":"C", "attrs":["p_kind"], "order_by":"p_kind"},
                                                {"header":"Ver", "attrs":["s_kind"], "order_by":"s_kind"},
                                                {"header":"Owner", "attrs":["owner"], "order_by":"owner"}
@@ -423,9 +423,9 @@
                                   "disp_short": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Requirement", "attrs":["value"]},
+                                               {"header":"Requirement", "attrs":["value", "implementation", "rationale", "remarks", "t1"]},
                                                {"header":"C", "attrs":["p_kind"], "order_by":"p_kind"},
-                                               {"header":"Ver", "attrs":["s_kind"], "order_by":"s_kind"}
+                                               {"header":"CloseOut", "attrs":["t2"]}
                                                ],
                                   "disp_trac": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
