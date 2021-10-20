@@ -1,8 +1,8 @@
 {
-     "editorVersion": "5.27",
+     "editorVersion": "5.28",
      "states": [
           {
-               "id": 503,
+               "id": 301,
                "attrs": {
                     "x": 612,
                     "y": 126,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 504,
+               "id": 302,
                "attrs": {
                     "x": 378,
                     "y": 113,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 506,
+               "id": 304,
                "attrs": {
                     "x": 363,
                     "y": 323,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 508,
+               "id": 306,
                "attrs": {
                     "x": 266,
                     "y": 380,
@@ -124,7 +124,7 @@
                "selected": false
           },
           {
-               "id": 509,
+               "id": 307,
                "attrs": {
                     "x": 118,
                     "y": 69,
@@ -147,11 +147,11 @@
                "selected": false
           },
           {
-               "id": 514,
+               "id": 309,
                "attrs": {
-                    "x": 162,
+                    "x": 197,
                     "y": 119,
-                    "width": 184,
+                    "width": 164,
                     "height": 44,
                     "r": 0,
                     "rx": 0,
@@ -165,12 +165,12 @@
                "fwprop": {
                     "autoid": 5,
                     "type": "note",
-                    "note": "The domain, name, change_log\nand the link fields cannot be changed"
+                    "note": "The domain and name and\nthe link fields cannot be changed"
                },
                "selected": false
           },
           {
-               "id": 574,
+               "id": 311,
                "attrs": {
                     "x": 304,
                     "y": 207,
@@ -209,7 +209,7 @@
                "selected": false
           },
           {
-               "id": 622,
+               "id": 313,
                "attrs": {
                     "x": 123,
                     "y": 225,
@@ -271,8 +271,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 503,
-               "stateToID": 504,
+               "stateFromID": 301,
+               "stateToID": 302,
                "selected": false
           },
           {
@@ -318,8 +318,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 504,
-               "stateToID": 574,
+               "stateFromID": 302,
+               "stateToID": 311,
                "selected": false
           },
           {
@@ -360,8 +360,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 506,
-               "stateToID": 508,
+               "stateFromID": 304,
+               "stateToID": 306,
                "selected": false
           },
           {
@@ -390,8 +390,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -402,8 +402,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 574,
-               "stateToID": 506,
+               "stateFromID": 311,
+               "stateToID": 304,
                "selected": false
           }
      ],
@@ -413,8 +413,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1243,
-               "height": 682,
+               "width": 1238,
+               "height": 622,
                "r": 0,
                "rx": 0,
                "ry": 0,

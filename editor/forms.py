@@ -135,6 +135,14 @@ class SpecItemForm(forms.Form):
             self.helper.add_input(Submit('submit', 'Delete'))
         else:
             self.helper.add_input(Submit('submit', 'Submit'))
+            
+        default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+        application_id = 0 if application==None else application.id
+        cancel_location = 'http://localhost:8000/editor/'+cat+'/'+str(project.id)+'/'+str(application_id)+\
+                          '/'+str(default_val_set.id)+'/Sel_All/list_spec_items'
+        self.helper.add_input(Button('cancel', 'Cancel', onclick="location.href='"+cancel_location+"';", \
+                                     css_class='btn btn-danger'))
+        
         self.fields['desc'].widget.attrs.update(rows = 1)
         self.fields['value'].widget.attrs.update(rows = 1)
         self.fields['rationale'].widget.attrs.update(rows = 1)
@@ -172,24 +180,22 @@ class SpecItemForm(forms.Form):
             self.fields['ext_item'].label = cat
             self.fields['ext_item'].choices = getattr(ext_cats, get_choices_func_name)(request)
         
-        # In add mode, the ValSet and ChangeLog are not visible
+        # In add mode, the ValSet is not visible
         if (self.mode == 'add'):
-            self.fields['val_set'].widget = forms.HiddenInput()      
-            self.fields['change_log'].widget = forms.HiddenInput()      
+            self.fields['val_set'].widget = forms.HiddenInput()    
 
-        # In all modes but copy and edit mode, the ValSet cannot be edited but is visible
+        # In copy and edit mode, the ValSet cannot be edited but is visible
         if (self.mode == 'copy') or (self.mode == 'edit'):     
             self.fields['val_set'].disabled = True
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
     
-        # In split mode, the ValSet can be edited but domain, name, and change_log  
+        # In split mode, the ValSet can be edited but domain and name   
         # must remain unchanged. The s_link and p_link fields must remain hidden.
         if (self.mode == 'split'):     
             self.fields['val_set'].queryset = ValSet.objects.filter(project_id=project.id).order_by('name')
             self.fields['domain'].disabled = True
             self.fields['name'].disabled = True
-            self.fields['change_log'].disabled = True
             self.fields['p_link'].disabled = True
             self.fields['p_link'].widget = forms.HiddenInput()
             self.fields['s_link'].disabled = True

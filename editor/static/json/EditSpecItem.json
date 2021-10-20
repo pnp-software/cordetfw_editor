@@ -1,8 +1,8 @@
 {
-     "editorVersion": "5.27",
+     "editorVersion": "5.28",
      "states": [
           {
-               "id": 684,
+               "id": 365,
                "attrs": {
                     "x": 640,
                     "y": 91,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 685,
+               "id": 366,
                "attrs": {
                     "x": 379,
                     "y": 78,
@@ -63,11 +63,11 @@
                "selected": false
           },
           {
-               "id": 687,
+               "id": 368,
                "attrs": {
                     "x": 132,
                     "y": 309,
-                    "width": 196,
+                    "width": 198,
                     "height": 56,
                     "r": 10,
                     "rx": 10,
@@ -91,7 +91,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Create old_spec_item as a copy\nthe spec_item to be edited and set its\nstatus to OBS",
+                    "entryDesc": "Create old_spec_item as a copy\nof the spec_item to be edited and set its\nstatus to OBS",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 689,
+               "id": 370,
                "attrs": {
                     "x": 121,
                     "y": 410,
@@ -141,7 +141,7 @@
                "selected": false
           },
           {
-               "id": 691,
+               "id": 372,
                "attrs": {
                     "x": 457,
                     "y": 513,
@@ -163,10 +163,10 @@
                "selected": false
           },
           {
-               "id": 692,
+               "id": 373,
                "attrs": {
-                    "x": 184,
-                    "y": 20,
+                    "x": 233,
+                    "y": 6,
                     "width": 474,
                     "height": 32,
                     "r": 0,
@@ -181,12 +181,12 @@
                "fwprop": {
                     "autoid": 2,
                     "type": "note",
-                    "note": "Operation to edit a new spec_item (only possible on spec_items with status CNF, MOD or NEW) "
+                    "note": "Operation to edit a spec_item (only possible on spec_items with status CNF, MOD or NEW) "
                },
                "selected": false
           },
           {
-               "id": 694,
+               "id": 375,
                "attrs": {
                     "x": 458,
                     "y": 325,
@@ -210,7 +210,7 @@
                "selected": false
           },
           {
-               "id": 695,
+               "id": 376,
                "attrs": {
                     "x": 562,
                     "y": 303,
@@ -249,12 +249,12 @@
                "selected": false
           },
           {
-               "id": 697,
+               "id": 378,
                "attrs": {
-                    "x": 138,
-                    "y": 65,
+                    "x": 136,
+                    "y": 48,
                     "width": 220,
-                    "height": 80,
+                    "height": 116,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -267,12 +267,12 @@
                "fwprop": {
                     "autoid": 3,
                     "type": "note",
-                    "note": "(a) The ValSet cannot be modified\nin an edit operation\n(b) If the spec_item does not belong to\ntthe Default ValSet, its domain:name\nand its pointer attributes cannot be modified"
+                    "note": "(a) The ValSet cannot be modified\nin an edit operation\n(b) If the spec_item does not belong to\ntthe Default ValSet, its domain:name\nand its pointer attributes cannot be modified\n(c) If the spec_item is in state CNF, its\nchange_log is cleared (but the user can\nthen update it)"
                },
                "selected": false
           },
           {
-               "id": 699,
+               "id": 380,
                "attrs": {
                     "x": 377,
                     "y": 103,
@@ -294,7 +294,7 @@
                "selected": false
           },
           {
-               "id": 700,
+               "id": 381,
                "attrs": {
                     "x": 458,
                     "y": 444,
@@ -318,7 +318,7 @@
                "selected": false
           },
           {
-               "id": 701,
+               "id": 382,
                "attrs": {
                     "x": 575,
                     "y": 504,
@@ -357,7 +357,7 @@
                "selected": false
           },
           {
-               "id": 703,
+               "id": 384,
                "attrs": {
                     "x": 316,
                     "y": 178,
@@ -396,7 +396,7 @@
                "selected": false
           },
           {
-               "id": 705,
+               "id": 386,
                "attrs": {
                     "x": 636,
                     "y": 202,
@@ -458,8 +458,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 684,
-               "stateToID": 685,
+               "stateFromID": 365,
+               "stateToID": 366,
                "selected": false
           },
           {
@@ -505,8 +505,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 685,
-               "stateToID": 703,
+               "stateFromID": 366,
+               "stateToID": 384,
                "selected": false
           },
           {
@@ -516,12 +516,12 @@
                     "path": [
                          [
                               "M",
-                              230,
+                              230.72268907563029,
                               370
                          ],
                          [
                               "L",
-                              230,
+                              230.453781512605,
                               402
                          ]
                     ],
@@ -547,8 +547,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 687,
-               "stateToID": 689,
+               "stateFromID": 368,
+               "stateToID": 370,
                "selected": false
           },
           {
@@ -589,8 +589,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 689,
-               "stateToID": 700,
+               "stateFromID": 370,
+               "stateToID": 381,
                "selected": false
           },
           {
@@ -605,7 +605,7 @@
                          ],
                          [
                               "L",
-                              336,
+                              338,
                               337
                          ]
                     ],
@@ -636,8 +636,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 694,
-               "stateToID": 687,
+               "stateFromID": 375,
+               "stateToID": 368,
                "selected": false
           },
           {
@@ -683,8 +683,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 694,
-               "stateToID": 695,
+               "stateFromID": 375,
+               "stateToID": 376,
                "selected": false
           },
           {
@@ -746,8 +746,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 695,
-               "stateToID": 700,
+               "stateFromID": 376,
+               "stateToID": 381,
                "selected": false
           },
           {
@@ -757,13 +757,13 @@
                     "path": [
                          [
                               "M",
-                              363,
-                              105.87121212121205
+                              361,
+                              106
                          ],
                          [
                               "L",
                               369,
-                              105.91666666666669
+                              106
                          ]
                     ],
                     "stroke-width": 2,
@@ -788,8 +788,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 697,
-               "stateToID": 699,
+               "stateFromID": 378,
+               "stateToID": 380,
                "selected": false
           },
           {
@@ -846,8 +846,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 700,
-               "stateToID": 701,
+               "stateFromID": 381,
+               "stateToID": 382,
                "selected": false
           },
           {
@@ -893,8 +893,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 700,
-               "stateToID": 691,
+               "stateFromID": 381,
+               "stateToID": 372,
                "selected": false
           },
           {
@@ -935,8 +935,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 701,
-               "stateToID": 691,
+               "stateFromID": 382,
+               "stateToID": 372,
                "selected": false
           },
           {
@@ -977,8 +977,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 703,
-               "stateToID": 694,
+               "stateFromID": 384,
+               "stateToID": 375,
                "selected": false
           }
      ],
@@ -988,8 +988,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1243,
-               "height": 682,
+               "width": 1238,
+               "height": 622,
                "r": 0,
                "rx": 0,
                "ry": 0,

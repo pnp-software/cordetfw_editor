@@ -173,8 +173,8 @@
                     "rx": 0,
                     "ry": 0,
                     "fill": "#ccccff",
-                    "stroke": "#6599FF",
-                    "stroke-width": 2,
+                    "stroke": "#666",
+                    "stroke-width": 1,
                     "fill-opacity": 100,
                     "stroke-dasharray": "--"
                },
@@ -183,7 +183,7 @@
                     "type": "note",
                     "note": "Operation to refresh a spec_item (only possible\non external spec_items)"
                },
-               "selected": true
+               "selected": false
           },
           {
                "id": 145,

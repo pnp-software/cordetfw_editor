@@ -44,6 +44,8 @@ SESSION_COOKIE_SECURE = True
 # Make project import a transaction
 IMPORT_EXPORT_USE_TRANSACTIONS = True
 
+DEFAULT_AUTO_FIELD='django.db.models.AutoField'
+
 # Application definition
 
 INSTALLED_APPS = [
