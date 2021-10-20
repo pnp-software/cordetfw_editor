@@ -468,8 +468,11 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
                                             sel_val, s_parent_id, p_parent_id, spec_item)
             return redirect(redirect_url)
     else:   
+        initial_spec_item_values = spec_item_to_edit(spec_item)
+        if spec_item.status == 'CNF':
+            initial_spec_item_values['change_log'] = ''
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            initial=spec_item_to_edit(spec_item))
+                            initial=initial_spec_item_values)
 
     # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -508,6 +511,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     spec_item = SpecItem.objects.get(id=item_id)
+    spec_item.change_log = ''
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
     if application_id != 0:
