@@ -1372,10 +1372,10 @@
      ],
      "globals": {
           "paperPanX": 0,
-          "paperPanY": 60,
+          "paperPanY": 0,
           "attrs": {
                "x": 0,
-               "y": 60,
+               "y": 0,
                "width": 1243,
                "height": 685,
                "r": 0,

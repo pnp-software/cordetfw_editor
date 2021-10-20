@@ -1,8 +1,8 @@
 {
-     "editorVersion": "5.27",
+     "editorVersion": "5.28",
      "states": [
           {
-               "id": 202,
+               "id": 66,
                "attrs": {
                     "x": 246,
                     "y": 166,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 203,
+               "id": 67,
                "attrs": {
                     "x": 375,
                     "y": 153,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 205,
+               "id": 69,
                "attrs": {
                     "x": 363,
                     "y": 383,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 207,
+               "id": 71,
                "attrs": {
                     "x": 263,
                     "y": 422,
@@ -124,7 +124,7 @@
                "selected": false
           },
           {
-               "id": 208,
+               "id": 72,
                "attrs": {
                     "x": 203,
                     "y": 83,
@@ -147,7 +147,7 @@
                "selected": false
           },
           {
-               "id": 239,
+               "id": 74,
                "attrs": {
                     "x": 316,
                     "y": 250,
@@ -186,7 +186,7 @@
                "selected": false
           },
           {
-               "id": 253,
+               "id": 76,
                "attrs": {
                     "x": 590,
                     "y": 413,
@@ -209,7 +209,7 @@
                "selected": false
           },
           {
-               "id": 259,
+               "id": 78,
                "attrs": {
                     "x": 622,
                     "y": 293,
@@ -231,12 +231,12 @@
                "selected": false
           },
           {
-               "id": 283,
+               "id": 79,
                "attrs": {
                     "x": 602,
-                    "y": 147,
-                    "width": 170,
-                    "height": 68,
+                    "y": 159,
+                    "width": 166,
+                    "height": 44,
                     "r": 0,
                     "rx": 0,
                     "ry": 0,
@@ -249,12 +249,12 @@
                "fwprop": {
                     "autoid": 6,
                     "type": "note",
-                    "note": "ChangeLog attribute is only \ndisplayed for editing if the status\nof the spec_item is CNF or MOD\n(otherwise, it remains unchanged)"
+                    "note": "ChangeLog attribute is cleared\nbefore display"
                },
                "selected": false
           },
           {
-               "id": 286,
+               "id": 81,
                "attrs": {
                     "x": 562,
                     "y": 178,
@@ -315,8 +315,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 202,
-               "stateToID": 203,
+               "stateFromID": 66,
+               "stateToID": 67,
                "selected": false
           },
           {
@@ -362,8 +362,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 203,
-               "stateToID": 239,
+               "stateFromID": 67,
+               "stateToID": 74,
                "selected": false
           },
           {
@@ -404,8 +404,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 205,
-               "stateToID": 207,
+               "stateFromID": 69,
+               "stateToID": 71,
                "selected": false
           },
           {
@@ -439,8 +439,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -457,8 +457,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 253,
-               "stateToID": 259,
+               "stateFromID": 76,
+               "stateToID": 78,
                "selected": false
           },
           {
@@ -487,8 +487,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -499,8 +499,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 239,
-               "stateToID": 205,
+               "stateFromID": 74,
+               "stateToID": 69,
                "selected": false
           },
           {
@@ -529,8 +529,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -541,8 +541,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 283,
-               "stateToID": 286,
+               "stateFromID": 79,
+               "stateToID": 81,
                "selected": false
           }
      ],
@@ -552,8 +552,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1243,
-               "height": 682,
+               "width": 1238,
+               "height": 622,
                "r": 0,
                "rx": 0,
                "ry": 0,
