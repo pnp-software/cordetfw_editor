@@ -138,7 +138,7 @@ class SpecItemForm(forms.Form):
             
         default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
         application_id = 0 if application==None else application.id
-        cancel_location = 'http://localhost:8000/editor/'+cat+'/'+str(project.id)+'/'+str(application_id)+\
+        cancel_location = '/editor/'+cat+'/'+str(project.id)+'/'+str(application_id)+\
                           '/'+str(default_val_set.id)+'/Sel_All/list_spec_items'
         self.helper.add_input(Button('cancel', 'Cancel', onclick="location.href='"+cancel_location+"';", \
                                      css_class='btn btn-danger'))
