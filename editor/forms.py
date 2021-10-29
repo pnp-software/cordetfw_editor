@@ -56,15 +56,30 @@ class ProjectForm(forms.Form):
 class ApplicationForm(forms.Form):
     name = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
+    cats = forms.CharField()
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, project, *args, **kwargs):
         super(ApplicationForm, self).__init__(*args, **kwargs)
+        self.project = project
         self.helper = FormHelper(self)
         self.helper.wrapper_class = 'row'
         self.helper.label_class = 'col-md-2'
         self.helper.field_class = 'col-md-8'
         self.helper.add_input(Submit('submit', 'Submit'))
         self.fields['description'].widget.attrs.update(rows = 2)
+        self.fields['cats'].label = 'Categories'
+        self.fields['cats'].help_text = 'A subset of: ' + project.cats
+
+    def clean_cats(self):
+        cats = self.cleaned_data['cats']
+        cat_list = cats.split(',')
+        err_msg = 'Must contain a comma-separated list of categories from: ' + self.project.cats
+        if len(cat_list) == 0:
+            raise forms.ValidationError(err_msg)
+        for cat_item in cat_list:
+            if not cat_item.strip() in self.project.cats:
+                raise forms.ValidationError(err_msg)
+        return cats
 
 
 class ValSetForm(forms.Form):

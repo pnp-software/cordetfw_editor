@@ -100,16 +100,17 @@ def add_application(request, project_id):
         return redirect(base_url)
     
     if request.method == 'POST':    # Bind form to posted data 
-        form = ApplicationForm(request.POST)
+        form = ApplicationForm(project, request.POST)
         if form.is_valid():
             new_application = Application(name = form.cleaned_data['name'],
                                           desc = form.cleaned_data['description'],
+                                          cats = form.cleaned_data['cats'],
                                           project = project)
             do_application_release(request, new_application, "Initial Release")
             new_application.save()
             return redirect(base_url)
     else:   
-        form = ApplicationForm()
+        form = ApplicationForm(project)
 
     context = {'form': form, 'project': project, 'title': 'Add Application to Project '+project.name, }
     return render(request, 'basic_form.html', context)    
@@ -241,14 +242,17 @@ def edit_application(request, application_id):
         return redirect(base_url)
     
     if request.method == 'POST':    
-        form = ApplicationForm(request.POST)
+        form = ApplicationForm(project, request.POST)
         if form.is_valid():
             application.name = form.cleaned_data['name']
             application.desc = form.cleaned_data['description']
+            application.cats = form.cleaned_data['cats']
             application.save()
             return redirect(base_url)
     else:   
-        form = ApplicationForm(initial={'name': application.name, 'description': application.desc})
+        form = ApplicationForm(project, initial={'name': application.name, 
+                                                 'description': application.desc,
+                                                 'cats': application.cats})
     
     context = {'form': form, 'title': 'Edit Application '+application.name, }
     return render(request, 'basic_form.html', context)    

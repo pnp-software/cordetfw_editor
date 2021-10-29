@@ -34,6 +34,7 @@ class ProjectUser(models.Model):
 class Application(models.Model):
     name = models.CharField(max_length=255)
     desc = models.TextField()
+    cats = models.TextField(default='')
     project = models.ForeignKey(Project, related_name='applications', on_delete=models.PROTECT)
     updated_at= models.DateTimeField(auto_now=True)
     release = models.ForeignKey(Release, on_delete=models.PROTECT)
