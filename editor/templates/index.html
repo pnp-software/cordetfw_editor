@@ -81,23 +81,23 @@
                     </td>
                     <td class="flex text-blue-gray-500 place-content-end p-0">
                         {% if item.user_has_access or request.user == item.project.owner %}
-                        {% for cat, value in item.project_configs.items %}
-                        {% if value.access_from_index.level == 'Project' %}
-                        <a class="pl-4 pt-8 pr-0 pb-6 flex flex-row items-center
-                                  hover:text-blue-600"
-                           href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'Sel_All' %}?disp=disp_def"
-                           title="Manage {{ value.name }}s">
-                            <svg class="h-5 w-5"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                      clip-rule="evenodd" />
-                            </svg>
-                            {{ value.abbr }}
-                        </a>
-                        {% endif %}
-                        {% endfor %}
+                            {% for cat, value in item.project_configs.items %}
+                                {% if value.access_from_index.level == 'Project' %}
+                                <a class="pl-4 pt-8 pr-0 pb-6 flex flex-row items-center
+                                          hover:text-blue-600"
+                                   href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'Sel_All' %}?disp=disp_def"
+                                   title="Manage {{ value.name }}s">
+                                    <svg class="h-5 w-5"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                              clip-rule="evenodd" />
+                                    </svg>
+                                    {{ value.abbr }}
+                                </a>
+                                {% endif %}
+                            {% endfor %}
                         {% endif %}
                     </td>
                     <td class="pl-6 pt-8 pr-0 pb-6">
@@ -153,19 +153,19 @@
                     </td>
                     <td class="pl-0 pt-0 pr-0 pb-4 w-5">
                         {% if request.user == item.project.owner %}
-                        <a href="{% url 'make_application_release' application.id %}"
-                           title="Make Release">
-                            <svg  class="h-5 w-5 text-blue-gray-400
-                                         hover:text-blue-600"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                      d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z"
-                                      clip-rule="evenodd" />
-                            </svg>
-                        </a>
+                            <a href="{% url 'make_application_release' application.id %}"
+                               title="Make Release">
+                                <svg  class="h-5 w-5 text-blue-gray-400
+                                             hover:text-blue-600"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                          d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z"
+                                          clip-rule="evenodd" />
+                                </svg>
+                            </a>
                         {% else %}
-                        <div class="h-5 w-5"></div>
+                            <div class="h-5 w-5"></div>
                         {% endif %}
                     </td>
                     <td class="text-blue-gray-900
@@ -176,23 +176,25 @@
                     </td>
                     <td class="flex text-blue-gray-500 place-content-end p-0">
                         {% if item.user_has_access or request.user == item.project.owner %}
-                        {% for cat, value in item.project_configs.items %}
-                        {% if value.access_from_index.level == 'Application' %}
-                        <a class="pl-4 pt-0 pr-0 pb-4 flex flex-row items-center
-                                  hover:text-blue-600"
-                           href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'Sel_All' %}?disp=disp_def"
-                           title="Manage {{ value.name }}s">
-                            <svg class="h-5 w-5"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                      clip-rule="evenodd" />
-                            </svg>
-                            {{ value.abbr }}
-                        </a>
-                        {% endif %}
-                        {% endfor %}
+                            {% for cat, value in item.project_configs.items %}
+                                {% if value.access_from_index.level == 'Application' %}
+                                    {% if cat in application.cats %}
+                                    <a class="pl-4 pt-0 pr-0 pb-4 flex flex-row items-center
+                                              hover:text-blue-600"
+                                       href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'Sel_All' %}?disp=disp_def"
+                                       title="Manage {{ value.name }}s">
+                                        <svg class="h-5 w-5"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                                  clip-rule="evenodd" />
+                                        </svg>
+                                        {{ value.abbr }}
+                                    </a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
                         {% endif %}
                     </td>
                     <td class="pl-6 pt-0 pr-0 pb-4">

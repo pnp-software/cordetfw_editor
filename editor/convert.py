@@ -45,8 +45,8 @@ def frmt_string(s):
                 ['%', '\\%'],
                 ['&', '\\&'],
                 ['#', '\\#'],
-                ['^', "\\textasciicircum"],
-                ['~', "\\textasciitilde"],
+                ['^', "\\textasciicircum "],
+                ['~', "\\textasciitilde "],
                 ['_', "\\_"]]
     for old, new in replacements:
        s = s.replace(old, new)    
