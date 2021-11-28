@@ -396,7 +396,7 @@
                                            "value":     {"label": "Text", "req_in_form": true, "kind": "ref_text"},
                                            "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
-                                           "implementation":  {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
+                                           "implementation":  {"label": "Additional Info", "req_in_form": false, "kind": "ref_text"},
                                            "val_set":   {"label": "ValSet",  "req_in_form": false, "kind": "plain_ref"},
                                            "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                            "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"}
