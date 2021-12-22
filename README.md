@@ -124,5 +124,3 @@ Additional list: [Django Secrity Tips](https://snyk.io/blog/django-security-tips
 * *done* never run `DEBUG` in production
 * *check* remember your environment
 * *check* check for errors with `python manage.py check --deploy`
-
-
