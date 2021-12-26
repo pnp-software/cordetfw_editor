@@ -92,7 +92,7 @@ def conv_do_nothing(context, item, name):
 def conv_db_disp_plain_ref(context, item, name):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
-    on the assumption that the attribute value contains internal references ('ref_text' content kind)
+    on the assumption that the attribute value only contains plain text
     """
     return str(getattr(item, name))
 
@@ -139,7 +139,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
 def conv_db_disp_eval_ref(context, item, name):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
-    on the assumption that the attribute value contains internal references ('ref_text' content kind)
+    on the assumption that the attribute value is of 'eval_ref' kind)
     """
     s = getattr(item, name)
     conv_s = convert_db_to_display(s)
