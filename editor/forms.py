@@ -42,7 +42,7 @@ class ProjectForm(forms.Form):
         return User.objects.get(id=owner_id)
         
     def clean_cats(self):
-        cats = self.cleaned_data['cats']
+        cats = self.cleaned_data['cats'].replace(' ','')
         cat_list = cats.split(',')
         err_msg = 'Must contain a comma-separated list of categories from: ' + self.predefined_cats
         if len(cat_list) == 0:
@@ -50,8 +50,20 @@ class ProjectForm(forms.Form):
         for cat_item in cat_list:
             if not cat_item.strip() in configs['cats']:
                 raise forms.ValidationError(err_msg)
+        # If category C1 is included and category C1 has C2 as an 'expand link category' or
+        # a 'traceability category', the category C2 must be included too
+        for cat in cat_list:
+            dependent_cats = (configs['cats'][cat]['expand']['s_link'], configs['cats'][cat]['expand']['p_link'])
+            for dependent_cat in dependent_cats:
+                if dependent_cat != 'None':
+                    if not dependent_cat in cat_list:
+                        err_msg = 'Category '+cat+' requires dependent category '+dependent_cat
+                        raise forms.ValidationError(err_msg)
+            for trac in configs['cats'][cat]['tracs']:
+                if not trac['trac_cat'] in cat_list:
+                    err_msg = 'Category '+cat+' requires dependent category '+trac['trac_cat']
+                    raise forms.ValidationError(err_msg)
         return cats
-
 
 class ApplicationForm(forms.Form):
     name = forms.CharField()
