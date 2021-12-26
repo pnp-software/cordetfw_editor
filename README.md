@@ -35,17 +35,15 @@ The `requirement.txt` file contains the exact library versions.
 - save dependencies `pip3 freeze > requirements.txt` in the project root
 
 #### Do the Deployment
-1. merge `master` into `deploy`
-2. push deploy to github
-3. `ssh pnp@pnp-software.io`
-4. `cd cordetfw_editor`
-5. `git pull origin`
-6. Import static resources and (if required) run the migration
+1. `ssh pnp@pnp-software.io`
+2. `cd cordetfw_editor`
+3. `git pull origin`
+4. Import static resources and (if required) run the migration
   - `source python-app-venv/bin/activate`
   - `python3 manage.py migrate`
   - `python3 manage.py collectstatic`
   - `deactivate`
-7. `sudo systemctl reload apache2.service`
+5. `sudo systemctl reload apache2.service`
 
 #### Update `css`
 The CSS for the editor is created in an external tool and is tailored for the editor. 
