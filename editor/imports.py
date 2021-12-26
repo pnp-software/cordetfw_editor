@@ -8,6 +8,7 @@ from django.utils.timezone import make_aware
 from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Application
 from editor.utilities import frmt_string
 from editor.convert import convert_edit_to_db
+from editor.configs import configs
 
 #--------------------------------------------------------------------------------
 def import_project_tables(request, imp_dir):
@@ -36,6 +37,12 @@ def import_project_tables(request, imp_dir):
         messages.error(request, 'The project owner '+project_dict['owner']+' does not exist: '+str(e))
         return   
         
+    # Check that project categories are defined in configs.json
+    for cat in project_dict['cats'].split(','):
+        if not cat.strip() in configs['cats']:
+            messages.error(request, 'The project category '+cat+' is not defined in configs.json')
+            return   
+    
     # Read the release table
     releases_csv = os.path.join(imp_dir,'releases.csv')
     try:
@@ -98,6 +105,13 @@ def import_project_tables(request, imp_dir):
         messages.error(request, 'Failure to open or read import Application file '+application_csv+': '+str(e))
         return
         
+    # Check that the application categories are defined in configs.json
+    for application in applications:
+        for cat in application['cats'].split(','):
+            if not cat.strip() in configs['cats']:
+                messages.error(request, 'The category '+cat+' in application '+application['name']+' is not defined in configs.json')
+                return   
+        
     # Read the SpecItem table
     spec_item_csv = os.path.join(imp_dir,'spec_items.csv')
     try:
@@ -134,6 +148,7 @@ def import_project_tables(request, imp_dir):
     # Import the project instance
     new_project = Project(name = project_dict['name'],
                           desc = project_dict['desc'],
+                          cats = project_dict['cats'],
                           updated_at = project_dict['updated_at'],
                           owner = project_owner)
     new_project.release_id = old_id_2_new_id[project_dict['release']]
@@ -163,6 +178,7 @@ def import_project_tables(request, imp_dir):
         new_application = Application(updated_at = application['updated_at'],
                                        project = new_project,
                                        desc = application['desc'],
+                                       cats = application['cats'],
                                        name = application['name'])
         new_application.release_id = old_id_2_new_id[application['release']]
         new_application.save()
