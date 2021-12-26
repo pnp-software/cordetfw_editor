@@ -194,10 +194,23 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
         },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(config['MEDIA_ROOT'],config['LOG_FILE']),
+            'formatter': 'verbose',
+        }
+    },
+    'loggers': {
+        'editor': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': False,
+        }
     },
     'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
+        'handlers': ['console', 'file'],
+        'level': 'WARNING',
     },
 }
 
