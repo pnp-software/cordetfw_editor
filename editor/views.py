@@ -39,6 +39,7 @@ from editor.imports import import_project_tables
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
+from editor.convert import update_pattern_edit, del_pattern_edit
 from editor.access import is_project_owner, has_read_access_to_project, \
                     can_create_project, can_add_val_set, has_write_access_to_project
 
@@ -141,6 +142,7 @@ def add_project(request):
             new_release.save()
             new_project.release = new_release
             new_project.save()
+            update_pattern_edit(new_project)
             default_val_set = ValSet(desc = 'Default ValSet',
                                      updated_at = datetime.today(),
                                      project = new_project,
@@ -193,6 +195,7 @@ def edit_project(request, project_id):
             project.owner = form.cleaned_data['owner']
             project.cats = form.cleaned_data['cats']
             project.save()
+            update_pattern_edit(project)
             return redirect(base_url)
     else:   
         form = ProjectForm(project, initial={'name': project.name, 
@@ -223,6 +226,8 @@ def del_project(request, project_id):
         spec_item.previous = None
         spec_item.save()
     SpecItem.objects.filter(project_id=project_id).delete()
+    
+    del_pattern_edit(project_id)    # Remove regex for project
     
     ValSet.objects.filter(project_id=project_id).delete()
     applications = Application.objects.filter(project_id=project_id)

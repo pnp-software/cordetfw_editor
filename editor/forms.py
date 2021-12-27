@@ -7,7 +7,7 @@ from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
-from editor.convert import pattern_edit, pattern_db, convert_edit_to_db
+from editor.convert import get_pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import configs, get_p_link_choices, get_s_link_choices, do_cat_specific_checks
 from editor import ext_cats
@@ -257,7 +257,7 @@ class SpecItemForm(forms.Form):
         for field in self.fields:  
             if (field in self.config['attrs']) and (not field in self.config['ext_attrs']):
                 if self.config['attrs'][field]['kind'] == 'eval_ref':
-                    internal_refs = re.findall(pattern_edit, cd[field])
+                    internal_refs = re.findall(get_pattern_edit(self.project.id), cd[field])
                     for ref in internal_refs:
                         if ref[0] != self.cat:
                             err_msg = 'The field '+field+' of a '+self.cat+' cannot contain internal references to '+\

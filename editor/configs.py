@@ -5,7 +5,7 @@ from django.contrib.auth import get_user
 from django.contrib import messages
 from django.conf import settings
 from editor.models import SpecItem, ValSet
-from editor.convert import pattern_edit, pattern_db
+from editor.convert import pattern_db
 
 with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
     configs = json.load(config_file)

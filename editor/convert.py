@@ -27,15 +27,45 @@ pattern_db = re.compile('#(iref):([0-9]+)')
 # rendered in export representation (e.g. 'dom:name')
 pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')     
 
-# Regex pattern for internal references to specification items as they are
-# rendered in edit representation (e.g. '#cat:dom:name')
-s = ''
-for cat in list(configs['cats'].keys()):
-    s = s+cat+'|'
-pattern_edit = re.compile('#('+s[:-1]+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+# Regex patterns for internal references to specification items as they are
+# rendered in edit representation (e.g. '#cat:dom:name').
+# One such regex pattern is created for each project holding the categories
+# for that project.
+pattern_edits = {}
+projects = Project.objects.all()
+for project in projects:
+    s = project.cats.replace(',','|')
+    pattern_edits[project.id] = re.compile('#('+s+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 logger = logging.getLogger(__name__)
 
+
+def get_pattern_edit(project_id):
+    """ 
+    Return the regex expression which catches the references to specification items in
+    edit representation (i.e. of the form '#cat:dom:name'). The regex expression depends
+    on the project because each project has a different set of categories.
+    """
+    return pattern_edits[project_id]
+    
+    
+def update_pattern_edit(project):
+    """
+    Update the regex expression which catches the references to specification items in
+    edit representation (i.e. of the form '#cat:dom:name'). The regex expression depends
+    on the project because each project has a different set of categories. This functiom
+    should be called every time the argument project is updated.
+    """    
+    global pattern_edits
+    s = project.cats.replace(',','|')
+    pattern_edits[project.id] = re.compile('#('+s+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+    
+    
+def del_pattern_edit(project_id):
+    """ Function must be called if argument project has been deleted """    
+    global pattern_edits
+    del pattern_edits[project_id]
+    
 
 def frmt_string(s):
     """ Format string for output to a Latex text file. """
@@ -168,7 +198,7 @@ def convert_edit_to_db(project, s):
             logger.warning('Non-existent internal reference: '+str(match.group()))
             return '#' + match.group(1) + ':' + match.group(2) + ':' + match.group(3)
     
-    s_db = pattern_edit.sub(edit_to_iref, s)
+    s_db = get_pattern_edit(project.id).sub(edit_to_iref, s)
     return s_db
     
     
