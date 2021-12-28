@@ -71,6 +71,7 @@ class SpecItem(models.Model):
     p_kind = models.CharField(max_length=24)
     s_kind = models.CharField(max_length=24)
     value = models.TextField(blank=True, default='')
+    s_data = models.JSONField(default=dict) 
     t1 = models.TextField(blank=True, default='')
     t2 = models.TextField(blank=True, default='')
     t3 = models.TextField(blank=True, default='')

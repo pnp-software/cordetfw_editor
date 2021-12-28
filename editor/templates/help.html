@@ -186,7 +186,7 @@
      
     <h4><a name="SpecItems">Specification Items</a></h4>
     <p>
-    Specification items are defined by their <strong>attributes</strong> and by the <strong>operatons</strong> 
+    Specification items are defined by their <strong>attributes</strong> and by the <strong>operations</strong> 
     which may be performed upon them.
     Specification items are divided into <strong>categories</strong>. 
     Specification items in the same category have the same behaviour (i.e. they are
@@ -203,28 +203,28 @@
     <p>
     The core attributes of specification items are:    
     <ul>
-    <li><i>Category(*)</i>: the category of the specification item (an enumeratd value; the range
+    <li><i>Category</i>: the category of the specification item (an enumeratd value; the range
                             of enumerated values is defined when the editor is instantiated)</li>
-    <li><i>Domain(*)</i>: the domain to which the specification item belongs (a string consisting 
+    <li><i>Domain</i>: the domain to which the specification item belongs (a string consisting 
                           of alphanumeric characters and underscores)</li>
-    <li><i>Name(*)</i>: the name of the specification item (a string consisting 
+    <li><i>Name</i>: the name of the specification item (a string consisting 
                         of alphanumeric characters and underscores)</li>
-    <li><i>Project(*)</i>: the project to which the specification item belongs </li>
+    <li><i>Project</i>: the project to which the specification item belongs </li>
     <li><i>Application</i>: the application to which the specification item belongs (empty if the specification
                      item describes a project-level feature)</li>
     <li><i>Title</i>: a short description of the specification item</li>
     <li><i>Description</i>: a long description of the specification item</li>
-    <li><i>Owner(*)</i>: the user who created or last updated the specification item</li>
-    <li><i>Status(*)</i>: the history status of the speecification item</li>
-    <li><i>Update Time(*)</i>: the time when the specification item was created or when the 
+    <li><i>Owner</i>: the user who created or last updated the specification item</li>
+    <li><i>Status</i>: the history status of the speecification item</li>
+    <li><i>Update Time</i>: the time when the specification item was created or when the 
                               history status of the specification was last updated</li>
     <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
                                  (empty if the specification item has no history)</li>
     <li><i>Rationale</i>: the rationale for the existence of the specification item or for its value</li>
     <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
     <li><i>Implementation</i>: information about how the specification item is implemented</li> 
-    <li><i>ValSet(*)</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
-    <li><i>ChangeLog(*)</i>: the reason for a change in a specification item whose status is either
+    <li><i>ValSet</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
+    <li><i>ChangeLog</i>: the reason for a change in a specification item whose status is either
                              'confirmed' or 'modified'</li> 
     </ul>
     Within a project, a specification item is uniquely identified by the pair <strong>domain:name</strong>. 
@@ -245,7 +245,8 @@
     <li><i>Primary and Secondary Kind</i> (p_kind and s_kind): enumerated values defining the role or kind of a 
         specification item</li>
     <li><i>Primary and Secondary Links</i> (p_link and s_link): links to other specification items</li>
-    <li><i>n1 to n5</i>: integer attributes</li>
+    <li><i>Structured Data</i>: a json object</li>
+   <li><i>n1 to n5</i>: integer attributes</li>
     <li><i>Value</i>: a text attribute possibly representing a numerical value</li>
     <li><i>t1 to t5</i>: text attributes</li>
     </ul>
@@ -376,6 +377,8 @@
         <li>image: an image data in svg format</li>
         <li>int: an integer</li>
         <li>date: a date</li>
+        <li>table: a json object consisting of an array of N arrays of M items of primitive type
+                   to represent an NxM matrix</li>
     </ul>
     </p><p>
     The table below shows which kind of content is allowed for which attribute.
@@ -396,12 +399,14 @@
             <th><code>image</code></th>
             <th><code>int</code></th>
             <th><code>date</code></th>
+            <th><code>table</code></th>
         </tr>
       </thead>
       <tbody>
         <tr>
             <td>Domain & Name</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -420,6 +425,7 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
+            <td>&#10060;</td>
         </tr>
         <tr>
             <td>Value</td>
@@ -429,6 +435,7 @@
             <td>&#10060;</td>
             <td>&#9989;</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
         </tr>
@@ -442,11 +449,13 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
+            <td>&#10060;</td>
         </tr>
         <tr>
             <td>Previous, Primary & Seconday Links</td>
-            <td>&#9989;</td>
             <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -457,6 +466,7 @@
         <tr>
             <td>Status, Primary & Secondary Kind</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -475,11 +485,13 @@
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
         </tr>
         <tr>
             <td>t1 to t5</td>
             <td>&#10060;</td>
             <td>&#9989;</td>
+            <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -497,6 +509,19 @@
             <td>&#10060;</td>
             <td>&#9989;</td>
             <td>&#10060;</td>
+            <td>&#10060;</td>
+        </tr>
+        <tr>
+            <td>Structured Data</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#10060;</td>
+            <td>&#9989;</td>
         </tr>
       </tbody>
     </table>
@@ -592,6 +617,14 @@
         <td>No change </td>
         <td>Converted to 'd-m-Y H:i' </td>
         <td>No change</td>
+        <td>No change</td>
+        <td>No change</td>
+        </tr>
+        <tr>
+        <td><code>table</code></td>
+        <td>No change </td>
+        <td>HTML table</td>
+        <td>TBD</td>
         <td>No change</td>
         <td>No change</td>
         </tr>

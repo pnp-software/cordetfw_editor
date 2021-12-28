@@ -1,9 +1,9 @@
 import re
+import json
 from django import forms
 from django.forms import formsets
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
-from itertools import chain
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
 from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
@@ -132,6 +132,7 @@ class SpecItemForm(forms.Form):
     implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     change_log = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    s_data = forms.JSONField()
     p_kind = forms.ChoiceField(choices=())
     s_kind = forms.ChoiceField(choices=())
     val_set = forms.ModelChoiceField(queryset=None, empty_label=None)
@@ -235,6 +236,10 @@ class SpecItemForm(forms.Form):
                     self.fields[field].disabled = True
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
+       
+    def clean_s_data(self):
+        cs_s_data = self.cleaned_data['s_data']   
+        return cs_s_data
                     
     def clean(self):
         cd = self.cleaned_data

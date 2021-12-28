@@ -394,6 +394,7 @@
                                            "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
                                            "title":     {"label": "Title", "req_in_form": false, "kind": "plain_text"},
                                            "value":     {"label": "Text", "req_in_form": true, "kind": "ref_text"},
+                                           "s_data":    {"label": "Json", "req_in_form": false, "kind": "plain_text"},
                                            "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation":  {"label": "Additional Info", "req_in_form": false, "kind": "ref_text"},
@@ -406,7 +407,7 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Description", "attrs":["value", "rationale", "remarks", "implementation"]},
+                                               {"header":"Description", "attrs":["value", "s_data", "rationale", "remarks", "implementation"]},
                                                {"header":"Owner", "attrs":["owner"], "order_by":"owner"}
                                                ],
                                   "disp_short": [{"header":"Domain", "attrs":["domain"]},
