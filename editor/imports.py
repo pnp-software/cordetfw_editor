@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.utils.timezone import make_aware
 from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Application
 from editor.utilities import frmt_string
-from editor.convert import convert_edit_to_db
+from editor.convert import convert_edit_to_db, update_pattern_edit
 from editor.configs import configs
 
 #--------------------------------------------------------------------------------
@@ -153,6 +153,7 @@ def import_project_tables(request, imp_dir):
                           owner = project_owner)
     new_project.release_id = old_id_2_new_id[project_dict['release']]
     new_project.save()
+    update_pattern_edit(new_project)    # Update the regex expressions associtated to the project
     
     # Import the ValSet instances
     val_set_old_id_2_new = {}
@@ -203,6 +204,7 @@ def import_project_tables(request, imp_dir):
                                      rationale = spec_item['rationale'],
                                      implementation = spec_item['implementation'],
                                      remarks = spec_item['remarks'],
+                                     s_data = spec_item['s_data'],
                                      p_kind = spec_item['p_kind'],
                                      s_kind = spec_item['s_kind'],
                                      value = spec_item['value'],
@@ -237,7 +239,7 @@ def import_project_tables(request, imp_dir):
             new_spec_item.p_link = spec_item_old_id_2_new[old_spec_item['p_link']]
         if old_spec_item['s_link'] != '':
             new_spec_item.s_link = spec_item_old_id_2_new[old_spec_item['s_link']]
-
+        
         new_spec_item.desc = convert_edit_to_db(new_project, new_spec_item.desc)
         new_spec_item.rationale = convert_edit_to_db(new_project, new_spec_item.rationale)
         new_spec_item.implementation = convert_edit_to_db(new_project, new_spec_item.implementation)

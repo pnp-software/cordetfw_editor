@@ -394,7 +394,7 @@
                                            "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
                                            "title":     {"label": "Title", "req_in_form": false, "kind": "plain_text"},
                                            "value":     {"label": "Text", "req_in_form": true, "kind": "ref_text"},
-                                           "s_data":    {"label": "Json", "req_in_form": false, "kind": "plain_text"},
+                                           "s_data":    {"label": "Table", "req_in_form": false, "kind": "table"},
                                            "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation":  {"label": "Additional Info", "req_in_form": false, "kind": "ref_text"},

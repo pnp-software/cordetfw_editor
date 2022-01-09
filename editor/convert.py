@@ -109,7 +109,6 @@ def convert_db_to_display(s):
             return iref_html
         except ObjectDoesNotExist:
             return 'ERROR:'+match.group(2)
-    
     s_iref = pattern_db.sub(iref_to_html, s)
     return markdown_to_html(s_iref)
     
@@ -139,6 +138,16 @@ def conv_db_disp_ref_text(context, item, name):
     """
     s = getattr(item, name)
     return convert_db_to_display(s)
+    
+    
+def conv_db_disp_table(context, item, name):
+    """ 
+    Convert attribute 'name' of spec_item 'item' from database to display representation
+    on the assumption that the attribute value contains a json description of a table.
+    TBD: the table is simply rendered as a json string with internal references and mark-up resolved.
+    """
+    s = getattr(item, name)     # 's' is a json object
+    return convert_db_to_display(str(s))
     
     
 def conv_db_disp_spec_item_ref(context, spec_item, name):

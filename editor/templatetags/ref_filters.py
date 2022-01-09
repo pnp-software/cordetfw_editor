@@ -4,7 +4,7 @@ from ..models import SpecItem
 from ..configs import configs
 from ..convert import conv_do_nothing, conv_db_disp_ref_text, conv_db_disp_plain_ref, \
                       conv_db_disp_spec_item_ref, conv_db_disp_date, eval_di_value, \
-                      convert_db_to_edit, convert_db_to_display
+                      convert_db_to_edit, convert_db_to_display, conv_db_disp_table
 from .. import convert
 
 register = template.Library()
@@ -18,7 +18,8 @@ conv_db_disp_func = {"plain_text": "conv_do_nothing",
                      'eval_ref': 'conv_db_disp_eval_ref',
                      'int': "conv_do_nothing",
                      'image': "conv_do_nothing",
-                     'date': "conv_db_disp_date"}
+                     'date': "conv_db_disp_date",
+                     'table': "conv_db_disp_table"}
 
 
 @register.simple_tag(takes_context=True)
