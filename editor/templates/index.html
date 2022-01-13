@@ -1,9 +1,8 @@
-{% extends "base_generic.html" %}
+{% extends "base_generic_bootstrap5.html" %}
 
 {% load ref_filters %}
 
 {% block content %}
-<div class="mt-6">
 
     {% if user.is_staff %}
     <div class="mb-8 text-lg leading-5 font-bold text-blue-gray-500 flex items-center">
@@ -255,91 +254,45 @@
     </div>
 </div>
 {% else %}
-<div class="flex-grow"></div>
-<div class="flex-none flex items-center divide-x-2 divide-blue-gray-200">
-    <div class="w-72 mr-16 text-lg leading-5 flex flex-col items-center">
-        <h1 class="mb-6 font-bold text-blue-gray-900">Cordet FW Editor</h1>
-        <p class="text-center text-blue-gray-700">Web-based editor to support the definition of inter-linked specification items</p>
-    </div>
-    <div class="py-16 pl-16 leading-5 flex flex-col items-center text-blue-gray-700">
-        <h1 class="mb-6 text-lg font-bold text-blue-gray-900">Sign-In</h1>
-        <form action="{% url 'login' %}" method="POST">
-            {% csrf_token %}
 
-            <div class="w-72 mb-4 flex items-center">
-                <label for="username" class="flex-grow">Username*</label>
-                <input type="text"
-                       class="h-8 w-48 pl-1
-                             border border-blue-gray-400 rounded-md
-                             focus:border-2 focus:border-blue-600
-                             focus:outline-none"
-                       id="username"
-                       name="username"
-                       autofocus>
-            </div>
-            <div class="w-72 mb-4 flex items-center">
-                <label for="password" class="flex-grow">Password*</label>
-                <input type="password"
-                       class="h-8 w-48 pl-1
-                             border border-blue-gray-400 rounded-md
-                             focus:border-2 focus:border-blue-600
-                             focus:outline-none"
-                       id="password"
-                       name="password">
-            </div>
-            <div class="w-72 flex flex-col items-end">
-                <button class="flex items-center
-                               leading-5 text-lg font-bold text-blue-gray-500
-                               hover:text-blue-600
-                               focus:text-blue-600 focus:outline-none"
-                        type="submit">
-                    <svg class="h-6 w-6 mr-1"
-                         xmlns="http://www.w3.org/2000/svg"
-                         fill="none" viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
-                    login
-                </button>
-            </div>
-        </form>
-        <div class="w-72 mt-12 text-blue-gray-500  flex flex-col items-end ">
-            <div class="flex text-blue-gray-400">
-                <a class="mr-4 flex
-                          hover:text-blue-600
-                          focus:text-blue-600 focus:outline-none"
-                   href="{% url 'password_reset' %}">
-                    <svg class="h-5 w-5"
-                         xmlns="http://www.w3.org/2000/svg"
-                         viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                              clip-rule="evenodd" />
-                    </svg>
-                    lost password?
-                </a>
-                <a class="flex
-                          hover:text-blue-600
-                          focus:text-blue-600 focus:outline-none"
-                   href="mailto:pnp-software@pnp-software.com">
-                    <svg class="h-5 w-5"
-                         xmlns="http://www.w3.org/2000/svg"
-                         viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd"
-                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                              clip-rule="evenodd" />
-                    </svg>
-                    request access
-                </a>
-            </div>
+
+
+<div class="container col-xl-10 col-xxl-8 px-4 py-5">
+    <div class="row align-items-center g-lg-5 py-5">
+        <div class="col-lg-7 text-center text-lg-start">
+            <h1 class="display-4 fw-bold lh-1 mb-3">Cordet FW Editor</h1>
+            <p class="col-lg-10 fs-4">Web-based editor to support the definition of inter-linked specification items.</p>
+        </div>
+        <div class="col-md-10 mx-auto col-lg-5">
+            <form class="p-4 p-md-5 border rounded-3 bg-light"
+                  action="{% url 'login' %}" method="POST">
+                {% csrf_token %}
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control"
+                           id="username" placeholder="Username" name="username" autofocus>
+                    <label for="username">Username</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control"
+                           id="password" placeholder="Password" name="password">
+                    <label for="password">Password</label>
+                </div>
+                <button class="w-100 btn btn-lg btn-primary" type="submit">Sign-In</button>
+                <hr class="my-4">
+                <small class="d-flex justify-content-between text-muted">
+                    <a class="bi-caret-right-fill text-decoration-none"
+                       href="{% url 'password_reset' %}">
+                        lost password?
+                    </a>
+                    <a class="bi-caret-right-fill text-decoration-none"
+                       href="mailto:pnp-software@pnp-software.com">
+                        request access
+                    </a>
+                </small>
+            </form>
         </div>
     </div>
 </div>
-<div class="flex-grow"></div>
-<div class="flex-grow"></div>
 {% endif %}
 
 {% endblock %}
