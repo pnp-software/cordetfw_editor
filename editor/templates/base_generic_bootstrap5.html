@@ -13,8 +13,8 @@
     </head>
     <body class="d-flex flex-column min-vh-100">
 
-        <div class="container">
-            <header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+        <header class="container">
+            <nav class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
                 <ul class="nav nav-pills">
                     <li class="nav-item">
                         {% url 'index' as index_url %}
@@ -29,83 +29,52 @@
                         <a class="nav-link {% if request.get_full_path == help_url %} active {% endif %}" href="{{ help_url }}">Help</a>
                     </li>
                 </ul>
-            </header>
-        </div>
+                {% if user.is_authenticated %}
+                <div aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        {% if project.name|length > 0 %}
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'index' %}">
+                                Cordet FW Editor: Projects
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            {{ project.name }}
+                        </li>
+                        {% if config.name|length > 0 %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {{ config.name }}
+                        </li>
+                        {% elif title|length > 0 %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {{ title }}
+                        </li>
+                        {% endif %}
+                        {% else %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            Cordet FW Editor: Projects
+                        </li>
+                        {% endif %}
+                    </ol>
+                </div>
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link disabled">
+                            {{ user.get_username }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+                {% endif %}
+            </nav>
+        </header>
 
 
         <!-- to change below -->
-        <header class="">
-            <nav class="mx-4 my-4 text-lg leading-5 text-blue-gray-500">
-                <ul class="flex items-center">
-                    {% if user.is_authenticated %}
-                    <li class="font-bold flex-grow flex flex-col">
-                        <div class="self-center flex flex-center">
-                            Cordet FW Editor
-                            <svg class="h-5 w-5"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd"
-                                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                      clip-rule="evenodd" />
-                            </svg>
-                            {% if project.name|length > 0 %}
-                                {{ project.name }}
-                                {% if config.name|length > 0 %}
-                                    <svg class="h-5 w-5"
-                                         xmlns="http://www.w3.org/2000/svg"
-                                         viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd"
-                                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                              clip-rule="evenodd" />
-                                    </svg>
-                                    <b class="text-blue-gray-900">{{ config.name }}</b>
-                                {% elif title|length > 0 %}
-                                    <svg class="h-5 w-5"
-                                         xmlns="http://www.w3.org/2000/svg"
-                                         viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd"
-                                              d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                              clip-rule="evenodd" />
-                                    </svg>
-                                    <b class="text-blue-gray-900">{{ title }}</b>
-                                {% endif %}
-                            {% else %}
-                                <b class="text-blue-gray-900">Projects</b>
-                                {% endif %}
-                        </div>
-                    </li>
-                    <li class="px-4 py-2 flex items-center rounded-md">
-                        {{ user.get_username }}
-                        <svg class="h-6 w-6 ml-1"
-                             xmlns="http://www.w3.org/2000/svg"
-                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </li>
-                    <li>
-                        <a class="px-4 py-2 flex items-center rounded-md
-                                  hover:bg-blue-100 hover:text-blue-800
-                                  focus:bg-blue-100 focus:text-blue-800
-                                  hover:no-underline focus:outline-none"
-                           href="{% url 'logout' %}">
-                            Logout
-                            <svg class="h-6 w-6 ml-1"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-        </header>
 
         <main class="flex-grow-1">
             {% if messages %}
