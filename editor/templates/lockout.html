@@ -1,9 +1,10 @@
-{% extends "base_generic_old.html" %}
+{% extends "base_generic_bootstrap5.html" %}
 
 {% block content %}
-<div class="col-lg-10 col-xl-9">
-<div class="jumbotron jumbotron-fluid bg-transparent mb-n3">
-  <h2 class="display-6">Account Locked</h2>
-  <p class="lead">Too many failed login attempts. Please try again later.</p>
+<div class="container col-xl-10 col-xxl-8 px-4 py-5">
+    <div class="col-lg-7 text-center text-lg-start">
+        <h1 class="display-4 fw-bold lh-1 mb-3">Account Locked</h1>
+        <p class="col-lg-9 fs-4">Too many failed login attempts. Please try again later.</p>
+    </div>
 </div>
 {% endblock %}
