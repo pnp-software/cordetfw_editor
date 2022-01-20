@@ -73,30 +73,32 @@
             </nav>
         </header>
 
-
-        <!-- to change below -->
-
         <main class="flex-grow-1">
             {% if messages %}
-            {% for message in messages %}
-            {% if message.level <= 20 %}  <!-- debug & info -->
-            <div class="self-start p-4 ml-4 text-lg leading-5 border-l-4 bg-blue-100 text-blue-800 border-blue-500" role="alert">
-            {% elif message.level == 25 %}  <!-- success -->
-            <div class="self-start p-4 ml-4 text-lg leading-5 border-l-4 bg-green-100 text-green-800 border-green-500" role="alert">
-            {% elif message.level == 30 %}
-            <div class="self-start p-4 ml-4 text-lg leading-5 border-l-4 bg-yellow-100 text-yellow-800 border-yellow-500" role="alert">
-            {% elif message.level == 40 %}
-            <div class="self-start p-4 ml-4 text-lg leading-5 border-l-4 bg-red-100 text-red-800 border-red-500" role="alert">
-                {% endif %}
-                {{ message }}
+            <div class="container">
+                {% for message in messages %}
+                <div class="alert alert-dismissible fade show
+                            {% if message.level <= 20 %}  <!-- debug & info -->
+                            alert-info
+                            {% elif message.level == 25 %}  <!-- success -->
+                            alert-success
+                            {% elif message.level == 30 %}
+                            alert-warning
+                            {% elif message.level == 40 %}
+                            alert-danger
+                            {% endif %}
+                            " role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="alert" aria-label="Close">
+                    </button>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
             {% endif %}
 
             {% block content %}{% endblock %}
         </main>
-
-        <!-- to change above -->
 
         <div class="container">
             <footer class="py-3 my-4 border-top">
