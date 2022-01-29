@@ -44,7 +44,7 @@
                         {% if request.user == item.project.owner %}
                         <a class="btn btn-outline-secondary"
                            href="{% url 'make_project_release' item.project.id %}"
-                           title="Make Release">
+                           title="Make Release for {{item.project.name}} Project">
                             make release
                         </a>
                         {% endif %}
@@ -74,20 +74,20 @@
                         {% if user.is_staff %}
                         <a class="btn btn-outline-primary bi-pencil-fill"
                            href="{% url 'edit_project' item.project.id %}"
-                           title="Edit Project">
+                           title="Edit {{item.project.name}} Project">
                         </a>
                         {% endif %}
                         {% if user.is_staff %}
                         <a class="btn btn-outline-danger bi-trash-fill"
                            href="{% url 'del_project' item.project.id %}"
                            onclick="return confirm('Are you sure you want to delete this item?');"
-                           title="Delete Project">
+                           title="Delete {{item.project.name}} Project">
                         </a>
                         {% endif %}
                         {% if item.user_has_access or request.user == item.project.owner %}
                         <a class="btn btn-outline-primary bi-cloud-download-fill"
                            href="{% url 'export_project' item.project.id %}"
-                           title="Export Project">
+                           title="Export {{item.project.name}} Project">
                         </a>
                         {% endif %}
                     </div>
@@ -113,7 +113,7 @@
                             {% if request.user == item.project.owner %}
                             <a class="btn btn-outline-secondary"
                                href="{% url 'make_application_release' application.id %}"
-                               title="Make Release">
+                               title="Make Release for {{application.name}} Application">
                                 make release
                             </a>
                             {% endif %}
@@ -144,23 +144,19 @@
                             {% if request.user == item.project.owner %}
                             <a class="btn btn-outline-primary bi-pencil-fill"
                                href="{% url 'edit_application' application.id%}"
-                               title="Edit Application">
+                               title="Edit {{application.name}} Application">
                             </a>
                             {% endif %}
                         </div>
                     </li>
                     {% endfor %}
 
-
-
-
-
                     <!-- add application -->
                     {% if request.user == item.project.owner %}
                     <li class="list-group-item">
                         <a class="bi-plus-circle text-decoration-none"
                            href="{% url 'add_application' item.project.id %}"
-                           title="Add Application">
+                           title="Add Application to {{item.project.name}} Project">
                             add application
                         </a>
                     </li>
@@ -180,8 +176,8 @@
 <div class="container col-xl-10 col-xxl-8 px-4 py-5">
     <div class="row align-items-center g-lg-5 py-5">
         <div class="col-lg-7 text-center text-lg-start">
-            <h1 class="display-4 fw-bold lh-1 mb-3">Cordet FW Editor</h1>
-            <p class="col-lg-10 fs-4">Web-based editor to support the definition of inter-linked specification items.</p>
+            <h1 class="display-4 fw-bold lh-1 mb-3 text-center">Cordet FW Editor</h1>
+            <p class="fs-4 text-center">Web-based editor to support the definition of interlinked specification items</p>
         </div>
         <div class="col-md-10 mx-auto col-lg-5">
             <form class="p-4 p-md-5 border rounded-3 bg-light"
