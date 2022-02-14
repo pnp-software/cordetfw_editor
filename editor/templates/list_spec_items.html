@@ -199,16 +199,30 @@
                         </a>
                     {% endif %}
                     {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
-                    <a class="bi-diagram-3 me-1 text-decoration-none"
-                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
-                       title="Show {{config.expand.s_label}} Children">
-                    </a>
+                        {% if item.id != expand_id %}
+                        <a class="bi-diagram-3 me-1 text-decoration-none"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           title="Show {{config.expand.s_label}} Children">
+                        </a>
+                        {% else %}
+                        <a class="bi-diagram-3 me-1 text-decoration-none"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           title="Close {{config.expand.s_label}} Children">
+                        </a>
+                        {% endif %}
                     {% endif %}
                     {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
-                    <a class="bi-diagram-3-fill me-1 text-decoration-none"
-                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
-                       title="Show {{config.expand.p_label}} Children">
-                    </a>
+                        {% if item.id != expand_id %}
+                        <a class="bi-diagram-3-fill me-1 text-decoration-none"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           title="Show {{config.expand.p_label}} Children">
+                        </a>
+                        {% else %}
+                        <a class="bi-diagram-3-fill me-1 text-decoration-none"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           title="Close {{config.expand.p_label}} Children">
+                        </a>
+                        {% endif %}
                     {% endif %}
                     {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
                     <a class="bi-node-plus me-1 text-decoration-none"
