@@ -161,7 +161,7 @@
                 {% if not history %}
                 <!-- The edit/copy/delete/split buttons  -->
                 <td>
-                    <nobr>
+                    <nobr class="float-end">
                     {% if item.val_set.name == 'Default' and config.ext_attrs|length == 0 %}
                     <a class="bi-files me-1 text-decoration-none"
                        href="{% url 'copy_spec_item' cat project.id application_id item.id sel_val %}"
