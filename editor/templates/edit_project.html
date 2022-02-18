@@ -1,115 +1,141 @@
-{% extends "base_generic_old.html" %}
+{% extends "base_generic_bootstrap5.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
-<div class="col-lg-10 col-xl-9">
-<div class="jumbotron jumbotron-fluid bg-transparent mt-n3 mb-n5">
-  <h2>Add or Edit a Project</h2>
-</div>
-{% crispy form %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <h2 class="my-3">Add or Edit a Project</h2>
+            {% crispy form %}
 
-{% if form.errors %}
-    {% for field in form %}
-        {% for error in field.errors %}
+            {% if form.errors %}
+            {% for field in form %}
+            {% for error in field.errors %}
             <div class="alert alert-danger">
                 <strong>{{ field.name }}: {{ error|escape }}</strong>
             </div>
-        {% endfor %}
-    {% endfor %}
-    {% for error in form.non_field_errors %}
-        <div class="alert alert-danger">
-            <strong>{{ error|escape }}</strong>
-        </div>
-    {% endfor %}
-{% endif %}
-</div>
-
-<br/>
-
-<div class="col-4">
-  <div class="form-inline">
-     <div class="dropdown mr-sm-2 mt-2 mb-2">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Add R/W User</button>
-        <div class="dropdown-menu">
-            {% for user in users %}
-                <a class="dropdown-item" href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RW">{{user.username}}</a>
             {% endfor %}
-        </div>
-     </div>
-     <div class="dropdown mr-sm-2 mt-2 mb-2">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">Add R/O User</button>
-        <div class="dropdown-menu">
-            {% for user in users %}
-                <a class="dropdown-item" href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RO">{{user.username}}</a>
             {% endfor %}
+            {% for error in form.non_field_errors %}
+            <div class="alert alert-danger">
+                <strong>{{ error|escape }}</strong>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="row mt-4">
+                <!-- user table -->
+                <div class="col-12 col-md-6">
+                    <div class="d-flex mb-2">
+                        <div class="dropdown me-2">
+                            <button class="btn btn-outline-secondary dropdown-toggle"
+                                    type="button"
+                                    id="dropdownAddRWUser" data-bs-toggle="dropdown">
+                                Add R/W User
+                            </button>
+                            <ul class="dropdown-menu"
+                                aria-labelledby="dropdownAddRWUser">
+                                {% for user in users %}
+                                <li><a class="dropdown-item"
+                                       href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RW">
+                                    {{user.username}}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle"
+                                    type="button"
+                                    id="dropdownAddROUser" data-bs-toggle="dropdown">
+                                Add R/O User
+                            </button>
+                            <ul class="dropdown-menu"
+                                aria-labelledby="dropdownAddROUser">
+                                {% for user in users %}
+                                <li><a class="dropdown-item"
+                                       href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RO">
+                                    {{user.username}}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr class="table-warning">
+                                <th>User Name</th>
+                                <th>Last Name</th>
+                                <th>First Name</th>
+                                <th>Role</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project_user in project_users %}
+                            <tr>
+                                <td>{{ project_user.user.username }}</td>
+                                <td>{{ project_user.user.last_name }}</td>
+                                <td>{{ project_user.user.first_name }}</td>
+                                <td>{{ project_user.role }}</td>
+                                <td>
+                                    <a class="bi-trash-fill link-danger text-decoration-none"
+                                       role="button"
+                                       href="{% url 'edit_project' project.id %}?del_user_id={{project_user.id}}"
+                                       title="Delete Project User">
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- ValSet table -->
+                <div class="col-12 col-md-6">
+                    <a class="btn btn-outline-secondary mb-2"
+                       href="{% url 'add_val_set' project.id %}">
+                        Add ValSet
+                    </a>
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr class="table-warning">
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for val_set in val_sets %}
+                            <tr>
+                                <td>{{ val_set.name }}</td>
+                                <td>{{ val_set.desc }}</td>
+                                <td>
+                                    <nobr class="float-end">
+                                        {% if val_set.name == 'Default' %}
+                                        <span class="bi-trash-fill link-secondary me-1"
+                                              aria-disabled="true">
+                                        </span>
+                                        <span class="bi-pencil-fill link-secondary"
+                                              aria-disabled="true">
+                                        </span>
+                                        {% else %}
+                                        <a class="bi-trash-fill link-danger text-decoration-none me-1"
+                                           href="{% url 'edit_project' project.id %}?del_val_set_id={{val_set.id}}"
+                                           title="Delete ValSet">
+                                        </a>
+                                        <a class="bi-pencil-fill text-decoration-none"
+                                           href="{% url 'edit_val_set' project.id val_set.id %}"
+                                           title="Edit ValSet">
+                                        </a>
+                                        {% endif %}
+                                    </nobr>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-     </div>
-  </div> 
-    <table class="table table-hover table-sm">
-      <thead>
-        <tr class="table-warning">
-          <th>User Name</th>
-          <th>Last Name</th>
-          <th>First Name</th>
-          <th>Role</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for project_user in project_users %}
-          <tr>
-            <td>{{ project_user.user.username }}</td>
-            <td>{{ project_user.user.last_name }}</td>
-            <td>{{ project_user.user.first_name }}</td>
-            <td>{{ project_user.role }}</td>
-            <td>
-              <div class="btn-group">
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'edit_project' project.id %}?del_user_id={{project_user.id}}" title="Delete Project User">D</a>
-              </div> 
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    </div>
 </div>
-<div class="col-4">
-  <div class="form-inline">
-    <a class="btn btn-outline-dark btn-sm mr-sm-2 mt-3 mb-2" href="{% url 'add_val_set' project.id %}">Add ValSet</a>
-  </div> 
-    <table class="table table-hover table-sm">
-      <thead>
-        <tr class="table-warning">
-          <th>Name</th>
-          <th>Description</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for val_set in val_sets %}
-          <tr>
-            <td>{{ val_set.name }}</td>
-            <td>{{ val_set.desc }}</td>
-            <td>
-              {% if val_set.name == 'Default' %}
-                <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">D</a>
-                <a class="btn btn-outline-secondary disabled btn-sm" aria-disabled="true" href="#">E</a>
-              {% else %}
-              <div class="btn-group">
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'edit_project' project.id %}?del_val_set_id={{val_set.id}}" title="Delete ValSet">D</a>
-              </div> 
-              <div class="btn-group">
-                <a class="btn btn-outline-dark btn-sm"
-                   href="{% url 'edit_val_set' project.id val_set.id %}" title="Edit ValSet">E</a>
-              </div> 
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-</div>
-
-
 
 {% endblock %}
