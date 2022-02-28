@@ -178,7 +178,7 @@
                        title="Refresh {{config.name}}">
                     </a>
                     {% endif %}
-                    <a class="bi-clock-history me-1 text-decoration-none {% if item.status != 'CNF' %}link-danger{% endif %}"
+                    <a class="bi-clock-fill me-1 text-decoration-none {% if item.status != 'CNF' %}link-danger{% endif %}"
                        href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_val %}"
                        title="{{config.name}} History">
                     </a>
