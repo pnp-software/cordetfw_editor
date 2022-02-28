@@ -1,0 +1,656 @@
+{% extends "base_generic_bootstrap5.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <h2 class="my-3">{{ title }}</h2>
+            <p class="mb-4 fs-5 fst-italic">{{ sub_title }}</p>
+
+            <form method="post">
+                {% csrf_token %}
+                {% if not form.domain.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.domain.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.domain.label }}{% if form.domain.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <input type="text" id="{{ form.domain.id_for_label }}"
+                               class="form-control {% if form.domain.errors %}is-invalid{% endif %}"
+                               name="domain" value="{{ form.domain.value }}"
+                               maxlength="255"
+                               {% if form.domain.field.required %}required{% endif %}
+                               {% if form.domain.field.disabled %}disabled{% endif %}>
+                        {% if form.domain.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.domain.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.domain.id_for_label }}" name="domain">
+                {% endif %}
+                {% if not form.name.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.name.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.name.label }}{% if form.name.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <input type="text" id="{{ form.name.id_for_label }}"
+                               class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+                               name="name" value="{{ form.name.value }}"
+                               maxlength="255"
+                               {% if form.name.field.required %}required{% endif %}
+                               {% if form.name.field.disabled %}disabled{% endif %}>
+                        {% if form.name.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.name.id_for_label }}" name="name">
+                {% endif %}
+                {% if not form.title.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.title.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.title.label }}{% if form.title.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <input type="text" id="{{ form.title.id_for_label }}"
+                               class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                               name="title" value="{{ form.title.value }}"
+                               maxlength="255"
+                               {% if form.title.field.required %}required{% endif %}
+                               {% if form.title.field.disabled %}disabled{% endif %}>
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.title.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.title.id_for_label }}" name="title">
+                {% endif %}
+                {% if not form.desc.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.desc.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.desc.label }}{% if form.desc.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.desc.id_for_label }}"
+                                  class="form-control {% if form.desc.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="desc" rows="1"
+                                  {% if form.desc.field.required %}required{% endif %}
+                                  {% if form.desc.field.disabled %}disabled{% endif %}>{{ form.desc.value }}</textarea>
+                        {% if form.desc.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.desc.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.desc.id_for_label }}" name="desc">
+                {% endif %}
+                {% if not form.value.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.value.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.value.label }}{% if form.value.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.value.id_for_label }}"
+                                  class="form-control {% if form.value.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="value" rows="1"
+                                  {% if form.value.field.required %}required{% endif %}
+                                  {% if form.value.field.disabled %}disabled{% endif %}>{{ form.value.value }}</textarea>
+                        {% if form.value.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.value.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.value.id_for_label }}" name="value">
+                {% endif %}
+                {% if not form.n1.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.n1.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.n1.label }}{% if form.n1.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <input type="number" id="{{ form.n1.id_for_label }}"
+                               class="form-control {% if form.n1.errors %}is-invalid{% endif %}"
+                               name="n1" value="{{ form.n1.value }}"
+                               min="0"
+                               {% if form.n1.field.required %}required{% endif %}
+                               {% if form.n1.field.disabled %}disabled{% endif %}>
+                        {% if form.n1.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.n1.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.n1.id_for_label }}" name="n1" value="{{ form.n1.value }}">
+                {% endif %}
+                {% if not form.rationale.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.rationale.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.rationale.label }}{% if form.rationale.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.rationale.id_for_label }}"
+                                  class="form-control {% if form.rationale.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="rationale" rows="1"
+                                  {% if form.rationale.field.required %}required{% endif %}
+                                  {% if form.rationale.field.disabled %}disabled{% endif %}>{{ form.rationale.value }}</textarea>
+                        {% if form.rationale.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.rationale.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.rationale.id_for_label }}" name="rationale">
+                {% endif %}
+                {% if not form.implementation.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.implementation.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.implementation.label }}{% if form.implementation.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.implementation.id_for_label }}"
+                                  class="form-control {% if form.implementation.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="implementation" rows="1"
+                                  {% if form.implementation.field.required %}required{% endif %}
+                                  {% if form.implementation.field.disabled %}disabled{% endif %}>{{ form.implementation.value }}</textarea>
+                        {% if form.implementation.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.implementation.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.implementation.id_for_label }}" name="implementation">
+                {% endif %}
+                {% if not form.remarks.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.remarks.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.remarks.label }}{% if form.remarks.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.remarks.id_for_label }}"
+                                  class="form-control {% if form.remarks.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="remarks" rows="1"
+                                  {% if form.remarks.field.required %}required{% endif %}
+                                  {% if form.remarks.field.disabled %}disabled{% endif %}>{{ form.remarks.value }}</textarea>
+                        {% if form.remarks.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.remarks.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.remarks.id_for_label }}" name="remarks">
+                {% endif %}
+                {% if not form.change_log.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.change_log.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.change_log.label }}{% if form.change_log.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.change_log.id_for_label }}"
+                                  class="form-control {% if form.change_log.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="change_log" rows="1"
+                                  {% if form.change.field.required %}required{% endif %}
+                                  {% if form.change.field.disabled %}disabled{% endif %}>{{ form.change_log.value }}</textarea>
+                        {% if form.change_log.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.change_log.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.change_log.id_for_label }}" name="change_log">
+                {% endif %}
+                {% if not form.s_data.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.s_data.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.s_data.label }}{% if form.s_data.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.s_data.id_for_label }}"
+                                  class="form-control {% if form.s_data.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="s_data"
+                                  {% if form.s_data.field.required %}required{% endif %}
+                                  {% if form.s_data.field.disabled %}disabled{% endif %}>{{ form.s_data.value }}</textarea>
+                        {% if form.s_data.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.s_data.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.s_data.id_for_label }}" name="s_data" value="{{ form.s_data.value }}">
+                {% endif %}
+                {% if not form.p_kind.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.p_kind.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.p_kind.label }}{% if form.p_kind.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <select id="{{ form.p_kind.id_for_label }}"
+                                class="form-select {% if form.p_kind.errors %}is-invalid{% endif %}"
+                                name="p_kind"
+                                {% if form.p_kind.field.required %}required{% endif %}
+                                {% if form.p_kind.field.disabled %}disabled{% endif %}>
+                            {% for choice in form.p_kind.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.p_kind.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.p_kind.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.p_kind.id_for_label }}" name="p_kind">
+                {% endif %}
+                {% if not form.s_kind.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.s_kind.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.s_kind.label }}{% if form.s_kind.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <select id="{{ form.s_kind.id_for_label }}"
+                                class="form-select {% if form.s_kind.errors %}is-invalid{% endif %}"
+                                name="s_kind"
+                                {% if form.s_kind.field.required %}required{% endif %}
+                                {% if form.s_kind.field.disabled %}disabled{% endif %}>
+                            {% for choice in form.s_kind.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.s_kind.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.s_kind.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.s_kind.id_for_label }}" name="s_kind">
+                {% endif %}
+                {% if not form.val_set.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.val_set.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.val_set.label }}{% if form.val_set.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <select id="{{ form.val_set.id_for_label }}"
+                                class="form-select {% if form.val_set.errors %}is-invalid{% endif %}"
+                                name="val_set"
+                                {% if form.val_set.field.required %}required{% endif %}
+                                {% if form.val_set.field.disabled %}disabled{% endif %}>
+                            {% for choice in form.val_set.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.val_set.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.val_set.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.val_set.id_for_label }}" name="val_set">
+                {% endif %}
+                {% if not form.p_link.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.p_link.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.p_link.label }}{% if form.p_link.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <select id="{{ form.p_link.id_for_label }}"
+                                class="form-select {% if form.p_link.errors %}is-invalid{% endif %}"
+                                name="p_link"
+                                {% if form.p_link.field.required %}required{% endif %}
+                                {% if form.p_link.field.disabled %}disabled{% endif %}>
+                            {% for choice in form.p_link.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.p_link.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.p_link.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.p_link.id_for_label }}" name="p_link">
+                {% endif %}
+                {% if not form.s_link.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.s_link.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.s_link.label }}{% if form.s_link.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <select id="{{ form.s_link.id_for_label }}"
+                                class="form-select {% if form.s_link.errors %}is-invalid{% endif %}"
+                                name="s_link"
+                                {% if form.s_link.field.required %}required{% endif %}
+                                {% if form.s_link.field.disabled %}disabled{% endif %}>
+                            {% for choice in form.s_link.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.s_link.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.s_link.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.s_link.id_for_label }}" name="s_link">
+                {% endif %}
+                {% if not form.n2.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.n2.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.n2.label }}{% if form.n2.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <input type="number" id="{{ form.n2.id_for_label }}"
+                               class="form-control {% if form.n2.errors %}is-invalid{% endif %}"
+                               name="n2" value="{{ form.n2.value }}"
+                               min="0"
+                               {% if form.n2.field.required %}required{% endif %}
+                               {% if form.n2.field.disabled %}disabled{% endif %}>
+                        {% if form.n2.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.n2.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.n2.id_for_label }}" name="n2" value="{{ form.n2.value }}">
+                {% endif %}
+                {% if not form.n3.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.n3.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.n3.label }}{% if form.n3.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <input type="number" id="{{ form.n3.id_for_label }}"
+                               class="form-control {% if form.n3.errors %}is-invalid{% endif %}"
+                               name="n3" value="{{ form.n3.value }}"
+                               min="0"
+                               {% if form.n3.field.required %}required{% endif %}
+                               {% if form.n3.field.disabled %}disabled{% endif %}>
+                        {% if form.n3.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.n3.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.n3.id_for_label }}" name="n3" value="{{ form.n3.value }}">
+                {% endif %}
+                {% if not form.t1.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.t1.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.t1.label }}{% if form.t1.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.t1.id_for_label }}"
+                                  class="form-control {% if form.t1.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="t1" rows="1"
+                                  {% if form.t1.field.required %}required{% endif %}
+                                  {% if form.t1.field.disabled %}disabled{% endif %}>{{ form.t1.value }}</textarea>
+                        {% if form.t1.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.t1.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.t1.id_for_label }}" name="t1">
+                {% endif %}
+                {% if not form.t2.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.t2.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.t2.label }}{% if form.t2.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.t2.id_for_label }}"
+                                  class="form-control {% if form.t2.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="t2" rows="1"
+                                  {% if form.t2.field.required %}required{% endif %}
+                                  {% if form.t2.field.disabled %}disabled{% endif %}>{{ form.t2.value }}</textarea>
+                        {% if form.t2.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.t2.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.t2.id_for_label }}" name="t2">
+                {% endif %}
+                {% if not form.t3.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.t3.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.t3.label }}{% if form.t3.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.t3.id_for_label }}"
+                                  class="form-control {% if form.t3.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="t3" rows="1"
+                                  {% if form.t3.field.required %}required{% endif %}
+                                  {% if form.t3.field.disabled %}disabled{% endif %}>{{ form.t3.value }}</textarea>
+                        {% if form.t3.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.t3.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.t3.id_for_label }}" name="t3">
+                {% endif %}
+                {% if not form.t4.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.t4.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.t4.label }}{% if form.t4.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.t4.id_for_label }}"
+                                  class="form-control {% if form.t4.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="t4" rows="1"
+                                  {% if form.t4.field.required %}required{% endif %}
+                                  {% if form.t4.field.disabled %}disabled{% endif %}>{{ form.t4.value }}</textarea>
+                        {% if form.t4.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.t4.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.t4.id_for_label }}" name="t4">
+                {% endif %}
+                {% if not form.t5.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.t5.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.t5.label }}{% if form.t5.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <textarea type="text" id="{{ form.t5.id_for_label }}"
+                                  class="form-control {% if form.t5.errors %}is-invalid{% endif %}
+                                        link-suggest"
+                                  name="t5" rows="1"
+                                  {% if form.t5.field.required %}required{% endif %}
+                                  {% if form.t5.field.disabled %}disabled{% endif %}>{{ form.t5.value }}</textarea>
+                        {% if form.t5.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.t5.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.t5.id_for_label }}" name="t5">
+                {% endif %}
+                {% if not form.ext_item.is_hidden %}
+                <div class="mb-3 row">
+                    <label for="{{ form.ext_item.id_for_label }}"
+                           class="col-form-label col-2">
+                        {{ form.ext_item.label }}{% if form.ext_item.field.required %}*{% endif %}
+                    </label>
+                    <div class="col-10 col-lg-8">
+                        <select id="{{ form.ext_item.id_for_label }}"
+                                class="form-select {% if form.ext_item.errors %}is-invalid{% endif %}"
+                                name="ext_item"
+                                {% if form.ext_item.field.required %}required{% endif %}
+                                {% if form.ext_item.field.disabled %}disabled{% endif %}>
+                            {% for choice in form.ext_item.field.choices %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.ext_item.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.ext_item.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <input type="hidden" id="{{ form.ext_item.id_for_label }}" name="ext_item">
+                {% endif %}
+                <div>{% if mode == "editd" %} {{mode}} {% endif %} </div>
+                <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
+                <button type="button" class="btn btn-outline-danger ms-2"
+                        onclick="location.href='{{ form.cancel.value }}';">{{ form.cancel.label }}</button>
+            </form>
+
+{% include "link_suggest.html" %}
+
+{% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="alert alert-danger">
+                <strong>{{ error|escape }}</strong>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger">
+            <strong>{{ error|escape }}</strong>
+        </div>
+    {% endfor %}
+{% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

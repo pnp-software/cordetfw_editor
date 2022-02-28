@@ -445,7 +445,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_val):
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'sub_title': sub_title, \
                'sel_val': sel_val, 'config': configs['cats'][cat], 'cat': cat, 'spec_items': spec_items}
-    return render(request, 'basic_form.html', context)  
+    return render(request, 'spec_item_form.html', context)  
 
 
 @login_required         
@@ -496,7 +496,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
         query_sets = query_sets | query_set
         
     context = {'form': form, 'project': project, 'title': title, 'spec_items': query_sets.order_by('cat','domain','name')}
-    return render(request, 'basic_form.html', context) 
+    return render(request, 'spec_item_form.html', context) 
 
 
 @login_required         
@@ -564,7 +564,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
-    return render(request, 'basic_form.html', context) 
+    return render(request, 'spec_item_form.html', context) 
 
 @login_required         
 def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
@@ -606,7 +606,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
-    return render(request, 'basic_form.html', context) 
+    return render(request, 'spec_item_form.html', context) 
 
 
 @login_required         
@@ -653,7 +653,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
-    return render(request, 'basic_form.html', context) 
+    return render(request, 'spec_item_form.html', context) 
 
         
 @login_required         

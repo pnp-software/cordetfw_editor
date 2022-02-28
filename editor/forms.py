@@ -122,31 +122,34 @@ class ReleaseForm(forms.Form):
 
 
 class SpecItemForm(forms.Form):
-    domain = forms.CharField(max_length=255)
-    name = forms.CharField(max_length=255)
-    title = forms.CharField(max_length=255)
-    desc = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    value = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    n1 = forms.IntegerField(min_value=0)
-    rationale = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    change_log = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    domain = forms.CharField()
+    name = forms.CharField()
+    title = forms.CharField()
+    desc = forms.CharField()
+    value = forms.CharField()
+    n1 = forms.IntegerField()
+    rationale = forms.CharField()
+    implementation = forms.CharField()
+    remarks = forms.CharField()
+    change_log = forms.CharField()
     s_data = forms.JSONField()
     p_kind = forms.ChoiceField(choices=())
     s_kind = forms.ChoiceField(choices=())
     val_set = forms.ModelChoiceField(queryset=None, empty_label=None)
     p_link = forms.ModelChoiceField(queryset=None, empty_label='')
     s_link = forms.ModelChoiceField(queryset=None, empty_label='')
-    n2 = forms.IntegerField(min_value=0)
-    n3 = forms.IntegerField(min_value=0)
-    t1 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    t2 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    t3 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    t4 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    t5 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    n2 = forms.IntegerField()
+    n3 = forms.IntegerField()
+    t1 = forms.CharField()
+    t2 = forms.CharField()
+    t3 = forms.CharField()
+    t4 = forms.CharField()
+    t5 = forms.CharField()
     ext_item = forms.ChoiceField(choices=())
-   
+    # use of charfield for submit and cancel values
+    submit = forms.CharField()
+    cancel = forms.CharField(label='Cancel')
+
     def __init__(self, mode, request, cat, project, application, config, s_parent_id, p_parent_id, *args, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
         self.project = project
@@ -155,33 +158,18 @@ class SpecItemForm(forms.Form):
         self.cat = cat
         self.config = config
         self.request = request
-        self.helper = FormHelper(self)
-        self.helper.wrapper_class = 'row'
-        self.helper.label_class = 'col-md-2'
-        self.helper.field_class = 'col-md-8'
         if mode == 'del':
-            self.helper.add_input(Submit('submit', 'Delete'))
+            self.fields['submit'].label = 'Delete'
         else:
-            self.helper.add_input(Submit('submit', 'Submit'))
-            
+            self.fields['submit'].label = 'Submit'
+
         default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
         application_id = 0 if application==None else application.id
         cancel_location = '/editor/'+cat+'/'+str(project.id)+'/'+str(application_id)+\
                           '/'+str(default_val_set.id)+'/Sel_All/list_spec_items'
-        self.helper.add_input(Button('cancel', 'Cancel', onclick="location.href='"+cancel_location+"';", \
-                                     css_class='btn btn-danger'))
-        
-        self.fields['desc'].widget.attrs.update(rows = 1)
-        self.fields['value'].widget.attrs.update(rows = 1)
-        self.fields['rationale'].widget.attrs.update(rows = 1)
-        self.fields['implementation'].widget.attrs.update(rows = 1)
-        self.fields['remarks'].widget.attrs.update(rows = 1)
-        self.fields['change_log'].widget.attrs.update(rows = 1)
-        self.fields['t1'].widget.attrs.update(rows = 1)
-        self.fields['t2'].widget.attrs.update(rows = 1)
-        self.fields['t3'].widget.attrs.update(rows = 1)
-        self.fields['t4'].widget.attrs.update(rows = 1)
-        self.fields['t5'].widget.attrs.update(rows = 1)
+        # set cancel_location as initial value (uggly but it works)
+        self.fields['cancel'].initial = cancel_location
+
         self.fields['p_kind'].choices = get_p_kind_choices(cat)
         self.fields['s_kind'].choices = get_s_kind_choices(cat)
         self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id, s_parent_id)
@@ -190,16 +178,17 @@ class SpecItemForm(forms.Form):
         self.fields['n2'].initial = 0
         self.fields['n3'].initial = 0
 
+
         # Hide fields which are not required for a given category
-        for field in self.fields:  
+        for field in self.fields:
             if (field not in config['attrs']) or (field in config['ext_attrs']):
                 self.fields[field].widget = forms.HiddenInput()
-                self.fields[field].required = False 
+                self.fields[field].required = False
                 continue
             self.fields[field].label = config['attrs'][field]['label']
             if not config['attrs'][field]['req_in_form']:
-                self.fields[field].required = False            
-        
+                self.fields[field].required = False
+
         # For external spec_item in add mode: load choices of external item
         if (len(config['ext_attrs']) > 0) and (self.mode == 'add'):
             get_choices_func_name = 'ext_' + cat.lower() + '_get_choices'
@@ -207,20 +196,20 @@ class SpecItemForm(forms.Form):
             self.fields['ext_item'].required = True
             self.fields['ext_item'].label = cat
             self.fields['ext_item'].choices = getattr(ext_cats, get_choices_func_name)(request)
-        
+
         # In add mode, the ValSet is not visible
         if (self.mode == 'add'):
-            self.fields['val_set'].widget = forms.HiddenInput()    
+            self.fields['val_set'].widget = forms.HiddenInput()
 
         # In copy and edit mode, the ValSet cannot be edited but is visible
-        if (self.mode == 'copy') or (self.mode == 'edit'):     
+        if (self.mode == 'copy') or (self.mode == 'edit'):
             self.fields['val_set'].disabled = True
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
-    
-        # In split mode, the ValSet can be edited but domain and name   
+
+        # In split mode, the ValSet can be edited but domain and name
         # must remain unchanged. The s_link and p_link fields must remain hidden.
-        if (self.mode == 'split'):     
+        if (self.mode == 'split'):
             self.fields['val_set'].queryset = ValSet.objects.filter(project_id=project.id).order_by('name')
             self.fields['domain'].disabled = True
             self.fields['name'].disabled = True
@@ -228,15 +217,15 @@ class SpecItemForm(forms.Form):
             self.fields['p_link'].widget = forms.HiddenInput()
             self.fields['s_link'].disabled = True
             self.fields['s_link'].widget = forms.HiddenInput()
-            
+
         # In delete mode, all fields but the change_log are visible but not editable
         if (self.mode == 'del'):
-            for field in self.fields:  
+            for field in self.fields:
                 if (field in config['attrs']) and (field != 'change_log'):
                     self.fields[field].disabled = True
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
-       
+
     def clean_s_data(self):
         cs_s_data = self.cleaned_data['s_data']   
         return cs_s_data
