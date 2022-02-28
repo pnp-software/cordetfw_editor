@@ -630,7 +630,7 @@
                 <div>{% if mode == "editd" %} {{mode}} {% endif %} </div>
                 <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
                 <button type="button" class="btn btn-outline-danger ms-2"
-                        onclick="location.href='{{ form.cancel.value }}';">{{ form.cancel.label }}</button>
+                        onclick="location.href='{{ form.cancel.help_text }}';">{{ form.cancel.label }}</button>
             </form>
 
 {% include "link_suggest.html" %}

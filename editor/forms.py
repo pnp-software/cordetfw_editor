@@ -167,8 +167,8 @@ class SpecItemForm(forms.Form):
         application_id = 0 if application==None else application.id
         cancel_location = '/editor/'+cat+'/'+str(project.id)+'/'+str(application_id)+\
                           '/'+str(default_val_set.id)+'/Sel_All/list_spec_items'
-        # set cancel_location as initial value (uggly but it works)
-        self.fields['cancel'].initial = cancel_location
+        # set cancel_location as help_text value (uggly but it works)
+        self.fields['cancel'].help_text = cancel_location
 
         self.fields['p_kind'].choices = get_p_kind_choices(cat)
         self.fields['s_kind'].choices = get_s_kind_choices(cat)
