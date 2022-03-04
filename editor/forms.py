@@ -69,16 +69,10 @@ class ApplicationForm(forms.Form):
     name = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
     cats = forms.CharField()
-    
+
     def __init__(self, project, *args, **kwargs):
         super(ApplicationForm, self).__init__(*args, **kwargs)
         self.project = project
-        self.helper = FormHelper(self)
-        self.helper.wrapper_class = 'row'
-        self.helper.label_class = 'col-md-2'
-        self.helper.field_class = 'col-md-8'
-        self.helper.add_input(Submit('submit', 'Submit'))
-        self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + project.cats
 

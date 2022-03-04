@@ -118,7 +118,7 @@ def add_application(request, project_id):
         form = ApplicationForm(project)
 
     context = {'form': form, 'project': project, 'title': 'Add Application to Project '+project.name, }
-    return render(request, 'basic_form.html', context)    
+    return render(request, 'application_form.html', context)    
 
 @login_required         
 def add_project(request):
@@ -243,14 +243,14 @@ def del_project(request, project_id):
     return redirect(base_url)    
 
 
-@login_required         
+@login_required
 def edit_application(request, application_id):
     application = Application.objects.get(id = application_id)
     project = application.project
     if not is_project_owner(request, project):
         return redirect(base_url)
-    
-    if request.method == 'POST':    
+
+    if request.method == 'POST':
         form = ApplicationForm(project, request.POST)
         if form.is_valid():
             application.name = form.cleaned_data['name']
@@ -258,13 +258,13 @@ def edit_application(request, application_id):
             application.cats = form.cleaned_data['cats']
             application.save()
             return redirect(base_url)
-    else:   
-        form = ApplicationForm(project, initial={'name': application.name, 
+    else:
+        form = ApplicationForm(project, initial={'name': application.name,
                                                  'description': application.desc,
                                                  'cats': application.cats})
-    
+
     context = {'form': form, 'title': 'Edit Application '+application.name, }
-    return render(request, 'basic_form.html', context)    
+    return render(request, 'application_form.html', context)
 
 
 @login_required         
