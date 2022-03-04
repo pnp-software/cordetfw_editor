@@ -1,5 +1,4 @@
 {% extends "base_generic_bootstrap5.html" %}
-{% load crispy_forms_tags %}
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
@@ -617,7 +616,6 @@
                 {% else %}
                 <input type="hidden" id="{{ form.ext_item.id_for_label }}" name="ext_item">
                 {% endif %}
-                <div>{% if mode == "editd" %} {{mode}} {% endif %} </div>
                 <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
                 <button type="button" class="btn btn-outline-danger ms-2"
                         onclick="location.href='{{ form.cancel.help_text }}';">{{ form.cancel.label }}</button>
