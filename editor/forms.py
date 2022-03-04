@@ -24,23 +24,17 @@ class ProjectForm(forms.Form):
     for item in configs['cats'].keys():
         predefined_cats = predefined_cats + item + ', '
     predefined_cats = predefined_cats[:-2] if len(predefined_cats)>2 else predefined_cats
-    
+
     def __init__(self, project, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
         self.fields['owner'].choices = get_user_choices(project)
-        self.helper = FormHelper(self)
-        self.helper.wrapper_class = 'row'
-        self.helper.label_class = 'col-md-2'
-        self.helper.field_class = 'col-md-8'
-        self.helper.add_input(Submit('submit', 'Submit'))
-        self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
 
-    def clean_owner(self):    
+    def clean_owner(self):
         owner_id = self.cleaned_data['owner']
         return User.objects.get(id=owner_id)
-        
+
     def clean_cats(self):
         cats = self.cleaned_data['cats'].replace(' ','')
         cat_list = cats.split(',')

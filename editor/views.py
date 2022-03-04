@@ -153,7 +153,7 @@ def add_project(request):
         form = ProjectForm(None)
 
     context = {'form': form, 'title': 'Add New Project', }
-    return render(request, 'basic_form.html', context)    
+    return render(request, 'add_project_form.html', context)    
 
 
 @login_required         
