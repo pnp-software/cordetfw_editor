@@ -325,7 +325,7 @@ def add_val_set(request, project_id):
         form = ValSetForm()
 
     context = {'form': form, 'project': project, 'title': 'Add ValSet to Project '+project.name}
-    return render(request, 'basic_form.html', context)    
+    return render(request, 'valset_form.html', context)    
 
 @login_required         
 def edit_val_set(request, project_id, val_set_id):
@@ -347,7 +347,7 @@ def edit_val_set(request, project_id, val_set_id):
         form = ValSetForm(initial={'name': val_set.name, 'description': val_set.desc})
 
     context = {'form': form, 'project': project, 'title': 'Edit ValSet '+val_set.name}
-    return render(request, 'basic_form.html', context)    
+    return render(request, 'valset_form.html', context)    
 
 
 @login_required         

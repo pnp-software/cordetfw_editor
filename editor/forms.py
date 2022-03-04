@@ -84,16 +84,10 @@ class ApplicationForm(forms.Form):
 
 class ValSetForm(forms.Form):
     name = forms.CharField()
-    description = forms.CharField(widget=forms.Textarea(attrs={'size': '255'}))
-    
+    description = forms.CharField(widget=forms.Textarea)
+
     def __init__(self, *args, **kwargs):
         super(ValSetForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper(self)
-        self.helper.wrapper_class = 'row'
-        self.helper.label_class = 'col-md-2'
-        self.helper.field_class = 'col-md-8'
-        self.helper.add_input(Submit('submit', 'Submit'))
-        self.fields['description'].widget.attrs.update(rows = 2)
 
 
 class ReleaseForm(forms.Form):
