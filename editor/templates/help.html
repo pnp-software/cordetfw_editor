@@ -1,20 +1,18 @@
-{% extends "base_generic_old.html" %}
+{% extends "base_generic_bootstrap5.html" %}
 
 {% load static %}
 
 {% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <h2 class="my-3">Cordet FW Editor - Online Help</h2>
+            <p class="mb-4 fs-5 fst-italic">Web-based editor to support the specification of a set of related applications</p>
 
-<div class="col-lg-10 col-xl-9">
-<div id="toc">
-    <div class="jumbotron jumbotron-fluid bg-transparent mb-n5">
-      <h2>Cordet FW Editor - Online Help</h2>
-      <p class="lead">Web-based editor to support the specification of a set of related applications</p>
-    </div>
-</div>
-        
-<div id="contents">
+            <div id="toc"></div>
 
-<div class="container-fluid bg-grey">
+            <div id="contents">
+
     <h3><a name="Overview">Overview</a></h3>
     <p>
     The Cordet FW Editor provides an environment where users define various kinds of specification items
@@ -22,86 +20,89 @@
     The specification information is stored in a database held on a server.
     The processing of the specification data is done by a back-end running on the server.
     The access to the editor data is through a browser on a client machine.
-    </p><p>
-    Distinctive features of the editor include:
+    </p>
+    <p>
+        Distinctive features of the editor include:
+    </p>
     <ul>
-    <li>Design based on a <a href="#ModellingLevels">framework</a> to allow 
+    <li>Design based on a <a class="text-decoration-none" href="#ModellingLevels">framework</a> to allow
         customization to meet user needs</li>
     <li>Distribution through a free and open licence </li>
-    <li>Support for multiple versions of requirements through the <a href="#ValSets">ValSet</a> concept</li>
-    <li>Support for a <a href="#History">history mechanism</a> to keep track of requirement evolution</li>
-    <li>Support for creating <a href="#IntRef">links between requirements</a> with auto-completion facilities</li>
-    <li><a href="#SpecItemRep">Rendering of requirements</a> either as hyperlinked html or as text in a form 
+    <li>Support for multiple versions of requirements through the <a class="text-decoration-none" href="#ValSets">ValSet</a> concept</li>
+    <li>Support for a <a class="text-decoration-none" href="#History">history mechanism</a> to keep track of requirement evolution</li>
+    <li>Support for creating <a class="text-decoration-none" href="#IntRef">links between requirements</a> with auto-completion facilities</li>
+    <li><a class="text-decoration-none" href="#SpecItemRep">Rendering of requirements</a> either as hyperlinked html or as text in a form 
         suitable for import in documents</li>
-    <li>Support for importing of, and linking to, <a href="ExtSpecRes">external specification resources</a></li>
-    <li><a href="#ExpImp">import/export facilities</a> to/from csv formats</li>
-    <li>Support for <a href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
-    <li>Support for <a href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
-    <li>Interface to import <a href="#Internal_and_External_Specification_Items">external specification 
+    <li>Support for importing of, and linking to, <a class="text-decoration-none" href="ExtSpecRes">external specification resources</a></li>
+    <li><a class="text-decoration-none" href="#ExpImp">import/export facilities</a> to/from csv formats</li>
+    <li>Support for <a class="text-decoration-none" href="#EditorGen">generators</a> to be embeeded within the editor to process its data</li>
+    <li>Support for <a class="text-decoration-none" href="#UserRoles">multiple levels of access</a> to requirements in a project</li>
+    <li>Interface to import <a class="text-decoration-none" href="#Internal_and_External_Specification_Items">external specification
         resources</a></li>
     </ul>
-    </p><p>
 
     <h3><a name="HowToUse">How To Use the Editor</a></h3>
     <p>
     The editor is built as a django project made available through an open and free licence.
     The installation instructions are in the 
-    <a href="https://github.com/pnp-software/cordetfw_editor">project home page</a>.
+    <a class="text-decoration-none" href="https://github.com/pnp-software/cordetfw_editor">project home page</a>.
     </p><p>
     The editor is available in a default configuration which can be used "as is". 
     However, projects normally have project-specific categories of requirements, or need to maintain
     project-specific relationships among their requirements, or need to generate
     project-specific artifacts from their requirements.
     The Cordet FW Editor caters to these needs by being built as 
-    a <a href="#The_Editor_Framework">framework</a> which users may configure to match their needs.
+    a <a class="text-decoration-none" href="#The_Editor_Framework">framework</a> which users may configure to match their needs.
     </p><p>
-    The key concept at framework level is that of <a href="#Specification_Items">specification item</a>.
+    The key concept at framework level is that of <a class="text-decoration-none" href="#Specification_Items">specification item</a>.
     A specification item is a set of specification-related information which are manipulated as 
     a single unit.
     At framework level, specification items are defined as an abstract entities upon which certain
     operations can be performed (adding a new specification item, editing an existing specification
     item, etc). 
     When users deploy the editor, they are expected to 
-    <a href="Editor_Instantiation">configure</a> it.
-    The outcome of this configuration process is an <a href="#Model">editor model</a> which
+    <a class="text-decoration-none" href="Editor_Instantiation">configure</a> it.
+    The outcome of this configuration process is an <a class="text-decoration-none" href="#Model">editor model</a> which
     defines the concrete categories of specification items and their mutual relationships
     and the generators to process them.
-    </p>
-    The <a href="#Default_Editor_Model">default editor configuration</a> can be used as a 
+    </p><p>
+    The <a class="text-decoration-none" href="#Default_Editor_Model">default editor configuration</a> can be used as a 
     blue-print for user-specific configurations. 
     <img src="{% static 'images/ModelLevels.png' %}" width="540" height="360" class="center"> 
-    </p><p>
+    </p>
      
     
     <h3><a name="MetaModel">The Editor Framework</a></h3>
     <p>
-    The editor framework is built on the following concepts:
-    <ul>
-    <li><a href="#Users">Users</a></li>
-    <li><a href="#ProjAndApp">Projects</a></li>
-    <li><a href="#ProjAndApp">Applications</a></li>
-    <li><a href="#Releases">Releases</a></li>
-    <li><a href="#SpecItems">Specification Items</a></li>
-    <li><a href="#ValSets">ValSets</a></li>
-    </ul>
+        The editor framework is built on the following concepts:
     </p>
+    <ul>
+    <li><a class="text-decoration-none" href="#Users">Users</a></li>
+    <li><a class="text-decoration-none" href="#ProjAndApp">Projects</a></li>
+    <li><a class="text-decoration-none" href="#ProjAndApp">Applications</a></li>
+    <li><a class="text-decoration-none" href="#Releases">Releases</a></li>
+    <li><a class="text-decoration-none" href="#SpecItems">Specification Items</a></li>
+    <li><a class="text-decoration-none" href="#ValSets">ValSets</a></li>
+    </ul>
     
-    <h4><a name="Users">Editor Users</a></h3>
+    <h4><a name="Users">Editor Users</a></h4>
     <p>
     The editor users are the entities which have access to the editor.
     There are two types of users: the <strong>admin user</strong> and the <strong>basic users</strong>.
-    The <strong>admin user</strong> is responsible for: 
+    The <strong>admin user</strong> is responsible for:
+    </p>
     <ul>
     <li>Creating and managing basic users</li>
     <li>Creating projects and assigning their owner</li>
     <li>Assigning basic users to a project</li>
-    <li>Defining the <a href="#ValSets">ValSets</a> for the specification items of 
+    <li>Defining the <a class="text-decoration-none" href="#ValSets">ValSets</a> for the specification items of 
         a project</li>
     </ul>
+    <p>
     The <strong>basic users</strong> manage the project 
     and the specification items they contain in accordance with their roles.
     Within a project, a user has one of three roles:
-    <p>
+    </p>
     <ul>
     <li>The <strong>Project Owner</strong> is appointed by the admin user when the project is created.
     The project owner can: 
@@ -126,6 +127,7 @@
         <li>Export all project items </li>
         </ul>
     </ul>
+    <p>
     A user can be assigned (either as owner or as plain user) to multiple projects.
     </p>
  
@@ -150,6 +152,7 @@
     project to which the application belongs and 'y' is a non-negative number. 
     The release numbers of projects and applications are set according to the 
     following rules:
+    </p>
     <ul>
     <li>When a project is created, its release number x is set to zero</li>
     <li>When an application is created the y component of its release number is set to zero</li>
@@ -158,16 +161,18 @@
     <li>When the project owner makes a new release of an applicatioin, 
     the y component of the release number of the application is incremented by 1</li>
     </ul>
+    <p>
     A textual description may be attached to each release.
     A release of a project or of an application causes the history status of the specification items
     in the project or application to be updated according to the editor's
     <strong>history mechanism</strong>. 
     </p><p>
-    Specification items carry history information through the following <a href+"Core_Attributes">core 
+    Specification items carry history information through the following <a class="text-decoration-none" href="#Core_Attributes">core 
     attributes</a>: (a) the owner (the user who last updated the specification item); 
     (b) the status (see below); (c) the previous pointer (a pointer to the previous version of the 
     specification item); and (d) the update time (the time when the specification item was last updated).
     The status is one of the following:
+    </p>
         <ul>
         <li><strong>New</strong>: the item has been created in the current release</li>
         <li><strong>Modified </strong>: the item was created in a previous release and 
@@ -179,6 +184,7 @@
         <li><strong>Deleted</strong>: the item was created in a previous release and 
         has since been deleted</li>
         </ul>
+    <p>
     The status information evolves according to the logic in this state diagram:
     </p><p>
     <img src="{% static 'images/HistoryStatus.png' %}"> 
@@ -191,17 +197,18 @@
     Specification items are divided into <strong>categories</strong>. 
     Specification items in the same category have the same behaviour (i.e. they are
     treated in the same way by the editor).  
-    The specification item categories are defined during the <a href+"">editor instantiation process</a>.
-    </p><p>        
+    The specification item categories are defined during the <a class="text-decoration-none" href="#Editor_Instantiation">editor instantiation process</a>.
+    </p><p>
     Some specification item attributes (the <strong>core attributes</strong>) have a semantics which is
     independent of the specification item category.
     Other specification item attributes have a category-specific semantics (the <strong>category-specific
     attributes</strong>).
-    </p><p>
-        
+    </p>
+
     <h5><a name="CoreAttr">Core Attributes</a></h5>
     <p>
-    The core attributes of specification items are:    
+        The core attributes of specification items are:
+    </p>
     <ul>
     <li><i>Category</i>: the category of the specification item (an enumeratd value; the range
                             of enumerated values is defined when the editor is instantiated)</li>
@@ -223,10 +230,11 @@
     <li><i>Rationale</i>: the rationale for the existence of the specification item or for its value</li>
     <li><i>Remarks</i>: any remarks applicable to the specification item</li> 
     <li><i>Implementation</i>: information about how the specification item is implemented</li> 
-    <li><i>ValSet</i>: the <a href="#ValSets">ValSet</a> to which the specification item belongs</li> 
+    <li><i>ValSet</i>: the <a class="text-decoration-none" href="#ValSets">ValSet</a> to which the specification item belongs</li> 
     <li><i>ChangeLog</i>: the reason for a change in a specification item whose status is either
                              'confirmed' or 'modified'</li> 
     </ul>
+    <p>
     Within a project, a specification item is uniquely identified by the pair <strong>domain:name</strong>. 
     The domain is used to capture a set of logically related specification items and acts as a kind
     of name space.
@@ -236,11 +244,12 @@
     <h5><a name="CatSpecAttr">Category-Specific Attributes</a></h5>
     <p>
     The category-specific specification items are defined during the 
-    <a href="#Instantiaton">instantiation process</a>, when the concrete 
+    <a class="text-decoration-none" href="#Editor_Instantiation">instantiation process</a>, when the concrete 
     specification item categories are defined.
     It is at this time that the category-specific attributes are given their meaning.
     </p><p>
-    The category-specific attributes are:
+        The category-specific attributes are:
+    </p>
     <ul>
     <li><i>Primary and Secondary Kind</i> (p_kind and s_kind): enumerated values defining the role or kind of a 
         specification item</li>
@@ -250,7 +259,7 @@
     <li><i>Value</i>: a text attribute possibly representing a numerical value</li>
     <li><i>t1 to t5</i>: text attributes</li>
     </ul>
-    </p><p>
+    <p>
     Depending on the category, some of these attributes are optional and others are mandatory.
     </p><p>
     The default editor provides an example of how specification items are defined 
@@ -259,7 +268,8 @@
     
     <h5><a name="SpecItemOper">Operations Performed on Specification Items</a></h5>
     <p>
-    The following operation may be performed on a specification item (spec_item):
+        The following operation may be performed on a specification item (spec_item):
+    </p>
     <ul>
     <li><strong>Add</strong>: a new spec_item is created</li>
     <li><strong>Edit</strong>: an existing spec_item is modified</li>
@@ -271,7 +281,7 @@
     <li><strong>Refresh</strong>: the external content of a specification item is refreshed
                                 (only for external specification items)</li>
     </ul>
-    </p><p>
+    <p>
     The semantics of these operations is illustrated in the activity diagrams below.
     In all cases, the user is presented a form which he fills in with information related to
     the requested operation.
@@ -280,7 +290,7 @@
     The validity check comprises: (a) generic checks and (b) category-specific checks.
     The generic checks are specified in the activity diagrams below.
     The category-specific checks are defined during the 
-    <a href="#Instantiaton">editor instantiation process</a>.
+    <a class="text-decoration-none" href="#Editor_Instantiation">editor instantiation process</a>.
     </p><p>
     <img src="{% static 'images/AddSpecItem.png' %}"> 
     </p><p>
@@ -300,36 +310,37 @@
     Specification items which are entirely defined within the editor are 
     <strong>internal specification items</strong>.
     Specification items which are partially defined externally (e.g. figures created outside the editor or
-    <a href="#BehaviouralModels">behavioural models</a> created in the FW Profile Editor) 
+    <a class="text-decoration-none" href="#Behavioural_Models">behavioural models</a> created in the FW Profile Editor) 
     are <strong>external specification items</strong>.
     </p><p>
     Even for external specification items, the user can still add information to the data
     imported from the external source (e.g. a descriptive text or a rationale).
     The attributes of external specification items which cannot be edited (because they contain information
     which is imported from outside the editor) are identified as such in the 
-    <a href="#EditorConfig">configuration dictionary</a> of the editor.  
+    <a class="text-decoration-none" href="#Editor_Configuration_Dictionary">configuration dictionary</a> of the editor.  
     </p><p>
     The distinction between internal and external specification items is at the level of specification
     item categories. 
-    For instance, in the <a href="#DefEditorModel">default editor model</a>, 
-    the <a href="#BehaviouralModels">behavioural model</a> category contains only
+    For instance, in the <a class="text-decoration-none" href="#Default_Editor_Model">default editor model</a>, 
+    the <a class="text-decoration-none" href="#Behavioural_Models">behavioural model</a> category contains only
     external specification items; all other categories only contain internal specification items.
     </p><p>
     External specification items may only belong to the default ValSet (because the specification 
     items are imported from an external source and hence it is not possible for the editor to 
     maintain mutliple versions of the same instance).
     </p><p>
-    At framework level, the editor defines an <a href+"ExtSpecItemInterface">interface to access 
+    At framework level, the editor defines an <a class="text-decoration-none" href="#Interface_to_External_Specification_Items">interface to access 
     external specification items</a>.
-    During the <a href+"#Editor_Instantiation">editor instantiation process</a>, users implement 
+    During the <a class="text-decoration-none" href="#Editor_Instantiation">editor instantiation process</a>, users implement 
     this interface for their external specification items. 
     </p>
 
-    <h5><a name="ExtSpecItemInterface">Interface to External Specification Items</a></h5>
+    <h5><a name="Interface_to_External_Specification_Items">Interface to External Specification Items</a></h5>
     <p>
     The interface to external specification items is in module <code>ext_cats</code>.
     Users who wish the editor to access external specification items, must populate this module,
     for each category of external specification items, with the following functions:
+    </p>
     <ul>
     <li><code>ext_spec_item_get_choices</code>: return the list of external items. This
     function is used in the form through which users import an external specification item.</li>
@@ -337,20 +348,20 @@
     item (i.e. an item in the list returned by <code>ext_spec_item_get_choices</code>).</li>
     <li><code>ext_model_refresh</code>: refresh an external item.</li>
     </ul>
-    </p>
 
 
     <h5><a name="Markdown">Markdown Tags</a></h5>
     <p>
-    A simple markdown language is supported to let users emphasize text:
+        A simple markdown language is supported to let users emphasize text:
+    </p>
     <ul>
     <li>'**...**' is redendered as <b>bolded text</b></li>
     <li>'++...++' is redendered as <u>underlined text</u></li>
     <li>'__...__' is redendered as <i>italicized text</i></li>
     <li>'``...``' is redendered as <code>teletype text</code></li>
     </ul>
-    </p><p>
-    Markdown can be used in attributes of <a href=#Rendering_of_Specification_Item_Attributes>kind</a>
+    <p>
+    Markdown can be used in attributes of <a class="text-decoration-none" href=#Rendering_of_Specification_Item_Attributes>kind</a>
     <code>plain_text</code> and <code>ref_text</code>.   
     It is not possible to nest markdown tags (e.g. it is not possible to have a 
     word which is both underlined and bolded. 
@@ -364,13 +375,14 @@
     An attribute of a specification item has multiple representations which depend on the kind of content it
     holds and on the context within which it is rendered.
     The kind of content is one of the following:
+    </p>
     <ul>
-        <li>plain_text: text with <a href=#Markdown_Tags>markdown tags</a> 
-                        but without <a href="#SpecItemLinks">internal references</a></li>
-        <li>ref_text: text with <a href=#Markdown_Language>markdown tags</a> 
-                      and with <a href="#SpecItemLinks">internal references</a></li>
+        <li>plain_text: text with <a class="text-decoration-none" href="#Markdown_Tags">markdown tags</a> 
+                        but without <a class="text-decoration-none" href="#SpecItemLinks">internal references</a></li>
+        <li>ref_text: text with <a class="text-decoration-none" href="#Markdown_Tags">markdown tags</a> 
+                      and with <a class="text-decoration-none" href="#SpecItemLinks">internal references</a></li>
         <li>spec_item_ref: a reference to another specification item 
-            (<a href="#SpecItemLinks">direct link</a>)</li>
+            (<a class="text-decoration-none" href="#SpecItemLinks">direct link</a>)</li>
         <li>plain_ref: a reference to a database model instance other than a specification item</li>
         <li>eval_ref: a mathematical formula expressed in term of numerical values and/or of the
             values of the same attribute of other specification items in the same category </li>
@@ -379,16 +391,16 @@
         <li>date: a date</li>
         <li>table: a json object consisting of an array of N arrays of M items of primitive type
                    to represent an NxM table. Text in each table entry can include 
-                   <a href=#Markdown_Tags>markdown tags</a> and 
-                   <a href="#SpecItemLinks">internal references</a></li>
+                   <a class="text-decoration-none" href="#Markdown_Tags">markdown tags</a> and 
+                   <a class="text-decoration-none" href="#SpecItemLinks">internal references</a></li>
     </ul>
-    </p><p>
+    <p>
     The table below shows which kind of content is allowed for which attribute.
     With the exception of the 'value' attribute, all attributes have only one kind of
     allowed content.
     The definition of the kind of content of each attribute is done in the editor
-    <a href="#EditorConfig">configuration dictionary</a>.
-    </p><p>
+    <a class="text-decoration-none" href="#EditorConfig">configuration dictionary</a>.
+    </p>
     <table class="table table-hover table-striped table-sm">
       <thead>
         <tr class="table-warning">
@@ -528,7 +540,8 @@
       </tbody>
     </table>
     <p>
-    The potential representations of the value of a specification item attribute are:
+        The potential representations of the value of a specification item attribute are:
+    </p>
     <ul>
     <li><strong>Database Representation</strong> is the representation of the attribute in the database</li>
     <li><strong>Display Representation</strong> is used when rendering the attribute in an HTML page</li>
@@ -537,11 +550,12 @@
     <li><strong>Edit Representation</strong> is used when rendering the attribute in a form for editing
         by the user</li>
     <li><strong>Export Representation</strong> is used when rendering the item for 
-                                               <a href="#ExpImp">plain export</a> to csv format</li>
+                                               <a class="text-decoration-none" href="#ExpImp">plain export</a> to csv format</li>
     </ul>
-    </p><p>
+    <p>
     The table shows how each kind of content is transformed when it is rendered in one of the above
     representations.
+    </p>
    
     <table class="table table-hover table-striped table-sm">
       <thead>
@@ -632,23 +646,23 @@
         </tr>
       </tbody>
     </table>
-    </p>
     
     <h5><a name="SpecItemLinks">Links Between Specification Items</a></h5>
     <p>
-    The editor models three kinds of links between specification items:
+        The editor models three kinds of links between specification items:
+    </p>
     <ul>
     <li>Direct Links</li>
     <li>internal References</li>
     <li>Traceability Links</li>
     </ul>
-    <p></p>
+    <p>
     <strong>Direct links</strong> are implemented through the <code>p_link</code> and 
     <code>s_link</code> attributes of a specification item.
     They establish a one-to-one link between two specification items.
     Direct links are robust to deletion: the target of a direct link cannot be deleted unless
     the link is deleted first. 
-    <p></p>
+    </p><p>
     Users create a direct link when they edit a specification item.
     If, for instance, the editor has been configured to have a <code>p_link</code> attribute
     for specification items of category C, then when an instance of category C is edited,
@@ -658,14 +672,14 @@
     Function <code>get_s_link_choices</code> serves a similar purpose for direct links
     implemented through the <code>s_link</code> attribute and it, too, must be
     customized by the user.
-    </p><p>  
+    </p><p>
     As an example, in the default editor configuration, both data items and data item types are 
     modelled as specification items.
     A direct link is then used to link a data items to its type.
-        
-    <p></p>
+    </p><p>
     <strong>Internal references</strong> are embedded within the text of one of the following 
     specification item attributes:
+    </p>
     <ul>
     <li>Description</li>
     <li>Value</li>
@@ -673,13 +687,13 @@
     <li>Remarks</li>
     <li>t1 to t5</li>
     </ul>
-    </p><p>
+    <p>
     Users create the internal reference when they edit the attribute.
     The internal reference is introduced through the following syntax: '#cat:domain:name'.
     Here, 'cat' is the category of the target specification item; 'domain' is the domain of the
     target specification item; and 'name' is its name.
     The editor offers an auto-completion facility to facilitate the creation of an internal reference link. 
-    </p><p>  
+    </p><p>
     When the reference is rendered for disply in an html page, it is converted to a hyperlink; when
     it is rendered for export, it is converted to '#dom:name'.
     </p><p>
@@ -696,7 +710,7 @@
     In this case, the link is itself a specification item.
     This has the advantage that it is possible to associate additional information
     to it (to, for instance, describe the nature or the reason for the link) and to
-    track its evolution in time through the <a href="#Releases">history mechanism</a>.
+    track its evolution in time through the <a class="text-decoration-none" href="#Releases">history mechanism</a>.
     </p><p>
     If specification item S1 is to be linked to specification item S2, then a specification
     item L is created such that its <code>p_link</code> points to S1 and its <code>s_link</code>
@@ -719,7 +733,7 @@
     A traceability link is then establshed by creating an instance of VerLink and using it
     to link a specification item of a category other than VerItem or VerLink to a specification
     item of category VerItem.
-    </p><p>  
+    </p><p>
     In another example, a user might have a need to maintain two sets of requirement: parent
     requirements (representing, for instance, system-level specifications) and child requirements
     (representing, for instance, the specification of unit within the system).
@@ -733,23 +747,17 @@
     
     <h5><a name="SpecItemKinds">Specification Item Kinds</a></h5>
     <p>
-    The <a href+"#Category-Specific_Attributes">category-specific 
+    The <a class="text-decoration-none" href="#Category-Specific_Attributes">category-specific 
     attributes</a> <code>p_kind</code> and <code>s_kind</code>
     allow two enumerated values to be associated to specification items.
     They are intended to capture information related to the status or role of a specification item.
     The range of values that these two attributes can take is category-dependent and
     is under the control of the user (it is defined through the <code>p_kind_choices</code> and
-    <code>s_kind_choices</code> elements in the <a href="#Editor_Configuration_Dictionary">editor 
+    <code>s_kind_choices</code> elements in the <a class="text-decoration-none" href="#Editor_Configuration_Dictionary">editor 
     configuration dictionary</a>).
-    </p><p>
-    
-    
     </p>
-    
-    
-    
-    
-    
+
+
     <h4><a name="ValSets">ValSets</a></h4>
     <p>
     A ValSet is a set of alternative values for the specification items in a project.
@@ -770,6 +778,7 @@
     Subsequently, the user can <strong>split</strong> the specification item. 
     When specification item S1 in the Default ValSet is split, a new specification item S2 is created with
     the following characteristics:
+    </p>
     <ul>
     <li>S2 has the same domain and name as S1</li>
     <li>The val_set attribute of S2 is different from the val_set attribute of all other specification
@@ -779,8 +788,9 @@
     <li>Other pointer attributes of S2 are left blank</li>
     <li>Non-pointer attributes of S2 other than domain and name can be set freely</li>
     </ul>
-    </p><p>
+    <p>
     When the two specification items S1 and S2 are edited, the following constraints are enforced:
+    </p>
     <ul>
     <li>The ValSet cannot be changed (i.e. the ValSet attribute can only be modified in a split operation)</li>
     <li>The domain and the name of S2  cannot be changed</li>
@@ -789,6 +799,7 @@
     <li>If S1 is deleted, then S2 is deleted, too</li>
     <li>Pointer attributes of S1 can only point to specification items in the Default ValSet</li>
     </ul>
+    <p>
     Thus, S2 serves as a clone of S1 which differs from it in having potentially different values for its
     attributes of primitive type.
     </p>
@@ -796,23 +807,24 @@
     
     <h4><a name="ExpImp">Export and Import</a></h4>
     <p>
-    There are three kinds of data imports and exports:
+        There are three kinds of data imports and exports:
+    </p>
     <ul>
     <li>Plain Export/Import</li>
     <li>Export to Latex Format</li>
     <li>Project Export/Import</li>
     </ul> 
-    </p><p>
+    <p>
     <strong>Plain import and export</strong> are done when the editor is displaying the specification
     items in a given category and ValSet and, optionally, in a given domain. 
     The import/export function is applied to the specification items in the currently
     selected category and ValSet and, optionally, to the selected domain.    
-    </p><p>    
+    </p><p>
     Plain export generates a csv table holding all the specification items in the
     currently selected category, ValSet and domain.
-    The exported items are rendered in <a href="#SpecItemRep">export representation</a>.
+    The exported items are rendered in <a class="text-decoration-none" href="#SpecItemRep">export representation</a>.
     Only the latest version of a specification item is exported.
-    The exported fields are those listed in the <a href="#EditorConfig">configuration dictionary</a>
+    The exported fields are those listed in the <a class="text-decoration-none" href="#EditorConfig">configuration dictionary</a>
     for the selected category. The field names in the exported file are the labels
     the configuration dictionary.
     </p><p>
@@ -822,9 +834,10 @@
     category and of the currently selected ValSet.
     When the data in a csv file are imported, each row is assumed to define one specification
     item.
-    Only the fields in the <a href="#EditorConfig">configuration dictionary</a> for the
+    Only the fields in the <a class="text-decoration-none" href="#EditorConfig">configuration dictionary</a> for the
     selected category are imported. 
     Other fields are set as follows:
+    </p>
     <ul>
     <li>The identifier is set by the database back-end when the item is saved</li>
     <li>The owner is set to the user who triggered the import</li>
@@ -836,20 +849,21 @@
         a copy is made of the existing item. the status of the new item is set to MOD and
         its previous pointer is set to the newly-copied item</li>
     </ul>
+    <p>
     With respect to the last bullet, it is noted that the copy of the spec_item is made even
     if the imported spec_item is identical to the spec_item with the same domain:name
     in the database.
-    <p></p>
+    </p><p>
     The change_log attribute is defined for all spec_items and should be used to record the
     reason for a change in the content of a spec_item.
     The change_log attribute is imported alongside other attributes.
     It is the responsibility of the user to enter an appropriate text in this field in the
     import file.
-    <p></p>
+    </p><p>
     Each imported specification item is processed according to the following activity diagram:
-    <p>
+
     <img src="{% static 'images/ImportSpecItem.png' %}"> 
-    </p>
+    </p><p>
     The typical use case for the plain import/export functions is as follows.
     A user needs to perform the same operation on a large number of specification items (e.g.
     update their names; capitalize their domain name; clear their values; etc).
@@ -866,7 +880,8 @@
     If this duplication is undesirable, users must delete the unchanged specification
     items from the import file prior to importing it.    
         
-    <strong>Latex export</strong> is like plain export except for the following differences:    
+    <strong>Latex export</strong> is like plain export except for the following differences:
+    </p>
     <ul>
     <li>In addition to the fields in the configuration dictionary, the following fields
         are also exported: project and application name, owner, update time and status;
@@ -874,14 +889,15 @@
         of the fields in the database model converted to CamelCase</li>
     <li>Exported fields are converted from database to latex format</li>
     <li>If the 'value' attribute has a content of the 
-        <a href="#Rendering_of_Specification_Item_Attributes"><code>eval_ref</code></a> kind
+        <a class="text-decoration-none" href="#Rendering_of_Specification_Item_Attributes"><code>eval_ref</code></a> kind
         (i.e. if it containts a mathematical expression), then a new field called
         'NVal' is also exported holding the result of a numerical evaluation of the
         'value' attribute </li>
-    <li>If the category being exported has <a href="#Links_Between_Specification_Items">traceability
+    <li>If the category being exported has <a class="text-decoration-none" href="#Links_Between_Specification_Items">traceability
         links</a>, then the
         traceability links are also exported in a dedicated field  </li>    
-    </ul> 
+    </ul>
+    <p>
     There is no import facility for latex formatted files.
     </p><p>
     <strong>Project export</strong> is used to back up the data in a project.
@@ -898,75 +914,77 @@
     The project import function can only be triggered by the editor administrator.
     This restriction is due to the fact that import of incomplete or incorrect
     data can corrupt the database.
+    </p>
    
     <h4><a name="Generators">Generators</a></h4>
     <p>
-    Users can process data in the editor by first <a href="Export_and_Import">exporting</a> them
+    Users can process data in the editor by first <a class="text-decoration-none" href="Export_and_Import">exporting</a> them
     and then putting them through their processin applications.
     Alternatively, the editor also supports the embedding of generators which process 
     the specification items of a project to, for instance,
     generate code or inputs for documents.
-    They are defined as part of the <a href="#Instantiaton">instantiation of the editor</a>.
+    They are defined as part of the <a class="text-decoration-none" href="#Instantiaton">instantiation of the editor</a>.
     No generators are defined at framework levels. 
-    </p><p>    
+    </p><p>
     This part of the editor is still TBD.
-    </p><p>    
+    </p>
 
     <h4><a name="Data Input Restrictions"></a></h4>
     <p>
     User data can enter the database through three channels:
-    
+    </p>
     <ul>
     <li>Through an input form as direct input by the user</li>
-    <li>Through the <a href="#Export_and_Import">data import</a> facility</li>
+    <li>Through the <a class="text-decoration-none" href="#Export_and_Import">data import</a> facility</li>
     <li>Through the import facility for 
-    <a href="#Internal_and_External_Specification_Items">external data items</a></li>
+    <a class="text-decoration-none" href="#Internal_and_External_Specification_Items">external data items</a></li>
     </ul>
-
+    <p>
     For the first two channels, in order to enhance security and robustness, the editor imposes
     two restrictions: all input data are escaped and only ASCII characters are allowed.
     The last channel is under the control of the user who is responsible for defining the 
     functions which import the data from the external specification repository.
-    </p><p>    
+    </p>
 
 
     <h3><a name="Instantiation">Editor Instantiation</a></h3>
     <p>
     The Cordet FW Editor is built as a framework which users are expected to instantiate when they deploy the
     editor.
-    The <a href="#Default_Editor_Model">default instantiation</a> can be used as a blue-print 
+    The <a class="text-decoration-none" href="#Default_Editor_Model">default instantiation</a> can be used as a blue-print 
     for the user-specific instantiation. 
-    During the instantiation process: 
+    During the instantiation process:
+    </p>
     <ul>
     <li>The categories of specification items and their mutual relationships are defined</li>
     <li>The generators are defined</li>
     </ul>
-    </p><p>  
-    These tasks are performed by: 
+    <p>  
+        These tasks are performed by:
+    </p>
     <ul>
-    <li>The <a href="#Editor_Configuration_Dictionary">editor configuration dictionary</a> 
+    <li>The <a class="text-decoration-none" href="#Editor_Configuration_Dictionary">editor configuration dictionary</a> 
         (file <code>configs.json</code>) is populated
         to define the static characteristics of the specification item categories</li>
     <li>Functions <code>get_p_link_choices</code> and <code>get_s_link_choices</code> are
         implemented in
-        module <code>configs.py</code> to define the <a href="#Links_Between_Specification_Items">direct
+        module <code>configs.py</code> to define the <a class="text-decoration-none" href="#Links_Between_Specification_Items">direct
         links</a> between specification item categories</li>
     <li>If category-specific checks are needed on the data entered by user through a specification
         item editing form, function <code>do_cat_specific_checks</code> is implemented in
         module <code>configs.py</code></li>
-    <li>If <a href="#Internal_and_External_Specification_Items">external specification 
+    <li>If <a class="text-decoration-none" href="#Internal_and_External_Specification_Items">external specification 
         items</a> are used, then, for each category of 
         external specification item, the corresponding <code>ext_*</code> functions in module
         <code>ext_cats.py</code> are implemented
         </li>
     <li>TBD for generators</li>
-    </ul>
-    </p><p>    
+    </ul>    
     
    
     <h4><a name="EditorConfig">Editor Configuration Dictionary</a></h4>
     <p>
-    The <a href="#Editor_Configuration_Dictionary">editor configuration dictionary</a> 
+    The <a class="text-decoration-none" href="#Editor_Configuration_Dictionary">editor configuration dictionary</a> 
     is held in json format in file <code>configs.json</code>.
     The example in the editor delivery file can be used as a template for the 
     creation of project-specific configuration dictionaries.
@@ -974,6 +992,7 @@
     </p><p> 
     Its two top-level elements are <code>General</code> and <code>cats</code>.
     Element <code>General</code> defines general purpose items:
+    </p>
     <ul>
     <li>The separator for the csv files exported by the editor</li>
     <li>The end-of-line charater for text files exported by the editor</li>
@@ -982,8 +1001,10 @@
     <li>The maximum depth of recursion when evaluating formulas in the <code>value</code> 
         attribute of a specification item</li>
     </ul>
+    <p>
     The <code>cats</code> element defines the specification item category.
     Each category is defined in terms of:
+    </p>
     <ul>
     <li><code>name</code>: The name of the category</li>
     <li><code>level</code>: Either 'application' or 'project', depending on whether the
@@ -1007,7 +1028,7 @@
         <li><code>href_tip</code>: attributes displayed in the hovering tip over a link to a spec_item</li>
         </ul>
         </li>
-    <li><code>tracs</code>: If category C1 has a <a href="#Links_Between_Specification_Items">
+    <li><code>tracs</code>: If category C1 has a <a class="text-decoration-none" href="#Links_Between_Specification_Items">
         traceability link</a> to category C2 and if the traceability link is held in category CL,
         then:
         <ul>
@@ -1025,7 +1046,7 @@
         <li><code>label</code>: the label (the name) used for attribute</li>
         <li><code>req_in_form</code>: either 'True' or 'false' depending on whether the attribute
             is mandatory or optional</li>
-        <li><code>kind</code>: the <a href="#Rendering_of_Specification_Item_Attributes">kind</a>
+        <li><code>kind</code>: the <a class="text-decoration-none" href="#Rendering_of_Specification_Item_Attributes">kind</a>
             of specification item attribute</li>
         </ul>
         </li>
@@ -1050,7 +1071,7 @@
         link category and the  name of the traceability link (either <code>p_link</code> 
         or <code>s_link</code></li>
     </ul>
-    </p><p>    
+    
 
     <h4><a name="ConfigModule">Configuration Module</a></h4>
     <p>
@@ -1065,23 +1086,23 @@
     <code>get_p_link_choices</code> and <code>get_s_link_choices</code> in module
     <code>configs.py</code>.
     These two functions must be provided by the user as part of the editor configuration.
-    They encapsulate the <a href="#Links_Between_Specification_Items">direct
+    They encapsulate the <a class="text-decoration-none" href="#Links_Between_Specification_Items">direct
     links</a> between specification item categories.
-    </p><p> 
+    </p>
     
     <h4><a name="ExtCatModule">External Categories Module</a></h4>
     <p>
     Module <code>ext_cats.py</code> provides the functions which define the
-    <a href="#Interface_to_External_Specification_Items">interface to external 
+    <a class="text-decoration-none" href="#Interface_to_External_Specification_Items">interface to external 
     specification items</a>.
     This module must be provided by the user if there is a need for the editor to
     access an external specification item repository. 
-    </p><p> 
+    </p>
     
     <h4><a name="GenModule">Generator Module</a></h4>
     <p>
     Generators are still TBD.
-    </p><p> 
+    </p>
 
     <h3><a name="DefModel">Default Editor Model</a></h3>
     <p>
@@ -1089,21 +1110,22 @@
     number of specification item categories with very different characteristics and which
     can therefore serve as a blueprint for user who wish to define their editor model.
     The default editor configuration has been used to model the requirements of the
-    PUS Extension of the <a href="https://www.pnp-software.com/cordetfw">Cordet Framework</a>.
+    PUS Extension of the <a class="text-decoration-none" href="https://www.pnp-software.com/cordetfw">Cordet Framework</a>.
     Among other things, the default editor model demonstrates the following features
     of the editor:
+    </p>
     <ul>
     <li>Use of External Specification Items</li>
     <li>Use of Traceability Links between Specification Items</li>
     </ul>
-    </p><p> 
     
     
 
     <h4><a name="SpecItemCat">Specification Item Categories</a></h4>
     <p>
     The specification item categories in the default configuration of the Cordet FW Editor 
-    are listed below together with the semantics of their non-core attributes. 
+    are listed below together with the semantics of their non-core attributes.
+    </p>
     <ul>
     <li><i>Requirement</i>: specification of a feature of an application</li>
         <ul>
@@ -1225,6 +1247,7 @@
         <li>Secondary Link: the pointer to the verified item</li>
         </ul>
     </ul>
+    <p>
     The figure shows how categories are linked to each other through their <code>p_link</code> 
     and <code>s_link</code> attributes.
     The three boxes grouped together ("Application Cmd/Rep") are the categories
@@ -1241,7 +1264,7 @@
     <p>
     This is the only external specification item in the default editor configuration.
     Behavioural models are implemented as state machine or procedure models generated with the 
-    <a href="https://www.pnp-software.com/fwprofile/editor">FW Profile Editor</a>.
+    <a class="text-decoration-none" href="https://www.pnp-software.com/fwprofile/editor">FW Profile Editor</a>.
     The FW Profile Editor stores models in a database (the <i>FW Profile Editor Database</i>).
     Each model has an owner who is identified by its e-mail address.
     Within the FW Profile Editor, models have a name and can have a domain and a title.
@@ -1250,29 +1273,29 @@
     The Cordet FW Editor has a connection to the FW Profile Editor Database, which allows a user to import 
     selected models. 
     A user can only import FW Profile modes which belong to him.
-    A model is imported through the <a href="#Operations_Performed_on_Specification_Items">'add' 
+    A model is imported through the <a class="text-decoration-none" href="#Operations_Performed_on_Specification_Items">'add' 
     operation</a>.
-    </p><p>
+    </p>
     
-    <h5><a name="VerItems">Verification Items</a></h5> 
+    <h5><a name="VerItems">Verification Items</a></h5>
+    <p>
     Verification items hold verification information (e.g. a test case or the outcome
     of a review or analysis) for other specification items.
     The editor captures the links between a specification item and the verification items
     which verify it.
-    This is an example of a <a href="#Links_Between_Specification_Items">traceability link</a>
+    This is an example of a <a class="text-decoration-none" href="#Links_Between_Specification_Items">traceability link</a>
     because it captures a many-to-many relationship.
     A dedicated category (<i>Verification Link</i> or VerLink) has been defined to 
     hold an instance of a verification link between a specification item and 
     a verification item. 
-    </p><p>   
+    </p><p>
     The figure illustrates the way the traceabiity links are set up.
     In the figure, the yellow boxes represent the specification items to be verified,
     the red boxes represent the verification items which verify them and the green
     boxes are the traceability links.
     Thus, for instance, the figure indicates that verification item V1 verifies specification
     item S1 whereas verification item V2 verifies items S1, S2 and S3.   
-    </p><p>   
-
+    </p><p>
     <img src="{% static 'images/TracLinks.png' %}"> 
     </p> 
 
@@ -1305,7 +1328,7 @@ window.onload = function () {
                 level = parseInt(openLevel);
 
                 var anchor = titleText.replace(/ /g, "_");
-                toc += "<li><a href=\"#" + anchor + "\">" + titleText
+                toc += "<li><a class=\"text-decoration-none\" href=\"#" + anchor + "\">" + titleText
                     + "</a></li>";
 
                 return "<h" + openLevel + "><a name=\"" + anchor + "\">"
@@ -1320,27 +1343,10 @@ window.onload = function () {
     document.getElementById("toc").innerHTML += toc;
 };
 </script>
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
-
-
-    
-
-    
-    
-
-
-
+            </div>
+        </div>
+    </div>
 </div>
-
-    </div>     
 
 {% endblock %}
