@@ -1,0 +1,17 @@
+{
+    "DEBUG": true,
+	"SECURE_KEY": "q2d*yipxml^#9wv%-w8-79@q=xwb$d#n1*%q4%oqn6q^a+lvh#",
+	"DATABASES": {
+    		"default": {
+        		"ENGINE": "django.db.backends.mysql",
+        		"NAME": "cordetfw",
+        		"USER": "testuser",
+        		"PASSWORD": "testpw",
+        		"HOST": "db",
+        		"PORT": "3306"
+    		}
+	},
+	"MEDIA_ROOT": "/tmp/cordet_22/temp",
+	"LOG_FILE": "/tmp/cordet_22/temp/editor.log",
+	"BASE_URL": "/editor"
+}

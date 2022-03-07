@@ -4,3 +4,4 @@
 *.pyc
 /cordetfw_editor.geany
 /cordetfw_editor.log
+mysql_db_persist/
