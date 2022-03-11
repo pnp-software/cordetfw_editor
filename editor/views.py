@@ -813,8 +813,12 @@ def import_project(request):
         imp_project = os.path.join(imp_dir,'import_project.zip')
         with open(imp_project, 'wb') as fd:
             fd.write(zip_file.read())
-        zip_obj = ZipFile(imp_project, 'r')
-        zip_obj.extractall(imp_dir)
+        try:
+            zip_obj = ZipFile(imp_project, 'r')
+            zip_obj.extractall(imp_dir)
+        except Exception as e:
+            messages.error(request,'Unable to import project zip file: '+repr(e))
+            return redirect(base_url)
         zip_obj.close()
 
         import_project_tables(request, imp_dir)
