@@ -29,7 +29,7 @@ class ProjectForm(forms.Form):
         super(ProjectForm, self).__init__(*args, **kwargs)
         self.fields['owner'].choices = get_user_choices(project)
         self.fields['cats'].label = 'Categories'
-        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
+        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats.replace(',', ', ')
 
     def clean_owner(self):
         owner_id = self.cleaned_data['owner']
@@ -68,10 +68,10 @@ class ApplicationForm(forms.Form):
         super(ApplicationForm, self).__init__(*args, **kwargs)
         self.project = project
         self.fields['cats'].label = 'Categories'
-        self.fields['cats'].help_text = 'A subset of: ' + project.cats
+        self.fields['cats'].help_text = 'A subset of: ' + project.cats.replace(',', ', ')
 
     def clean_cats(self):
-        cats = self.cleaned_data['cats']
+        cats = self.cleaned_data['cats'].replace(' ','')
         cat_list = cats.split(',')
         err_msg = 'Must contain a comma-separated list of categories from: ' + self.project.cats
         if len(cat_list) == 0:
