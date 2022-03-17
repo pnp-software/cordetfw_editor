@@ -65,7 +65,7 @@ def spec_item_to_latex(spec_item):
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
             dic[label] = convert_db_to_latex(getattr(spec_item, key))
-        if value['kind'] == 'table':
+        elif value['kind'] == 'table':
             dic[label] = convert_db_to_latex(str(getattr(spec_item, key)))
         elif value['kind'] == 'spec_item_ref':
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
