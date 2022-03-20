@@ -162,16 +162,25 @@ def edit_project(request, project_id):
         return redirect(base_url)
     project = Project.objects.get(id=project_id)
     
-    # Handle case where edit_project is invoked to add a new user to the project 
+    # Handle case where edit_project is invoked to add a new user to the project or to change its role.
+    # If the new user is not yet attached to the project, it is added to it in the specified role.
+    # If the specified user is already attached to the project, it is checked whether it is necessary
+    # to change its role
     user_id = request.GET.get('user_id')
     user_role = request.GET.get('role')
-    if user_id != None:     
+    if user_id != None:    
+        user =  ProjectUser.objects.filter(project_id=project_id, user_id=user_id)
         if not ProjectUser.objects.filter(project_id=project_id, user_id=user_id).exists():
             new_project_user = ProjectUser(updated_at = datetime.now(tz=get_current_timezone()),
                                            user = User.objects.get(id=user_id),
                                            project = project,
                                            role = user_role)
             new_project_user.save()
+        else:
+            user =  ProjectUser.objects.get(project_id=project_id, user_id=user_id)
+            if user.role != user_role:
+                user.role = user_role
+                user.save()
     
     # Handle case where edit_project is invoked to delete a user from the project 
     del_user_id = request.GET.get('del_user_id')
