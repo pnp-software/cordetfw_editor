@@ -118,7 +118,7 @@ def add_application(request, project_id):
         form = ApplicationForm(project)
 
     context = {'form': form, 'project': project, 'title': 'Add Application to Project '+project.name, }
-    return render(request, 'application_form.html', context)    
+    return render(request, 'generic_form.html', context)    
 
 @login_required         
 def add_project(request):
@@ -153,7 +153,7 @@ def add_project(request):
         form = ProjectForm(None)
 
     context = {'form': form, 'title': 'Add New Project', }
-    return render(request, 'add_project_form.html', context)    
+    return render(request, 'generic_form.html', context)    
 
 
 @login_required         
@@ -273,7 +273,7 @@ def edit_application(request, application_id):
                                                  'cats': application.cats})
 
     context = {'form': form, 'title': 'Edit Application '+application.name, }
-    return render(request, 'application_form.html', context)
+    return render(request, 'generic_form.html', context)
 
 
 @login_required         
@@ -334,7 +334,7 @@ def add_val_set(request, project_id):
         form = ValSetForm()
 
     context = {'form': form, 'project': project, 'title': 'Add ValSet to Project '+project.name}
-    return render(request, 'valset_form.html', context)    
+    return render(request, 'generic_form.html', context)    
 
 @login_required         
 def edit_val_set(request, project_id, val_set_id):
@@ -356,7 +356,7 @@ def edit_val_set(request, project_id, val_set_id):
         form = ValSetForm(initial={'name': val_set.name, 'description': val_set.desc})
 
     context = {'form': form, 'project': project, 'title': 'Edit ValSet '+val_set.name}
-    return render(request, 'valset_form.html', context)    
+    return render(request, 'generic_form.html', context)    
 
 
 @login_required         

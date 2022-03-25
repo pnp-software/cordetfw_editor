@@ -28,6 +28,7 @@ class ProjectForm(forms.Form):
     def __init__(self, project, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
         self.fields['owner'].choices = get_user_choices(project)
+        self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats.replace(',', ', ')
 
@@ -67,6 +68,7 @@ class ApplicationForm(forms.Form):
     def __init__(self, project, *args, **kwargs):
         super(ApplicationForm, self).__init__(*args, **kwargs)
         self.project = project
+        self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + project.cats.replace(',', ', ')
 
@@ -84,10 +86,11 @@ class ApplicationForm(forms.Form):
 
 class ValSetForm(forms.Form):
     name = forms.CharField()
-    description = forms.CharField(widget=forms.Textarea)
+    description = forms.CharField(widget=forms.Textarea(attrs={'size': '255'}))
 
     def __init__(self, *args, **kwargs):
         super(ValSetForm, self).__init__(*args, **kwargs)
+        self.fields['description'].widget.attrs.update(rows = 2)
 
 
 class ReleaseForm(forms.Form):
@@ -98,29 +101,29 @@ class ReleaseForm(forms.Form):
 
 
 class SpecItemForm(forms.Form):
-    domain = forms.CharField()
-    name = forms.CharField()
-    title = forms.CharField()
-    desc = forms.CharField()
-    value = forms.CharField()
-    n1 = forms.IntegerField()
-    rationale = forms.CharField()
-    implementation = forms.CharField()
-    remarks = forms.CharField()
-    change_log = forms.CharField()
+    domain = forms.CharField(max_length=255)
+    name = forms.CharField(max_length=255)
+    title = forms.CharField(max_length=255)
+    desc = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    value = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    n1 = forms.IntegerField(min_value=0)
+    rationale = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    change_log = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     s_data = forms.JSONField()
     p_kind = forms.ChoiceField(choices=())
     s_kind = forms.ChoiceField(choices=())
     val_set = forms.ModelChoiceField(queryset=None, empty_label=None)
     p_link = forms.ModelChoiceField(queryset=None, empty_label='')
     s_link = forms.ModelChoiceField(queryset=None, empty_label='')
-    n2 = forms.IntegerField()
-    n3 = forms.IntegerField()
-    t1 = forms.CharField()
-    t2 = forms.CharField()
-    t3 = forms.CharField()
-    t4 = forms.CharField()
-    t5 = forms.CharField()
+    n2 = forms.IntegerField(min_value=0)
+    n3 = forms.IntegerField(min_value=0)
+    t1 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    t2 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    t3 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    t4 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
+    t5 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     ext_item = forms.ChoiceField(choices=())
     # use of charfield for submit and cancel values
     submit = forms.CharField()
@@ -146,6 +149,17 @@ class SpecItemForm(forms.Form):
         # set cancel_location as help_text value (uggly but it works)
         self.fields['cancel'].help_text = cancel_location
 
+        self.fields['desc'].widget.attrs.update(rows = 1)
+        self.fields['value'].widget.attrs.update(rows = 1)
+        self.fields['rationale'].widget.attrs.update(rows = 1)
+        self.fields['implementation'].widget.attrs.update(rows = 1)
+        self.fields['remarks'].widget.attrs.update(rows = 1)
+        self.fields['change_log'].widget.attrs.update(rows = 1)
+        self.fields['t1'].widget.attrs.update(rows = 1)
+        self.fields['t2'].widget.attrs.update(rows = 1)
+        self.fields['t3'].widget.attrs.update(rows = 1)
+        self.fields['t4'].widget.attrs.update(rows = 1)
+        self.fields['t5'].widget.attrs.update(rows = 1)
         self.fields['p_kind'].choices = get_p_kind_choices(cat)
         self.fields['s_kind'].choices = get_s_kind_choices(cat)
         self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id, s_parent_id)

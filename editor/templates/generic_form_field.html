@@ -1,0 +1,113 @@
+{% if field.widget_type == "text" %}
+<div class="mb-3 row">
+    <label for="{{ field.id_for_label }}"
+           class="col-form-label col-2">
+        {{ field.label }}{% if field.field.required %}*{% endif %}
+    </label>
+    <div class="col-10 col-lg-8">
+        <input type="text" id="{{ field.id_for_label }}"
+               class="form-control {% if field.errors %}is-invalid{% endif %}"
+               name="{{ field.html_name }}"
+               {% if field.value %}value="{{ field.value }}"{% endif %}
+               {% if field.field.max_length %}maxlength="{{ field.field.max_length }}"{% endif %}
+               {% if field.field.required %}required{% endif %}
+               {% if field.field.disabled %}disabled{% endif %}>
+        {% if field.errors %}
+        <div class="invalid-feedback">
+            {% for error in field.errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% if field.widget_type == "number" %}
+<div class="mb-3 row">
+    <label for="{{ field.id_for_label }}"
+           class="col-form-label col-2">
+        {{ field.label }}{% if field.field.required %}*{% endif %}
+    </label>
+    <div class="col-10 col-lg-8">
+        <input type="number" id="{{ field.id_for_label }}"
+               class="form-control {% if field.errors %}is-invalid{% endif %}"
+               name="{{ field.html_name }}"
+               {% if field.value %}value="{{ field.value }}"{% endif %}
+               {% if field.field.min_value %}min="{{ field.field.min_value }}"{% endif %}
+               {% if field.field.required %}required{% endif %}
+               {% if field.field.disabled %}disabled{% endif %}>
+        {% if field.errors %}
+        <div class="invalid-feedback">
+            {% for error in field.errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% if field.widget_type == "textarea" %}
+<div class="mb-3 row">
+    <label for="{{ field.id_for_label }}"
+           class="col-form-label col-2">
+        {{ field.label }}{% if field.field.required %}*{% endif %}
+    </label>
+    <div class="col-10 col-lg-8">
+        <textarea type="text" id="{{ field.id_for_label }}"
+                  class="form-control {% if field.errors %}is-invalid{% endif %} {{ field.field.widget.attrs.class }}"
+                  name="{{ field.html_name }}"
+                  {% if field.field.widget.attrs.rows %}rows="{{ field.field.widget.attrs.rows }}"{% endif %}
+                  {% if field.field.widget.attrs.size %}size="{{ field.field.widget.attrs.size }}"{% endif %}
+                  {% if field.field.required %}required{% endif %}
+                  {% if field.field.disabled %}disabled{% endif %}>{% if field.value %}{{ field.value }}{% endif %}</textarea>
+        {% if field.errors %}
+        <div class="invalid-feedback">
+            {% for error in field.errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% if field.widget_type == "select" %}
+<div class="mb-3 row">
+    <label for="{{ field.id_for_label }}"
+           class="col-form-label col-2">
+        {{ field.label }}{% if field.field.required %}*{% endif %}
+    </label>
+    <div class="col-10 col-lg-8">
+        <select id="{{ field.id_for_label }}"
+                class="form-select {% if field.errors %}is-invalid{% endif %}"
+                name="{{ field.html_name }}"
+                {% if field.field.required %}required{% endif %}
+                {% if field.field.disabled %}disabled{% endif %}>
+            {% for choice in field.field.choices %}
+            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+        {% if field.errors %}
+        <div class="invalid-feedback">
+            {% for error in field.errors %}
+            {{ error }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% if field.widget_type == "hidden" %}
+<input type="hidden" id="{{ field.id_for_label }}" name="{{ field.html_name }}">
+{% endif %}

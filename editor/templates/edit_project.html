@@ -6,83 +6,16 @@
             <h2 class="my-3">Add or Edit a Project</h2>
             <form method="post">
                 {% csrf_token %}
-                <div class="mb-3 row">
-                    <label for="{{ form.name.id_for_label }}"
-                           class="col-form-label col-2">{{ form.name.label }}</label>
-                    <div class="col-10 col-lg-8">
-                        <input type="text" id="{{ form.name.id_for_label }}"
-                               class="form-control {% if form.name.errors %}is-invalid{% endif %}"
-                               name="name" value="{{ form.name.value }}">
-                        {% if form.name.errors %}
-                        <div class="invalid-feedback">
-                            {% for error in form.name.errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="mb-3 row">
-                    <label for="{{ form.owner.id_for_label }}"
-                           class="col-form-label col-2">{{ form.owner.label }}</label>
-                    <div class="col-10 col-lg-8">
-                        <select id="{{ form.owner.id_for_label }}"
-                                class="form-select {% if form.owner.errors %}is-invalid{% endif %}"
-                                name="owner">
-                            {% for choice in form.owner.field.choices %}
-                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
-                            {% endfor %}
-                        </select>
-                        {% if form.owner.errors %}
-                        <div class="invalid-feedback">
-                            {% for error in form.owner.errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="mb-3 row">
-                    <label for="{{ form.cats.id_for_label }}"
-                           class="col-form-label col-2">{{ form.cats.label }}</label>
-                    <div class="col-10 col-lg-8">
-                        <input type="text" id="{{ form.cats.id_for_label }}"
-                               class="form-control {% if form.cats.errors %}is-invalid{% endif %}"
-                               name="cats" value="{{ form.cats.value }}">
-                        {% if form.cats.errors %}
-                        <div class="invalid-feedback">
-                            {% for error in form.cats.errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <div class="form-text">{{ form.cats.help_text }}</div>
-                    </div>
-                </div>
-                <div class="mb-3 row">
-                    <label for="{{ form.description.id_for_label }}"
-                           class="col-form-label col-2">{{ form.description.label }}</label>
-                    <div class="col-10 col-lg-8">
-                        <textarea type="text" id="{{ form.description.id_for_label }}"
-                                  class="form-control {% if form.description.errors %}is-invalid{% endif %}"
-                                  name="description">{{ form.description.value }}
-                        </textarea>
-                        {% if form.description.errors %}
-                        <div class="invalid-feedback">
-                            {% for error in form.description.errors %}
-                            {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
+                {% for field in form %}
+                {% include "generic_form_field.html" %}
+                {% endfor %}
                 <button type="submit" class="btn btn-primary">Submit</button>
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger">
-                    {{ form.non_field_errors }}
-                </div>
-                {% endif %}
             </form>
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
 
 
             <div class="row mt-5">
