@@ -63,12 +63,13 @@ class ProjectForm(forms.Form):
 class ApplicationForm(forms.Form):
     name = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
-    cats = forms.CharField()
+    cats = forms.CharField(widget=forms.Textarea)
 
     def __init__(self, project, *args, **kwargs):
         super(ApplicationForm, self).__init__(*args, **kwargs)
         self.project = project
         self.fields['description'].widget.attrs.update(rows = 2)
+        self.fields['cats'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + project.cats.replace(',', ', ')
 
