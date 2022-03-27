@@ -21,6 +21,7 @@ def has_read_access_to_project(request, project):
         messages.error(request, 'This operation requires read access to project '+project.name)
         return False
 
+
 def has_write_access_to_project(request, project):
     """ Return True if user owns the project or is assigned to it with read/write access """
     if (request.user.id == project.owner.id):
@@ -38,6 +39,15 @@ def has_write_access_to_project(request, project):
         
 
 def can_create_project(request):
+    """ Return True if user is admin """
+    if request.user.is_staff:
+        return True
+    else:
+        messages.error(request, 'This operation is only accessible to a staff user')
+        return False
+
+
+def can_repair(request):
     """ Return True if user is admin """
     if request.user.is_staff:
         return True

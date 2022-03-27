@@ -41,7 +41,8 @@ from editor.resources import ProjectResource, ApplicationResource, ProjectUserRe
 from editor.ext_cats import ext_model_refresh
 from editor.convert import update_pattern_edit, del_pattern_edit
 from editor.access import is_project_owner, has_read_access_to_project, \
-                    can_create_project, can_add_val_set, has_write_access_to_project
+                    can_create_project, can_add_val_set, has_write_access_to_project, \
+                    can_repair
 
 import cexprtk
 import logging
@@ -81,6 +82,15 @@ def help(request):
     """Help function for home page of CordetFwEditor site"""
     context = {'project_name': 'n.a.'}
     return render(request, 'help.html', context=context)
+
+
+@login_required  
+def repair(request):
+    """Repair database"""
+    if not can_repair(request):
+        return redirect(base_url)
+    messages.warning(request, 'Nothing to repair')
+    return redirect(base_url)
 
 
 @login_required         

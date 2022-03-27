@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('help/', views.help, name='help'),
+    path('repair/', views.repair, name='repair'),
     path('', include('django.contrib.auth.urls')),
     path('change_password', views.change_password, name='change_password'),
     
