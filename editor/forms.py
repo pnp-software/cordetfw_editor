@@ -218,7 +218,9 @@ class SpecItemForm(forms.Form):
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
 
     def clean_s_data(self):
-        cs_s_data = self.cleaned_data['s_data']   
+        cs_s_data = self.cleaned_data['s_data']
+        if cs_s_data == None:
+            cs_s_data = '{}'
         return cs_s_data
                     
     def clean(self):
