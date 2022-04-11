@@ -511,7 +511,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
                         exclude(status='DEL').exclude(status='OBS')
     query_sets = SpecItem.objects.none()
     for cat in project.cats.split(','):
-        query_set = spec_items.filter(cat=cat)
+        query_set = spec_items.filter(cat=cat.strip())
         query_sets = query_sets | query_set
         
     context = {'form': form, 'project': project, 'title': title, 'spec_items': query_sets.order_by('cat','domain','name')}
