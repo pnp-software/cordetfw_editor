@@ -88,6 +88,8 @@ def convert_db_to_display(s):
     The string s is a text field read from the database. It
     contains markdown text and internal references in the form #iref:n. 
     Internal references are replaced with <domain>:<name> and hyperlinks.
+    If the target of the hyperlink is an itemw which is either MODified or
+    DELeted, the hyperlink is in red font.
     Invalid references are replaced with: ERROR:n.
     Markdown text is converted to html.
     """
@@ -104,8 +106,13 @@ def convert_db_to_display(s):
             for title_attr in title_attrs:
                 title = title + configs['cats'][item.cat]['attrs'][title_attr]['label'] +': '+\
                         convert_db_to_edit(getattr(item, title_attr)) + '&#13;'
-            iref_html = '<a class="link-table-list-spec" href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+title+'\">'+\
-                    item.domain+':'+item.name+'</a>'
+            if item.status in ['DEL', 'MOD']:
+                title = 'Status: ' + item.status + '&#13;' + title
+                iref_html = '<a href=\"'+target+'#'+item.domain+':'+item.name+'\" class="link-danger" title=\"'+title+'\">'+\
+                            item.domain+':'+item.name+'</a>'
+            else: 
+                iref_html = '<a href=\"'+target+'#'+item.domain+':'+item.name+'\" title=\"'+title+'\">'+\
+                            item.domain+':'+item.name+'</a>'
             return iref_html
         except ObjectDoesNotExist:
             return 'ERROR:'+match.group(2)
@@ -153,7 +160,8 @@ def conv_db_disp_table(context, item, name):
 def conv_db_disp_spec_item_ref(context, spec_item, name):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
-    on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind)
+    on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind).
+    If the target spec_item is MODified or DELeted, then its hyperlink is in red.
     """
     spec_item_link = getattr(spec_item, name)
     if spec_item_link == None:
@@ -172,7 +180,11 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
         s_title = s_title + configs['cats'][spec_item_link.cat]['attrs'][title_attr]['label'] +': '+\
                 convert_db_to_edit(getattr(spec_item_link, title_attr)) + '&#13;'
     
-    return '<a class="link-table-list-spec" href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
+    if spec_item_link.status in ['MOD', 'DEL']:
+        s_title = 'Status: ' + spec_item_link.status + '&#13;' + s_title
+        return '<a href=\"'+s_href+'\" class="link-danger" title=\"'+s_title+'\">'+s_name+'</a>'
+    else:
+        return '<a href=\"'+s_href+'\" title=\"'+s_title+'\">'+s_name+'</a>'
    
  
 def conv_db_disp_eval_ref(context, item, name):
