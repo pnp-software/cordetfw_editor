@@ -92,7 +92,11 @@
                 {% if field.field.required %}required{% endif %}
                 {% if field.field.disabled %}disabled{% endif %}>
             {% for choice in field.field.choices %}
-            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% if field.value == choice.0 %}
+                    <option value="{{ choice.0 }}" selected>{{ choice.1 }}</option>
+                {% else %}
+                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% endif %}
             {% endfor %}
         </select>
         {% if field.errors %}
