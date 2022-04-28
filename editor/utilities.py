@@ -211,19 +211,19 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
 def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
                      sel_val, s_parent_id, p_parent_id, target_spec_item):
     """
-    Compute the url to which the user is re-directed after having added/copied/edited/delete
+    Compute the url to which the user is re-directed after having added/copied/edited/deleted
     a spec_item. If s_parent_id or p_parent_id are different from 'None', then the 
-    add/copy/edit /del operation is being done on a spec_item in an expansion list and
+    add/copy/edit/del operation is being done on a spec_item in an expansion list and
     hence the re-direct is to the list_spec_items view with an expand_id. 
     """
     if (s_parent_id != None):
         s_parent = SpecItem.objects.get(id=s_parent_id)
-        target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
+        target = '#'+s_parent.domain+':'+s_parent.name
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
                            '/'+sel_val+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
     if (p_parent_id != None):
         p_parent = SpecItem.objects.get(id=p_parent_id)
-        target = '#expand:'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
+        target = '#'+p_parent.domain+':'+p_parent.name 
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
                            '/'+sel_val+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
     
