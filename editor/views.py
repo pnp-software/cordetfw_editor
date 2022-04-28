@@ -385,7 +385,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     domains = get_domains(cat, application_id, project_id) 
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
     
-    if (application_id == 0):   # Items to be listed are 'project items'
+    if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                     exclude(status='DEL').exclude(status='OBS') 
     else:                       # Items to be listed are 'application items'
