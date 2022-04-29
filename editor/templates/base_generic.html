@@ -24,10 +24,12 @@
                         {% url 'admin:index' as admin_url %}
                         <a class="nav-link {% if request.get_full_path == admin_url %} active {% endif %}" href="{{ admin_url }}">Admin</a>
                     </li>
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         {% url 'repair' as repair_url %}
                         <a class="nav-link {% if request.get_full_path == repair_url %} active {% endif %}" href="{{ repair_url }}">Repair</a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         {% url 'help' as help_url %}
                         <a class="nav-link {% if request.get_full_path == help_url %} active {% endif %}" href="{{ help_url }}">Help</a>
