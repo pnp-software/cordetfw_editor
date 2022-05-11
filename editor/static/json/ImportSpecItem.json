@@ -1,5 +1,5 @@
 {
-     "editorVersion": "5.27",
+     "editorVersion": "5.28",
      "states": [
           {
                "id": 1,
@@ -312,7 +312,7 @@
                     "x": 372,
                     "y": 554,
                     "width": 196,
-                    "height": 80,
+                    "height": 68,
                     "r": 10,
                     "rx": 10,
                     "ry": 10,
@@ -335,7 +335,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Update existing spec_item with \ncontent of imported spec_item and set:\n(a) previous pointer to old_spec_item\n(b) owner to the current user\n(c) update time to the current time",
+                    "entryDesc": "Update existing spec_item with \ncontent of imported spec_item and set:\n(a) owner to the current user\n(b) update time to the current time",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -451,7 +451,7 @@
                "selected": false
           },
           {
-               "id": 113,
+               "id": 24,
                "attrs": {
                     "x": 557,
                     "y": 383,
@@ -474,7 +474,7 @@
                "selected": false
           },
           {
-               "id": 116,
+               "id": 26,
                "attrs": {
                     "x": 537,
                     "y": 442.5,
@@ -1187,7 +1187,7 @@
                          [
                               "M",
                               470,
-                              639
+                              627
                          ],
                          [
                               "L",
@@ -1347,8 +1347,8 @@
                     "identifier": "",
                     "guardFunc": "",
                     "actionFunc": "",
-                    "guardType": "function",
-                    "actionType": "function",
+                    "guardType": "call function",
+                    "actionType": "call function",
                     "guardCode": "",
                     "actionCode": ""
                },
@@ -1365,8 +1365,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 113,
-               "stateToID": 116,
+               "stateFromID": 24,
+               "stateToID": 26,
                "selected": false
           }
      ],
@@ -1376,8 +1376,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1243,
-               "height": 685,
+               "width": 1179,
+               "height": 615,
                "r": 0,
                "rx": 0,
                "ry": 0,
