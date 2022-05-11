@@ -688,22 +688,26 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     export_type = request.GET.get('export')
 
     if (application_id == 0):   # Items to be exported are 'project items'
-        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                    order_by('domain','name') 
+        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id)
         fdName = project.name.replace(' ','_') + cat + '.csv'
     else:                       # Items to be exported are 'application items'
         application = Application.objects.get(id=application_id)
-        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                    order_by('domain','name') 
+        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id)
         fdName = application.name.replace(' ','') + cat + '.csv'
         
     items = items.exclude(status='DEL').exclude(status='OBS')  
         
+    if order_by == None:    
+        items = items.order_by('domain','name')
+    elif order_by in ('p_link', 's_link'):
+        items = items.order_by(order_by+'__domain',order_by+'__name')
+    elif order_by == 'owner':
+        items = items.order_by(order_by+'__username', 'domain','name')
+    else:
+        items = items.order_by(order_by, 'domain','name')
+        
     if (sel_val != 'Sel_All'):
         items = items.filter(domain=sel_val)
-
-    if order_by != None:
-        items = items.order_by(order_by, 'domain','name')
 
     csv_sep = configs['general']['csv_sep']
     fd = StringIO()
