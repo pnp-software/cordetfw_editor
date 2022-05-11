@@ -106,7 +106,7 @@ def convert_db_to_display(s):
             for title_attr in title_attrs:
                 title = title + configs['cats'][item.cat]['attrs'][title_attr]['label'] +': '+\
                         convert_db_to_edit(getattr(item, title_attr)) + '&#13;'
-            if item.status in ['DEL', 'MOD']:
+            if item.status in ['DEL', 'MOD', 'NEW']:
                 title = 'Status: ' + item.status + '&#13;' + title
                 iref_html = '<a href=\"'+target+'#'+item.domain+':'+item.name+'\" class="link-danger" title=\"'+title+'\">'+\
                             item.domain+':'+item.name+'</a>'
@@ -180,7 +180,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
         s_title = s_title + configs['cats'][spec_item_link.cat]['attrs'][title_attr]['label'] +': '+\
                 convert_db_to_edit(getattr(spec_item_link, title_attr)) + '&#13;'
     
-    if spec_item_link.status in ['MOD', 'DEL']:
+    if spec_item_link.status in ['MOD', 'DEL', 'NEW']:
         s_title = 'Status: ' + spec_item_link.status + '&#13;' + s_title
         return '<a href=\"'+s_href+'\" class="link-danger" title=\"'+s_title+'\">'+s_name+'</a>'
     else:
