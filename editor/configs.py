@@ -27,6 +27,10 @@ def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name') 
         return q1 | q2
 
+    if cat == 'RiskScenario':
+        return SpecItem.objects.filter(project_id=project.id, cat='OpContext').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+
     if cat == 'VerLink':
         return SpecItem.objects.filter(project_id=project.id, cat='VerItem').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
@@ -74,6 +78,10 @@ def get_s_link_choices(cat, project, application, s_parent_id, p_parent_id):
     if s_parent_id != None:
         return SpecItem.objects.filter(id=int(s_parent_id))
         
+    if cat == 'RiskScenario':
+        return SpecItem.objects.filter(project_id=project.id, cat='DisrEvt').\
+                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
+
     if cat == 'EnumValue': 
         return SpecItem.objects.filter(project_id=project.id, cat='EnumType'). \
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
