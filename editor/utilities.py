@@ -353,7 +353,7 @@ def del_release(request, release, n):
 def list_trac_items_for_latex(spec_item, trac_cat, trac_link):
     """
     Generate the latex representation of the traceability information for spec_item.
-    If S is spec_item, then this function assumes that the traceability link is stored
+    If S is a spec_item, then this function assumes that the traceability link is stored
     in category 'trac_cat' and that attribute 'trac_link' holds the link from trac_cat
     to spec_item. trac_link is either 's_link' or 'p_link'.
     To illustrate, suppose that 'trac_link' is equal to 's_link'; in this case, 
@@ -362,6 +362,8 @@ def list_trac_items_for_latex(spec_item, trac_cat, trac_link):
       and which point to S through their s_link
     - It returns a string holding a list of the spec_items which are pointed at by
       L1, L2, ... Ln through p_link
+    Recall: a traceability link sets up a many-to-many relationship between two categories
+    of spec_items. 
     """
     if trac_link == 's_link':
         trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
@@ -372,11 +374,14 @@ def list_trac_items_for_latex(spec_item, trac_cat, trac_link):
     
     s = ''
     for link in trac_links:
-        if trac_link == 's_link':
+        if trac_link == 's_link' and link.p_link != None:
             s = s + link.p_link.domain+':' + link.p_link.name + ' ('+ link.p_link.title +')'
-        else:
+            s = s + '\n'
+            continue
+        if trac_link == 'p_link' and link.s_link != None:
             s = s + link.s_link.domain+':' + link.s_link.name + ' ('+ link.s_link.title +')'
-        s = s + '\n'    
+            s = s + '\n'
+            continue
     return frmt_string(s[:-1])    # The last '\n' is removed
     
 def make_obs_spec_item_copy(request, spec_item):
