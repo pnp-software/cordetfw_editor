@@ -35,8 +35,8 @@ The `requirement.txt` file contains the exact library versions.
 - save dependencies `pip3 freeze > requirements.txt` in the project root
 
 #### Do the Deployment
-1. `ssh pnp@pnp-software.io`
-2. `cd cordetfw_editor`
+1. `ssh <your host>`
+2. `cd <editor_directory>`
 3. `git pull origin`
 4. Import static resources and (if required) run the migration
   - `source python-app-venv/bin/activate`
@@ -55,7 +55,7 @@ The description of the creation and customization procedure for the CSS is still
 Check python libraries verison and update to latest.
 
 1. ssh to server
-2. `cd cordetfw_editor`
+2. `cd <editor_directory>`
 3. load environment `source python-app-venv/bin/activate`
 4. `pip list --outdated`
 5. update listed packaged with `pip install -U PACKAGE_NAME`
