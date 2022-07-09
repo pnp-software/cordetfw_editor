@@ -942,7 +942,7 @@
                                   "abbr": "OpContext",
                                   "ext_attrs": [],
                                   "expand": {"s_link": "None", 
-                                             "p_link": "RiskScenario", "p_label": "Risk Scenario"},
+                                             "p_link": "RiskScenario", "p_label": "Danger Situation"},
                                   "short_desc": {"expand_text": ["title", "desc"],
                                                  "href_tip": ["title", "desc", "p_kind"],
                                                  "expand_tip": ["title", "desc"]},
@@ -970,19 +970,19 @@
                                                {"header":"Duration", "attrs":["p_kind"], "order_by":"p_kind"}
                                                ],
                                   "disp_short": [{"header":"Title", "attrs":["title"]},
-                                               {"header":"Description", "attrs":["desc", "remarks"]},
+                                               {"header":"Description", "attrs":["desc"]},
                                                {"header":"Duration", "attrs":["p_kind"], "order_by":"p_kind"}
                                                ],
                                   "disp_trac": [{"header":"Title", "attrs":["title"]},
                                                {"header":"Duration", "attrs":["p_kind"], "order_by":"p_kind"},
-                                               {"header":"Risk Scenarios", "trac_cat":"RiskScenario", "trac_link":"p_link"}
+                                               {"header":"Danger Situations", "trac_cat":"RiskScenario", "trac_link":"p_link"}
                                                ]
                                  },
                     "DisrEvt":{"name": "Disruptive Event",
                                   "level": "application",
                                   "abbr": "DisrEvt",
                                   "ext_attrs": [],
-                                  "expand": {"s_link": "RiskScenario", "s_label": "Risk Scenario", 
+                                  "expand": {"s_link": "RiskScenario", "s_label": "Danger Situation", 
                                              "p_link": "None"},
                                   "short_desc": {"expand_text": ["title", "desc"],
                                                  "href_tip": ["title", "desc", "p_kind"],
@@ -1017,10 +1017,10 @@
                                                ],
                                   "disp_trac": [{"header":"Title", "attrs":["title"]},
                                                {"header":"Freq", "attrs":["p_kind"], "order_by":"p_kind"},
-                                               {"header":"Risk Scenarios", "trac_cat":"RiskScenario", "trac_link":"s_link"}
+                                               {"header":"Danger Situations", "trac_cat":"RiskScenario", "trac_link":"s_link"}
                                                ]
                                  },
-                   "RiskScenario": {"name": "Risk Scenario",
+                   "RiskScenario": {"name": "Danger Situation",
                                "level": "application",
                                "abbr": "RiskScen",
                                "ext_attrs": [],
@@ -1037,7 +1037,7 @@
                                        "title":     {"label": "Title", "req_in_form": false, "kind": "plain_text"},
                                        "desc":      {"label": "Impact", "req_in_form": false, "kind": "ref_text"},
                                        "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
-                                       "t1":        {"label": "Enhancement", "req_in_form": false, "kind": "ref_text"},
+                                       "t1":        {"label": "Countermeasures", "req_in_form": false, "kind": "ref_text"},
                                        "p_link":    {"label": "OpContext", "req_in_form": false, "kind": "spec_item_ref"},
                                        "s_link":    {"label": "DisrEvt", "req_in_form": false, "kind": "spec_item_ref"},
                                        "p_kind":    {"label": "Likelihood", "req_in_form": false, "kind": "plain_text"},
@@ -1057,24 +1057,24 @@
                               "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
                                            {"header":"Description", "attrs":["title", "desc", "t1", "remarks"]},
-                                           {"header":"Likelihood", "attrs":["p_kind"]},
-                                           {"header":"Risk Level", "attrs":["s_kind"]},
-                                           {"header":"Oper. Context", "attrs":["p_link"], "order_by":"p_link"},
-                                           {"header":"Disr. Event", "attrs":["s_link"], "order_by":"s_link"}
-                                           ],
-                              "disp_short": [{"header":"Oper. Context", "attrs":["p_link"], "order_by":"p_link"},
-                                           {"header":"Disr. Event", "attrs":["s_link"], "order_by":"s_link"},
-                                           {"header":"Impact", "attrs":["desc"]},
                                            {"header":"Likelihood", "attrs":["p_kind"], "order_by":"p_kind"},
                                            {"header":"Risk Level", "attrs":["s_kind"], "order_by":"s_kind"},
-                                           {"header":"Design Changes", "attrs":["t1"]}
+                                           {"header":"Oper. Scenario", "attrs":["p_link"], "order_by":"p_link"},
+                                           {"header":"Disr. Event", "attrs":["s_link"], "order_by":"s_link"}
+                                           ],
+                              "disp_short": [{"header":"Oper. Scenario", "attrs":["p_link"], "order_by":"p_link"},
+                                           {"header":"Disr. Event", "attrs":["s_link"], "order_by":"s_link"},
+                                           {"header":"Description", "attrs":["title"]},
+                                           {"header":"Likelihood", "attrs":["p_kind"], "order_by":"p_kind"},
+                                           {"header":"Risk Level", "attrs":["s_kind"], "order_by":"s_kind"},
+                                           {"header":"Design Countermeasures", "attrs":["t1"]}
                                            ],
                               "disp_trac": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
                                            {"header":"Impact", "attrs":["desc", "remarks"]},
                                            {"header":"Likelihood", "attrs":["p_kind"], "order_by":"p_kind"},
                                            {"header":"Risk Level", "attrs":["s_kind"], "order_by":"s_kind"},
-                                           {"header":"Oper. Context", "attrs":["p_link"], "order_by":"p_link"},
+                                           {"header":"Oper. Scenario", "attrs":["p_link"], "order_by":"p_link"},
                                            {"header":"Disr. Event", "attrs":["s_link"], "order_by":"s_link"}
                                            ]
                                },  
