@@ -107,7 +107,6 @@ class SpecItemForm(forms.Form):
     title = forms.CharField(max_length=255)
     desc = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     value = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
-    n1 = forms.IntegerField(min_value=0)
     rationale = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     implementation = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     remarks = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
@@ -118,8 +117,9 @@ class SpecItemForm(forms.Form):
     val_set = forms.ModelChoiceField(queryset=None, empty_label=None)
     p_link = forms.ModelChoiceField(queryset=None, empty_label='')
     s_link = forms.ModelChoiceField(queryset=None, empty_label='')
-    n2 = forms.IntegerField(min_value=0)
-    n3 = forms.IntegerField(min_value=0)
+    n1 = forms.IntegerField()
+    n2 = forms.IntegerField()
+    n3 = forms.IntegerField()
     t1 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     t2 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     t3 = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
@@ -165,10 +165,6 @@ class SpecItemForm(forms.Form):
         self.fields['s_kind'].choices = get_s_kind_choices(cat)
         self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id, s_parent_id)
         self.fields['s_link'].queryset = get_s_link_choices(cat, self.project, self.application, s_parent_id, p_parent_id)
-        self.fields['n1'].initial = 0
-        self.fields['n2'].initial = 0
-        self.fields['n3'].initial = 0
-
 
         # Hide fields which are not required for a given category
         for field in self.fields:
