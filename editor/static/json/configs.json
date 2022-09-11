@@ -928,8 +928,7 @@
                                            ],
                               "disp_short": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
-                                           {"header":"Title", "attrs":["title"]},
-                                           {"header":"Diagram", "attrs":["value"]},
+                                           {"header":"Title", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
                                            {"header":"Kind", "attrs":["p_kind"], "order_by":"p_kind"}
                                            ],
                               "disp_trac": [{"header":"Domain", "attrs":["domain"]},
