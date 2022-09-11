@@ -341,6 +341,7 @@
                                            "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation":  {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
+                                           "t1":  {"label": "Close Out", "req_in_form": false, "kind": "ref_text"},
                                            "p_kind":    {"label": "Kind", "req_in_form": true, "kind": "plain_text"},
                                            "val_set":   {"label": "ValSet",  "req_in_form": false, "kind": "plain_ref"},
                                            "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
