@@ -35,7 +35,7 @@
         <input type="number" id="{{ field.id_for_label }}"
                class="form-control {% if field.errors %}is-invalid{% endif %}"
                name="{{ field.html_name }}"
-               {% if field.value %}value="{{ field.value }}"{% endif %}
+               value="{{ field.value }}"
                {% if field.field.min_value %}min="{{ field.field.min_value }}"{% endif %}
                {% if field.field.required %}required{% endif %}
                {% if field.field.disabled %}disabled{% endif %}>
