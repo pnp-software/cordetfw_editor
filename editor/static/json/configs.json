@@ -359,7 +359,7 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Requirement", "attrs":["value", "rationale", "remarks", "implementation"]},
+                                               {"header":"Requirement", "attrs":["value", "rationale", "remarks", "implementation", "t1"]},
                                                {"header":"Kind", "attrs":["p_kind"], "order_by":"p_kind"},
                                                {"header":"Ver", "attrs":["s_kind"], "order_by":"s_kind"},
                                                {"header":"Owner", "attrs":["owner"], "order_by":"owner"}
