@@ -48,6 +48,9 @@ class SpecItemResource(resources.ModelResource):
     def dehydrate_remarks(self, spec_item):
         return convert_db_to_edit(spec_item.remarks)
         
+    def dehydrate_implementation(self, spec_item):
+        return convert_db_to_edit(spec_item.implementation)
+        
     def dehydrate_value(self, spec_item):
         return convert_db_to_edit(spec_item.value)
 
