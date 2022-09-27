@@ -236,14 +236,15 @@ def convert_exp_to_db(project, s):
     The argument is a plain reference field in export representation 
     (the reference is represented by the string domain:name). 
     The function converts it to database representation.
-    Invalid references raise an exception which must be handled by the caller.
+    If the field is empty or the reference is invalid, None is returned.
     """
-    if s == '':
+    try:
+        m = pattern_ref_exp.match(s)
+        ref = m.group().split(':')
+        return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
+                            get(project_id=project.id, domain=ref[0], name=ref[1])
+    except Exception as e:
         return None
-    m = pattern_ref_exp.match(s)
-    ref = m.group().split(':')
-    return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
-                        get(project_id=project.id, domain=ref[0], name=ref[1])
     
 
 def convert_db_to_edit(s):
