@@ -82,5 +82,8 @@ class SpecItem(models.Model):
     n3  = models.IntegerField(blank=True, default=0)
     change_log = models.TextField(blank=True, default='')
     def __str__(self):
-        return self.domain + ':' + self.name + ' (' + self.title + ')'
-  
+        if self.title != '':
+            return self.domain + ':' + self.name + ' (' + self.title + ')'
+        else:
+            desc = self.desc if len(self.desc)<64 else self.desc[0:64]+'...' 
+            return self.domain + ':' + self.name + ' (' +desc + ')'
