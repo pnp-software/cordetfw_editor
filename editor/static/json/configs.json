@@ -769,7 +769,6 @@
                                        "t1":        {"label": "Enable Check", "req_in_form": false, "kind": "ref_text"},
                                        "t2":        {"label": "Ready Check", "req_in_form": false, "kind": "ref_text"},
                                        "t3":        {"label": "Repeat Check", "req_in_form": false, "kind": "ref_text"},
-                                       "t4":        {"label": "Acceptance Check", "req_in_form": false, "kind": "ref_text"},
                                        "t5":        {"label": "Update Action", "req_in_form": false, "kind": "ref_text"},
                                        "p_link":    {"label": "Packet", "req_in_form": true, "kind": "spec_item_ref"},
                                        "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
