@@ -590,7 +590,7 @@
                                              "href_tip": ["title", "desc"],
                                              "expand_tip": ["title", "desc"]},
                               "tracs": [{"trac_cat":"VerLink", "trac_link":"s_link"}],
-                              "access_from_index": {"level": "None"},           
+                              "access_from_index": {"level": "Project"},           
                               "attrs": {"domain":   {"label": "Domain", "req_in_form": true, "kind": "plain_text"},
                                        "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
                                        "title":     {"label": "Title", "req_in_form": true, "kind": "plain_text"},
