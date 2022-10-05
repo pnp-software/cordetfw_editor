@@ -47,6 +47,11 @@
                         <li class="breadcrumb-item">
                             {{ project.name }}
                         </li>
+                        {% if application_id > 0 %}
+                        <li class="breadcrumb-item">
+                            {{ application_name }}
+                        </li>
+                        {% endif %}
                         {% if config.name|length > 0 %}
                         <li class="breadcrumb-item active" aria-current="page">
                             {{ config.name }}

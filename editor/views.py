@@ -384,6 +384,11 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     order_by = request.GET.get('order_by')
     domains = get_domains(cat, application_id, project_id) 
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
+
+    if application_id != 0:
+        application_name = Application.objects.get(id=application_id)
+    else:
+        application_name = None
     
     if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
@@ -410,7 +415,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     else:
         expand_items = None
     
-    context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_val': sel_val,\
+    context = {'items': items, 'project': project, 'application_id': application_id, 'application_name': application_name, 'domains': domains, 'sel_val': sel_val,\
                'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
