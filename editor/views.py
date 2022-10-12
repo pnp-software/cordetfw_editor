@@ -385,13 +385,60 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     domains = get_domains(cat, application_id, project_id) 
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
 
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
-        cats = application.cats.split(', ')
+    # if application_id != 0:
+    #     application = Application.objects.get(id=application_id)
+    #     cats = application.cats.split(', ')
+    # else:
+    #     application = None
+    #     cats = project.cats.split(', ')
+    breadcrumb = {}
+    breadcrumb['rest'] = []
+    spec_items = []
+    project_cats = list(map(str.strip, project.cats.split(',')))
+    for cat_item in project_cats:
+        if (cat_item == cat and application_id == 0) or configs['cats'][cat_item]['access_from_index']['level'] != 'Project':
+            continue
+        spec_item = {}
+        if application_id == 0:
+            list_as = configs['cats'][cat_item]['name']
+        else:
+            list_as = project.name + ' / ' + configs['cats'][cat_item]['name']
+        spec_item['list_as'] = list_as
+        spec_item['spec_item'] = cat_item
+        spec_item['project_id'] = project_id
+        spec_item['application_id'] = 0
+        spec_item['val_set_id'] = default_val_set.id
+        spec_item['domain_id'] = sel_val
+        spec_items.append(spec_item)
+    if application_id == 0:
+        breadcrumb['active'] = spec_items
     else:
-        application = None
-        cats = project.cats.split(', ')
-    
+        breadcrumb['rest'] = spec_items
+    applications = project.applications.all().order_by('name')
+    for application_item in applications:
+        spec_items = []
+        application_cats = list(map(str.strip, application_item.cats.split(',')))
+        for cat_item in application_cats:
+            if (cat_item == cat and application_id == application_item.id) or configs['cats'][cat_item]['access_from_index']['level'] != 'Application':
+                continue
+            spec_item = {}
+            if application_id == application_item.id:
+                list_as = configs['cats'][cat_item]['name']
+            else:
+                list_as = project.name + ' / ' + application_item.name + ' / ' + configs['cats'][cat_item]['name']
+            spec_item['list_as'] = list_as
+            spec_item['spec_item'] = cat_item
+            spec_item['project_id'] = project_id
+            spec_item['application_id'] = application_item.id
+            spec_item['val_set_id'] = default_val_set.id
+            spec_item['domain_id'] = sel_val
+            spec_items.append(spec_item)
+        if application_id == application_item.id:
+            breadcrumb['application_name_active'] = application_item.name
+            breadcrumb['active'] = spec_items
+        else:
+            breadcrumb['rest'] += spec_items
+
     if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
         items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                     exclude(status='DEL').exclude(status='OBS') 
@@ -417,9 +464,9 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     else:
         expand_items = None
     
-    context = {'items': items, 'project': project, 'application_id': application_id, 'application': application, 'domains': domains, 'sel_val': sel_val,\
+    context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_val': sel_val,\
                'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
-               'config': configs['cats'][cat], 'config_cats': configs['cats'], 'cat': cat, 'cats': cats, 'expand_id': expand_id, \
+               'config': configs['cats'][cat], 'cat': cat, 'breadcrumb': breadcrumb, 'expand_id': expand_id, \
                'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
                'disp': disp, 'disp_list':configs['cats'][cat][disp], 'history': False, 'order_by': order_by }
     return render(request, 'list_spec_items.html', context)    

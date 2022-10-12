@@ -44,12 +44,22 @@
                                 Cordet FW Editor: Projects
                             </a>
                         </li>
-                        <li class="breadcrumb-item">
-                            {{ project.name }}
+                        <li class="breadcrumb-item dropdown me-3" aria-current="page">
+                            <div class="dropdown-toggle" id="catAllDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ project.name }}
+                            </div>
+                            <ul class="dropdown-menu" aria-labelledby="catAllDropdown">
+                                {% for cat_item in breadcrumb.rest %}
+                                <li><a class="dropdown-item"
+                                       href="{% url 'list_spec_items' cat_item.spec_item cat_item.project_id cat_item.application_id cat_item.val_set_id cat_item.domain_id %}?disp={{disp}}">
+                                    {{ cat_item.list_as }}
+                                </a> </li>
+                                {% endfor %}
+                            </ul>
                         </li>
                         {% if application_id > 0 %}
                         <li class="breadcrumb-item">
-                            {{ application.name }}
+                            {{ breadcrumb.application_name_active }}
                         </li>
                         {% endif %}
                         {% if config.name|length > 0 %}
@@ -58,17 +68,11 @@
                                 {{ config.name }}
                             </div>
                             <ul class="dropdown-menu" aria-labelledby="catDropdown">
-                                {% for cats_item in cats %}
-                                {% for config_cat, value in config_cats.items %}
-                                {% if cats_item == config_cat and cats_item != cat %}
-                                {% if value.access_from_index.level == 'Project' and application_id == 0 or value.access_from_index.level == 'Application' and application_id > 0 %}
+                                {% for cat_item in breadcrumb.active %}
                                 <li><a class="dropdown-item"
-                                       href="{% url 'list_spec_items' cats_item project.id application_id default_val_set_id sel_val %}?disp={{disp}}">
-                                    {{ value.name }}
+                                       href="{% url 'list_spec_items' cat_item.spec_item cat_item.project_id cat_item.application_id cat_item.val_set_id cat_item.domain_id %}?disp={{disp}}">
+                                    {{ cat_item.list_as }}
                                 </a> </li>
-                                {% endif %}
-                                {% endif %}
-                                {% endfor %}
                                 {% endfor %}
                             </ul>
                         </li>
