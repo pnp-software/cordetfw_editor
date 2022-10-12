@@ -385,12 +385,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     domains = get_domains(cat, application_id, project_id) 
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
 
-    # if application_id != 0:
-    #     application = Application.objects.get(id=application_id)
-    #     cats = application.cats.split(', ')
-    # else:
-    #     application = None
-    #     cats = project.cats.split(', ')
+    # prep data for dropdown in header
     breadcrumb = {}
     breadcrumb['rest'] = []
     spec_items = []
