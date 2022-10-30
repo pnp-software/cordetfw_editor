@@ -754,9 +754,9 @@
                                "expand": {"s_link": "None",
                                           "p_link": "None"
                                           },
-                              "short_desc": {"expand_text": ["t1", "t2", "t3", "t4", "t5"],
-                                             "href_tip": ["t1", "t2", "t3", "t4", "t5"],
-                                             "expand_tip": ["t1", "t2", "t3", "t4", "t5"]},
+                              "short_desc": {"expand_text": ["t1", "t2", "t3", "t5"],
+                                             "href_tip": ["t1", "t2", "t3", "t5"],
+                                             "expand_tip": ["t1", "t2", "t3", "t5"]},
                               "tracs": [{"trac_cat":"VerLink", "trac_link":"s_link"}],
                                "access_from_index": {"level": "Application"},           
                                "attrs": {"domain":  {"label": "Domain", "req_in_form": true, "kind": "plain_text"},
@@ -779,13 +779,13 @@
                               "s_kind_choices": {"INV": "Invalid"},
                               "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
-                                           {"header":"Checks and Actions", "attrs":["t1", "t2", "t3", "t4", "t5"]},
+                                           {"header":"Checks and Actions", "attrs":["t1", "t2", "t3", "t5"]},
                                            {"header":"Packet", "attrs":["p_link"], "order_by":"p_link"},
                                            {"header":"Owner", "attrs":["owner"]}
                                            ],
                               "disp_short": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
-                                           {"header":"Checks and Actions", "attrs":["value", "t1", "t2", "t3", "t4", "t5"]},
+                                           {"header":"Checks and Actions", "attrs":["value", "t1", "t2", "t3", "t5"]},
                                            {"header":"Packet", "attrs":["p_link"], "order_by":"p_link"}
                                            ],
                               "disp_trac": [{"header":"Domain", "attrs":["domain"]},
