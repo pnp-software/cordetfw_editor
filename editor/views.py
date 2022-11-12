@@ -744,8 +744,10 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         fdName = project.name.replace(' ','_') + cat + '.csv'
     else:                       # Items to be exported are 'application items'
         items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id)
-        assert application != None, "Attempt to download application-level spec_items with invalid application ID"
-        fdName = application.name.replace(' ','') + cat + '.csv'
+        if application == None:
+            fdName = project.name.replace(' ','') + cat + '.csv'
+        else:
+            fdName = application.name.replace(' ','') + cat + '.csv'
         
     items = items.exclude(status='DEL').exclude(status='OBS')  
         
