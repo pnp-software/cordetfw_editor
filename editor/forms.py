@@ -236,17 +236,22 @@ class SpecItemForm(forms.Form):
         if not pattern_name.match(self.cleaned_data['domain']):
             raise ValidationError({'domain':'Domain may contain only alphanumeric characters and underscores'})
  
-        # Fields of kind 'eval_ref' may only contain internal references to spec_items of the same category
+        # Fields F of kind 'eval_ref' may only contain internal references to spec_items with the following
+        # characteristics: (a) they contain field F and (b) field F is of type 'eval_ref'
         for field in self.fields:  
             if (field in self.config['attrs']) and (not field in self.config['ext_attrs']):
                 if self.config['attrs'][field]['kind'] == 'eval_ref':
                     internal_refs = re.findall(get_pattern_edit(self.project.id), cd[field])
                     for ref in internal_refs:
-                        if ref[0] != self.cat:
-                            err_msg = 'The field '+field+' of a '+self.cat+' cannot contain internal references to '+\
-                                      'internal_ref_cat of a different category: '+str(ref)
+                        if not field in configs['cats'][ref[0]]['attrs']:
+                            err_msg = 'The field \"'+field+'\" of kind eval_ref contains internal reference ' + \
+                                      str(ref) + ' to a spec_item which does not support field \"' + field + '\"'
                             raise forms.ValidationError(err_msg)
-         
+                        if configs['cats'][ref[0]]['attrs'][field]['kind'] != 'eval_ref':
+                            err_msg = 'The field \"'+field+'\" of kind eval_ref contains internal reference ' + \
+                                      str(ref) + ' to a spec_item whose field \"' + field + '\" is not of kind eval_ref'
+                            raise forms.ValidationError(err_msg)
+ 
         # Fields of kind 'ref_text' or 'eval_ref' are converted from 'edit' to 'db' representation
         # (but external attribute fields are left untouched because they are loaded from an
         #  external resource) 

@@ -1115,7 +1115,7 @@
                                        "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
                                        "title":     {"label": "Title", "req_in_form": true, "kind": "plain_text"},
                                        "desc":      {"label": "Description", "req_in_form": false, "kind": "ref_text"},
-                                       "value":     {"label": "Value", "req_in_form": true, "kind": "ref_text"},
+                                       "value":     {"label": "Value", "req_in_form": true, "kind": "eval_ref"},
                                        "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                        "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                        "implementation": {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
