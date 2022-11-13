@@ -921,7 +921,7 @@
                                        "t1":        {"label": "Enable Conditions", "req_in_form": false, "kind": "ref_text"},
                                        "t2":        {"label": "Detection Check", "req_in_form": false, "kind": "ref_text"},
                                        "t3":        {"label": "Recovery Action", "req_in_form": false, "kind": "ref_text"},
-                                       "n1":        {"label": "Counter Threshold", "req_in_form": false, "kind": "int"},
+                                       "t4":        {"label": "Counter Threshold", "req_in_form": false, "kind": "ref_text"},
                                        "p_kind":    {"label": "Appl", "req_in_form": true, "kind": "plain_text"},
                                        "s_kind":    {"label": "Inst", "req_in_form": true, "kind": "plain_text"},
                                        "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
@@ -934,7 +934,7 @@
                                            {"header":"Name", "attrs":["name"]},
                                            {"header":"Title", "attrs":["title"]},
                                            {"header":"Description", "attrs":["desc", "remarks"]},
-                                           {"header":"Detection and Recovery", "attrs":["t1", "t2", "t3", "n1"]},
+                                           {"header":"Detection and Recovery", "attrs":["t1", "t2", "t3", "t4"]},
                                            {"header":"Appl.", "attrs":["p_kind"], "order_by":"p_kind"},
                                            {"header":"Inst.", "attrs":["s_kind"], "order_by":"s_kind"},
                                            {"header":"Owner", "attrs":["owner"]}
@@ -943,14 +943,14 @@
                                            {"header":"Name", "attrs":["name"]},
                                            {"header":"Title", "attrs":["title"]},
                                            {"header":"Description", "attrs":["desc", "remarks"]},
-                                           {"header":"Detection and Recovery", "attrs":["t1", "t2", "t3", "n1"]},
+                                           {"header":"Detection and Recovery", "attrs":["t1", "t2", "t3", "t4"]},
                                            {"header":"Appl.", "attrs":["p_kind"]}
                                            ],
                               "disp_trac": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
                                            {"header":"Title", "attrs":["title"]},
                                            {"header":"Description", "attrs":["desc", "remarks"]},
-                                           {"header":"Detection and Recovery", "attrs":["t1", "t2", "t3", "n1"]},
+                                           {"header":"Detection and Recovery", "attrs":["t1", "t2", "t3", "t4"]},
                                            {"header":"Appl.", "attrs":["p_kind"]}
                                            ]
                              },
