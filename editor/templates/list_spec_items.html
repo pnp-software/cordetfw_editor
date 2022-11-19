@@ -20,7 +20,7 @@
                 {% for v_set in val_sets %}
                 <li>
                     <a class="dropdown-item"
-                       href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}">
+                       href="{% url 'list_spec_items' cat project.id application_id v_set.id sel_val %}?disp={{disp}}">
                         {{ v_set.name }}
                     </a>
                 </li>
