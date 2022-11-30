@@ -1,71 +1,37 @@
-import os
 import re
 import json
 import cexprtk
 import logging
-from tablib import Dataset
-from django.contrib import messages
 from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth import get_user
-from django.contrib.auth.models import User
-from django.forms.models import model_to_dict
-from django.db.models import ForeignKey
 from django.conf import settings
-from datetime import datetime
-from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
+from editor.models import SpecItem, Project
 from editor.markdown import markdown_to_html, markdown_to_latex
-       
+
 with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
     configs = json.load(config_file)
-      
+
 # Regex pattern for internal references to specification items as they
 # are stored in the database (e.g. '#iref:1234')
-pattern_db = re.compile('#(iref):([0-9]+)')     
+pattern_db = re.compile('#(iref):([0-9]+)')
 
 # Regex pattern for plain references to specification items as they
 # rendered in export representation (e.g. 'dom:name')
-pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')     
-
-# Regex patterns for internal references to specification items as they are
-# rendered in edit representation (e.g. '#cat:dom:name').
-# One such regex pattern is created for each project holding the categories
-# for that project.
-pattern_edits = {}
-projects = Project.objects.all()
-for project in projects:
-    s = project.cats.replace(',','|')
-    pattern_edits[project.id] = re.compile('#('+s+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 logger = logging.getLogger(__name__)
 
 
 def get_pattern_edit(project_id):
-    """ 
+    """
     Return the regex expression which catches the references to specification items in
     edit representation (i.e. of the form '#cat:dom:name'). The regex expression depends
     on the project because each project has a different set of categories.
     """
-    return pattern_edits[project_id]
-    
-    
-def update_pattern_edit(project):
-    """
-    Update the regex expression which catches the references to specification items in
-    edit representation (i.e. of the form '#cat:dom:name'). The regex expression depends
-    on the project because each project has a different set of categories. This functiom
-    should be called every time the argument project is updated.
-    """    
-    global pattern_edits
-    s = project.cats.replace(',','|')
-    pattern_edits[project.id] = re.compile('#('+s+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
-    
-    
-def del_pattern_edit(project_id):
-    """ Function must be called if argument project has been deleted """    
-    global pattern_edits
-    del pattern_edits[project_id]
-    
+    project = Project.objects.get(id=project_id)
+    s = project.cats.replace(',', '|')
+    return re.compile('#('+s+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+
 
 def frmt_string(s):
     """ Format string for output to a Latex text file. """

@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.utils.timezone import make_aware
 from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Application
 from editor.utilities import frmt_string
-from editor.convert import convert_edit_to_db, update_pattern_edit
+from editor.convert import convert_edit_to_db
 from editor.configs import configs
 
 #--------------------------------------------------------------------------------
@@ -153,8 +153,7 @@ def import_project_tables(request, imp_dir):
                           owner = project_owner)
     new_project.release_id = old_id_2_new_id[project_dict['release']]
     new_project.save()
-    update_pattern_edit(new_project)    # Update the regex expressions associtated to the project
-    
+
     # Import the ValSet instances
     val_set_old_id_2_new = {}
     for val_set in val_sets:
