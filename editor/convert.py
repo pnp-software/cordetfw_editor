@@ -5,7 +5,7 @@ import logging
 from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
-from editor.models import SpecItem, Project
+from editor.models import SpecItem, Project, ValSet
 from editor.markdown import markdown_to_html, markdown_to_latex
 
 with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
@@ -186,8 +186,10 @@ def convert_edit_to_db(project, s):
     def edit_to_iref(match):
         """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
         try:
+            default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
             id = SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
-                    get(project_id=project.id, cat=match.group(1), domain=match.group(2), name=match.group(3)).id
+                    get(project_id=project.id, cat=match.group(1), domain=match.group(2), \
+                        name=match.group(3), val_set=default_val_set.id).id
             return '#iref:' + str(id)
         except ObjectDoesNotExist:
             logger.warning('Non-existent internal reference: '+str(match.group()))
