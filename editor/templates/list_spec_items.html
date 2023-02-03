@@ -129,7 +129,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for item in items %}
+            {% for item in page_items %}
             <tr {% if item.id == expand_id %}class="table-primary"{% endif %}>
                 {% for disp_item in disp_list %}
                 <td {% if forloop.first %}id="{{item.domain}}:{{item.name}}"{% endif %}>
@@ -309,5 +309,39 @@
             {% endfor %}
         </tbody>
     </table>
+    <nav aria-label="pagination">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}{{get_parameter_sting}}page={{ pagination.previous_page }}">Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+            {% for item in pagination.page_list %}
+            {% if item == '…' %}
+            <li class="page-item disabled"><span class="page-link">{{ item }}</span></li>
+            {% elif item == pagination.page_number %}
+            <li class="page-item active"><span class="page-link">{{ item }}</span></li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}{{get_parameter_sting}}page={{ item }}">{{ item }}
+                </a>
+            </li>
+            {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}{{get_parameter_sting}}page={{ pagination.next_page }}">Next
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
 </div>
 {% endblock %}

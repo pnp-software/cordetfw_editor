@@ -22,6 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist
 from django.forms.models import model_to_dict
+from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.utils.timezone import get_current_timezone
 
@@ -373,9 +374,16 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     val_set = ValSet.objects.get(id=val_set_id)
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+    get_parameter_sting = '?'
     expand_id = request.GET.get('expand_id')
+    if expand_id is not None:
+        get_parameter_sting += 'expand_id=' + str(expand_id) + '&'
     expand_link = request.GET.get('expand_link')
+    if expand_link is not None:
+        get_parameter_sting += 'expand_link=' + str(expand_link) + '&'
     disp = 'disp_def' if (request.GET.get('disp') == None) else request.GET.get('disp')
+    if disp is not None:
+        get_parameter_sting += 'disp=' + str(disp) + '&'
     order_by = request.GET.get('order_by')
     domains = get_domains(cat, application_id, project_id) 
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
@@ -456,12 +464,39 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         expand_id = int(expand_id)      # Cast is necessary for comparison to spec_item_id in list_spec_items.html
     else:
         expand_items = None
+
+    # Pagination
+    paginator_items = Paginator(items, configs['cats'][cat]['page_size'])
+    page_number = 1
+    if 'page' in request.GET:
+        page_number = int(request.GET.get('page'))
+    page_items = paginator_items.page(page_number)
+    previous_page = None
+    if page_items.has_previous():
+        previous_page = page_items.previous_page_number()
+    next_page = None
+    if page_items.has_next():
+        next_page = page_items.next_page_number()
+    pagination = {
+        'page_number': page_number,
+        'has_previous': page_items.has_previous(),
+        'previous_page': previous_page,
+        'has_next': page_items.has_next(),
+        'next_page': next_page,
+        'page_list': paginator_items.get_elided_page_range(page_number)
+    }
     
-    context = {'items': items, 'project': project, 'application_id': application_id, 'domains': domains, 'sel_val': sel_val,\
-               'val_set': val_set, 'val_sets': val_sets, 'default_val_set_id': default_val_set.id, \
-               'config': configs['cats'][cat], 'cat': cat, 'breadcrumb': breadcrumb, 'expand_id': expand_id, \
-               'expand_items': expand_items, 'expand_link': expand_link, 'n_pad_fields': n_pad_fields, \
-               'disp': disp, 'disp_list':configs['cats'][cat][disp], 'history': False, 'order_by': order_by }
+    context = {
+        'page_items': page_items, 'pagination': pagination, 'project': project,
+        'application_id': application_id, 'domains': domains,
+        'sel_val': sel_val, 'val_set': val_set, 'val_sets': val_sets,
+        'default_val_set_id': default_val_set.id,
+        'config': configs['cats'][cat], 'cat': cat, 'breadcrumb': breadcrumb,
+        'expand_id': expand_id, 'expand_items': expand_items,
+        'expand_link': expand_link, 'n_pad_fields': n_pad_fields, 'disp': disp,
+        'disp_list': configs['cats'][cat][disp], 'history': False,
+        'order_by': order_by, 'get_parameter_sting': get_parameter_sting
+    }
     return render(request, 'list_spec_items.html', context)    
 
 
