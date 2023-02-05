@@ -1013,7 +1013,7 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
                                                     
     spec_item = SpecItem.objects.get(id=item_id)
     items = get_previous_list(spec_item)
-    context = {'items': items, 'project': project, 'application_id': application_id, 'sel_val': sel_val,\
+    context = {'page_items': items, 'project': project, 'application_id': application_id, 'sel_val': sel_val,\
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 'val_set_id': val_set.id, \
                'val_set': val_set, 'default_val_set_id': default_val_set.id, 'disp': disp, \
                'disp_list': disp_list, 'history': True }

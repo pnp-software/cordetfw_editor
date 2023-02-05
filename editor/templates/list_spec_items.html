@@ -7,7 +7,7 @@
     <nav class="nav nav-underline">
         {% if history %}
         <div class="nav-link disabled">
-            History of {{items.0.domain}}:{{items.0.name}}
+            History of {{page_items.0.domain}}:{{page_items.0.name}}
         </div>
         {% else %}
         <!-- Dropdown for ValSet -->
@@ -309,6 +309,7 @@
             {% endfor %}
         </tbody>
     </table>
+    {% if pagination != None %}
     <nav aria-label="pagination">
         <ul class="pagination justify-content-center">
             {% if pagination.has_previous %}
@@ -343,5 +344,6 @@
             {% endif %}
         </ul>
     </nav>
+    {% endif %}
 </div>
 {% endblock %}
