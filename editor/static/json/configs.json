@@ -971,7 +971,7 @@
                                        "title":     {"label": "Title", "req_in_form": false, "kind": "plain_text"},
                                        "desc":      {"label": "Description", "req_in_form": false, "kind": "ref_text"},
                                        "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
-                                       "t1":        {"label": "Generatiion Conditions", "req_in_form": false, "kind": "ref_text"},
+                                       "t1":        {"label": "Generation Conditions", "req_in_form": false, "kind": "ref_text"},
                                        "t2":        {"label": "Parameters", "req_in_form": false, "kind": "ref_text"},
                                        "p_kind":    {"label": "Level", "req_in_form": true, "kind": "plain_text"},
                                        "s_kind":    {"label": "Inst", "req_in_form": true, "kind": "plain_text"},
