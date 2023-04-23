@@ -12,8 +12,8 @@ from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import configs, get_p_link_choices, get_s_link_choices, do_cat_specific_checks
 from editor import ext_cats
 
-# Regex pattern for 'domain' and 'name' (alphanumeric characters and underscores)
-pattern_name = re.compile('[a-zA-Z0-9_]+$')     
+# Regex pattern for 'domain' and 'name' (alphanumeric characters, underscores, dots and dashes)
+pattern_name = re.compile('[a-zA-Z0-9_\-\.]+$')     
 
 class ProjectForm(forms.Form):
     name = forms.CharField()
@@ -232,9 +232,9 @@ class SpecItemForm(forms.Form):
             
         # Check that domain and name only contain alphanumeric characters and underscores
         if not pattern_name.match(self.cleaned_data['name']):
-            raise ValidationError({'name':'Name may contain only alphanumeric characters and underscores'})
+            raise ValidationError({'name':'Only alphanumeric characters, underscores, dots and dashes allowed'})
         if not pattern_name.match(self.cleaned_data['domain']):
-            raise ValidationError({'domain':'Domain may contain only alphanumeric characters and underscores'})
+            raise ValidationError({'domain':'Only alphanumeric characters, underscores, dots and dashes allowed'})
  
         # Fields F of kind 'eval_ref' may only contain internal references to spec_items with the following
         # characteristics: (a) they contain field F and (b) field F is of type 'eval_ref'
