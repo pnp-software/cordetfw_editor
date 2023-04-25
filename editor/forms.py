@@ -101,6 +101,15 @@ class ReleaseForm(forms.Form):
         super(ReleaseForm, self).__init__(*args, **kwargs)
 
 
+class FindReplaceForm(forms.Form):
+    field = forms.CharField(max_length=255)
+    find = forms.CharField(max_length=255)
+    replace = forms.CharField(max_length=255)
+
+    def __init(self, *args, **kwargs):
+        super(FindReplaceForm, self).__init__(*args, **kwargs)
+
+
 class SpecItemForm(forms.Form):
     domain = forms.CharField(max_length=255)
     name = forms.CharField(max_length=255)

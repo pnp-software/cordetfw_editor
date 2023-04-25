@@ -28,7 +28,7 @@ from django.utils.timezone import get_current_timezone
 
 from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
-from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm
+from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
@@ -464,6 +464,18 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         expand_id = int(expand_id)      # Cast is necessary for comparison to spec_item_id in list_spec_items.html
     else:
         expand_items = None
+
+    # Find & Replace (POST form)
+    if request.method == 'POST':
+        form = FindReplaceForm(request.POST)
+        if form.is_valid():
+            print(form.cleaned_data['field'])
+            existing_headers = [d['header'] for d in configs['cats'][cat][disp] if 'header' in d]
+            if form.cleaned_data['field'] in existing_headers:
+                print('happy')
+                print(form.cleaned_data['find'])
+                print(form.cleaned_data['replace'])
+            print('hallo', flush=True)
 
     # Pagination
     paginator_items = Paginator(items, configs['cats'][cat]['page_size'])
