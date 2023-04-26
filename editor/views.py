@@ -385,7 +385,6 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     if disp is not None:
         get_parameter_sting += 'disp=' + str(disp) + '&'
     order_by = request.GET.get('order_by')
-    domains = get_domains(cat, application_id, project_id) 
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
 
     # Prepare data for dropdown in header through which users can access
@@ -469,13 +468,21 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     if request.method == 'POST':
         form = FindReplaceForm(request.POST)
         if form.is_valid():
-            print(form.cleaned_data['field'])
-            existing_headers = [d['header'] for d in configs['cats'][cat][disp] if 'header' in d]
-            if form.cleaned_data['field'] in existing_headers:
-                print('happy')
-                print(form.cleaned_data['find'])
-                print(form.cleaned_data['replace'])
-            print('hallo', flush=True)
+            field_to_search = form.cleaned_data['field']
+            find_string = form.cleaned_data['find']
+            replace_string = form.cleaned_data['replace']
+            if field_to_search in configs['cats'][cat]['attrs'].keys():
+                fields_to_check = items.values('id', field_to_search)
+                for field_to_check in fields_to_check:
+                    if find_string in field_to_check[field_to_search]:
+                        new_value = field_to_check[field_to_search].replace(find_string, replace_string)
+                        update_spec_item = SpecItem.objects.get(id=field_to_check['id'])
+                        setattr(update_spec_item, field_to_search, new_value)
+                        update_spec_item.updated_at = datetime.now(tz=get_current_timezone())
+                        update_spec_item.owner = get_user(request)
+                        update_spec_item.save()
+
+    domains = get_domains(cat, application_id, project_id)
 
     # Pagination
     paginator_items = Paginator(items, configs['cats'][cat]['page_size'])
@@ -507,6 +514,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         'expand_id': expand_id, 'expand_items': expand_items,
         'expand_link': expand_link, 'n_pad_fields': n_pad_fields, 'disp': disp,
         'disp_list': configs['cats'][cat][disp], 'history': False,
+        'find_replace_fields': configs['cats'][cat]['attrs'],
         'order_by': order_by, 'get_parameter_sting': get_parameter_sting
     }
     return render(request, 'list_spec_items.html', context)    

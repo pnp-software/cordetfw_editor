@@ -65,8 +65,8 @@
                                 <label for="id_field" class="form-label">Find in Field</label>
                                 <select id="id_field" class="form-select" name="field">
                                     <option selected>Select field</option>
-                                    {% for disp_item in disp_list %}
-                                    <option value="{{disp_item|get_dict_item:'header'}}">{{disp_item|get_dict_item:'header'}}</option>
+                                    {% for field_name, field_desc in find_replace_fields.items %}
+                                    <option value="{{field_name}}">{{field_desc.label}}</option>
                                     {% endfor %}
                                 </select>
                             </div>
