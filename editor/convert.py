@@ -30,7 +30,7 @@ def get_pattern_edit(project_id):
     """
     project = Project.objects.get(id=project_id)
     s = project.cats.replace(',', '|')
-    return re.compile('#('+s+'):([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+    return re.compile('#('+s+'):([a-zA-Z0-9_\-\.]+):([a-zA-Z0-9_\-\.]+)')
 
 
 def frmt_string(s):
