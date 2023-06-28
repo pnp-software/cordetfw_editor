@@ -836,11 +836,12 @@
                                        "t4":        {"label": "SW Response Assessment", "req_in_form": false, "kind": "ref_text"},
                                        "n1":        {"label": "Severity", "req_in_form": false, "kind": "int"},
                                        "s_kind":    {"label": "Inst", "req_in_form": true, "kind": "plain_text"},
+                                       "p_kind":    {"label": "Outcome", "req_in_form": false, "kind": "plain_text"},
                                        "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
                                        "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
                                        "val_set":   {"label": "ValSet", "req_in_form": false, "kind": "plain_ref"}
                                        },
-                              "p_kind_choices": {"INV": "Invalid"},
+                              "p_kind_choices": {"RES": "Resume Normal Operation", "DEG": "Degraded Operation", "FAIL": "Instrument Failure", "OTH": "Other"},
                               "s_kind_choices": {"BOTH": "CoCa and Maniac", "MNC": "Maniac", "COC": "CoCa"},
                               "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
