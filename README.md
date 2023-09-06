@@ -5,8 +5,8 @@
  The specification information is stored in a database held on a server.
  The processing of the specification data is done by a back-end running on the server.
  The access to the editor data is through a browser on a client machine.
- 
- The Cordet FW Editor is currently available as an **alpha version**.
+
+ Release 1.0.0 of the editor has been in use for some time at P&P Software GmbH.
 
 ### Start-Up
 - Install Django `python3 -m pip install Django`
