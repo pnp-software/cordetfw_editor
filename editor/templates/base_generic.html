@@ -51,7 +51,7 @@
                             <ul class="dropdown-menu" aria-labelledby="catAllDropdown">
                                 {% for cat_item in breadcrumb.rest %}
                                 <li><a class="dropdown-item"
-                                       href="{% url 'list_spec_items' cat_item.spec_item cat_item.project_id cat_item.application_id cat_item.val_set_id cat_item.domain_id %}?disp={{disp}}">
+                                       href="{% url 'list_spec_items' cat_item.spec_item cat_item.project_id cat_item.application_id cat_item.val_set_id cat_item.domain_id sel_rel_id%}?disp={{disp}}">
                                     {{ cat_item.list_as }}
                                 </a> </li>
                                 {% endfor %}
@@ -70,7 +70,7 @@
                             <ul class="dropdown-menu" aria-labelledby="catDropdown">
                                 {% for cat_item in breadcrumb.active %}
                                 <li><a class="dropdown-item"
-                                       href="{% url 'list_spec_items' cat_item.spec_item cat_item.project_id cat_item.application_id cat_item.val_set_id cat_item.domain_id %}?disp={{disp}}">
+                                       href="{% url 'list_spec_items' cat_item.spec_item cat_item.project_id cat_item.application_id cat_item.val_set_id cat_item.domain_id sel_rel_id%}?disp={{disp}}">
                                     {{ cat_item.list_as }}
                                 </a> </li>
                                 {% endfor %}

@@ -20,7 +20,7 @@
                 {% for v_set in val_sets %}
                 <li>
                     <a class="dropdown-item"
-                       href="{% url 'list_spec_items' cat project.id application_id v_set.id sel_val %}?disp={{disp}}">
+                       href="{% url 'list_spec_items' cat project.id application_id v_set.id sel_val sel_rel_id %}?disp={{disp}}">
                         {{ v_set.name }}
                     </a>
                 </li>
@@ -36,15 +36,34 @@
             <div class="dropdown-menu">
                 {% for domain in domains %}
                 <a class="dropdown-item"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id domain %}?disp={{disp}}">
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id domain sel_rel_id %}?disp={{disp}}">
                     {{ domain }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Dropdown Release -->
+        <div class="nav-item dropdown">
+            <div class="nav-link dropdown-toggle"
+                 data-bs-toggle="dropdown" role="button">
+                Release: {% if sel_rel_id == 0 %}Current{% else %}{{ sel_rel.project_version }}.{{ sel_rel.application_version }}{% endif %}
+            </div>
+            <div class="dropdown-menu">
+                <a class="dropdown-item"
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val 0 %}?disp={{disp}}">
+                    Current Release
+                </a>
+                {% for rel in releases %}
+                <a class="dropdown-item"
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val rel.id %}?disp={{disp}}">
+                    {{ rel.project_version }}.{{ rel.application_version }}: {{ rel.desc }}
                 </a>
                 {% endfor %}
             </div>
         </div>
         <!-- add new item -->
         <a class="nav-link bi-plus-circle"
-           href="{% url 'add_spec_item' cat project.id application_id sel_val %}">
+           href="{% url 'add_spec_item' cat project.id application_id sel_val sel_rel_id %}">
             Add {{ config.name }}
         </a>
         <!-- Modal for find/replace -->
@@ -121,19 +140,19 @@
             <a class="btn
                       {% if disp == 'disp_def' %}btn-primary{% else %}btn-outline-primary{% endif %}
                       bi-list-columns"
-               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp=disp_def"
+               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?disp=disp_def"
                title="default view">
             </a>
             <a class="btn
                       {% if disp == 'disp_short' %}btn-primary{% else %}btn-outline-primary{% endif %}
                       bi-list"
-               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp=disp_short"
+               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?disp=disp_short"
                title="short without traceability info">
             </a>
             <a class="btn
                       {% if disp == 'disp_trac' %}btn-primary{% else %}btn-outline-primary{% endif %}
                       bi-text-left"
-               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp=disp_trac"
+               href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?disp=disp_trac"
                title="short with traceability info">
             </a>
         </div>
@@ -149,7 +168,7 @@
                     {% if disp_item.order_by and not history %}
                     <th class="col">
                         <a class="{% if disp_item.order_by == order_by %}bi-caret-down-fill{% else %}bi-caret-down{% endif %}"
-                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}&order_by={{disp_item.order_by}}"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?disp={{disp}}&order_by={{disp_item.order_by}}"
                            title="List in alphabetical order">
                             {{disp_item|get_dict_item:'header'}}
                         </a>
@@ -204,17 +223,19 @@
                     <nobr class="float-end">
                     {% if item.val_set.name == 'Default' and config.ext_attrs|length == 0 %}
                     <a class="bi-files me-1 text-decoration-none"
-                       href="{% url 'copy_spec_item' cat project.id application_id item.id sel_val %}"
+                       href="{% url 'copy_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}"
                        title="Copy {{config.name}}">
                     </a>
-                    <a class="bi-share-fill me-1 text-decoration-none"
-                       href="{% url 'split_spec_item' cat project.id application_id item.id sel_val %}"
-                       title="Split {{config.name}}">
-                    </a>
+                        {% if sel_rel_id == 0 %}
+                        <a class="bi-share-fill me-1 text-decoration-none"
+                            href="{% url 'split_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}"
+                            title="Split {{config.name}}">
+                        </a>
+                        {% endif %}
                     {% endif %}
-                    {% if config.ext_attrs|length != 0 %}
+                    {% if config.ext_attrs|length != 0 and sel_rel_id == 0 %}
                     <a class="bi-arrow-clockwise me-1 text-decoration-none"
-                       href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_val %}"
+                       href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}"
                        title="Refresh {{config.name}}">
                     </a>
                     {% endif %}
@@ -222,31 +243,28 @@
                        href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_val %}"
                        title="{{config.name}} History">
                     </a>
+                    {% if sel_rel_id == 0 %}
                     <a class="bi-pencil-fill me-1 text-decoration-none"
-                       href="{% url 'edit_spec_item' cat project.id application_id item.id sel_val %}"
+                       href="{% url 'edit_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}"
                        title="Edit {{config.name}}">
                     </a>
-                    {% if item.status == 'NEW' %}
+                    {% endif %}
+                    {% if sel_rel_id == 0 %}
                         <a class="bi-trash-fill link-danger me-1 text-decoration-none"
-                           href="{% url 'del_spec_item' cat project.id application_id item.id sel_val %}"
+                           href="{% url 'del_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}"
                            onclick="return confirm('Are you sure you want to delete this item?');"
-                           title="Delete {{config.name}}">
-                        </a>
-                    {% else %}
-                        <a class="bi-trash-fill link-danger me-1 text-decoration-none"
-                           href="{% url 'del_spec_item' cat project.id application_id item.id sel_val %}"
                            title="Delete {{config.name}}">
                         </a>
                     {% endif %}
                     {% if config.expand.s_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                         {% if item.id != expand_id %}
                         <a class="bi-diagram-3 me-1 text-decoration-none"
-                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?expand_id={{item.id}}&expand_link=s_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
                            title="Show {{config.expand.s_label}} Children">
                         </a>
                         {% else %}
                         <a class="bi-diagram-3 me-1 text-decoration-none"
-                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?disp={{disp}}#{{item.domain}}:{{item.name}}"
                            title="Close {{config.expand.s_label}} Children">
                         </a>
                         {% endif %}
@@ -254,31 +272,31 @@
                     {% if config.expand.p_link != 'None' and val_set.name == 'Default' and not 'trac' in display_list %}
                         {% if item.id != expand_id %}
                         <a class="bi-diagram-3-fill me-1 text-decoration-none"
-                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?expand_id={{item.id}}&expand_link=p_link&disp={{disp}}#{{item.domain}}:{{item.name}}"
                            title="Show {{config.expand.p_label}} Children">
                         </a>
                         {% else %}
                         <a class="bi-diagram-3-fill me-1 text-decoration-none"
-                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}?disp={{disp}}#{{item.domain}}:{{item.name}}"
+                           href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?disp={{disp}}#{{item.domain}}:{{item.name}}"
                            title="Close {{config.expand.p_label}} Children">
                         </a>
                         {% endif %}
                     {% endif %}
-                    {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list %}
+                    {% if expand_link == 's_link' and val_set.name == 'Default' and not 'trac' in display_list and sel_rel_id == 0 %}
                     <a class="bi-node-plus me-1 text-decoration-none"
-                       href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_val %}?s_parent_id={{item.id}}&disp={{disp}}"
+                       href="{% url 'add_spec_item' config.expand.s_link project.id application_id sel_val sel_rel_id %}?s_parent_id={{item.id}}&disp={{disp}}"
                        title="Add {{config.expand.s_label}} Child">
                     </a>
                     {% endif %}
-                    {% if expand_link == 'p_link' and val_set.name == 'Default' and not 'trac' in display_list %}
+                    {% if expand_link == 'p_link' and val_set.name == 'Default' and not 'trac' in display_list and sel_rel_id == 0 %}
                     <a class="bi-node-plus-fill me-1 text-decoration-none"
-                       href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_val %}?p_parent_id={{item.id}}&disp={{disp}}"
+                       href="{% url 'add_spec_item' config.expand.p_link project.id application_id sel_val sel_rel_id %}?p_parent_id={{item.id}}&disp={{disp}}"
                        title="Add {{config.expand.p_label}} Child">
                     </a>
                     {% endif %}
-                    {% if 'trac' in display_list %}
+                    {% if 'trac' in display_list and sel_rel_id == 0 %}
                     <a class="link-45deg me-1 text-decoration-none"
-                       href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_val %}?s_parent_id={{item.id}}&disp={{disp}}"
+                       href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_val sel_rel_id %}?s_parent_id={{item.id}}&disp={{disp}}"
                        title="Add Verification Link">
                     </a>
                     {% endif %}
@@ -291,7 +309,7 @@
             <tr class="table-secondary">
                 <td>{{expand_item.domain}}</td>
                 <td>
-                    <a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain %}#{{expand_item.domain}}:{{expand_item.name}}"
+                    <a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain sel_rel_id %}#{{expand_item.domain}}:{{expand_item.name}}"
                        title="{{expand_item|filter_expand_tip|linebreaksbr}}">
                         {{expand_item.name}}
                     </a>
@@ -301,43 +319,43 @@
                 <!-- The edit/copy/delete/split buttons  -->
                 <td>
                     <nobr class="float-end">
-                    {% if expand_link == 'p_link' %}
+                    {% if expand_link == 'p_link' and sel_rel_id == 0 %}
                     {% if item.val_set.name == 'Default' %}
                     <a class="bi-files me-1 text-decoration-none"
-                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}"
+                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id %}?p_parent_id={{item.id}}"
                        title="Copy {{config.expand.p_label}} Child">
                     </a>
                     <a class="bi-share-fill me-1 text-decoration-none"
-                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}"
+                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id %}?p_parent_id={{item.id}}"
                        title="Split {{config.expand.p_label}} Child">
                     </a>
                     {% endif %}
                     <a class="bi-pencil-fill me-1 text-decoration-none"
-                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}"
+                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id %}?p_parent_id={{item.id}}"
                        title="Edit {{config.expand.p_label}} Child">
                     </a>
                     <a class="bi-trash-fill link-danger me-1 text-decoration-none"
-                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?p_parent_id={{item.id}}"
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id %}?p_parent_id={{item.id}}"
                        title="Delete {{config.expand.p_label}} Child">
                     </a>
                     {% endif %}
-                    {% if expand_link == 's_link' %}
+                    {% if expand_link == 's_link' and sel_rel_id == 0  %}
                     {% if item.val_set.name == 'Default' %}
                     <a class="bi-files me-1 text-decoration-none"
-                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}"
+                       href="{% url 'copy_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id%}?s_parent_id={{item.id}}"
                        title="Copy {{config.expand.s_label}} Child">
                     </a>
                     <a class="bi-share-fill me-1 text-decoration-none"
-                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}"
+                       href="{% url 'split_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id %}?s_parent_id={{item.id}}"
                        title="Split {{config.expand.s_label}} Child">
                     </a>
                     {% endif %}
                     <a class="bi-pencil-fill me-1 text-decoration-none"
-                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}"
+                       href="{% url 'edit_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id %}?s_parent_id={{item.id}}"
                        title="Edit {{config.expand.s_label}} Child">
                     </a>
                     <a class="bi-trash-fill link-danger me-1 text-decoration-none"
-                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val %}?s_parent_id={{item.id}}"
+                       href="{% url 'del_spec_item' expand_item.cat project.id application_id expand_item.id sel_val sel_rel_id %}?s_parent_id={{item.id}}"
                        title="Delete {{config.expand.s_label}} Child">
                     </a>
                     {% endif %}
@@ -355,7 +373,7 @@
             {% if pagination.has_previous %}
             <li class="page-item">
                 <a class="page-link"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}{{get_parameter_sting}}page={{ pagination.previous_page }}">Previous
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}{{get_parameter_sting}}page={{ pagination.previous_page }}">Previous
                 </a>
             </li>
             {% else %}
@@ -369,14 +387,14 @@
             {% else %}
             <li class="page-item">
                 <a class="page-link"
-                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}{{get_parameter_sting}}page={{ item }}">{{ item }}
+                   href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}{{get_parameter_sting}}page={{ item }}">{{ item }}
                 </a>
             </li>
             {% endif %}
             {% endfor %}
             {% if pagination.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val %}{{get_parameter_sting}}page={{ pagination.next_page }}">Next
+                <a class="page-link" href="{% url 'list_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}{{get_parameter_sting}}page={{ pagination.next_page }}">Next
                 </a>
             </li>
             {% else %}

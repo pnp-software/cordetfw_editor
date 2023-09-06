@@ -73,7 +73,7 @@
                                 {% if value.access_from_index.level == 'Project' %}
                                 <li>
                                     <a class="dropdown-item"
-                                       href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'Sel_All' %}?disp=disp_def"
+                                       href="{% url 'list_spec_items' cat item.project.id 0 item.default_val_set_id 'Sel_All' 0 %}?disp=disp_def"
                                        title="Manage {{ value.name }}s">
                                         {{ value.name }}
                                     </a>
@@ -129,7 +129,7 @@
                                     {% if value.access_from_index.level == 'Application' %}
                                     {% if cat in application.cats %}
                                     <a class="dropdown-item"
-                                       href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'Sel_All' %}?disp=disp_def"
+                                       href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'Sel_All' 0 %}?disp=disp_def"
                                        title="Manage {{ value.name }}s">
                                         {{ value.name }}
                                     </a>

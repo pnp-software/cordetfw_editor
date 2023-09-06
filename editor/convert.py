@@ -49,13 +49,16 @@ def frmt_string(s):
     return s
 
 
-def convert_db_to_display(s):
+def convert_db_to_display(s, sel_rel_id):
     """
     The string s is a text field read from the database. It
     contains markdown text and internal references in the form #iref:n. 
     Internal references are replaced with <domain>:<name> and hyperlinks.
     If the target of the hyperlink is an item which is either NEW, MODified or
     DELeted, the hyperlink is in red font.
+    Hyperlinks point to the list_spec_item page. This page lists the spec_items
+    correspondig to a given release. The release identifier is in argument
+    sel_rel_id.
     Invalid references are replaced with: ERROR:n.
     Markdown text is converted to html.
     The output of this function is guaranteed to be safe for displat in an
@@ -68,7 +71,7 @@ def convert_db_to_display(s):
             project_id = str(item.project.id) if item.project != None else '0'
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
-                    item.domain+'\list_spec_items'
+                    item.domain+'/'+str(sel_rel_id)+'\list_spec_items'
             title_attrs = configs['cats'][item.cat]['short_desc']['href_tip']
             title = ''
             for title_attr in title_attrs:
@@ -90,12 +93,12 @@ def convert_db_to_display(s):
     return markdown_to_html(s_iref)
     
 
-def conv_do_nothing(context, item, name):
+def conv_do_nothing(context, item, name, sel_rel_id):
     """ Returns the value of attribute 'name' of spec_item 'item' without change """
     return getattr(item, name)
 
 
-def conv_db_disp_plain_ref(context, item, name):
+def conv_db_disp_plain_ref(context, item, name, sel_rel_id):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute value only contains plain text
@@ -103,31 +106,31 @@ def conv_db_disp_plain_ref(context, item, name):
     return str(getattr(item, name))
 
 
-def conv_db_disp_date(context, item, name):
+def conv_db_disp_date(context, item, name, sel_rel_id):
     """ TBD """
     return s
 
 
-def conv_db_disp_ref_text(context, item, name):
+def conv_db_disp_ref_text(context, item, name, sel_rel_id):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
     s = getattr(item, name)
-    return convert_db_to_display(s)
+    return convert_db_to_display(s, sel_rel_id)
     
     
-def conv_db_disp_table(context, item, name):
+def conv_db_disp_table(context, item, name, sel_rel_id):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute value contains a json description of a table.
     TBD: the table is simply rendered as a json string with internal references and mark-up resolved.
     """
     s = getattr(item, name)     # 's' is a json object
-    return convert_db_to_display(str(s))
+    return convert_db_to_display(str(s), sel_rel_id)
     
     
-def conv_db_disp_spec_item_ref(context, spec_item, name):
+def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel_id):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind).
@@ -144,7 +147,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
     sel_val = context['sel_val']
     s_name = spec_item_link.domain + ':' + spec_item_link.name
     s_href = '/editor/'+cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
-             '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/list_spec_items#'+s_name
+             '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/'+str(sel_rel_id)+'/list_spec_items#'+s_name
 
     title_attrs = configs['cats'][spec_item_link.cat]['short_desc']['href_tip']
     s_title = ''
@@ -161,13 +164,13 @@ def conv_db_disp_spec_item_ref(context, spec_item, name):
                '\">' + escape(s_name) + '</a>'
    
  
-def conv_db_disp_eval_ref(context, item, name):
+def conv_db_disp_eval_ref(context, item, name, sel_rel_id):
     """ 
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute value is of 'eval_ref' kind)
     """
     s = getattr(item, name)
-    conv_s = convert_db_to_display(s)
+    conv_s = convert_db_to_display(s, sel_rel_id)
     if conv_s != s:
         nval = eval_di_value(s)
         return conv_s + ' = ' + nval

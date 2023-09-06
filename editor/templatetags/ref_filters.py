@@ -36,7 +36,7 @@ def conv_db_disp(context, spec_item, attr_names):
     for attr_name in attr_names:
         attr_content_kind = configs['cats'][spec_item.cat]['attrs'][attr_name]['kind']
         conv_func = conv_db_disp_func[attr_content_kind]
-        s = getattr(convert, conv_func)(context, spec_item, attr_name)
+        s = getattr(convert, conv_func)(context, spec_item, attr_name, context['sel_rel_id'])
         if s != '':
             values.append((context['config']['attrs'][attr_name]['label'], mark_safe(s)))
     return values
@@ -45,14 +45,14 @@ def conv_db_disp(context, spec_item, attr_names):
 @register.simple_tag(takes_context=True)
 def disp_trac(context, spec_item, trac_cat, trac_link):
     """ 
-    Generate the display representation of the traceability information for spec_item.
+    Generate the display representation of the traceability information for a spec_item.
     If S is spec_item, then this function assumes that the traceability link is stored
     in category 'trac_cat' and that attribute 'trac_link' holds the link from trac_cat
     to spec_item. trac_link is either 's_link' or 'p_link'.
     To illustrate, suppose that 'trac_link' is equal to 's_link'; in this case, the  
     function proceeds in two steps:
     - It extracts all the spec_items L1, L2, ... Ln which belong to category spec_cat  
-      and which point to S through s_link
+      and which point to S through their s_link
     - It returns a string holding a list of the spec_items which are pointed at by
       L1, L2, ... Ln through their p_link
     """

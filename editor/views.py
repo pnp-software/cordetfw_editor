@@ -25,6 +25,7 @@ from django.forms.models import model_to_dict
 from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.utils.timezone import get_current_timezone
+from django.db.models import OuterRef, Subquery
 
 from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
@@ -35,7 +36,8 @@ from editor.utilities import get_domains, do_application_release, do_project_rel
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
                              del_release, list_trac_items_for_latex, make_obs_spec_item_copy, \
                              mark_spec_item_aliases_as_del, create_and_init_spec_item, \
-                             remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases
+                             remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
+                             get_spec_item_query
 from editor.imports import import_project_tables
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
@@ -366,7 +368,7 @@ def edit_val_set(request, project_id, val_set_id):
 
 
 @login_required         
-def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
+def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
@@ -385,7 +387,16 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     if disp is not None:
         get_parameter_sting += 'disp=' + str(disp) + '&'
     order_by = request.GET.get('order_by')
+    if order_by is not None:
+        get_parameter_sting += 'order_by=' + str(disp) + '&'
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
+
+    # Get selected release object and the list of previous releases
+    if sel_rel_id != 0:
+        sel_rel = Release.objects.get(id=sel_rel_id)   # Selected release to be displayed
+    else:
+        sel_rel = None
+    releases = get_previous_list(project.release)
 
     # Prepare data for dropdown in header through which users can access
     # the list of all project and applications spec_items
@@ -439,13 +450,23 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         else:
             breadcrumb['rest'] += drop_down_items
 
-    if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
-        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                    exclude(status='DEL').exclude(status='OBS') 
-    else:                       # Items to be listed are 'application items'
-        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                    exclude(status='DEL').exclude(status='OBS')
-    
+    # Create list of items to be displayed
+    if sel_rel is None:
+        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
+            items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        exclude(status='DEL').exclude(status='OBS') 
+        else:                       # Items to be listed are 'application items'
+            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        exclude(status='DEL').exclude(status='OBS')
+    else:
+        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
+            items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        filter(updated_at__lte=sel_rel.updated_at)
+        else:                      # Items to be listed are 'application items'
+            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        filter(updated_at__lte=sel_rel.updated_at)
+        # TBD: remove all items from 'items' which, in the selected release, were either obsolete or deleted
+                         
     if (sel_val != "Sel_All"):
         items = items.filter(domain=sel_val)
         
@@ -506,22 +527,37 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     }
     
     context = {
-        'page_items': page_items, 'pagination': pagination, 'project': project,
-        'application_id': application_id, 'domains': domains,
-        'sel_val': sel_val, 'val_set': val_set, 'val_sets': val_sets,
+        'page_items': page_items, 
+        'pagination': pagination, 
+        'project': project,
+        'application_id': application_id, 
+        'domains': domains,
+        'sel_val': sel_val, 
+        'val_set': val_set, 
+        'val_sets': val_sets,
         'default_val_set_id': default_val_set.id,
-        'config': configs['cats'][cat], 'cat': cat, 'breadcrumb': breadcrumb,
-        'expand_id': expand_id, 'expand_items': expand_items,
-        'expand_link': expand_link, 'n_pad_fields': n_pad_fields, 'disp': disp,
-        'disp_list': configs['cats'][cat][disp], 'history': False,
+        'config': configs['cats'][cat], 
+        'cat': cat, 
+        'breadcrumb': breadcrumb,
+        'expand_id': expand_id, 
+        'expand_items': expand_items,
+        'expand_link': expand_link, 
+        'n_pad_fields': n_pad_fields, 
+        'disp': disp,
+        'disp_list': configs['cats'][cat][disp], 
+        'history': False,
         'find_replace_fields': configs['cats'][cat]['attrs'],
-        'order_by': order_by, 'get_parameter_sting': get_parameter_sting
+        'order_by': order_by, 
+        'sel_rel': sel_rel,
+        'sel_rel_id': sel_rel_id,
+        'releases': releases,
+        'get_parameter_sting': get_parameter_sting
     }
     return render(request, 'list_spec_items.html', context)    
 
 
 @login_required         
-def add_spec_item(request, cat, project_id, application_id, sel_val):
+def add_spec_item(request, cat, project_id, application_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
@@ -551,13 +587,14 @@ def add_spec_item(request, cat, project_id, application_id, sel_val):
             new_spec_item.cat = cat
             new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
+            new_spec_item.created_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
             new_spec_item.status = 'NEW'
             new_spec_item.project = project
             new_spec_item.application = application
             new_spec_item.save()
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_val, s_parent_id, p_parent_id, new_spec_item)
+                                            sel_val, sel_rel_id, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id)
@@ -570,7 +607,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_val):
 
 
 @login_required         
-def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
+def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
@@ -599,7 +636,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
             if (spec_item.val_set.name == 'Default') and (('name' in form.changed_data) or ('domain' in form.changed_data)):
                 update_dom_name_in_val_set(spec_item)
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_val, s_parent_id, p_parent_id, spec_item)
+                                            sel_val, sel_rel_id, s_parent_id, p_parent_id, spec_item)
             return redirect(redirect_url)
     else:   
         initial_spec_item_values = spec_item_to_edit(spec_item)
@@ -621,7 +658,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val):
 
 
 @login_required         
-def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val):
+def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     if not has_write_access_to_project(request, project):
@@ -641,12 +678,12 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
         messages.warning(request,'External spec_item has not changed -- no refresh needed')
  
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+\
-                    str(default_val_set.id)+'/'+sel_val+'/list_spec_items#'+spec_item.domain+':'+spec_item.name
+                    str(default_val_set.id)+'/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items#'+spec_item.domain+':'+spec_item.name
     return redirect(redirect_url)
     
 
 @login_required         
-def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
+def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     spec_item = SpecItem.objects.get(id=item_id)
@@ -669,13 +706,14 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
             new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
+            new_spec_item.created_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
             new_spec_item.application = application
             new_spec_item.status = 'NEW'
             new_spec_item.save()
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_val, s_parent_id, p_parent_id, new_spec_item)
+                                            sel_val, sel_rel_id, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
@@ -688,7 +726,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val):
     return render(request, 'spec_item_form.html', context) 
 
 @login_required         
-def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
+def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     spec_item = SpecItem.objects.get(id=item_id)
@@ -710,6 +748,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
             new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
+            new_spec_item.created_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
             new_spec_item.project = project
             new_spec_item.application = application
@@ -717,7 +756,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
             new_spec_item.status = 'NEW'
             new_spec_item.save()
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                            sel_val, s_parent_id, p_parent_id, new_spec_item)
+                                            sel_val, sel_rel_id, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
@@ -731,7 +770,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val):
 
 
 @login_required         
-def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
+def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     spec_item = SpecItem.objects.get(id=item_id)
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
@@ -751,7 +790,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
             remove_spec_item_aliases(request, spec_item)
         remove_spec_item(request, spec_item)
         redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                                sel_val, s_parent_id, p_parent_id, None)
+                                                sel_val, sel_rel_id, s_parent_id, p_parent_id, None)
         return redirect(redirect_url)
   
     if request.method == 'POST':   
@@ -764,7 +803,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val):
             spec_item.change_log = form.cleaned_data['change_log']
             spec_item.save() 
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
-                                                    sel_val, s_parent_id, p_parent_id, None)
+                                                    sel_val, sel_rel_id, s_parent_id, p_parent_id, None)
             return redirect(redirect_url)
     else:   
         form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
@@ -835,7 +874,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     return response            
 
 
-def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
+def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     val_set = ValSet.objects.filter(project_id=project.id).get(id=val_set_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
@@ -847,7 +886,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         return redirect(base_url)
 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(val_set_id)+\
-                           '/'+sel_val+'/list_spec_items'    
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items'    
   
     if request.method == 'POST':   
         try:
@@ -888,6 +927,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     export_to_spec_item(request, project, item, new_spec_item)   
                     new_spec_item.status = 'NEW'
                     new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
+                    new_spec_item.created_at = datetime.now(tz=get_current_timezone())
                     new_spec_item.previous = None
                     new_spec_item.owner = get_user(request)
                     new_spec_item.project = project

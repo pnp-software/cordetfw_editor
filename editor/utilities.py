@@ -80,6 +80,7 @@ def spec_item_to_latex(spec_item):
             dic[label] = frmt_string(str(getattr(spec_item, key)))
     
     dic['UpdatedAt'] = spec_item.updated_at.strftime('%d-%m-%Y %H:%M')    
+    dic['CreatedAt'] = spec_item.created_at.strftime('%d-%m-%Y %H:%M')    
     dic['Owner'] = frmt_string(str(spec_item.owner))
     dic['Status'] = spec_item.status
     dic['Project'] = frmt_string(str(spec_item.project))
@@ -209,7 +210,7 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
    
 
 def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
-                     sel_val, s_parent_id, p_parent_id, target_spec_item):
+                     sel_val, sel_rel_id, s_parent_id, p_parent_id, target_spec_item):
     """
     Compute the url to which the user is re-directed after having added/copied/edited/deleted
     a spec_item. If s_parent_id or p_parent_id are different from 'None', then the 
@@ -220,16 +221,16 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
         s_parent = SpecItem.objects.get(id=s_parent_id)
         target = '#'+s_parent.domain+':'+s_parent.name
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_val+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
     if (p_parent_id != None):
         p_parent = SpecItem.objects.get(id=p_parent_id)
         target = '#'+p_parent.domain+':'+p_parent.name 
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_val+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
     
     target = '#'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
     return '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_val+'/list_spec_items'+target
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items'+target
       
          
 def get_domains(cat, application_id, project_id):
@@ -456,4 +457,27 @@ def update_dom_name_in_val_set(spec_item):
                 child.domain = spec_item.domain
                 child.save()
     
+
+def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel):
+    """ 
+    Query the database for all spec_items belonging to the argument project, application,
+    val_set and catefory. 
+    If the release identifier (sel_rel_id) is zero, the last version of each spec_item
+    is returned; otherwise, the version corresponding to the argument release is returned.
+    """
+    if sel_rel is None:     # Return the latest version of the spec_items
+        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
+            items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        exclude(status='DEL').exclude(status='OBS') 
+        else:               # Items to be listed are 'application items'
+            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        exclude(status='DEL').exclude(status='OBS')
+    else:
+        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
+            items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        filter(updated_at__lte=sel_rel.updated_at)
+        else:               # Items to be listed are 'application items'
+            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+                        filter(updated_at__lte=sel_rel.updated_at)
+    return items
     

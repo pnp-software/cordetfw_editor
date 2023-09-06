@@ -225,6 +225,7 @@
     <li><i>Status</i>: the history status of the speecification item</li>
     <li><i>Update Time</i>: the time when the specification item was created or when the 
                               history status of the specification was last updated</li>
+    <li><i>Create Time</i>: the time when the specification item was created</li>
     <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
                                  (empty if the specification item has no history)</li>
     <li><i>Rationale</i>: the rationale for the existence of the specification item or for its value</li>
@@ -302,6 +303,23 @@
     <img src="{% static 'images/SplitSpecItem.png' %}"> 
     </p><p>
     <img src="{% static 'images/RefreshSpecItem.png' %}"> 
+    </p>
+    
+    <h5><a name="ViewOldRelease">View Old Release</a></h5>
+    <p>
+    By default, the editor displays the current version of the specification items but users can ask to 
+    display the specification items as they existed when a given <a class="text-decoration-none" href="#Releases">release</a> was created.
+    The editor then proceeds as follows:
+    <ul>
+    <li>It retrieves the date D1 corresponding to the selected release and the date D2 corresponding to the
+        release ffollowin the selected release. If the selected release was the last one, D2 is set equal
+        to the current time</li>
+    <li>It retrieves all specification items in state CNF whose update date is earlier than or equal to D1</li>
+    <li>It retrieves all specification items in state DEL whose update data is later than D1 and whose
+        creation date is earlier than D1</li>
+    <li>It retrieves all specifications in state OBS whose update date lies between D1 and D2 </li>
+    <li>It displays all specifications retrieved in the prevoous three steps </li>
+    </ul>
     </p>
      
     <h5><a name="IntExtSpecItems">Internal and External Specification Items</a></h5>
@@ -489,7 +507,7 @@
             <td>&#10060;</td>
         </tr>
         <tr>
-            <td>Update Time</td>
+            <td>Update & Create Time</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
             <td>&#10060;</td>
@@ -842,7 +860,8 @@
     <li>The owner is set to the user who triggered the import</li>
     <li>The update time is set to the current time</li>
     <li>If there is no item with the same domain:name in the selected category and ValSet,
-        the status is set to NEW and the previous pointer is set to 'None'</li>
+        the status is set to NEW, the previous pointer is set to 'None' and the create
+        time is set to the current time</li>
     <li>If there is a non-obsolete and non-deleted item with the same domain:name in the 
         selected category and ValSet,
         a copy is made of the existing item. the status of the new item is set to MOD and
@@ -883,7 +902,7 @@
     </p>
     <ul>
     <li>In addition to the fields in the configuration dictionary, the following fields
-        are also exported: project and application name, owner, update time and status;
+        are also exported: project and application name, owner, update and create time and status;
         the names of these extra fields in the exported file are the same as the names
         of the fields in the database model converted to CamelCase</li>
     <li>Exported fields are converted from database to latex format</li>

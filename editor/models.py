@@ -2,6 +2,7 @@ import json
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
+from datetime import datetime
 
 class Release(models.Model):
     release_author = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -61,6 +62,7 @@ class SpecItem(models.Model):
     owner = models.ForeignKey(User, related_name='owned_spec_items', on_delete=models.PROTECT)
     status = models.CharField(max_length=20, default='NEW')
     updated_at = models.DateTimeField()  
+    created_at = models.DateTimeField(default=datetime(2000, 1, 1))
     previous = models.OneToOneField('self', on_delete=models.SET_DEFAULT, null=True, default=None)
     rationale = models.TextField(blank=True, default='')
     remarks = models.TextField(blank=True, default='')
