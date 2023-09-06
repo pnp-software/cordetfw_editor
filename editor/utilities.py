@@ -458,12 +458,16 @@ def update_dom_name_in_val_set(spec_item):
                 child.save()
     
 
-def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel):
+def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by):
     """ 
     Query the database for all spec_items belonging to the argument project, application,
     val_set and catefory. 
     If the release identifier (sel_rel_id) is zero, the last version of each spec_item
     is returned; otherwise, the version corresponding to the argument release is returned.
+    If sel_val is different from 'Sel_All', then only spec_items with their domain equal to
+    sel_val are included in the query.
+    If order_by is equal to None, then items are ordered by their domain:name; otherwise,
+    they are ordered by the field names in 'order_by'.
     """
     if sel_rel is None:     # Return the latest version of the spec_items
         if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
@@ -475,9 +479,22 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel):
     else:
         if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
             items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                        filter(updated_at__lte=sel_rel.updated_at)
+                        filter(updated_at__lte=sel_rel.updated_at).exclude(status='DEL')            
         else:               # Items to be listed are 'application items'
             items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         filter(updated_at__lte=sel_rel.updated_at)
+
+    if (sel_val != "Sel_All"):
+        items = items.filter(domain=sel_val)
+        
+    if order_by == None:    
+        items = items.order_by('domain','name')
+    elif order_by in ('p_link', 's_link'):
+        items = items.order_by(order_by+'__domain',order_by+'__name')
+    elif order_by == 'owner':
+        items = items.order_by(order_by+'__username', 'domain','name')
+    else:
+        items = items.order_by(order_by, 'domain','name')
+
     return items
     

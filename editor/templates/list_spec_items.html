@@ -7,7 +7,8 @@
     <nav class="nav nav-underline">
         {% if history %}
         <div class="nav-link disabled">
-            History of {{page_items.0.domain}}:{{page_items.0.name}}
+            History of {{page_items.0.domain}}:{{page_items.0.name}} 
+            {% if sel_rel_id != 0 %}in Release {{sel_rel_id}}{% else %}in Current Release {% endif %}
         </div>
         {% else %}
         <!-- Dropdown for ValSet -->
@@ -114,17 +115,17 @@
             </div>
             <div class="dropdown-menu">
                 <a class="dropdown-item"
-                   href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val %}">
+                   href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}">
                     plain
                 </a>
                 {% if order_by != None %}
                 <a class="dropdown-item"
-                   href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val %}?export=latex_format&order_by={{order_by}}">
+                   href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?export=latex_format&order_by={{order_by}}">
                     latex
                 </a>
                 {% else %}
                 <a class="dropdown-item"
-                   href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val %}?export=latex_format">
+                   href="{% url 'export_spec_items' cat project.id application_id val_set.id sel_val sel_rel_id %}?export=latex_format">
                     latex
                 </a>
                 {% endif %}
@@ -206,7 +207,7 @@
                             {% endfor %}
                         {% endif %}
                     {% else %} <!-- Display traceability links -->
-                        {% disp_trac item disp_item.trac_cat disp_item.trac_link as link_value %}
+                        {% disp_trac item disp_item.trac_cat disp_item.trac_link sel_rel as link_value %}
                         {{ link_value|linebreaksbr }}
                     {% endif %}
                 </td>

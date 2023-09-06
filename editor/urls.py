@@ -31,7 +31,7 @@ urlpatterns = [
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_val>/<int:sel_rel_id>/copy_spec_item', views.copy_spec_item, name='copy_spec_item'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_val>/<int:sel_rel_id>/split_spec_item', views.split_spec_item, name='split_spec_item'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_val>/<int:sel_rel_id>/del_spec_item', views.del_spec_item, name='del_spec_item'),
-    path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_val>/export_spec_items', views.export_spec_items, name='export_spec_items'),
+    path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_val>/<int:sel_rel_id>/export_spec_items', views.export_spec_items, name='export_spec_items'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:val_set_id>/<str:sel_val>/import_spec_items', views.import_spec_items, name='import_spec_items'),
     path('<str:cat>/<int:project_id>/<int:application_id>/<int:item_id>/<str:sel_val>/<int:sel_rel_id>/refresh_spec_item', views.refresh_spec_item, name='refresh_spec_item'),
     

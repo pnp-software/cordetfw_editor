@@ -311,14 +311,15 @@
     display the specification items as they existed when a given <a class="text-decoration-none" href="#Releases">release</a> was created.
     The editor then proceeds as follows:
     <ul>
-    <li>It retrieves the date D1 corresponding to the selected release and the date D2 corresponding to the
-        release ffollowin the selected release. If the selected release was the last one, D2 is set equal
-        to the current time</li>
-    <li>It retrieves all specification items in state CNF whose update date is earlier than or equal to D1</li>
-    <li>It retrieves all specification items in state DEL whose update data is later than D1 and whose
-        creation date is earlier than D1</li>
-    <li>It retrieves all specifications in state OBS whose update date lies between D1 and D2 </li>
-    <li>It displays all specifications retrieved in the prevoous three steps </li>
+    <li>It retrieves the date D1 corresponding to the selected release</li>
+    <li>It removes all specification items created after D1</li>
+    <li>From the query of bullet 2, it retrieves all specification items in state CNF whose 
+        update date is earlier than or equal to D1</li>
+    <li>From the query of bullet 2, It retrieves all specification items which satisfy the 
+        following two conditions: (a) They are in state DEL or OBS and (b) their previous
+        pointer is either NONE or it points to a specification item with an 
+        update time earlier than D1 </li>
+    <li>It displays all specifications retrieved in the previous two steps </li>
     </ul>
     </p>
      

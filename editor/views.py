@@ -123,7 +123,8 @@ def add_application(request, project_id):
                                           desc = form.cleaned_data['description'],
                                           cats = form.cleaned_data['cats'],
                                           project = project)
-            do_application_release(request, new_application, "Initial Release")
+            do_application_release(request, new_application, "Initial release for application " \
+                                   + new_application.name)
             new_application.save()
             return redirect(base_url)
     else:   
@@ -145,7 +146,7 @@ def add_project(request):
                                   cats = form.cleaned_data['cats'],
                                   updated_at = datetime.now(tz=get_current_timezone()),
                                   owner = form.cleaned_data['owner'])
-            new_release = Release(desc = "Initial release after project creation",
+            new_release = Release(desc = "Initial release for project " + new_project.name,
                                   release_author = get_user(request),
                                   updated_at = datetime.now(tz=get_current_timezone()),
                                   application_version = 0,
@@ -393,7 +394,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
 
     # Get selected release object and the list of previous releases
     if sel_rel_id != 0:
-        sel_rel = Release.objects.get(id=sel_rel_id)   # Selected release to be displayed
+        sel_rel = Release.objects.get(id=sel_rel_id)   # Release to be displayed
     else:
         sel_rel = None
     releases = get_previous_list(project.release)
@@ -451,34 +452,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             breadcrumb['rest'] += drop_down_items
 
     # Create list of items to be displayed
-    if sel_rel is None:
-        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
-            items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                        exclude(status='DEL').exclude(status='OBS') 
-        else:                       # Items to be listed are 'application items'
-            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                        exclude(status='DEL').exclude(status='OBS')
-    else:
-        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
-            items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                        filter(updated_at__lte=sel_rel.updated_at)
-        else:                      # Items to be listed are 'application items'
-            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                        filter(updated_at__lte=sel_rel.updated_at)
-        # TBD: remove all items from 'items' which, in the selected release, were either obsolete or deleted
-                         
-    if (sel_val != "Sel_All"):
-        items = items.filter(domain=sel_val)
-        
-    if order_by == None:    
-        items = items.order_by('domain','name')
-    elif order_by in ('p_link', 's_link'):
-        items = items.order_by(order_by+'__domain',order_by+'__name')
-    elif order_by == 'owner':
-        items = items.order_by(order_by+'__username', 'domain','name')
-    else:
-        items = items.order_by(order_by, 'domain','name')
-    
+    items = get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by)
+                             
     if (expand_id != None) and (expand_link != 'None'):   # parent_id must be listed together with its children
         expand_items = get_expand_items(cat, project_id, val_set_id, expand_id, expand_link)     
         expand_id = int(expand_id)      # Cast is necessary for comparison to spec_item_id in list_spec_items.html
@@ -817,7 +792,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
 
         
 @login_required         
-def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
+def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     order_by = request.GET.get('order_by')
     if application_id != 0:
@@ -828,30 +803,22 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         return redirect(base_url)
     export_type = request.GET.get('export')
 
+    # Get selected release object 
+    if sel_rel_id != 0:
+        sel_rel = Release.objects.get(id=sel_rel_id)   # Selected release to be displayed
+    else:
+        sel_rel = None
+
+    items = get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by)
+
     if configs['cats'][cat]['level'] == 'project':   # Items to be exported are 'project items'
-        items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id)
         fdName = project.name.replace(' ','_') + cat + '.csv'
     else:                       # Items to be exported are 'application items'
-        items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id)
         if application == None:
             fdName = project.name.replace(' ','') + cat + '.csv'
         else:
             fdName = application.name.replace(' ','') + cat + '.csv'
         
-    items = items.exclude(status='DEL').exclude(status='OBS')  
-        
-    if order_by == None:    
-        items = items.order_by('domain','name')
-    elif order_by in ('p_link', 's_link'):
-        items = items.order_by(order_by+'__domain',order_by+'__name')
-    elif order_by == 'owner':
-        items = items.order_by(order_by+'__username', 'domain','name')
-    else:
-        items = items.order_by(order_by, 'domain','name')
-        
-    if (sel_val != 'Sel_All'):
-        items = items.filter(domain=sel_val)
-
     csv_sep = configs['general']['csv_sep']
     fd = StringIO()
     for i, item in enumerate(items):
@@ -1076,5 +1043,5 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
     context = {'page_items': items, 'project': project, 'application_id': application_id, 'sel_val': sel_val,\
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 'val_set_id': val_set.id, \
                'val_set': val_set, 'default_val_set_id': default_val_set.id, 'disp': disp, \
-               'disp_list': disp_list, 'history': True }
+               'disp_list': disp_list, 'history': True, 'sel_rel': None, 'sel_rel_id': 0 }
     return render(request, 'list_spec_items.html', context)    

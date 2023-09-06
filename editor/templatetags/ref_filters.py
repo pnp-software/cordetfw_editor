@@ -36,14 +36,14 @@ def conv_db_disp(context, spec_item, attr_names):
     for attr_name in attr_names:
         attr_content_kind = configs['cats'][spec_item.cat]['attrs'][attr_name]['kind']
         conv_func = conv_db_disp_func[attr_content_kind]
-        s = getattr(convert, conv_func)(context, spec_item, attr_name, context['sel_rel_id'])
+        s = getattr(convert, conv_func)(context, spec_item, attr_name, context['sel_rel'])
         if s != '':
             values.append((context['config']['attrs'][attr_name]['label'], mark_safe(s)))
     return values
 
  
 @register.simple_tag(takes_context=True)
-def disp_trac(context, spec_item, trac_cat, trac_link):
+def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
     """ 
     Generate the display representation of the traceability information for a spec_item.
     If S is spec_item, then this function assumes that the traceability link is stored
@@ -51,19 +51,31 @@ def disp_trac(context, spec_item, trac_cat, trac_link):
     to spec_item. trac_link is either 's_link' or 'p_link'.
     To illustrate, suppose that 'trac_link' is equal to 's_link'; in this case, the  
     function proceeds in two steps:
-    - It extracts all the spec_items L1, L2, ... Ln which belong to category spec_cat  
+    - It extracts all the spec_items L1, L2, ... Ln which belong to category trac_cat  
       and which point to S through their s_link
     - It returns a string holding a list of the spec_items which are pointed at by
       L1, L2, ... Ln through their p_link
     """
-    if trac_link == 's_link':
-        trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
-                    s_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+    
+    if sel_rel == None:
+        sel_rel_id = 0
+        if trac_link == 's_link':
+            trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                        s_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+        else:
+            trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                        p_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
     else:
-        trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
-                    p_link_id=spec_item.id).exclude(status='DEL').exclude(status='OBS')
+        sel_rel_id = sel_rel.id
+        if trac_link == 's_link':
+            trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                        s_link_id=spec_item.id).filter(updated_at__lte=sel_rel.updated_at)
+        else:
+            trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
+                        p_link_id=spec_item.id).filter(updated_at__lte=sel_rel.updated_at)
     
     s = ''
+    
     for link in trac_links:
         application_id = str(link.p_link.application_id)
         if application_id == 'None':
@@ -71,7 +83,7 @@ def disp_trac(context, spec_item, trac_cat, trac_link):
 
         if trac_link == 's_link' and link.p_link != None:
             target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'\list_spec_items'
+                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'/'+str(sel_rel_id)+'\list_spec_items'
             s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
                 link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + ')'
             s = s + '\n'
@@ -79,7 +91,7 @@ def disp_trac(context, spec_item, trac_cat, trac_link):
         
         if trac_link == 'p_link' and link.s_link != None:
             target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'\list_spec_items'
+                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'/'+str(sel_rel_id)+'\list_spec_items'
             s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
                 link.s_link.desc+'\">' + link.s_link.domain + ':' + link.s_link.name + '</a> (' + link.s_link.title + ')'
             s = s + '\n'    
