@@ -1,8 +1,8 @@
 {
-     "editorVersion": "5.28",
+     "editorVersion": "5.29",
      "states": [
           {
-               "id": 301,
+               "id": 177,
                "attrs": {
                     "x": 612,
                     "y": 126,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 302,
+               "id": 178,
                "attrs": {
                     "x": 378,
                     "y": 113,
@@ -63,11 +63,11 @@
                "selected": false
           },
           {
-               "id": 304,
+               "id": 180,
                "attrs": {
-                    "x": 363,
+                    "x": 362,
                     "y": 323,
-                    "width": 214,
+                    "width": 216,
                     "height": 140,
                     "r": 10,
                     "rx": 10,
@@ -91,7 +91,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update time to the current time\n(e) parent atribute to point to the spec_item\nwhich was split\n(f) other pointer attributes to None\n(g) leave change_log unchanged",
+                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update and create times to current time\n(e) parent attribute to point to the spec_item\nwhich was split\n(f) other pointer attributes to None\n(g) leave change_log unchanged",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 306,
+               "id": 182,
                "attrs": {
                     "x": 266,
                     "y": 380,
@@ -124,7 +124,7 @@
                "selected": false
           },
           {
-               "id": 307,
+               "id": 183,
                "attrs": {
                     "x": 118,
                     "y": 69,
@@ -147,7 +147,7 @@
                "selected": false
           },
           {
-               "id": 309,
+               "id": 185,
                "attrs": {
                     "x": 197,
                     "y": 119,
@@ -170,7 +170,7 @@
                "selected": false
           },
           {
-               "id": 311,
+               "id": 187,
                "attrs": {
                     "x": 304,
                     "y": 207,
@@ -209,7 +209,7 @@
                "selected": false
           },
           {
-               "id": 313,
+               "id": 189,
                "attrs": {
                     "x": 123,
                     "y": 225,
@@ -271,8 +271,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 301,
-               "stateToID": 302,
+               "stateFromID": 177,
+               "stateToID": 178,
                "selected": false
           },
           {
@@ -318,8 +318,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 302,
-               "stateToID": 311,
+               "stateFromID": 178,
+               "stateToID": 187,
                "selected": false
           },
           {
@@ -329,7 +329,7 @@
                     "path": [
                          [
                               "M",
-                              358,
+                              357,
                               393
                          ],
                          [
@@ -360,8 +360,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 304,
-               "stateToID": 306,
+               "stateFromID": 180,
+               "stateToID": 182,
                "selected": false
           },
           {
@@ -402,8 +402,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 311,
-               "stateToID": 304,
+               "stateFromID": 187,
+               "stateToID": 180,
                "selected": false
           }
      ],
@@ -413,8 +413,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1238,
-               "height": 622,
+               "width": 1101,
+               "height": 559,
                "r": 0,
                "rx": 0,
                "ry": 0,

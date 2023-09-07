@@ -1,8 +1,8 @@
 {
-     "editorVersion": "5.28",
+     "editorVersion": "5.29",
      "states": [
           {
-               "id": 66,
+               "id": 51,
                "attrs": {
                     "x": 246,
                     "y": 166,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 67,
+               "id": 52,
                "attrs": {
                     "x": 375,
                     "y": 153,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 69,
+               "id": 54,
                "attrs": {
                     "x": 363,
                     "y": 383,
@@ -91,7 +91,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update time to the current time\n(e) ValSet to the Default ValSet",
+                    "entryDesc": "Create new spec_item and populate\nit with the content of the form and then set:\n(a) status of spec_item to NEW\n(b) previous pointer to None\n(c) owner to the current user\n(d) update and create times to current time\n(e) ValSet to the Default ValSet",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 71,
+               "id": 56,
                "attrs": {
                     "x": 263,
                     "y": 422,
@@ -124,7 +124,7 @@
                "selected": false
           },
           {
-               "id": 72,
+               "id": 57,
                "attrs": {
                     "x": 203,
                     "y": 83,
@@ -147,7 +147,7 @@
                "selected": false
           },
           {
-               "id": 74,
+               "id": 59,
                "attrs": {
                     "x": 316,
                     "y": 250,
@@ -186,7 +186,7 @@
                "selected": false
           },
           {
-               "id": 76,
+               "id": 61,
                "attrs": {
                     "x": 590,
                     "y": 413,
@@ -209,7 +209,7 @@
                "selected": false
           },
           {
-               "id": 78,
+               "id": 63,
                "attrs": {
                     "x": 622,
                     "y": 293,
@@ -231,7 +231,7 @@
                "selected": false
           },
           {
-               "id": 79,
+               "id": 64,
                "attrs": {
                     "x": 602,
                     "y": 159,
@@ -254,7 +254,7 @@
                "selected": false
           },
           {
-               "id": 81,
+               "id": 66,
                "attrs": {
                     "x": 562,
                     "y": 178,
@@ -315,8 +315,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 66,
-               "stateToID": 67,
+               "stateFromID": 51,
+               "stateToID": 52,
                "selected": false
           },
           {
@@ -362,8 +362,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 67,
-               "stateToID": 74,
+               "stateFromID": 52,
+               "stateToID": 59,
                "selected": false
           },
           {
@@ -404,8 +404,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 69,
-               "stateToID": 71,
+               "stateFromID": 54,
+               "stateToID": 56,
                "selected": false
           },
           {
@@ -457,8 +457,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 76,
-               "stateToID": 78,
+               "stateFromID": 61,
+               "stateToID": 63,
                "selected": false
           },
           {
@@ -499,8 +499,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 74,
-               "stateToID": 69,
+               "stateFromID": 59,
+               "stateToID": 54,
                "selected": false
           },
           {
@@ -541,8 +541,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 79,
-               "stateToID": 81,
+               "stateFromID": 64,
+               "stateToID": 66,
                "selected": false
           }
      ],
@@ -552,8 +552,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1238,
-               "height": 622,
+               "width": 1101,
+               "height": 559,
                "r": 0,
                "rx": 0,
                "ry": 0,

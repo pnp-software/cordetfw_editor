@@ -1,8 +1,8 @@
 {
-     "editorVersion": "5.28",
+     "editorVersion": "5.29",
      "states": [
           {
-               "id": 115,
+               "id": 1,
                "attrs": {
                     "x": 273,
                     "y": 73,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 116,
+               "id": 2,
                "attrs": {
                     "x": 409,
                     "y": 66,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 118,
+               "id": 4,
                "attrs": {
                     "x": 397,
                     "y": 363,
@@ -102,12 +102,12 @@
                "selected": false
           },
           {
-               "id": 120,
+               "id": 6,
                "attrs": {
                     "x": 378,
                     "y": 446,
                     "width": 208,
-                    "height": 80,
+                    "height": 92,
                     "r": 10,
                     "rx": 10,
                     "ry": 10,
@@ -130,7 +130,7 @@
                     "entryCode": "",
                     "doCode": "",
                     "exitCode": "",
-                    "entryDesc": "(a) Set status of spec_item to NEW\n(b) Set previous pointer to None\n(c) Set ValSet to the default ValSet\n(d) Set owner to the current user\n(e) Set update time to the current time",
+                    "entryDesc": "(a) Set status of spec_item to NEW\n(b) Set previous pointer to None\n(c) Set ValSet to the default ValSet\n(d) Set owner to the current user\n(e) Set update time to the current time\n(f) Set create time to the current time",
                     "doDesc": "",
                     "exitDesc": "",
                     "entryAp": false,
@@ -141,10 +141,10 @@
                "selected": false
           },
           {
-               "id": 122,
+               "id": 8,
                "attrs": {
                     "x": 275,
-                    "y": 473,
+                    "y": 479,
                     "width": 26,
                     "height": 26,
                     "r": 13,
@@ -163,7 +163,7 @@
                "selected": false
           },
           {
-               "id": 123,
+               "id": 9,
                "attrs": {
                     "x": 588,
                     "y": 175,
@@ -186,7 +186,7 @@
                "selected": false
           },
           {
-               "id": 125,
+               "id": 11,
                "attrs": {
                     "x": 582,
                     "y": 71.5,
@@ -209,7 +209,7 @@
                "selected": false
           },
           {
-               "id": 127,
+               "id": 13,
                "attrs": {
                     "x": 634,
                     "y": 283,
@@ -231,7 +231,7 @@
                "selected": false
           },
           {
-               "id": 128,
+               "id": 14,
                "attrs": {
                     "x": 470,
                     "y": 165,
@@ -255,7 +255,7 @@
                "selected": false
           },
           {
-               "id": 129,
+               "id": 15,
                "attrs": {
                     "x": 182,
                     "y": 155,
@@ -294,7 +294,7 @@
                "selected": false
           },
           {
-               "id": 131,
+               "id": 17,
                "attrs": {
                     "x": 328,
                     "y": 240,
@@ -372,8 +372,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 115,
-               "stateToID": 116,
+               "stateFromID": 1,
+               "stateToID": 2,
                "selected": false
           },
           {
@@ -419,8 +419,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 116,
-               "stateToID": 128,
+               "stateFromID": 2,
+               "stateToID": 14,
                "selected": false
           },
           {
@@ -461,8 +461,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 118,
-               "stateToID": 120,
+               "stateFromID": 4,
+               "stateToID": 6,
                "selected": false
           },
           {
@@ -473,12 +473,12 @@
                          [
                               "M",
                               373,
-                              486
+                              492
                          ],
                          [
                               "L",
                               309,
-                              486
+                              492
                          ]
                     ],
                     "stroke-width": 2,
@@ -503,8 +503,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 120,
-               "stateToID": 122,
+               "stateFromID": 6,
+               "stateToID": 8,
                "selected": false
           },
           {
@@ -556,8 +556,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 123,
-               "stateToID": 127,
+               "stateFromID": 9,
+               "stateToID": 13,
                "selected": false
           },
           {
@@ -603,8 +603,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 128,
-               "stateToID": 129,
+               "stateFromID": 14,
+               "stateToID": 15,
                "selected": false
           },
           {
@@ -650,8 +650,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 128,
-               "stateToID": 131,
+               "stateFromID": 14,
+               "stateToID": 17,
                "selected": false
           },
           {
@@ -703,8 +703,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 129,
-               "stateToID": 131,
+               "stateFromID": 15,
+               "stateToID": 17,
                "selected": false
           },
           {
@@ -745,19 +745,19 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 131,
-               "stateToID": 118,
+               "stateFromID": 17,
+               "stateToID": 4,
                "selected": false
           }
      ],
      "globals": {
           "paperPanX": 0,
-          "paperPanY": 0,
+          "paperPanY": 60,
           "attrs": {
                "x": 0,
-               "y": 0,
-               "width": 1238,
-               "height": 622,
+               "y": 60,
+               "width": 1101,
+               "height": 559,
                "r": 0,
                "rx": 0,
                "ry": 0,
