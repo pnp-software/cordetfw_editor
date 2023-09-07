@@ -597,6 +597,10 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
         return redirect(base_url)
   
     spec_item = SpecItem.objects.get(id=item_id)
+    if not spec_item.status in ('CNF', 'MOD', 'NEW'):
+        messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be edited ')
+        return redirect(base_url)
+    
     if request.method == 'POST':   
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
                             request.POST, initial=spec_item_to_edit(spec_item))
@@ -673,6 +677,9 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
         title = 'Copy '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project) or (spec_item.val_set.name != 'Default'):
         return redirect(base_url)
+    if spec_item.val_set != default_val_set:
+        messages.error(request, 'Only SpecItems in default ValSet can be copied ')
+        return redirect(base_url)
   
     if request.method == 'POST':   
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, \
@@ -714,6 +721,9 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
         application = None
         title = 'Split '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project)  or (spec_item.val_set.name != 'Default'):
+        return redirect(base_url)
+    if not spec_item.status in ('CNF', 'MOD', 'NEW'):
+        messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be split ')
         return redirect(base_url)
   
     if request.method == 'POST':   
@@ -758,6 +768,9 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
         application = None
         title = 'Delete '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project):
+        return redirect(base_url)
+    if not spec_item.status in ('CNF', 'MOD', 'NEW'):
+        messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be deleted ')
         return redirect(base_url)
 
     if spec_item.status == 'NEW':

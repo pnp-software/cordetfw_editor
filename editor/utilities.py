@@ -388,8 +388,9 @@ def list_trac_items_for_latex(spec_item, trac_cat, trac_link):
 def make_obs_spec_item_copy(request, spec_item):
     """ 
     The argument spec_item must be made obsolete: the previous pointer of spec_item is reset;
-    a copy of the spec_item is created; its status is set to OBS; the spec_item copy is saved 
-    to the database; the status of the argument spec_item is set to MOD; its previous
+    a copy of the spec_item is created; its status is set to OBS and its update time is set 
+    to the current time; the spec_item copy is saved to the database; 
+    the status of the argument spec_item is set to MOD; its previous
     pointer is set to point to the newly created OBS copy; the original spec_item instance
     is returned to the caller 
     """
@@ -400,6 +401,8 @@ def make_obs_spec_item_copy(request, spec_item):
     
     spec_item.status = 'OBS'
     spec_item.previous = previous
+    spec_item.updated_at = datetime.now(tz=get_current_timezone())
+    spec_item.owner = get_user(request)
     spec_item.id = None
     spec_item.save()            # Create new instance holding the OBS version of the spec_item
     
@@ -485,7 +488,6 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
         else:               # Items to be listed are 'application items'
             items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='NEW').exclude(status='MOD')
-        #import pdb; pdb.set_trace()
         items = items.filter(created_at__lte=sel_rel.updated_at)
         items = items.exclude(Q(status='CNF') & Q(updated_at__gt=sel_rel.updated_at))
         items = items.exclude(Q(status='DEL') & Q(updated_at__lt=sel_rel.updated_at))

@@ -167,28 +167,39 @@
     in the project or application to be updated according to the editor's
     <strong>history mechanism</strong>. 
     </p><p>
-    Specification items carry history information through the following <a class="text-decoration-none" href="#Core_Attributes">core 
+    Specification items carry history information through the following 
+    <a class="text-decoration-none" href="#Core_Attributes">core 
     attributes</a>: (a) the owner (the user who last updated the specification item); 
     (b) the status (see below); (c) the previous pointer (a pointer to the previous version of the 
-    specification item); and (d) the update time (the time when the specification item was last updated).
+    specification item); and (d) the update time (the time when the specification item was created or
+    last updated or deleted).
     The status is one of the following:
     </p>
         <ul>
-        <li><strong>New</strong>: the item has been created in the current release</li>
-        <li><strong>Modified </strong>: the item was created in a previous release and 
+        <li><strong>New (NEW)</strong>: the item has been created in the current release</li>
+        <li><strong>Modified (MODE)</strong>: the item was created in a previous release and 
         has been modified in the current release</li>
-        <li><strong>Confirmed</strong>: the item was created in a previous release and 
+        <li><strong>Confirmed (CNF)</strong>: the item was created in a previous release and 
         has not been modified in the current release</li>
-        <li><strong>Obsolete</strong>: the item was created in a previous release and 
+        <li><strong>Obsolete (OBC)</strong>: the item was created in a previous release and 
         has since been modified</li>
-        <li><strong>Deleted</strong>: the item was created in a previous release and 
+        <li><strong>Deleted (DEL)</strong>: the item was created in a previous release and 
         has since been deleted</li>
         </ul>
     <p>
     The status information evolves according to the logic in this state diagram:
     </p><p>
     <img src="{% static 'images/HistoryStatus.png' %}"> 
-    </p>
+    </p><p>
+    The management of the history of a specification item implies that a specification items exists
+    within the database as several linked database entries.
+    The next figure shows several possible situations. The green boxes in the figure represent
+    a database entry. A set of entries linked through the 'previous' pointer (one of the 
+    <a class="text-decoration-none" href="#Core_Attributes">core attributes</a> of specification
+    items) represents a specification item.
+    </p><p>
+    <img src="{% static 'images/SpecItemDbEntries.png' %}"> 
+    </p>    
      
     <h4><a name="SpecItems">Specification Items</a></h4>
     <p>
@@ -222,10 +233,11 @@
     <li><i>Title</i>: a short description of the specification item</li>
     <li><i>Description</i>: a long description of the specification item</li>
     <li><i>Owner</i>: the user who created or last updated the specification item</li>
-    <li><i>Status</i>: the history status of the speecification item</li>
-    <li><i>Update Time</i>: the time when the specification item was created or when the 
-                              history status of the specification was last updated</li>
-    <li><i>Create Time</i>: the time when the specification item was created</li>
+    <li><i>Status</i>: the history status of the specification item</li>
+    <li><i>Create Time</i>: the time when the specification item was created (i.e. when it entered state NEW)</li>
+    <li><i>Update Time</i>: the time when the last of the following state changes took place:
+                            the specification item was created (it entered state NEW), or was modified
+                            (it entered state MOD) or was deleted (it entered state DEL)</li>
     <li><i>Previous</i>: the pointer to the previous version of a specification item which has been modified 
                                  (empty if the specification item has no history)</li>
     <li><i>Rationale</i>: the rationale for the existence of the specification item or for its value</li>
@@ -336,7 +348,7 @@
     which, at the time the display of release R1 is commanded, are still in the CNF state.
     The items at points 2 and 3 are those which were in state CNF when release
     R1 was created but were later deleted.
-    The items at points 4 and 5 are those which were in steate CNF when release
+    The items at points 4 and 5 are those which were in state CNF when release
     R1 was created but were later modified.
     </p>
      

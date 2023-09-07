@@ -253,7 +253,9 @@
                     {% if sel_rel_id == 0 %}
                         <a class="bi-trash-fill link-danger me-1 text-decoration-none"
                            href="{% url 'del_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}"
+                           {% if item.status == 'NEW' %}
                            onclick="return confirm('Are you sure you want to delete this item?');"
+                           {% endif %}
                            title="Delete {{config.name}}">
                         </a>
                     {% endif %}

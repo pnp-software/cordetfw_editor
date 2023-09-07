@@ -2,7 +2,7 @@
      "editorVersion": "5.29",
      "states": [
           {
-               "id": 51,
+               "id": 173,
                "attrs": {
                     "x": 246,
                     "y": 166,
@@ -24,7 +24,7 @@
                "selected": false
           },
           {
-               "id": 52,
+               "id": 174,
                "attrs": {
                     "x": 375,
                     "y": 153,
@@ -63,7 +63,7 @@
                "selected": false
           },
           {
-               "id": 54,
+               "id": 176,
                "attrs": {
                     "x": 363,
                     "y": 383,
@@ -102,7 +102,7 @@
                "selected": false
           },
           {
-               "id": 56,
+               "id": 178,
                "attrs": {
                     "x": 263,
                     "y": 422,
@@ -124,11 +124,11 @@
                "selected": false
           },
           {
-               "id": 57,
+               "id": 179,
                "attrs": {
-                    "x": 203,
-                    "y": 83,
-                    "width": 560,
+                    "x": 255,
+                    "y": 85,
+                    "width": 430,
                     "height": 56,
                     "r": 0,
                     "rx": 0,
@@ -142,12 +142,12 @@
                "fwprop": {
                     "autoid": 2,
                     "type": "note",
-                    "note": "Operation to copy a spec_item (only possible on spec_items in the Default ValSet with status CNF, MOD or NEW) \n\nNB: If the spec_item being copied had aliases in non-default ValSets, these are not copied"
+                    "note": "Operation to copy a spec_item (only possible on spec_items in the Default ValSet) \n\nNB: If the spec_item being copied had aliases in non-default ValSets, these are not copied"
                },
                "selected": false
           },
           {
-               "id": 59,
+               "id": 181,
                "attrs": {
                     "x": 316,
                     "y": 250,
@@ -186,7 +186,7 @@
                "selected": false
           },
           {
-               "id": 61,
+               "id": 183,
                "attrs": {
                     "x": 590,
                     "y": 413,
@@ -209,7 +209,7 @@
                "selected": false
           },
           {
-               "id": 63,
+               "id": 185,
                "attrs": {
                     "x": 622,
                     "y": 293,
@@ -231,7 +231,7 @@
                "selected": false
           },
           {
-               "id": 64,
+               "id": 186,
                "attrs": {
                     "x": 602,
                     "y": 159,
@@ -254,7 +254,7 @@
                "selected": false
           },
           {
-               "id": 66,
+               "id": 188,
                "attrs": {
                     "x": 562,
                     "y": 178,
@@ -315,8 +315,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 51,
-               "stateToID": 52,
+               "stateFromID": 173,
+               "stateToID": 174,
                "selected": false
           },
           {
@@ -362,8 +362,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 52,
-               "stateToID": 59,
+               "stateFromID": 174,
+               "stateToID": 181,
                "selected": false
           },
           {
@@ -404,8 +404,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 54,
-               "stateToID": 56,
+               "stateFromID": 176,
+               "stateToID": 178,
                "selected": false
           },
           {
@@ -457,8 +457,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 61,
-               "stateToID": 63,
+               "stateFromID": 183,
+               "stateToID": 185,
                "selected": false
           },
           {
@@ -499,8 +499,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 59,
-               "stateToID": 54,
+               "stateFromID": 181,
+               "stateToID": 176,
                "selected": false
           },
           {
@@ -541,8 +541,8 @@
                     "x": 0,
                     "y": 0
                },
-               "stateFromID": 64,
-               "stateToID": 66,
+               "stateFromID": 186,
+               "stateToID": 188,
                "selected": false
           }
      ],
@@ -552,8 +552,8 @@
           "attrs": {
                "x": 0,
                "y": 0,
-               "width": 1101,
-               "height": 559,
+               "width": 1207,
+               "height": 581,
                "r": 0,
                "rx": 0,
                "ry": 0,
