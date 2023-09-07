@@ -1,5 +1,6 @@
 from django import template
 from django.utils.safestring import mark_safe
+from django.db.models import Q
 from ..models import SpecItem
 from ..configs import configs
 from ..convert import conv_do_nothing, conv_db_disp_ref_text, conv_db_disp_plain_ref, \
@@ -69,11 +70,23 @@ def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
         sel_rel_id = sel_rel.id
         if trac_link == 's_link':
             trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
-                        s_link_id=spec_item.id).filter(updated_at__lte=sel_rel.updated_at)
+                        s_link_id=spec_item.id).exclude(status='NEW').exclude(status='MOD')
         else:
             trac_links = SpecItem.objects.filter(project_id=spec_item.project_id, cat=trac_cat,
-                        p_link_id=spec_item.id).filter(updated_at__lte=sel_rel.updated_at)
-    
+                        p_link_id=spec_item.id).exclude(status='NEW').exclude(status='MOD')
+        # Only retain items created before the release date
+        trac_links = trac_links.filter(created_at__lte=sel_rel.updated_at)
+        # Exclude CNF items updated after the release date
+        trac_links = trac_links.exclude(Q(status='CNF') & Q(updated_at__gt=sel_rel.updated_at))
+        # Exclude items deleted before the release date 
+        trac_links = trac_links.exclude(Q(status='DEL') & Q(updated_at__lt=sel_rel.updated_at))
+        # Exclude items which were first updated after the release data and then deleted
+        trac_links = trac_links.exclude(Q(status='DEL') & (Q(previous__isnull=False) & Q(previous__updated_at__gt=sel_rel.updated_at)))
+        # Exclude items representing updates done before the release date 
+        trac_links = trac_links.exclude(Q(status='OBS') & Q(updated_at__lt=sel_rel.updated_at))
+        # Exclude items representing updates done after releases later than the selected release
+        trac_links = trac_links.exclude(Q(status='OBS') & (Q(previous__isnull=False) & Q(previous__updated_at__gt=sel_rel.updated_at)))
+
     s = ''
     
     for link in trac_links:
