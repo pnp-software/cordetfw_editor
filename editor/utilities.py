@@ -9,7 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user
 from django.contrib.auth.models import User
 from django.forms.models import model_to_dict
-from django.db.models import ForeignKey
+from django.db.models import ForeignKey, Q
 from django.utils.timezone import get_current_timezone
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
@@ -442,6 +442,8 @@ def mark_spec_item_aliases_as_del(request, spec_item):
         for child in spec_item.p_children.all():
             if child.val_set.name != 'Default':
                 child.status = 'DEL'
+                child.updated_at = datetime.now(tz=get_current_timezone())
+                child.owner = get_user(request)
                 child.save()
 
           
@@ -479,10 +481,17 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
     else:
         if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
             items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                        filter(updated_at__lte=sel_rel.updated_at).exclude(status='DEL')            
+                        exclude(status='NEW').exclude(status='MOD')            
         else:               # Items to be listed are 'application items'
             items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
-                        filter(updated_at__lte=sel_rel.updated_at)
+                        exclude(status='NEW').exclude(status='MOD')
+        #import pdb; pdb.set_trace()
+        items = items.filter(created_at__lte=sel_rel.updated_at)
+        items = items.exclude(Q(status='CNF') & Q(updated_at__gt=sel_rel.updated_at))
+        items = items.exclude(Q(status='DEL') & Q(updated_at__lt=sel_rel.updated_at))
+        items = items.exclude(Q(status='DEL') & (Q(previous__isnull=False) & Q(previous__updated_at__gt=sel_rel.updated_at)))
+        items = items.exclude(Q(status='OBS') & Q(updated_at__lt=sel_rel.updated_at))
+        items = items.exclude(Q(status='OBS') & (Q(previous__isnull=False) & Q(previous__updated_at__gt=sel_rel.updated_at)))
 
     if (sel_val != "Sel_All"):
         items = items.filter(domain=sel_val)

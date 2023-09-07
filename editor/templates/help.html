@@ -308,19 +308,36 @@
     <h5><a name="ViewOldRelease">View Old Release</a></h5>
     <p>
     By default, the editor displays the current version of the specification items but users can ask to 
-    display the specification items as they existed when a given <a class="text-decoration-none" href="#Releases">release</a> was created.
-    The editor then proceeds as follows:
-    <ul>
-    <li>It retrieves the date D1 corresponding to the selected release</li>
-    <li>It removes all specification items created after D1</li>
-    <li>From the query of bullet 2, it retrieves all specification items in state CNF whose 
-        update date is earlier than or equal to D1</li>
-    <li>From the query of bullet 2, It retrieves all specification items which satisfy the 
-        following two conditions: (a) They are in state DEL or OBS and (b) their previous
-        pointer is either NONE or it points to a specification item with an 
-        update time earlier than D1 </li>
-    <li>It displays all specifications retrieved in the previous two steps </li>
-    </ul>
+    display the specification items as they existed when a given 
+    <a class="text-decoration-none" href="#Releases">project release</a> was created.
+    It is recalled that when a project is released, all its application are released too.
+    It is not possible to display the specification items when an application release
+    was created (i.e. when a single application was released without the
+    concurrent release of the entire project).
+    </p><p>
+    The specification items corresponding to a project release R1 are those which
+    were in state CNF when R1 was created. They consist of specification items
+    created before D1 (the date when release R1 was created) and which
+    satisfy the following conditions:
+    <ol>
+    <li>They are in state CNF and have an update date earlier than D1</li>
+    <li>They are in state DEL with an update date later than D1 and a null
+        previous pointer</li>
+    <li>They are in state DEL with an update date later than D1 and a 
+        previous pointer pointing to a specification item with an update
+        date earlier than D1</li>
+    <li>They are in state OBS with an update date later than D1 and a null
+        previous pointer</li>
+    <li>They are in state OBS with an update date later than D1 and a 
+        previous pointer pointing to a specification item with an update
+        date earlier than D1</li>
+    </ol>
+    The items at point 1 are those which were in the CNF state at release R1 and 
+    which, at the time the display of release R1 is commanded, are still in the CNF state.
+    The items at points 2 and 3 are those which were in state CNF when release
+    R1 was created but were later deleted.
+    The items at points 4 and 5 are those which were in steate CNF when release
+    R1 was created but were later modified.
     </p>
      
     <h5><a name="IntExtSpecItems">Internal and External Specification Items</a></h5>

@@ -394,10 +394,10 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
 
     # Get selected release object and the list of previous releases
     if sel_rel_id != 0:
-        sel_rel = Release.objects.get(id=sel_rel_id)   # Release to be displayed
+        sel_rel = Release.objects.get(id=sel_rel_id)    # Release to be displayed
     else:
         sel_rel = None
-    releases = get_previous_list(project.release)
+    releases = get_previous_list(project.release)       # Only project releases are handled
 
     # Prepare data for dropdown in header through which users can access
     # the list of all project and applications spec_items
@@ -775,6 +775,8 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
             if spec_item.val_set.name == 'Default':
                 mark_spec_item_aliases_as_del(request, spec_item)
             spec_item.status = 'DEL' 
+            spec_item.updated_at = datetime.now(tz=get_current_timezone())
+            spec_item.owner = get_user(request)
             spec_item.change_log = form.cleaned_data['change_log']
             spec_item.save() 
             redirect_url = get_redirect_url(cat, project_id, application_id, default_val_set.id,\
