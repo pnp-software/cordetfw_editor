@@ -485,14 +485,20 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
         if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
             items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='NEW').exclude(status='MOD')            
-        else:               # Items to be listed are 'application items'
+        else:               
             items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='NEW').exclude(status='MOD')
+        # Only retain items created before the release date
         items = items.filter(created_at__lte=sel_rel.updated_at)
+        # Exclude CNF items updated after the release date
         items = items.exclude(Q(status='CNF') & Q(updated_at__gt=sel_rel.updated_at))
+        # Exclude items deleted before the release date 
         items = items.exclude(Q(status='DEL') & Q(updated_at__lt=sel_rel.updated_at))
+        # Exclude items which were first updated after the release data and then deleted
         items = items.exclude(Q(status='DEL') & (Q(previous__isnull=False) & Q(previous__updated_at__gt=sel_rel.updated_at)))
+        # Exclude items representing updates done before the release date 
         items = items.exclude(Q(status='OBS') & Q(updated_at__lt=sel_rel.updated_at))
+        # Exclude items representing updates done after releases later than the selected release
         items = items.exclude(Q(status='OBS') & (Q(previous__isnull=False) & Q(previous__updated_at__gt=sel_rel.updated_at)))
 
     if (sel_val != "Sel_All"):
