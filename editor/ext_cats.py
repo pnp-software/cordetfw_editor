@@ -88,7 +88,7 @@ def ext_model_refresh(request, spec_item):
 #--------------------------------------------------------------------------------
 def ext_model_get_choice(request, model_id):
     """ 
-    Function takes as input the choice made by the user out of the option presented
+    Function takes as input the choice made by the user out of the options presented
     by function ext_model_get_choices. It returns a dictionary holding the values of
     the external attributes for the chosen model instance (or None if the model
     instance cannot be found).
@@ -161,3 +161,96 @@ def ext_model_get_choices(request):
 
     fw_db.close()
     return sorted(model_list, key=lambda tup: (tup[1].split(':')[0], tup[1].split(':')[1]))
+
+#--------------------------------------------------------------------------------
+def ext_fcp_get_choices(request):
+    """ 
+    Return the list of FCP models available for import in the editor.
+    These are the models in the FW Profile DB whose names starts with 
+    'fcp_' and which are owned by the user calling this function.
+    """
+    fw_db, fw_db_cur = connect(request)
+    
+    empty_choice_list = [(0, 'No Model Found')]
+    
+    user_email = request.user.email
+    try:
+        fw_db_cur.execute('SELECT * FROM users WHERE email = \''+str(user_email)+'\'')    
+        user = fw_db_cur.fetchall()
+    except Exception as e:
+        messages.error(request, 'User \"'+str(request.user)+'\" with e-mail \"'+user_email+\
+                            '\" not found in FW Profile DB: '+str(e))
+        return empty_choice_list
+    
+    try:
+        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])) 
+        diagrams = fw_db_cur.fetchall()
+    except Exception as e:
+        messages.error(request, 'Error trying to retrieve the models for user \"'+user_email+':'+str(e))
+        return empty_choice_list
+    
+    model_list = []
+    for diagram in diagrams:
+        dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
+        if dom_name.startswith('fcp_'):
+            model_list.append(dom_name)
+
+    if model_list == []:
+        messages.error(request, 'No models found in FW Profile Database for user \"'+\
+                                str(request.user)+'\" with e-mail \"'+user_email)
+        return empty_choice_list
+
+    fw_db.close()
+    return sorted(model_list, key=lambda tup: (tup[1].split(':')[0], tup[1].split(':')[1]))
+
+
+#--------------------------------------------------------------------------------
+def ext_fcp_get_choice(request, fcp_id):
+    """ 
+    Function takes as input the choice made by the user out of the options presented
+    by function ext_model_get_choices. It returns a dictionary holding the values of
+    the external attributes for the chosen model instance (or None if the model
+    instance cannot be found).
+    (NB: The external attributes are those listed at the 'ext_att' key in the
+         'configs' dictionary).
+    """
+    def get_fcp_desc(jsonObj): 
+        """ Return the title and description of the FCP held in the argument json object """
+        fcpStates = jsonObj["states"]
+        for state in fcpStates:
+            note = state["fwprop"]["note"]
+            start = note.find("Title:")
+            if (start > -1):
+                end = note.find("\n")
+                title = note[start+6:end].strip()
+                descStart = note.find("\n")
+                desc = note[descStart+1:]
+                desc = desc.replace("\n"," ")
+                desc = desc.strip() 
+                return ['title': title, 'desc': desc]
+        return None    
+        
+    fw_db, fw_db_cur = connect(request)
+    
+    try:
+        fw_db_cur.execute('SELECT * FROM diagrams WHERE ID = '+str(fcp_id)) 
+        diagrams = fw_db_cur.fetchall()
+    except Exception as e:
+        messages.error(request, 'Error while accessing model with ID \"'+str(fcp_id)+': '+str(e))
+        return None
+
+    ext_item_dict = {}
+            
+    ext_item_dict['domain'] = get_model_domain(diagrams[0][6])        
+    ext_item_dict['name'] = diagrams[0][2]
+    ext_item_dict['updated_at'] = diagrams[0][5]
+    fcp_desc = get_fcp_desc(diagrams[0][6])
+    ext_item_dict['title'] = fcp_desc['title']
+    ext_item_dict['desc'] = fcp_desc['desc']
+    ext_item_dict['value'] = diagrams[0][7]     # svg representation of diagram
+    ext_item_dict['n1'] = diagrams[0][8]        # figure width
+    ext_item_dict['n2'] = diagrams[0][9]        # figure height
+    ext_item_dict['n3'] = diagrams[0][0]        # ID in FW Profile Database
+ 
+    fw_db.close()
+    return ext_item_dict
