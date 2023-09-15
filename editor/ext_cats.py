@@ -18,7 +18,7 @@ def connect(request):
     except Exception as e:
         messages.error(request, 'Unable to access credentials for FW Profile database')
         return (None, None)
-
+    import pdb; pdb.set_trace()
     try:
         fw_db = mdb.connect(config['FWPROFILE_DB']['HOST'], 
                             config['FWPROFILE_DB']['USER'], 
@@ -171,7 +171,7 @@ def ext_fcp_get_choices(request):
     """
     fw_db, fw_db_cur = connect(request)
     
-    empty_choice_list = [(0, 'No Model Found')]
+    empty_choice_list = [(0, 'No FCP Found')]
     
     user_email = request.user.email
     try:
@@ -186,7 +186,7 @@ def ext_fcp_get_choices(request):
         fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])) 
         diagrams = fw_db_cur.fetchall()
     except Exception as e:
-        messages.error(request, 'Error trying to retrieve the models for user \"'+user_email+':'+str(e))
+        messages.error(request, 'Error trying to retrieve the FCPs for user \"'+user_email+':'+str(e))
         return empty_choice_list
     
     model_list = []
@@ -196,13 +196,29 @@ def ext_fcp_get_choices(request):
             model_list.append(dom_name)
 
     if model_list == []:
-        messages.error(request, 'No models found in FW Profile Database for user \"'+\
+        messages.error(request, 'No FCPs found in FW Profile Database for user \"'+\
                                 str(request.user)+'\" with e-mail \"'+user_email)
         return empty_choice_list
 
     fw_db.close()
     return sorted(model_list, key=lambda tup: (tup[1].split(':')[0], tup[1].split(':')[1]))
 
+#--------------------------------------------------------------------------------
+def get_fcp_desc(jsonObj): 
+    """ Return the title and description of the FCP held in the argument json object """
+    fcpStates = jsonObj["states"]
+    for state in fcpStates:
+        note = state["fwprop"]["note"]
+        start = note.find("Title:")
+        if (start > -1):
+            end = note.find("\n")
+            title = note[start+6:end].strip()
+            descStart = note.find("\n")
+            desc = note[descStart+1:]
+            desc = desc.replace("\n"," ")
+            desc = desc.strip() 
+            return {'title': title, 'desc': desc}
+    return None    
 
 #--------------------------------------------------------------------------------
 def ext_fcp_get_choice(request, fcp_id):
@@ -213,23 +229,7 @@ def ext_fcp_get_choice(request, fcp_id):
     instance cannot be found).
     (NB: The external attributes are those listed at the 'ext_att' key in the
          'configs' dictionary).
-    """
-    def get_fcp_desc(jsonObj): 
-        """ Return the title and description of the FCP held in the argument json object """
-        fcpStates = jsonObj["states"]
-        for state in fcpStates:
-            note = state["fwprop"]["note"]
-            start = note.find("Title:")
-            if (start > -1):
-                end = note.find("\n")
-                title = note[start+6:end].strip()
-                descStart = note.find("\n")
-                desc = note[descStart+1:]
-                desc = desc.replace("\n"," ")
-                desc = desc.strip() 
-                return ['title': title, 'desc': desc]
-        return None    
-        
+    """        
     fw_db, fw_db_cur = connect(request)
     
     try:
@@ -254,3 +254,47 @@ def ext_fcp_get_choice(request, fcp_id):
  
     fw_db.close()
     return ext_item_dict
+
+#--------------------------------------------------------------------------------
+def ext_fcp_refresh(request, spec_item):
+    """ 
+    Argument spec_item holds an external FCP which needs to be refreshed.
+    The function retrieves the FCP from the FW Profile Database. If the 
+    FCP cannot be extracted from the database, the function issues a warning
+    and returns 'NOT_FOUND'. 
+    If the FCP does exist in the FW Profile Database, the function checks 
+    whether its svg image is different from the one held in spec_item.
+    If it is different, it updates spec_item with the new FCP instance
+    and returns 'REFRESH'. If, instead, the svg image has not changed, the 
+    function return 'NO_CHANGE'.
+    """
+    fw_db, fw_db_cur = connect(request)
+
+    model_id = spec_item.n3
+    try:
+        fw_db_cur.execute('SELECT * FROM diagrams WHERE ID = '+str(model_id)) 
+        diagrams = fw_db_cur.fetchall()
+    except Exception as e:
+        messages.error(request, 'Error while accessing model with ID \"'+str(model_id)+': '+str(e))
+        return 'NOT_FOUND'
+    
+    if len(diagrams) == 0:
+        messages.warning(request, 'FCP not found in FW Profile Database (its ID is: '+str(model_id)+')')
+        return 'NOT_FOUND'
+        
+    if diagrams[0][7] == spec_item.value:
+        return 'NO_CHANGE'
+    
+    spec_item.domain = get_model_domain(diagrams[0][6])        
+    spec_item.name = diagrams[0][2]
+    fcp_desc = get_fcp_desc(diagrams[0][6])
+    ext_item_dict['title'] = fcp_desc['title']
+    ext_item_dict['desc'] = fcp_desc['desc']
+    spec_item.updated_at = diagrams[0][5]
+    spec_item.value = diagrams[0][7]     # svg representation of diagram
+    spec_item.n1 = diagrams[0][8]        # figure width
+    spec_item.n2 = diagrams[0][9]        # figure height
+    spec_item.n3 = diagrams[0][0]        # ID in FW Profile Database
+
+    fw_db.close()
+    return 'REFRESH'
