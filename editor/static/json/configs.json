@@ -152,8 +152,8 @@
                                                  "CLOSED": "Verification Closed"},
                               "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
-                                           {"header":"Title and Description", "attrs":["title", "desc", "rationale", "remarks", "implementation"]},
-                                           {"header":"Text", "attrs":["value", "t1", "t2", "t3"]},
+                                           {"header":"Title and Conditions", "attrs":["title", "t1", "t2"]},
+                                           {"header":"Description", "attrs":["desc", "value", "rationale", "remarks", "implementation", "t3"]},
                                            {"header":"Kind", "attrs":["p_kind"], "order_by":"p_kind"}
                                            ],
                               "disp_short": [{"header":"Domain", "attrs":["domain"]},
@@ -201,13 +201,13 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Description", "attrs":["desc", "remarks", "t1", "t2"]},
+                                               {"header":"Description", "attrs":["desc", "remarks", "t2"]},
+                                               {"header":"Coverage", "attrs":["t1"]},
                                                {"header":"Test Case", "attrs":["s_link"], "order_by":"s_link"}
                                                ],
                                   "disp_short": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Description", "attrs":["desc"]},
                                                {"header":"Test Case", "attrs":["s_link"], "order_by":"s_link"}
                                                ],
                                   "disp_trac": [{"header":"Domain", "attrs":["domain"]},
