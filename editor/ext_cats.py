@@ -18,7 +18,6 @@ def connect(request):
     except Exception as e:
         messages.error(request, 'Unable to access credentials for FW Profile database')
         return (None, None)
-    import pdb; pdb.set_trace()
     try:
         fw_db = mdb.connect(config['FWPROFILE_DB']['HOST'], 
                             config['FWPROFILE_DB']['USER'], 
