@@ -191,7 +191,7 @@ def ext_fcp_get_choices(request):
     model_list = []
     for diagram in diagrams:
         dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
-        if diagram[2].startswith('fcp_'):
+        if diagram[2].startswith('Fcp_'):
             model_list.append(dom_name)
 
     if model_list == []:
