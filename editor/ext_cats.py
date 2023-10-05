@@ -191,7 +191,7 @@ def ext_fcp_get_choices(request):
     model_list = []
     for diagram in diagrams:
         dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
-        if dom_name.startswith('fcp_'):
+        if diagram[2].startswith('fcp_'):
             model_list.append(dom_name)
 
     if model_list == []:
@@ -203,8 +203,9 @@ def ext_fcp_get_choices(request):
     return sorted(model_list, key=lambda tup: (tup[1].split(':')[0], tup[1].split(':')[1]))
 
 #--------------------------------------------------------------------------------
-def get_fcp_desc(jsonObj): 
+def get_fcp_desc(json_rep): 
     """ Return the title and description of the FCP held in the argument json object """
+    jsonObj = json.loads(json_rep)
     fcpStates = jsonObj["states"]
     for state in fcpStates:
         note = state["fwprop"]["note"]
