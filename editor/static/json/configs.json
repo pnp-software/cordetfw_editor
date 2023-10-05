@@ -487,7 +487,7 @@
                               "access_from_index": {"level": "Application"},           
                               "attrs": {"domain":   {"label": "Domain", "req_in_form": true, "kind": "plain_text"},
                                        "name":      {"label": "Name", "req_in_form": true, "kind": "plain_text"},
-                                       "title":     {"label": "Title", "req_in_form": true, "kind": "plain_text"},
+                                       "title":     {"label": "Title", "req_in_form": false, "kind": "plain_text"},
                                        "desc":      {"label": "Description", "req_in_form": false, "kind": "ref_text"},
                                        "value":     {"label": "Diagram", "req_in_form": false, "kind": "image"},
                                        "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
