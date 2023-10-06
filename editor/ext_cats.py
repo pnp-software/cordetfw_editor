@@ -190,9 +190,11 @@ def ext_fcp_get_choices(request):
     
     model_list = []
     for diagram in diagrams:
+        if get_model_domain(diagram[6]) != None:
+            if not get_model_domain(diagram[6]).endswith('Fcp'):
+                continue
         dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
-        if diagram[2].startswith('Fcp_'):
-            model_list.append(dom_name)
+        model_list.append(dom_name)
 
     if model_list == []:
         messages.error(request, 'No FCPs found in FW Profile Database for user \"'+\
