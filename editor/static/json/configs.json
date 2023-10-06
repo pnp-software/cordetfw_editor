@@ -391,7 +391,8 @@
                                            "rationale": {"label": "Rationale", "req_in_form": false, "kind": "ref_text"},
                                            "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                            "implementation":  {"label": "Implementation", "req_in_form": false, "kind": "ref_text"},
-                                           "t1":  {"label": "Close Out", "req_in_form": false, "kind": "ref_text"},
+                                           "t1":        {"label": "Close Out", "req_in_form": false, "kind": "ref_text"},
+                                           "t2":        {"label": "Validation", "req_in_form": false, "kind": "ref_text"},
                                            "p_kind":    {"label": "Kind", "req_in_form": true, "kind": "plain_text"},
                                            "val_set":   {"label": "ValSet",  "req_in_form": false, "kind": "plain_ref"},
                                            "change_log":{"label": "Change Log",  "req_in_form": false, "kind": "ref_text"},
@@ -409,7 +410,7 @@
                                   "disp_def": [{"header":"Domain", "attrs":["domain"]},
                                                {"header":"Name", "attrs":["name"]},
                                                {"header":"Title", "attrs":["title"]},
-                                               {"header":"Requirement", "attrs":["value", "rationale", "remarks", "implementation", "t1"]},
+                                               {"header":"Requirement", "attrs":["value", "rationale", "remarks", "implementation", "t2", "t1"]},
                                                {"header":"Kind", "attrs":["p_kind"], "order_by":"p_kind"},
                                                {"header":"Ver", "attrs":["s_kind"], "order_by":"s_kind"},
                                                {"header":"Owner", "attrs":["owner"], "order_by":"owner"}
