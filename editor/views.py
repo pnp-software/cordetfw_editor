@@ -856,7 +856,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     return response            
 
 
-def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val, sel_rel_id):
+def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
     val_set = ValSet.objects.filter(project_id=project.id).get(id=val_set_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
@@ -868,7 +868,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         return redirect(base_url)
 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(val_set_id)+\
-                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items'    
+                           '/'+sel_val+'/'+str(0)+'/list_spec_items'    
   
     if request.method == 'POST':   
         try:
