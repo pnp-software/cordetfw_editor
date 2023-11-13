@@ -389,7 +389,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         get_parameter_sting += 'disp=' + str(disp) + '&'
     order_by = request.GET.get('order_by')
     if order_by is not None:
-        get_parameter_sting += 'order_by=' + str(disp) + '&'
+        get_parameter_sting += 'order_by=' + str(order_by) + '&'
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
 
     # Get selected release object and the list of previous releases
