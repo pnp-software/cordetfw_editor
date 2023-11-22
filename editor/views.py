@@ -947,9 +947,6 @@ def import_project(request):
         except Exception as e:
             messages.error(request,'Unable to upload file: '+repr(e))
             return redirect(base_url)
-        if zip_file.multiple_chunks():
-            messages.error(request,'Uploaded file '+zip_file.name+' is too big, size in MB is: '+str(zip_file.size/(1000*1000)))
-            return redirect(base_url)
 
         # Create directory where import file is unzipped
         temp_dir = configs['general']['temp_dir']
@@ -961,7 +958,8 @@ def import_project(request):
         # Unzip import file    
         imp_project = os.path.join(imp_dir,'import_project.zip')
         with open(imp_project, 'wb') as fd:
-            fd.write(zip_file.read())
+            for chunk in zip_file.chunks():
+                fd.write(chunk)
         try:
             zip_obj = ZipFile(imp_project, 'r')
             zip_obj.extractall(imp_dir)
