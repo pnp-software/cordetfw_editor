@@ -237,7 +237,10 @@ class SpecItemForm(forms.Form):
             get_choice_func_name = 'ext_' + self.cat.lower() + '_get_choice'
             ext_choice = getattr(ext_cats, get_choice_func_name)(self.request, cd['ext_item'])
             for ext_attr in self.config['ext_attrs']:
-                cd[ext_attr] = ext_choice[ext_attr]
+                if ext_attr in ext_choice:
+                    cd[ext_attr] = ext_choice[ext_attr]
+                else:
+                    cd[ext_attr] = ''
             
         # Check that domain and name only contain alphanumeric characters and underscores
         if not pattern_name.match(self.cleaned_data['name']):
