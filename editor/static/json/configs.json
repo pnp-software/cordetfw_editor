@@ -1138,6 +1138,7 @@
                                        "remarks":   {"label": "Remarks", "req_in_form": false, "kind": "ref_text"},
                                        "t1":        {"label": "Generation Conditions", "req_in_form": false, "kind": "ref_text"},
                                        "t2":        {"label": "Parameters", "req_in_form": false, "kind": "ref_text"},
+                                       "t3":        {"label": "Ground Response", "req_in_form": false, "kind": "ref_text"},
                                        "p_kind":    {"label": "Level", "req_in_form": true, "kind": "plain_text"},
                                        "s_kind":    {"label": "Inst", "req_in_form": true, "kind": "plain_text"},
                                        "owner":     {"label": "Owner",  "req_in_form": false, "kind": "plain_ref"},
@@ -1150,7 +1151,7 @@
                                            {"header":"Name", "attrs":["name"]},
                                            {"header":"Title", "attrs":["title"]},
                                            {"header":"Description", "attrs":["desc", "remarks"]},
-                                           {"header":"Conditions and Parameters", "attrs":["t1", "t2"]},
+                                           {"header":"Conditions and Parameters", "attrs":["t1", "t2", "t3"]},
                                            {"header":"Appl.", "attrs":["p_kind"], "order_by":"p_kind"},
                                            {"header":"Inst.", "attrs":["s_kind"], "order_by":"s_kind"},
                                            {"header":"Owner", "attrs":["owner"]}
