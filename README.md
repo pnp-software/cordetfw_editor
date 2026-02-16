@@ -70,7 +70,7 @@ Django provides a [deployment checklist](https://docs.djangoproject.com/en/3.0/h
 **Done**
 * `SECRET_KEY` is loaded from configuration file
 * `DEBUG` is loaded from configuration file but should be disabled
-* `ALLOWED_HOSTS` set according to server ip/dns
+* `ALLOWED_HOSTS` is loaded from configuration file
 * `CACHES` *not relevant for us?*
 * `DATABASE` password is loaded from configuration file
 * `EMAIL_BACKEND` *not relevant for us?*

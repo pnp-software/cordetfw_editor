@@ -11,6 +11,7 @@
         		"PORT": "3306"
     		}
 	},
+	"ALLOWED_HOSTS": ["localhost"],
 	"MEDIA_ROOT": "/tmp/cordet_22/temp",
 	"LOG_FILE": "/tmp/cordet_22/temp/editor.log",
 	"BASE_URL": "/editor"

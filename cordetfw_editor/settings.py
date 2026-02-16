@@ -31,7 +31,7 @@ SECRET_KEY = config['SECURE_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config['DEBUG']
 
-ALLOWED_HOSTS = ['localhost', '217.160.170.47', 'pnp-software.io', 'www.pnp-software.io']
+ALLOWED_HOSTS = config['ALLOWED_HOSTS']
 
 INTERNAL_IPS = [
     "127.0.0.1",
