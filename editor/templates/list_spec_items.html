@@ -150,7 +150,7 @@
                     const result = await response.json();
                     if (response.ok) {
                         if (result.updated_count === 0) {
-                            errorAlert.textContent = 'No matching items found.';
+                            errorAlert.textContent = 'Error: No matching items found.';
                             errorAlert.classList.remove('d-none');
                             return;
                         }

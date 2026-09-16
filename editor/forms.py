@@ -279,14 +279,18 @@ class SpecItemForm(forms.Form):
         if (self.mode == 'add') or (self.mode == 'copy'):
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
-                raise forms.ValidationError('Add or Copy Error: Domain:Name pair already exists in this project')
+                self.add_error(
+                    'name', "Error: Name '%s' already exists in domain '%s'" % (cd['name'], cd['domain'])
+                )
 
         # Verify that, in edit mode, if the domain:name has been modified, it is unique within non-deleted, 
         # non-obsolete spec_items in the project and in the default ValSet
         if (self.mode == 'edit') and (('name' in self.changed_data) or ('domain' in self.changed_data)):
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
-                    raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
+                    self.add_error(
+                        'name', "Error: Name '%s' already exists in domain '%s'" % (cd['name'], cd['domain'])
+                    )
         
         # Verify that, in split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete 
         # spec_items of a project with the same domain:name 
