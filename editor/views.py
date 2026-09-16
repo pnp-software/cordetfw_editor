@@ -15,21 +15,23 @@ from django.shortcuts import render, redirect
 from django.forms import formset_factory                                 
 from django.views import generic
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import update_session_auth_hash, get_user
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.core.files import File
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.forms.models import model_to_dict
 from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.utils.timezone import get_current_timezone
+from django.db import transaction
 from django.db.models import OuterRef, Subquery
 
 from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
-from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm
+from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm, \
+                         validate_identifier
 from editor.utilities import get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
@@ -54,6 +56,42 @@ with open('/etc/dj_cordetfw_config.json') as config_file:
     
 base_url = config['BASE_URL']
 logger = logging.getLogger(__name__)
+
+
+def get_find_replace_updates(items, project_id, val_set_id, field, find_string, replace_string):
+    updates = []
+    model_field = SpecItem._meta.get_field(field)
+    if find_string == replace_string:
+        raise ValidationError(
+            'Find & Replace Error: Find and replace values must be different'
+        )
+    if field in ('domain', 'name'):
+        validate_identifier(replace_string)
+    for item in items:
+        old_value = getattr(item, field)
+        if not isinstance(old_value, str) or find_string not in old_value:
+            continue
+        new_value = old_value.replace(find_string, replace_string)
+        model_field.clean(new_value, item)
+        updates.append((item, new_value))
+
+    if field in ('domain', 'name'):
+        replacements = {item.id: new_value for item, new_value in updates}
+        identifiers = {}
+        active_items = SpecItem.objects.select_for_update().filter(
+            project_id=project_id, val_set_id=val_set_id
+        ).exclude(status='DEL').exclude(status='OBS').values('id', 'domain', 'name')
+        for active_item in active_items:
+            if active_item['id'] in replacements:
+                active_item[field] = replacements[active_item['id']]
+            identifier = (active_item['domain'], active_item['name'])
+            if identifier in identifiers:
+                raise ValidationError(
+                    'Find & Replace Error: Domain:Name pair %s:%s already exists in this project' % identifier
+                )
+            identifiers[identifier] = active_item['id']
+
+    return updates
 
 def index(request):
     projects = Project.objects.order_by('name').all()
@@ -460,23 +498,43 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     else:
         expand_items = None
 
+    find_replace_form = FindReplaceForm()
+    find_replace_update_count = 0
+
     # Find & Replace (POST form)
     if request.method == 'POST':
-        form = FindReplaceForm(request.POST)
-        if form.is_valid():
-            field_to_search = form.cleaned_data['field']
-            find_string = form.cleaned_data['find']
-            replace_string = form.cleaned_data['replace']
+        find_replace_form = FindReplaceForm(request.POST)
+        if find_replace_form.is_valid():
+            field_to_search = find_replace_form.cleaned_data['field']
+            find_string = find_replace_form.cleaned_data['find']
+            replace_string = find_replace_form.cleaned_data['replace']
             if field_to_search in configs['cats'][cat]['attrs'].keys():
-                fields_to_check = items.values('id', field_to_search)
-                for field_to_check in fields_to_check:
-                    if find_string in field_to_check[field_to_search]:
-                        new_value = field_to_check[field_to_search].replace(find_string, replace_string)
-                        update_spec_item = SpecItem.objects.get(id=field_to_check['id'])
-                        setattr(update_spec_item, field_to_search, new_value)
-                        update_spec_item.updated_at = datetime.now(tz=get_current_timezone())
-                        update_spec_item.owner = get_user(request)
-                        update_spec_item.save()
+                try:
+                    with transaction.atomic():
+                        item_ids = items.values_list('id', flat=True)
+                        locked_items = SpecItem.objects.select_for_update().filter(id__in=item_ids)
+                        updates = get_find_replace_updates(
+                            locked_items, project_id, val_set_id, field_to_search,
+                            find_string, replace_string
+                        )
+                        for update_spec_item, new_value in updates:
+                            setattr(update_spec_item, field_to_search, new_value)
+                            update_spec_item.updated_at = datetime.now(tz=get_current_timezone())
+                            update_spec_item.owner = get_user(request)
+                            update_spec_item.save()
+                        find_replace_update_count = len(updates)
+                except ValidationError as error:
+                    find_replace_form.add_error(None, error)
+            else:
+                find_replace_form.add_error('field', 'Select a valid field')
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            if find_replace_form.errors:
+                return JsonResponse(
+                    {'errors': find_replace_form.errors.get_json_data()},
+                    status=400
+                )
+            return JsonResponse({'updated_count': find_replace_update_count})
 
     domains = get_domains(cat, application_id, project_id)
 
@@ -522,6 +580,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         'disp_list': configs['cats'][cat][disp], 
         'history': False,
         'find_replace_fields': configs['cats'][cat]['attrs'],
+        'find_replace_form': find_replace_form,
         'order_by': order_by, 
         'sel_rel': sel_rel,
         'sel_rel_id': sel_rel_id,

@@ -15,6 +15,13 @@ from editor import ext_cats
 # Regex pattern for 'domain' and 'name' (alphanumeric characters, underscores, dashes, and dots only in internal positions)
 pattern_identifier = re.compile(r'[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$')
 
+identifier_error = 'Only alphanumeric characters, underscores and dashes allowed; dots must be internal'
+
+
+def validate_identifier(value):
+    if not pattern_identifier.fullmatch(value):
+        raise ValidationError(identifier_error)
+
 class ProjectForm(forms.Form):
     name = forms.CharField()
     owner = forms.ChoiceField(choices=())
@@ -111,8 +118,8 @@ class FindReplaceForm(forms.Form):
 
 
 class SpecItemForm(forms.Form):
-    domain = forms.CharField(max_length=255)
-    name = forms.CharField(max_length=255)
+    domain = forms.CharField(max_length=255, validators=[validate_identifier])
+    name = forms.CharField(max_length=255, validators=[validate_identifier])
     title = forms.CharField(max_length=255)
     desc = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     value = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
@@ -230,6 +237,9 @@ class SpecItemForm(forms.Form):
                     
     def clean(self):
         cd = self.cleaned_data
+        if self.errors:
+            return cd
+
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
         
         # When in add mode: load data for external attributes
@@ -241,12 +251,6 @@ class SpecItemForm(forms.Form):
                     cd[ext_attr] = ext_choice[ext_attr]
                 else:
                     cd[ext_attr] = ''
-            
-        # Dots are allowed only within names and domains, never at their beginning or end.
-        if not pattern_identifier.match(self.cleaned_data['name']):
-            raise ValidationError({'name':'Only alphanumeric characters, underscores and dashes allowed; dots must be internal'})
-        if not pattern_identifier.match(self.cleaned_data['domain']):
-            raise ValidationError({'domain':'Only alphanumeric characters, underscores and dashes allowed; dots must be internal'})
  
         # Fields F of kind 'eval_ref' may only contain internal references to spec_items with the following
         # characteristics: (a) they contain field F and (b) field F is of type 'eval_ref'
