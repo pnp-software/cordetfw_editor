@@ -14,9 +14,7 @@ from editor import ext_cats
 
 # Regex pattern for 'domain' and 'name' (alphanumeric characters, underscores, dashes, and dots only in internal positions)
 pattern_identifier = re.compile(r'[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$')
-
-identifier_error = 'Only alphanumeric characters, underscores and dashes allowed; dots must be internal'
-
+identifier_error = 'Error: Only alphanumeric characters, underscores and dashes allowed; dots must be internal'
 
 def validate_identifier(value):
     if not pattern_identifier.fullmatch(value):

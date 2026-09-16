@@ -63,7 +63,7 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
     model_field = SpecItem._meta.get_field(field)
     if find_string == replace_string:
         raise ValidationError(
-            'Find & Replace Error: Find and replace values must be different'
+            'Error: Find and replace values must be different'
         )
     if field in ('domain', 'name'):
         validate_identifier(replace_string)
@@ -87,7 +87,9 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
             identifier = (active_item['domain'], active_item['name'])
             if identifier in identifiers:
                 raise ValidationError(
-                    'Find & Replace Error: Domain:Name pair %s:%s already exists in this project' % identifier
+                    "Error: Name '%s' already exists in domain '%s'" % (
+                        active_item['name'], active_item['domain']
+                    )
                 )
             identifiers[identifier] = active_item['id']
 
