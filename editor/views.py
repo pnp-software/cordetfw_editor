@@ -603,7 +603,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
     
     if request.method == 'POST':   
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            request.POST, initial=spec_item_to_edit(spec_item))
+                            request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
         if form.is_valid():
             if spec_item.status == 'CNF':
                 spec_item = make_obs_spec_item_copy(request, spec_item)
@@ -622,7 +622,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
         if spec_item.status == 'CNF':
             initial_spec_item_values['change_log'] = ''
         form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            initial=initial_spec_item_values)
+                            initial=initial_spec_item_values, item_id=spec_item.id)
 
     # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
