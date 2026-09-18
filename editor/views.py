@@ -871,6 +871,8 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                            '/'+sel_val+'/'+str(0)+'/list_spec_items'    
   
     if request.method == 'POST':   
+        import_error_counts = {}
+        imported_count = 0
         try:
             csv_file = request.FILES['upload_file']
         except Exception as e:
@@ -883,24 +885,66 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             file_data = csv_file.read().decode('utf-8')
             f = StringIO(file_data)
             items = csv.DictReader(f, delimiter=configs['general']['csv_sep'])
+            expected_fields = {
+                field_config['label']
+                for field_config in configs['cats'][cat]['attrs'].values()
+            }
+            uploaded_fields = set(items.fieldnames or [])
+            if uploaded_fields != expected_fields:
+                missing_fields = sorted(expected_fields - uploaded_fields)
+                unexpected_fields = sorted(uploaded_fields - expected_fields)
+                details = []
+                if missing_fields:
+                    details.append('missing column(s): '+', '.join(missing_fields))
+                if unexpected_fields:
+                    details.append('unexpected column(s): '+', '.join(unexpected_fields))
+                messages.error(
+                    request,
+                    'Uploaded CSV does not match the selected '+cat+' category: '+'; '.join(details)
+                )
+                return redirect(redirect_url)
             csv_domain = configs['cats'][cat]['attrs']['domain']['label']
             csv_name = configs['cats'][cat]['attrs']['name']['label']
             csv_val_set = configs['cats'][cat]['attrs']['val_set']['label']
+            required_fields = {
+                field_config['label']
+                for field_config in configs['cats'][cat]['attrs'].values()
+                if field_config['req_in_form']
+            }
             for i, item in enumerate(items):
+                missing_fields = [
+                    field for field in required_fields
+                    if not item.get(field, '').strip()
+                ]
+                if missing_fields:
+                    error = 'missing '+', '.join(sorted(missing_fields))
+                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
+                    continue
+                try:
+                    validate_identifier(item[csv_domain])
+                    validate_identifier(item[csv_name])
+                except ValidationError as error:
+                    error = str(error)
+                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
+                    continue
                 if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
-                    messages.error(request, ' '+str(i+1)+': Incorrect domain: expected '+sel_val+' but found '+item[csv_domain])
+                    error = 'incorrect Domain'
+                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
                     continue
                 if item[csv_val_set] != val_set.name:
-                    messages.error(request, ' '+str(i+1)+': Incorrect ValSet: expected '+val_set+' but found '+item[csv_val_set])
+                    error = 'incorrect ValSet'
+                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
                     continue
                 q_all_cat = SpecItem.objects.filter(project_id=project_id, \
                             name=item[csv_name], domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')    
                 if q_all_cat.exclude(cat=cat).exists():
-                    messages.error(request, ' '+str(i+1)+': '+item[csv_domain]+':'+item[csv_name]+' already in use outside selected category')
+                    error = 'identifier already in use outside selected category'
+                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
                     continue
                 if val_set.name != 'Default':
                     if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
-                        messages.error(request, ' '+str(i+1)+': '+item[csv_domain]+':'+item[csv_name]+' missing from Default ValSet')
+                        error = 'missing from Default ValSet'
+                        import_error_counts[error] = import_error_counts.get(error, 0) + 1
                         continue
                 q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
                 if not bool(q_cat):     # The domain:name is new in selected category
@@ -928,6 +972,18 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                         q_cat[0].updated_at = datetime.now(tz=get_current_timezone())
                         q_cat[0].owner = get_user(request)
                         q_cat[0].save()
+                imported_count += 1
+            if imported_count:
+                messages.success(request, str(imported_count)+' row(s) imported successfully')
+            if import_error_counts:
+                error_summary = '; '.join(
+                    str(count)+' '+error
+                    for error, count in sorted(import_error_counts.items())
+                )
+                messages.error(
+                    request,
+                    str(sum(import_error_counts.values()))+' row(s) could not be imported: '+error_summary
+                )
         except Exception as e:
             messages.error(request, 'Unable to read or process uploaded file at line '+str(i+2)+'; traceback: '+traceback.format_exc())
     else:
