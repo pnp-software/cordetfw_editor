@@ -125,26 +125,18 @@ def ext_model_get_choice(request, model_id):
 def ext_model_get_choices(request):
     """ 
     Return the list of models available for import in the editor.
-    These are the models in the FW Profile DB owned by the user calling this function.
+    These are the models visible to the user in the FW Profile DB, including
+    models shared by other users.
     """
     fw_db, fw_db_cur = connect(request)
     
     empty_choice_list = [(0, 'No Model Found')]
     
-    user_email = request.user.email
     try:
-        fw_db_cur.execute('SELECT * FROM users WHERE email = \''+str(user_email)+'\'')    
-        user = fw_db_cur.fetchall()
-    except Exception as e:
-        messages.error(request, 'User \"'+str(request.user)+'\" with e-mail \"'+user_email+\
-                            '\" not found in FW Profile DB: '+str(e))
-        return empty_choice_list
-    
-    try:
-        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])) 
+        fw_db_cur.execute('SELECT * FROM diagrams')
         diagrams = fw_db_cur.fetchall()
     except Exception as e:
-        messages.error(request, 'Error trying to retrieve the models for user \"'+user_email+':'+str(e))
+        messages.error(request, 'Error trying to retrieve the models from FW Profile DB: '+str(e))
         return empty_choice_list
     
     model_list = []
@@ -154,7 +146,7 @@ def ext_model_get_choices(request):
 
     if model_list == []:
         messages.error(request, 'No models found in FW Profile Database for user \"'+\
-                                str(request.user)+'\" with e-mail \"'+user_email)
+                                str(request.user))
         return empty_choice_list
         
 
