@@ -4,7 +4,7 @@
            class="col-form-label col-2">
         {{ field.label }}{% if field.field.required %}*{% endif %}
     </label>
-    <div class="col-10 col-lg-8">
+    <div class="col-10 {{ field_width|default:'col-lg-8' }}">
         <input type="text" id="{{ field.id_for_label }}"
                class="form-control {% if field.errors %}is-invalid{% endif %}"
                name="{{ field.html_name }}"
@@ -31,7 +31,7 @@
            class="col-form-label col-2">
         {{ field.label }}{% if field.field.required %}*{% endif %}
     </label>
-    <div class="col-10 col-lg-8">
+    <div class="col-10 {{ field_width|default:'col-lg-8' }}">
         <input type="number" id="{{ field.id_for_label }}"
                class="form-control {% if field.errors %}is-invalid{% endif %}"
                name="{{ field.html_name }}"
@@ -58,7 +58,7 @@
            class="col-form-label col-2">
         {{ field.label }}{% if field.field.required %}*{% endif %}
     </label>
-    <div class="col-10 col-lg-8">
+    <div class="col-10 {{ field_width|default:'col-lg-8' }}">
         <textarea type="text" id="{{ field.id_for_label }}"
                   class="form-control {% if field.errors %}is-invalid{% endif %} {{ field.field.widget.attrs.class }}"
                   name="{{ field.html_name }}"
@@ -85,7 +85,7 @@
            class="col-form-label col-2">
         {{ field.label }}{% if field.field.required %}*{% endif %}
     </label>
-    <div class="col-10 col-lg-8">
+    <div class="col-10 {{ field_width|default:'col-lg-8' }}">
         <select id="{{ field.id_for_label }}"
                 class="form-select {% if field.errors %}is-invalid{% endif %}"
                 name="{{ field.html_name }}"

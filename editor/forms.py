@@ -14,6 +14,11 @@ from editor import ext_cats
 
 # Regex pattern for 'domain' and 'name' (alphanumeric characters, underscores, dashes, and dots only in internal positions)
 pattern_identifier = re.compile(r'[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$')
+identifier_error = 'Error: Only alphanumeric characters, underscores and dashes allowed; dots must be internal'
+
+def validate_identifier(value):
+    if not pattern_identifier.fullmatch(value):
+        raise ValidationError(identifier_error)
 
 class ProjectForm(forms.Form):
     name = forms.CharField()
@@ -111,8 +116,8 @@ class FindReplaceForm(forms.Form):
 
 
 class SpecItemForm(forms.Form):
-    domain = forms.CharField(max_length=255)
-    name = forms.CharField(max_length=255)
+    domain = forms.CharField(max_length=255, validators=[validate_identifier])
+    name = forms.CharField(max_length=255, validators=[validate_identifier])
     title = forms.CharField(max_length=255)
     desc = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
     value = forms.CharField(widget=forms.Textarea(attrs={'class': 'link-suggest'}))
@@ -230,6 +235,9 @@ class SpecItemForm(forms.Form):
                     
     def clean(self):
         cd = self.cleaned_data
+        if self.errors:
+            return cd
+
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
         
         # When in add mode: load data for external attributes
@@ -241,12 +249,6 @@ class SpecItemForm(forms.Form):
                     cd[ext_attr] = ext_choice[ext_attr]
                 else:
                     cd[ext_attr] = ''
-            
-        # Dots are allowed only within names and domains, never at their beginning or end.
-        if not pattern_identifier.match(self.cleaned_data['name']):
-            raise ValidationError({'name':'Only alphanumeric characters, underscores and dashes allowed; dots must be internal'})
-        if not pattern_identifier.match(self.cleaned_data['domain']):
-            raise ValidationError({'domain':'Only alphanumeric characters, underscores and dashes allowed; dots must be internal'})
  
         # Fields F of kind 'eval_ref' may only contain internal references to spec_items with the following
         # characteristics: (a) they contain field F and (b) field F is of type 'eval_ref'
@@ -277,14 +279,18 @@ class SpecItemForm(forms.Form):
         if (self.mode == 'add') or (self.mode == 'copy'):
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
-                raise forms.ValidationError('Add or Copy Error: Domain:Name pair already exists in this project')
+                self.add_error(
+                    'name', "Error: Name '%s' already exists in domain '%s'" % (cd['name'], cd['domain'])
+                )
 
         # Verify that, in edit mode, if the domain:name has been modified, it is unique within non-deleted, 
         # non-obsolete spec_items in the project and in the default ValSet
         if (self.mode == 'edit') and (('name' in self.changed_data) or ('domain' in self.changed_data)):
             if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
-                    raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
+                    self.add_error(
+                        'name', "Error: Name '%s' already exists in domain '%s'" % (cd['name'], cd['domain'])
+                    )
         
         # Verify that, in split mode, the ValSet is not duplicated within the set of non-deleted, non-obsolete 
         # spec_items of a project with the same domain:name 

@@ -78,25 +78,33 @@
                         <h5 class="modal-title" id="findReplaceModalLabel">
                             Find and Replace</h5>
                     </div>
-                    <form method="POST">
+                    <form method="POST" id="findReplaceForm">
                         <div class="modal-body">
                             {% csrf_token %}
+                            <div id="findReplaceErrors" class="alert alert-danger{% if not find_replace_form.non_field_errors %} d-none{% endif %}" role="alert">
+                                {% for error in find_replace_form.non_field_errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
                             <div class="mb-3">
                                 <label for="id_field" class="form-label">Find in Field</label>
-                                <select id="id_field" class="form-select" name="field">
-                                    <option selected>Select field</option>
+                                <select id="id_field" class="form-select{% if find_replace_form.field.errors %} is-invalid{% endif %}" name="field">
+                                    <option value="">Select field</option>
                                     {% for field_name, field_desc in find_replace_fields.items %}
-                                    <option value="{{field_name}}">{{field_desc.label}}</option>
+                                    <option value="{{field_name}}"{% if find_replace_form.field.value == field_name %} selected{% endif %}>{{field_desc.label}}</option>
                                     {% endfor %}
                                 </select>
+                                <div id="id_field_error" class="invalid-feedback">{{ find_replace_form.field.errors.0 }}</div>
                             </div>
                             <div class="mb-3">
                                 <label for="id_find" class="form-label">Find String</label>
-                                <input type="text" class="form-control" id="id_find" name="find" placeholder="find string">
+                                <input type="text" class="form-control{% if find_replace_form.find.errors %} is-invalid{% endif %}" id="id_find" name="find" value="{{ find_replace_form.find.value|default_if_none:'' }}" placeholder="find string">
+                                <div id="id_find_error" class="invalid-feedback">{{ find_replace_form.find.errors.0 }}</div>
                             </div>
                             <div class="mb-3">
                                 <label for="id_replace" class="form-label">Replace String</label>
-                                <input type="text" class="form-control" id="id_replace" name="replace" placeholder="replace string">
+                                <input type="text" class="form-control{% if find_replace_form.replace.errors %} is-invalid{% endif %}" id="id_replace" name="replace" value="{{ find_replace_form.replace.value|default_if_none:'' }}" placeholder="replace string">
+                                <div id="id_replace_error" class="invalid-feedback">{{ find_replace_form.replace.errors.0 }}</div>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -107,6 +115,72 @@
                 </div>
             </div>
         </div>
+        {% if find_replace_form.errors %}
+        <script>
+            new bootstrap.Modal(document.getElementById('findReplaceModal')).show();
+        </script>
+        {% endif %}
+        <script>
+            const form = document.getElementById('findReplaceForm');
+            const errorAlert = document.getElementById('findReplaceErrors');
+            const submitButton = form.querySelector('[type="submit"]');
+            const fieldNames = ['field', 'find', 'replace'];
+            let requestInProgress = false;
+
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+                if (requestInProgress) {
+                    return;
+                }
+                requestInProgress = true;
+                fieldNames.forEach(function (fieldName) {
+                    document.getElementById('id_' + fieldName).classList.remove('is-invalid');
+                    document.getElementById('id_' + fieldName + '_error').textContent = '';
+                });
+                submitButton.disabled = true;
+
+                try {
+                    const response = await fetch(window.location.href, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        if (result.updated_count === 0) {
+                            errorAlert.textContent = 'Error: No matching items found.';
+                            errorAlert.classList.remove('d-none');
+                            return;
+                        }
+                        window.location.reload();
+                        return;
+                    }
+
+                    Object.entries(result.errors || {}).forEach(function ([fieldName, errors]) {
+                        const message = errors.map(function (error) { return error.message; }).join(' ');
+                        if (fieldName === '__all__') {
+                            errorAlert.textContent = message;
+                            errorAlert.classList.remove('d-none');
+                            return;
+                        }
+                        const input = document.getElementById('id_' + fieldName);
+                        const feedback = document.getElementById('id_' + fieldName + '_error');
+                        if (input && feedback) {
+                            input.classList.add('is-invalid');
+                            feedback.textContent = message;
+                        }
+                    });
+                } catch (error) {
+                    errorAlert.textContent = 'Find & Replace could not be completed.';
+                    errorAlert.classList.remove('d-none');
+                } finally {
+                    requestInProgress = false;
+                    submitButton.disabled = false;
+                }
+            });
+        </script>
         <!-- Dropdown export -->
         <div class="nav-item dropdown">
             <div class="nav-link bi-cloud-download"
