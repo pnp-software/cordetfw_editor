@@ -413,6 +413,21 @@
     It is not possible to nest markdown tags (e.g. it is not possible to have a 
     word which is both underlined and bolded. 
     </p><p>
+    Tables can be entered in the <code>Text</code> and <code>Description</code> attributes with the <i>Insert table</i> button
+    above the text field (place the cursor inside an existing table to edit or remove it).
+    The <i>Import table</i> button loads a table from a <code>.csv</code> file (separator '|', ';', ',' or tab,
+    detected automatically); the first row becomes the header row.
+    Tables are stored as markdown tables where the first row is the header row:
+    </p>
+<pre>| Header 1 | Header 2 |
+| --- | --- |
+| Cell 1 | Cell 2 |</pre>
+    <p>
+    In the latex export, tables are rendered as a <code>longtable</code> (the document must load
+    <code>\usepackage{longtable}</code>): columns have equal width and wrap their text, the table is
+    broken across pages when needed and the header row is repeated on each page.
+    </p>
+    <p>
     Markdown support for bulleted lists and code listing is still TBD.
     </p>    
 

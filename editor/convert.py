@@ -6,7 +6,7 @@ from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from editor.models import SpecItem, Project, ValSet
-from editor.markdown import markdown_to_html, markdown_to_latex
+from editor.markdown import markdown_to_html, markdown_to_latex, split_tables, table_to_latex
 
 with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
     configs = json.load(config_file)
@@ -256,8 +256,13 @@ def convert_db_to_latex(s):
             return 'ERROR:'+match.group(2)
     
     s_iref = pattern_db.sub(iref_to_latex, s)
-    s_md = markdown_to_latex(s_iref)
-    return frmt_string(s_md)
+    s_latex = ''
+    for is_table, segment in split_tables(s_iref):
+        if is_table:
+            s_latex = s_latex + table_to_latex(segment, lambda c: frmt_string(markdown_to_latex(c)))
+        else:
+            s_latex = s_latex + frmt_string(markdown_to_latex(segment))
+    return s_latex
  
 
 def render_for_eval(s, n):

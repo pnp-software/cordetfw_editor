@@ -191,6 +191,12 @@ class SpecItemForm(forms.Form):
             if not config['attrs'][field]['req_in_form']:
                 self.fields[field].required = False
 
+        # The 'Text' and 'Description' attributes support tables through the table editor (see table_editor.js)
+        for field, label in [('value', 'Text'), ('desc', 'Description')]:
+            if (field in config['attrs']) and (field not in config['ext_attrs']) and (mode != 'del') and \
+               (config['attrs'][field]['label'] == label) and (config['attrs'][field]['kind'] == 'ref_text'):
+                self.fields[field].widget.attrs['class'] += ' table-editor'
+
         # For external spec_item in add mode: load choices of external item
         if (len(config['ext_attrs']) > 0) and (self.mode == 'add'):
             get_choices_func_name = 'ext_' + cat.lower() + '_get_choices'

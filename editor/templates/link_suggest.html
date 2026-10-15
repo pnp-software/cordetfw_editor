@@ -6,7 +6,7 @@ var linkElements = [
     {path: '{{spec_item.cat}}:{{spec_item.domain}}:{{spec_item.name}}', comment: '{{spec_item.title}}'},
   {% endfor %}
 ];
-$('.link-suggest').suggest('#', {
+var linkSuggestOptions = {
   data: linkElements,
   map: function(element) {
     return {
@@ -18,6 +18,7 @@ $('.link-suggest').suggest('#', {
     casesensitive: false,
     limit: 16
   }
-})
+};
+$('.link-suggest').suggest('#', linkSuggestOptions)
 </script>
 

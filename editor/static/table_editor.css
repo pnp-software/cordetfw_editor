@@ -1,0 +1,46 @@
+/* Tables rendered from markdown in spec item attributes */
+.md-table {
+    width: 100%;
+}
+/* Long unbroken words wrap inside the cell instead of widening the page */
+.md-table th,
+.md-table td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Table editor (see table_editor.js) */
+.te-bar {
+    display: flex;
+    width: fit-content;
+}
+.te-picker {
+    display: grid;
+    grid-template-columns: repeat(10, 1.1rem);
+    gap: 2px;
+}
+.te-pick-cell {
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 1px solid #ced4da;
+    background-color: #fff;
+    cursor: pointer;
+}
+.te-pick-cell.active {
+    background-color: #cfe2ff;
+    border-color: #0d6efd;
+}
+.te-grid {
+    min-width: 100%;
+}
+.te-grid .te-cell {
+    min-width: 7rem;
+    border-radius: 0;
+}
+.te-grid th .te-cell {
+    background-color: #f8f9fa;
+}
+/* Not 'table-responsive': its overflow would clip the link suggestions */
+.te-grid-wrap .suggest .dropdown-menu {
+    z-index: 1060;
+}
