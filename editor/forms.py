@@ -139,7 +139,7 @@ class SpecItemForm(forms.Form):
     submit = forms.CharField()
     cancel = forms.CharField(label='Cancel')
 
-    def __init__(self, mode, request, cat, project, application, config, s_parent_id, p_parent_id, *args, **kwargs):
+    def __init__(self, mode, request, cat, project, application, config, s_parent_id, p_parent_id, *args, item_id=None, **kwargs):
         super(SpecItemForm, self).__init__(*args, **kwargs)
         self.project = project
         self.application = application
@@ -147,6 +147,7 @@ class SpecItemForm(forms.Form):
         self.cat = cat
         self.config = config
         self.request = request
+        self.item_id = item_id
         if mode == 'del':
             self.fields['submit'].label = 'Delete'
         else:
@@ -281,8 +282,10 @@ class SpecItemForm(forms.Form):
 
         # Verify that, in edit mode, if the domain:name has been modified, it is unique within non-deleted, 
         # non-obsolete spec_items in the project and in the default ValSet
+        # (the item being edited is excluded, since some DB backends use case-insensitive collation, which 
+        #  would otherwise make a pure case change of domain/name match the item's own current DB row)
         if (self.mode == 'edit') and (('name' in self.changed_data) or ('domain' in self.changed_data)):
-            if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').filter(project_id=self.project.id, \
+            if SpecItem.objects.exclude(status='DEL').exclude(status='OBS').exclude(id=self.item_id).filter(project_id=self.project.id, \
                          domain=cd['domain'], name=cd['name'], val_set_id=default_val_set_id).exists():
                     raise forms.ValidationError('Edit Error: Domain:Name pair already exists in this project')
         
