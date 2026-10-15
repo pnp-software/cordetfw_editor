@@ -14,7 +14,7 @@
             <h2 class="my-3">{{ title }}</h2>
             <p class="mb-4 fs-5 fst-italic">{{ sub_title }}</p>
 
-            <form method="post">
+            <form method="post" {% if confirm_delete %}data-confirm-message="Are you sure you want to delete this item?"{% endif %}>
                 {% csrf_token %}
                 <div class="mb-3 row">
                     <label for="{{ form.domain.id_for_label }}"

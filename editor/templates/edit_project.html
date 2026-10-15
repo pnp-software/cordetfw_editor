@@ -73,12 +73,14 @@
                                 <td>{{ project_user.user.first_name }}</td>
                                 <td>{{ project_user.role }}</td>
                                 <td>
-                                    <a class="bi-trash-fill link-danger text-decoration-none"
-                                       role="button"
-                                       href="{% url 'edit_project' project.id %}?del_user_id={{project_user.id}}"
-                                       onclick="return confirm('Are you sure you want to remove this user from the project?');"
-                                       title="Delete Project User">
-                                    </a>
+                                        <form method="post" action="{% url 'edit_project' project.id %}"
+                                            data-confirm-message="Are you sure you want to remove this user from the project?">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="del_user_id" value="{{project_user.id}}">
+                                        <button type="submit" class="btn btn-link bi-trash-fill link-danger text-decoration-none p-0"
+                                            title="Delete Project User">
+                                        </button>
+                                        </form>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -114,10 +116,14 @@
                                               aria-disabled="true">
                                         </span>
                                         {% else %}
-                                        <a class="bi-trash-fill link-danger text-decoration-none me-1"
-                                           href="{% url 'edit_project' project.id %}?del_val_set_id={{val_set.id}}"
-                                           title="Delete ValSet">
-                                        </a>
+                                            <form class="d-inline" method="post" action="{% url 'edit_project' project.id %}"
+                                                data-confirm-message="Are you sure you want to delete this ValSet?">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="del_val_set_id" value="{{val_set.id}}">
+                                            <button type="submit" class="btn btn-link bi-trash-fill link-danger text-decoration-none p-0 me-1"
+                                                title="Delete ValSet">
+                                            </button>
+                                        </form>
                                         <a class="bi-pencil-fill text-decoration-none"
                                            href="{% url 'edit_val_set' project.id val_set.id %}"
                                            title="Edit ValSet">
