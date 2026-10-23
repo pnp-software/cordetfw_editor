@@ -39,13 +39,14 @@ decision recorded here.
   - Logout with an unsafe `?next=` now redirects to `/editor` (upstream fix of the self-redirect loop).
   - Honeypot decoy follows the Django 4.2 admin login template (matches the real `/pnpAdmin/`).
   - Hidden `s_data` input of a re-rendered invalid form: `value="null"` instead of empty; proven to store identical data.
-- [ ] **Task 3.4b** import-export 3.3.9 → 4.x on Django 4.2
+- [x] **Task 3.4b** import-export 3.3.9 → 4.4.3 + tablib 3.5.0 → 3.10.0 on Django 4.2: all export files byte-identical;
+  only the intermediate Dataset holds some ints as strings (tests compare cell text; verified against 3.3.9 output)
 - [ ] **Task 3.5** Django 5.2 LTS: USE_L10N removal (decide date rendering: app templates use explicit `|date`, admin
   currently shows broken strftime output), POST logout, MySQL utf8mb4 connection default, CSRF Origin
   checking → `CSRF_TRUSTED_ORIGINS` for the Apache proxy
 - [ ] **Task 3.6** crispy + crispy-bootstrap4
 - [ ] **Task 3.7** axes / ipware
-- [ ] **Task 3.8** import-export / tablib
+- [x] **Task 3.8** import-export / tablib (done as Task 3.4b)
 - [ ] **Task 3.9** mysqlclient, cexprtk, remaining packages, test tools
 - [ ] **Task 3.10** Exact pins, `requirements-lock.txt`, fresh-venv reproduction
 

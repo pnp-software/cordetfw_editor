@@ -369,12 +369,25 @@ def test_export_spec_items_requires_read_access(client, world):
 from editor import resources as R
 
 
+def cells(rows):
+    """Compare Dataset cells by value as written to CSV.
+
+    Changed in Task 3.4b (import-export 3.3.9 -> 4.4.3): 4.x renders some integer cells as
+    strings ('1' instead of 1). The CSV text written to the export files is byte-identical
+    (verified against the 3.3.9 output for every resource), so integers are compared by
+    their text form. Any other change (None vs '', different text) still fails.
+    """
+    def norm(row):
+        return tuple(str(v) if isinstance(v, int) and not isinstance(v, bool) else v for v in row)
+    return [norm(row) for row in rows]
+
+
 def test_resource_project(world):
     ds = R.ProjectResource().export(queryset=Project.objects.all())
     assert ds.headers == ['id', 'name', 'desc', 'cats', 'updated_at', 'owner', 'release']
     assert len(ds) == 1
-    assert ds[0] == (1, 'Demo Proj', 'Demo project with unicode ä µ \u263A\nsecond line',
-                     'DataItem,EnumType,EnumValue,DataItemType', '2024-02-20 16:45:30', 'owner', 2)
+    assert cells([ds[0]]) == cells([(1, 'Demo Proj', 'Demo project with unicode ä µ \u263A\nsecond line',
+                     'DataItem,EnumType,EnumValue,DataItemType', '2024-02-20 16:45:30', 'owner', 2)])
     assert ds.csv == ('id,name,desc,cats,updated_at,owner,release\r\n'
                       '1,Demo Proj,"Demo project with unicode ä µ \u263A\nsecond line",'
                       '"DataItem,EnumType,EnumValue,DataItemType",2024-02-20 16:45:30,owner,2\r\n')
@@ -384,31 +397,31 @@ def test_resource_release(world):
     ds = R.ReleaseResource().export(queryset=Release.objects.all())
     assert ds.headers == ['id', 'release_author', 'desc', 'updated_at', 'project_version',
                           'application_version', 'previous']
-    assert list(ds) == [
+    assert cells(ds) == cells([
         (1, 'owner', 'Initial release for project', '2023-12-01 08:00:00', 0, 0, ''),
         (2, 'writer', 'First "release" | with pipe\nand newline', '2024-02-20 16:45:30', 1, 0, 1),
         (3, 'owner', 'Initial release for application', '2023-12-01 08:00:00', 0, 0, ''),
         (4, 'owner', 'Application release äµ', '2024-02-20 16:45:30', 1, 1, 3),
-    ]
+    ])
 
 
 def test_resource_application(world):
     ds = R.ApplicationResource().export(queryset=Application.objects.all())
     assert ds.headers == ['id', 'name', 'desc', 'cats', 'project', 'updated_at', 'release']
-    assert list(ds) == [(1, 'App One', 'Application | desc', 'Requirement', 1, '2024-02-20 16:45:30', 4)]
+    assert cells(ds) == cells([(1, 'App One', 'Application | desc', 'Requirement', 1, '2024-02-20 16:45:30', 4)])
 
 
 def test_resource_project_user(world):
     ds = R.ProjectUserResource().export(queryset=ProjectUser.objects.all())
     assert ds.headers == ['id', 'updated_at', 'user', 'project', 'role']
-    assert list(ds) == [(1, '2024-01-15', 'reader', 1, 'RO'), (2, '2024-01-15', 'writer', 1, 'RW')]
+    assert cells(ds) == cells([(1, '2024-01-15', 'reader', 1, 'RO'), (2, '2024-01-15', 'writer', 1, 'RW')])
 
 
 def test_resource_val_set(world):
     ds = R.ValSetResource().export(queryset=ValSet.objects.all())
     assert ds.headers == ['id', 'updated_at', 'project', 'name', 'desc']
-    assert list(ds) == [(1, '2024-01-15', 1, 'Default', 'Default ValSet'),
-                        (2, '2024-01-15', 1, 'VS1', 'Alternative "values"')]
+    assert cells(ds) == cells([(1, '2024-01-15', 1, 'Default', 'Default ValSet'),
+                               (2, '2024-01-15', 1, 'VS1', 'Alternative "values"')])
 
 
 SPEC_HEADERS = ['id', 'cat', 'name', 'domain', 'project', 'application', 'title', 'desc', 'owner', 'status',
@@ -422,17 +435,18 @@ def test_resource_spec_item_headers_and_dehydrate(world):
     assert ds.headers == SPEC_HEADERS
     enum_type, color_var = list(ds)
     # an empty JSON value is exported as None (-> empty CSV cell); FKs as ids; None FKs as ''
-    assert enum_type == (102, 'EnumType', 'Color', 'Types', 1, '', 'Colour',
+    [enum_type, color_var] = cells([enum_type, color_var])
+    assert enum_type == cells([(102, 'EnumType', 'Color', 'Types', 1, '', 'Colour',
                          'Colors ä µ \u263A and **markdown**\n\n- bullet one\n- bullet two',
                          'owner', 'CNF', '2024-02-20 16:45:30', '2023-12-01 08:00:00', 103, '', '', '', 1,
-                         '', '', '', '', '', None, '', '', '', '', '', 4, 0, 0, 'changed\r\nwith CRLF')
+                         '', '', '', '', '', None, '', '', '', '', '', 4, 0, 0, 'changed\r\nwith CRLF')])[0]
     # text fields: internal references converted to edit form; owner dehydrated; s_data is JSON text
-    assert color_var == (106, 'DataItem', 'ColorVar', 'Dom', 1, '', 'Title of ColorVar',
+    assert color_var == cells([(106, 'DataItem', 'ColorVar', 'Dom', 1, '', 'Title of ColorVar',
                          'See #EnumValue:Types:Red and #DataItemType:Types:uint8 and **bold**\n'
                          'newline "q" | pipe; dangling ERROR:9999',
                          'owner', 'MOD', '2024-03-03 03:03:03', '2023-12-01 08:00:00', '', 'x | y',
                          '  padded  ', '', 1, 102, '', 'VAR', '', '#EnumValue:Types:Red',
-                         '{"a": 1, "k": [1, 2], "u": "\\u00e4"}', '1', 'µm', '', '', '', 0, 0, 7, '')
+                         '{"a": 1, "k": [1, 2], "u": "\\u00e4"}', '1', 'µm', '', '', '', 0, 0, 7, '')])[0]
 
 
 def test_resource_spec_item_dict_rows_are_ordered(world):
@@ -1388,8 +1402,8 @@ PROJECT_DISPOSITIONS = {
 @pytest.mark.parametrize('name', list(PROJECT_DISPOSITIONS), ids=['quotes', 'latin1', 'cjk'])
 def test_export_project_content_disposition_special_names(client, fresh_temp, name):
     # 'quotes' changed as expected in Task 3.2 (CVE-2022-36359), accepted by the operator.
-    # EXPECTED-CHANGE: Django 4.2+ also emits a plain ASCII fallback 'filename="..."'
-    # next to filename*=utf-8'' for non-ASCII names, so 'latin1' and 'cjk' change too.
+    # 'latin1' and 'cjk' were predicted to gain an ASCII 'filename="..."' fallback on Django 4.2+;
+    # verified unchanged on Django 4.2.30 (Task 3.4). Kept as a guard for Django 5.2.
     w = build_world(name)
     client.force_login(w.owner)
     response, data, zf = export_zip(client, w.project.id, fresh_temp)
@@ -1466,7 +1480,7 @@ def build_numbers_world():
 def test_export_project_numbers_golden(client, fresh_temp):
     # django-import-export 4 renders numbers differently (e.g. ints/floats in CSV cells),
     # so releases.csv / spec_items.csv of this dataset are pinned byte for byte.
-    # EXPECTED-CHANGE: django-import-export 4.x number rendering (and widget changes).
+    # Verified byte-identical with django-import-export 4.4.3 (Task 3.4b); kept as a guard.
     w = build_numbers_world()
     client.force_login(w.owner)
     response, data, zf = export_zip(client, w.project.id, fresh_temp)
@@ -1483,7 +1497,7 @@ def test_export_project_numbers_golden(client, fresh_temp):
 
 
 def test_export_project_numbers_spec_items_golden(client, fresh_temp):
-    # EXPECTED-CHANGE: django-import-export 4.x number rendering
+    # Verified byte-identical with django-import-export 4.4.3 (Task 3.4b); kept as a guard
     w = build_numbers_world()
     client.force_login(w.owner)
     response, data, zf = export_zip(client, w.project.id, fresh_temp)
