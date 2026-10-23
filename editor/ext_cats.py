@@ -2,6 +2,7 @@ import MySQLdb as mdb
 import re
 import sys
 import json
+import os
 from django.core.exceptions import MultipleObjectsReturned
 from django.contrib.auth import update_session_auth_hash, get_user
 from django.contrib import messages
@@ -13,7 +14,7 @@ from editor.choices import MODEL_KIND
 def connect(request):
     """ Open connection to fwprofile db. In case of error, an error msg is returned. """
     try:
-        with open('/etc/dj_cordetfw_config.json') as config_file:
+        with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
             config = json.load(config_file)
     except Exception as e:
         messages.error(request, 'Unable to access credentials for FW Profile database')

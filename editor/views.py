@@ -51,7 +51,7 @@ from editor.access import is_project_owner, has_read_access_to_project, \
 import cexprtk
 import logging
     
-with open('/etc/dj_cordetfw_config.json') as config_file:
+with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
     config = json.load(config_file)
     
 base_url = config['BASE_URL']

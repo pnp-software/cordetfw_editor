@@ -15,7 +15,7 @@ import datetime
 from django.contrib.messages import constants as messages
 import json
 
-with open('/etc/dj_cordetfw_config.json') as config_file:
+with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
     config = json.load(config_file)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
