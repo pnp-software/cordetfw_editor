@@ -5,6 +5,7 @@
 /cordetfw_editor.geany
 /cordetfw_editor.log
 mysql_db_persist/
+mysql84_db_persist/
 **/cordetfwvenv/
 /editorvenv/bin/**
 /editorvenv/**

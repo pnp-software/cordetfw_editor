@@ -68,9 +68,12 @@ decision recorded here.
   gate green (1141 SQLite / 1150 MySQL), strict DeprecationWarning run green, coverage 97%.
 
 ## Phase 4: Real-environment validation (external gates)
-- [ ] **Task 4.1** Full suite on MySQL 8.0.x (matching production) and 8.4
+- [x] **Task 4.1** Full suite on MySQL 8.0.42 (every gate) and **MySQL 8.4.13 LTS: 1150 passed**. Note: the MySQL 8.0
+  series reached end of life in April 2026; production (8.0.46) should plan a move to 8.4 LTS (separate change).
 - [ ] **Task 4.2** Sanitized production DB copy: migrate rehearsal, export ZIP old vs new identical
-- [ ] **Task 4.3** tryout Docker files → Python 3.12, pinned MySQL, healthcheck
+- [x] **Task 4.3** tryout: `python:3.12-bookworm` + lock file, `mysql:8.4` pinned, healthcheck/`service_healthy` instead of
+  `sleep 5`, removed `--default-authentication-plugin` (MySQL 8.4 refuses it), new data dir `mysql84_db_persist/`.
+  Verified: isolated `up --build` migrates the 2022 dump schema and serves `/editor/` (HTTP 200).
 - [ ] **Task 4.4** Apache/mod_wsgi staging, `check --deploy`, browser walkthrough
 
 ## Phase 5: Handoff
