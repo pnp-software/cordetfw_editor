@@ -109,8 +109,10 @@ decision recorded here.
   JS-string filter that leaves ordinary titles byte-identical. Find & Replace refuses all FW-Profile attributes. Production
   check: 0 of 240 diagrams rejected. Gate 1419 SQLite / 1428 MySQL. Opus review: stopped before payload testing; its
   design finding (a deny-list is fragile for a field rendered raw) leads to Task 6.6c
-- [ ] **Task 6.6c** SVG allowlist validator (strict XML, element/attribute allowlist from the production diagrams, validate
-  only, never rewrite) on every write path + placeholder on render for stored values that fail; replaces the deny-list
+- [x] **Task 6.6c** `ee966b1` SVG allowlist validator (strict XML, element/attribute allowlist from the production diagrams, validate
+  only, never rewrite) on every write path + placeholder on render for stored values that fail; replaces the deny-list. Elements: 7 observed + inert shapes;
+  CSS keywords only as observed (position relative, overflow hidden, display none, white-space pre, cursor default/move/
+  nw-resize). Production: 240/240 accepted. Gate 1534 SQLite / 1543 MySQL. Test fixtures `<svg/>` -> namespaced documents
 - [x] **Task 6.7** `509d5d8` Optional `AXES_LOCKOUT_PARAMETERS` config key (default unchanged; recommended
   `["ip_address", "username"]`, trade-off: a known username can be locked out for the cool-off); pip-audit 2.10.1:
   no known vulnerabilities (2026-10-23). Gate 1437 SQLite / 1446 MySQL; ROLLOUT §0: pip-audit before cutover.
