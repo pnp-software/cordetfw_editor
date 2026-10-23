@@ -9,10 +9,14 @@
  Release 1.0.0 of the editor has been in use for some time at P&P Software GmbH.
 
 ### Start-Up
-- Install Django `python3 -m pip install Django`
-- Install Django-Crispy-Forms `pip3 install django-crispy-forms`
-- Install cexprtk `pip3 install cexprtk`
-- Set up a mySQL server
+- Python 3.12, Django 5.2 LTS. Install the pinned dependencies into a virtual environment
+  (mysqlclient is built from source and needs `pkg-config` and the MySQL client headers):
+  ```sh
+  python3.12 -m venv .venv
+  .venv/bin/pip install -r requirements.txt -c requirements-lock.txt
+  ```
+- Configuration is read from `/etc/dj_cordetfw_config.json` (override the path with `CORDETFW_CONFIG_PATH`)
+- Set up a MySQL server (8.0.11 or later; tested with 8.0 and 8.4)
 - If no database is available for import:
   - Create database cordetfw
   - In cordetfw_editor directory, run: `python3 manage.py createsuperuser` and create the `admin` user with superuser rights
@@ -27,20 +31,26 @@
 - STATICFILES_DIRS in `settings.py` contains an absolute path!
 - For the customization of the auto-completion list (e.g. changing number of entries): see issue #6
 
+### Tests
+See `CLAUDE.md` ("Tests"): `.venv/bin/python -m pytest -q`, the MySQL run, and `scripts/migration_gate.sh`.
+Install the test tools with `pip install -r requirements-test.txt`.
+
 ### Deployment
-The `requirement.txt` file contains the exact library versions.
+`requirements.txt` lists the direct dependencies with exact versions; `requirements-lock.txt` pins the
+complete resolved set. Install with `pip install -r requirements.txt -c requirements-lock.txt`.
+For the Django 5.2 upgrade itself follow `docs/migration/ROLLOUT.md`.
 
 #### Using Virtual Environment
 - load `source path_to_venv/bin/activate` e.g. `source python-app-venv/bin/activate`
-- save dependencies `pip3 freeze > requirements.txt` in the project root
 
 #### Do the Deployment
 1. `ssh <your host>`
 2. `cd <editor_directory>`
 3. `git pull origin`
-4. Import static resources and (if required) run the migration
+4. Install the dependencies, import static resources and (if required) run the migration
   - `source python-app-venv/bin/activate`
-  - `python3 manage.py migrate`
+  - `pip install -r requirements.txt -c requirements-lock.txt`
+  - `python3 manage.py migrate --plan` (review), then `python3 manage.py migrate`
   - `python3 manage.py collectstatic`
   - `deactivate`
 5. `sudo systemctl reload apache2.service`
@@ -54,18 +64,17 @@ The description of the creation and customization procedure for the CSS is still
 ##### Check Version
 Check python libraries verison and update to latest.
 
-1. ssh to server
-2. `cd <editor_directory>`
-3. load environment `source python-app-venv/bin/activate`
-4. `pip list --outdated`
-5. update listed packaged with `pip install -U PACKAGE_NAME`
-6. update `requirements.txt` with `pip freeze > requirements.txt`
-7. add update `requirements.txt` to git
+Updates are made in a development environment, never directly on the server:
 
-> load `requirements.txt` with `pip install -r requirements.txt`
+1. `pip list --outdated` in a development venv lists candidates (an inventory, not a to-do list)
+2. Update one package (or one compatibility group) at a time in `requirements.txt`
+3. Install into a fresh venv, run `scripts/migration_gate.sh` (tests on SQLite and MySQL, golden files)
+4. Regenerate `requirements-lock.txt` from that venv (`pip freeze`, without the test tools) and commit both files
+5. Deploy as above
 
 ##### Deployment Checklist Django
-Django provides a [deployment checklist](https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/)
+Django provides a [deployment checklist](https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/)
+(`python3 manage.py check --deploy`)
 
 **Done**
 * `SECRET_KEY` is loaded from configuration file
