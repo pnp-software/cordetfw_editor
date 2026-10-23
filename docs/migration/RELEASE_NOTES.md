@@ -25,6 +25,20 @@ Exact resolved set: `requirements-lock.txt`. Tested database servers: MySQL 8.0.
    navbar. `GET /editor/logout/` now returns 405, so bookmarks or scripts that call it must use POST.
 2. **The admin (`/pnpAdmin/`) shows real timestamps**, e.g. `15-01-2024 10:30:00`. Before, it showed broken
    strftime output such as `%15-%01-%2024 %10:%Jan:%th`. Editor pages are unchanged: they use explicit date formats.
+3. **Delete, remove, refresh and member actions are buttons (POST) with a confirmation dialog** (upstream #86,
+   Task 6.3): delete a project, remove a project member, delete a ValSet, refresh a Model item, and add a member
+   or change its role (RO/RW). Changing actions no longer work through plain links, so a link can no longer change
+   data by being opened or prefetched.
+   - Old links or bookmarks to project delete (`/editor/<id>/del_project`) and item refresh
+     (`.../refresh_spec_item`) now return 405.
+   - Old member / ValSet links (`edit_project?user_id=...`, `?del_user_id=...`, `?del_val_set_id=...`) open the
+     project page, change nothing and show the warning "This link no longer changes the project. Use the buttons on
+     this page."
+   - Deleting a NEW spec item now goes through the confirmation page (before, it was deleted immediately).
+   - Deleting a ValSet now asks for confirmation (before, it did not).
+   - The project delete text now reads "Are you sure you want to delete this project?".
+   - The dialog needs `/static/confirm-delete.js` (run `collectstatic`); if the Bootstrap script from the CDN does
+     not load, the browser's own confirm dialog is used instead.
 
 ## Other changes you may notice
 

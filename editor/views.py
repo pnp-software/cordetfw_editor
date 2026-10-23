@@ -258,6 +258,10 @@ def edit_project(request, project_id):
                                     ', possibly because it is still in use: '+repr(e))
         return redirect('edit_project', project_id=project_id)
 
+    if request.method != 'POST' and any(k in request.GET for k in ('user_id', 'del_user_id', 'del_val_set_id')):
+        # Old bookmarks / stale pages: these links used to change the project. They no longer do.
+        messages.warning(request, 'This link no longer changes the project. Use the buttons on this page.')
+
     if request.method == 'POST':    # Bind form to posted data 
         form = ProjectForm(project, request.POST)
         if form.is_valid():

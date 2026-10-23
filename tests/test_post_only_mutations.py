@@ -1,13 +1,18 @@
 """Task 6.3, mutation-via-get: no state change on a GET request.
 
-Step A (upstream #86): the delete actions are POST-only (del_project, edit_project's
-del_user_id / del_val_set_id, del_spec_item for NEW items).
+Upstream #86 plus the follow-ups: delete, refresh and member/ValSet actions are POST-only
+(del_project, edit_project's user_id / del_user_id / del_val_set_id, del_spec_item for NEW items,
+refresh_spec_item).
 GET behaviour as implemented:
   * del_project                      -> 405 (require_POST), nothing changes
   * edit_project?del_*=...           -> 200 edit page, the parameter is ignored
   * del_spec_item (any status)       -> 200 confirmation form, nothing changes
 """
+import tempfile
+
 import pytest
+from django.core.signals import request_finished
+from django.db import close_old_connections
 from django.test import Client
 
 from editor.models import Project, ProjectUser, SpecItem, ValSet
@@ -202,15 +207,18 @@ def test_delete_forms_render_csrf_token_and_post_method(client):
     assert '?del_user_id=' not in html and '?del_val_set_id=' not in html
 
     html = client.get('/editor/').content.decode()
-    form = html[:html.index('Delete Proj Project')].rsplit('<form', 1)[1]
+    form = html[html.index(f'<form id="del-project-{s.pid}"'):]
+    form = form[:form.index('</form>')]
     assert f'action="/editor/{s.pid}/del_project"' in form
     assert 'method="post"' in form and 'csrfmiddlewaretoken' in form
 
     client.force_login(s.w.owner)
     html = client.get(f'/editor/DataItem/{s.pid}/0/{s.new_item.id}/Sel_All/0/del_spec_item').content.decode()
     assert 'data-confirm-message=' in html
-    form = html[html.index('data-confirm-message=') - 40:]
-    assert 'csrfmiddlewaretoken' in form
+    form = html[:html.index('</form>', html.index('data-confirm-message='))]
+    form = form.rsplit('<form', 1)[1]
+    assert 'data-confirm-message=' in form
+    assert 'method="post"' in form and 'csrfmiddlewaretoken' in form
 
 
 # =============================================================================================
@@ -391,22 +399,88 @@ def test_add_member_menu_items_are_post_forms_with_csrf_token(client):
 
 # ------------------------------------------------------------------ nothing mutates on GET, anywhere
 
-def test_no_get_request_changes_the_database(client):
-    """Every project/application/item URL, with every mutating query parameter that used to work."""
-    from tests.test_access import ENDPOINTS
+def test_edit_project_old_member_links_warn_and_change_nothing(client):
+    s, pu, vs = project_with_member_and_valset()
+    client.force_login(s.w.staff)
+    before = db_snapshot()
+    for params in ({'user_id': pu.user_id, 'role': 'RW'}, {'del_user_id': pu.id},
+                   {'del_val_set_id': vs.id}):
+        response = client.get(s.url('edit_project'), params)
+        assert response.status_code == 200
+        assert response.context['messages'] and \
+            [m.message for m in response.context['messages']] == \
+            ['This link no longer changes the project. Use the buttons on this page.']
+        assert db_snapshot() == before
+    # a plain visit shows no warning
+    response = client.get(s.url('edit_project'))
+    assert not [m.message for m in response.context['messages']]
+
+
+def test_confirm_delete_script_is_served_and_does_not_fail_open():
+    from django.contrib.staticfiles import finders
+    path = finders.find('confirm-delete.js')
+    assert path
+    with open(path, encoding='utf-8') as f:
+        js = f.read()
+    assert "typeof bootstrap === 'undefined'" in js or "typeof bootstrap !== 'undefined'" in js
+    assert 'window.confirm(form.dataset.confirmMessage)' in js
+    assert 'HTMLFormElement.prototype.submit.call(form)' in js
+    assert "typeof form.requestSubmit === 'function'" in js
+
+
+def test_project_delete_button_sits_directly_in_the_button_group(client):
     s = Setup()
+    client.force_login(s.w.staff)
+    html = client.get('/editor/').content.decode()
+    group = html[html.index('aria-label="project controls"'):]
+    group = group[:group.index('</div>')]
+    assert f'form="del-project-{s.pid}"' in group and '<form' not in group
+    form = html[html.index(f'<form id="del-project-{s.pid}"'):]
+    form = form[:form.index('</form>')]
+    assert f'action="/editor/{s.pid}/del_project"' in form
+    assert 'method="post"' in form and 'csrfmiddlewaretoken' in form
+    assert 'data-confirm-message="Are you sure you want to delete this project?"' in form
+
+
+def test_no_get_request_changes_the_database(client):
+    """Every project/application/item URL, with every mutating query parameter that used to work.
+
+    Run as roles that get PAST the access check (owner = writer; a staff user who is also an RW
+    member), with a NEW item for del_spec_item and a Model item for refresh_spec_item, and the FW
+    Profile DB mocked so that a mutation would happen if GET were allowed.
+    """
+    from tests.test_access import ENDPOINTS
+    s, app, model_item, refresh_url = model_setup()
     member = make_user('member')
     pu = make_project_user(s.w.project, member, 'RO')
     vs = make_val_set(s.w.project, 'VS1')
-    client.force_login(s.w.superuser)
-    before = db_snapshot()
+    staff_member = make_user('staffmember', is_staff=True)
+    make_project_user(s.w.project, staff_member, 'RW')
     params = {'user_id': member.id, 'role': 'RW', 'del_user_id': pu.id, 'del_val_set_id': vs.id,
               'export': 'csv'}
-    with fake_connect([ROW]) as connect:
-        for endpoint in sorted(ENDPOINTS):
-            if endpoint.startswith('export_'):
-                continue            # streaming responses, covered by the access matrix
-            response = client.get(s.url(endpoint), params)
-            assert response.status_code in (200, 302, 405), endpoint
-            assert db_snapshot() == before, endpoint
-    connect.assert_not_called()
+    urls = {e: s.url(e) for e in ENDPOINTS}
+    urls['del_spec_item'] = f'/editor/DataItem/{s.pid}/0/{s.new_item.id}/Sel_All/0/del_spec_item'
+    urls['refresh_spec_item'] = refresh_url
+    reached = set()
+    for user in (s.w.owner, staff_member):
+        client.force_login(user)
+        before = db_snapshot()
+        with fake_connect([ROW]) as connect, mock.patch(
+                'editor.views.make_temp_dir',
+                side_effect=lambda d, n: tempfile.mkdtemp(prefix=n, dir=d)):
+            for endpoint in sorted(urls):
+                response = client.get(urls[endpoint], params)
+                assert response.status_code in (200, 302, 405), endpoint
+                if response.status_code == 200:
+                    reached.add(endpoint)
+                if response.streaming:
+                    # like Django's test client: closing must not close the test's DB connection
+                    request_finished.disconnect(close_old_connections)
+                    try:
+                        response.close()
+                    finally:
+                        request_finished.connect(close_old_connections)
+                assert db_snapshot() == before, (user.username, endpoint)
+        connect.assert_not_called()
+    # the sweep really got past the access checks of the mutating endpoints
+    assert {'del_spec_item', 'edit_project', 'export_project', 'export_spec_items'} <= reached

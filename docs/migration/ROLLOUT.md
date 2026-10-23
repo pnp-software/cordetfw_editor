@@ -53,6 +53,10 @@ deployable versions.
          `CSRF_TRUSTED_ORIGINS` behind a TLS proxy), logout (button), password change, password reset mail
    - [ ] project list for an owner, an RW user and an RO user; an RO user cannot edit
    - [ ] add / edit / copy / split / delete a spec item, history, find/replace, refresh of an external Model item
+   - [ ] delete a project (as staff): the confirmation dialog appears, Cancel keeps it, OK deletes it
+   - [ ] project members: add a member as RW and as RO, change a role, remove a member (dialog each time)
+   - [ ] delete a non-default ValSet (dialog); refresh a Model item (button)
+   - [ ] `curl -sI https://<host>/static/confirm-delete.js` returns 200 (after `collectstatic`)
    - [ ] make a project release and an application release; release view of a list
    - [ ] export a project ZIP and spec-item CSV/LaTeX; compare them with exports from the old production
    - [ ] import spec items from CSV; import a project ZIP (as staff)

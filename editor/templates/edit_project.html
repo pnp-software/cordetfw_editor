@@ -85,7 +85,7 @@
                                             data-confirm-message="Are you sure you want to remove this user from the project?">
                                         {% csrf_token %}
                                         <input type="hidden" name="del_user_id" value="{{project_user.id}}">
-                                        <button type="submit" class="btn btn-link bi-trash-fill link-danger text-decoration-none p-0"
+                                        <button type="submit" class="btn btn-link bi-trash-fill link-danger text-decoration-none p-0 align-baseline border-0"
                                             title="Delete Project User">
                                         </button>
                                         </form>
@@ -128,7 +128,7 @@
                                                 data-confirm-message="Are you sure you want to delete this ValSet?">
                                             {% csrf_token %}
                                             <input type="hidden" name="del_val_set_id" value="{{val_set.id}}">
-                                            <button type="submit" class="btn btn-link bi-trash-fill link-danger text-decoration-none p-0 me-1"
+                                            <button type="submit" class="btn btn-link bi-trash-fill link-danger text-decoration-none p-0 me-1 align-baseline border-0"
                                                 title="Delete ValSet">
                                             </button>
                                         </form>

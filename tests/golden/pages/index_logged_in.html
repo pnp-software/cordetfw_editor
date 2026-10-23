@@ -106,13 +106,10 @@
                     </div>
                     <div class="btn-group me-3" role="group" aria-label="project controls">
                         
-                        <form class="d-inline" method="post" action="/editor/1/del_project"
-                            data-confirm-message="Are you sure you want to delete this project?">
-                            <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
-                            <button type="submit" class="btn btn-outline-danger bi-trash-fill"
-                                title="Delete Proj Project">
-                            </button>
-                        </form>
+                        <button type="submit" form="del-project-1"
+                            class="btn btn-outline-danger bi-trash-fill"
+                            title="Delete Proj Project">
+                        </button>
                         
                         
                         <a class="btn btn-outline-primary bi-cloud-download-fill"
@@ -183,6 +180,13 @@
                         </a>
                         
                     </div>
+                    
+                    <form id="del-project-1" class="d-none" method="post"
+                        action="/editor/1/del_project"
+                        data-confirm-message="Are you sure you want to delete this project?">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                    </form>
+                    
                 </div>
 
 
