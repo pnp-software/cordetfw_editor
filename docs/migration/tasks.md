@@ -94,7 +94,7 @@ decision recorded here.
   kept, fixing `edit-project-del-user-unscoped`) + `b22d64e` refresh, del_project, member add/role via POST, role must be
   RO/RW. GET: 405 (del_project, refresh) or confirmation page / ignored parameters. 32 goldens promoted, mechanically
   proven to differ only in the converted controls + delete modal. Gate 1254 SQLite / 1263 MySQL. Opus review: no blocking findings; low-severity follow-ups in Task 6.3b
-- [ ] **Task 6.3b** Review follow-ups: confirm fallback without Bootstrap/requestSubmit, stronger GET sweep test, button group/alignment, warning for old GET member links, release notes + ROLLOUT walkthrough
+- [x] **Task 6.3b** `0eb5a54` Review follow-ups: confirm fallback without Bootstrap/requestSubmit, stronger GET sweep test, button group/alignment, warning for old GET member links, release notes + ROLLOUT walkthrough. Gate 1257 SQLite / 1266 MySQL
 - [ ] **Task 6.4** Cross-project scoping of every id (item, application, ValSet, parent, release, ProjectUser); find/replace needs write access
 - [ ] **Task 6.5** `add-app-releases-null-app-items`
 - [ ] **Task 6.6** XSS escaping (HTML path): text nodes escape `&<>` only, attributes full `escape()`, `image` (SVG) exempt;
