@@ -7,6 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from editor.models import SpecItem, Project, ValSet
 from editor.markdown import markdown_to_html, markdown_to_latex
+from editor.svg_check import svg_rule_violation
 
 with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
     configs = json.load(config_file)
@@ -111,6 +112,21 @@ def convert_db_to_display(s, sel_rel):
 def conv_do_nothing(context, item, name, sel_rel):
     """ Returns the value of attribute 'name' of spec_item 'item' without change """
     return getattr(item, name)
+
+
+IMAGE_PLACEHOLDER = '[diagram not shown: invalid content]'
+
+
+def conv_db_disp_image(context, item, name, sel_rel):
+    """
+    Display representation of an 'image' attribute (inline SVG): a stored value which passes the
+    allowlist validator (Task 6.6c) is returned unchanged, anything else is replaced by a fixed
+    placeholder text.
+    """
+    value = getattr(item, name)
+    if svg_rule_violation(value):
+        return escape_text(IMAGE_PLACEHOLDER)
+    return value
 
 
 def conv_db_disp_plain_text(context, item, name, sel_rel):

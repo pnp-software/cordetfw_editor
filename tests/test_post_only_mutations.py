@@ -234,7 +234,7 @@ def model_setup():
     s = Setup()
     app = make_application(s.w.project, 'ModApp', cats='Model')
     item = make_spec_item(s.w.project, cat='Model', domain='OldDom', name='OldName', application=app,
-                          n3=77, value='<svg>old</svg>', p_kind='SM', status='NEW')
+                          n3=77, value='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>', p_kind='SM', status='NEW')
     url = f'/editor/Model/{s.pid}/{app.id}/{item.id}/Sel_All/0/refresh_spec_item'
     return s, app, item, url
 
@@ -248,7 +248,7 @@ def fake_connect(rows):
 
 
 ROW = (77, 1, 'NewName', 3, 'Procedure', datetime(2024, 5, 5, tzinfo=timezone.utc),
-       '{"globals": {"fwprop": {"smTags": "NewDom"}}}', '<svg>new</svg>', 11, 22)
+       '{"globals": {"fwprop": {"smTags": "NewDom"}}}', '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>', 11, 22)
 
 
 @pytest.mark.parametrize('role', ['owner', 'ro', 'rw', 'unrelated', 'staff'])
@@ -277,7 +277,7 @@ def test_refresh_post_by_writer_refreshes(client, role):
         response = client.post(url)
     assert response.status_code == 302
     item.refresh_from_db()
-    assert (item.domain, item.name, item.value) == ('NewDom', 'NewName', '<svg>new</svg>')
+    assert (item.domain, item.name, item.value) == ('NewDom', 'NewName', '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>')
 
 
 @pytest.mark.parametrize('role', ['ro', 'unrelated', 'staff'])

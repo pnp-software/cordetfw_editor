@@ -205,7 +205,7 @@ def test_02_idor_item_project_split_get_and_post(w):
 def test_02_idor_item_project_refresh_get(w):
     # FIXED: idor-item-project (was: B's item refreshed from the external DB through A's URL)
     b_model = make_spec_item(w.b, cat='Model', domain='OldDom', name='OldName', application=w.app_b, n3=77,
-                             value='<svg>old</svg>', p_kind='SM', status='CNF')
+                             value='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>', p_kind='SM', status='CNF')
     c = w.client(w.rw_a)
     before = snapshot()
     with mock.patch('editor.ext_cats.mdb.connect') as connect:

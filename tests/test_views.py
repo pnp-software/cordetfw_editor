@@ -1217,7 +1217,7 @@ def test_del_cnf_post_with_parent_redirect(client, owner, project, dvs):
 # refresh_spec_item (external FW Profile DB is mocked)
 # ----------------------------------------------------------------------------
 
-SVG_NEW = '<svg>new</svg>'
+SVG_NEW = '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>'
 
 
 def fake_connect(rows):
@@ -1237,7 +1237,7 @@ def diagram_row(svg=SVG_NEW, name='NewName', kind='Procedure', model_id=77):
 def model_item(project, dvs):
     app = make_application(project, 'App', cats='Model')
     item = make_spec_item(project, cat='Model', domain='OldDom', name='OldName', application=app, n3=77,
-                          value='<svg>old</svg>', p_kind='SM', status='NEW')
+                          value='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>', p_kind='SM', status='NEW')
     return app, item
 
 
@@ -1288,12 +1288,12 @@ def test_refresh_not_found(client, owner, project, dvs, model_item):
         ('alert-warning', 'Model not found in FW Profile Database (its ID is: 77)'),
         ('alert-warning', 'External spec_item no longer exists -- no refresh can be done')]
     item.refresh_from_db()
-    assert item.value == '<svg>old</svg>'
+    assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
 
 
 def test_refresh_no_change(client, owner, project, dvs, model_item):
     app, item = model_item
-    patcher, cursor, conn = fake_connect([diagram_row(svg='<svg>old</svg>')])
+    patcher, cursor, conn = fake_connect([diagram_row(svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>')])
     with patcher:
         resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302

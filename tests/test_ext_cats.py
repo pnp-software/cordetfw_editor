@@ -93,7 +93,7 @@ def model_json(domain, extra=None):
     return json.dumps(d)
 
 
-def diagram(id_, name, domain, kind='State Machine', svg='<svg/>', w=100, h=200,
+def diagram(id_, name, domain, kind='State Machine', svg='<svg xmlns="http://www.w3.org/2000/svg"></svg>', w=100, h=200,
             updated=datetime(2024, 3, 4, 5, 6, 7), json_rep=None):
     return (id_, 7, name, 'x', kind, updated,
             json_rep if json_rep is not None else model_json(domain), svg, w, h)
@@ -247,11 +247,11 @@ def test_model_get_choices_null_domain_crashes(fake_db):
 # ---------------------------------------------------------------------------
 
 def test_model_get_choice_state_machine(fake_db):
-    fake_db.responder = lambda sql: [diagram(7, 'nm', 'DomA', kind='State Machine', svg='<svg>1</svg>', w=11, h=22)]
+    fake_db.responder = lambda sql: [diagram(7, 'nm', 'DomA', kind='State Machine', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>1</desc></svg>', w=11, h=22)]
     request = make_request()
     result = ext_cats.ext_model_get_choice(request, 7)
     assert result == {'domain': 'DomA', 'name': 'nm', 'p_kind': 'SM',
-                      'updated_at': datetime(2024, 3, 4, 5, 6, 7), 'value': '<svg>1</svg>',
+                      'updated_at': datetime(2024, 3, 4, 5, 6, 7), 'value': '<svg xmlns="http://www.w3.org/2000/svg"><desc>1</desc></svg>',
                       'n1': 11, 'n2': 22, 'n3': 7}
     assert fake_db.conn.sql == ['SELECT * FROM diagrams WHERE ID = 7']
     assert fake_db.conn.closed is True
@@ -293,18 +293,18 @@ def test_model_get_choice_not_found_raises(fake_db):
 # ext_model_refresh
 # ---------------------------------------------------------------------------
 
-def make_item(n3=7, value='<svg>old</svg>'):
+def make_item(n3=7, value='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'):
     return SpecItem(n3=n3, value=value, domain='OldDom', name='old', p_kind='SM', n1=1, n2=2)
 
 
 def test_model_refresh_refresh(fake_db):
     fake_db.responder = lambda sql: [diagram(7, 'newname', 'NewDom', kind='Procedure',
-                                             svg='<svg>new</svg>', w=33, h=44)]
+                                             svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>', w=33, h=44)]
     item = make_item()
     request = make_request()
     assert ext_cats.ext_model_refresh(request, item) == 'REFRESH'
     assert (item.domain, item.name, item.p_kind, item.value, item.n1, item.n2, item.n3) == \
-           ('NewDom', 'newname', 'PR', '<svg>new</svg>', 33, 44, 7)
+           ('NewDom', 'newname', 'PR', '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>', 33, 44, 7)
     assert item.updated_at == datetime(2024, 3, 4, 5, 6, 7)
     assert fake_db.conn.sql == ['SELECT * FROM diagrams WHERE ID = 7']
     assert fake_db.conn.closed is True
@@ -312,7 +312,7 @@ def test_model_refresh_refresh(fake_db):
 
 
 def test_model_refresh_no_change(fake_db):
-    fake_db.responder = lambda sql: [diagram(7, 'other', 'Other', svg='<svg>old</svg>')]
+    fake_db.responder = lambda sql: [diagram(7, 'other', 'Other', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>')]
     item = make_item()
     assert ext_cats.ext_model_refresh(make_request(), item) == 'NO_CHANGE'
     assert (item.domain, item.name) == ('OldDom', 'old')
@@ -412,11 +412,11 @@ def test_fcp_get_choices_null_domain_crashes(fake_db):
 
 def test_fcp_get_choice(fake_db):
     note = 'Title: My Title\nSome description'
-    fake_db.responder = lambda sql: [diagram(5, 'fcpname', 'XFcp', svg='<svg>f</svg>', w=5, h=6,
+    fake_db.responder = lambda sql: [diagram(5, 'fcpname', 'XFcp', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>f</desc></svg>', w=5, h=6,
                                              json_rep=fcp_json('XFcp', note))]
     result = ext_cats.ext_fcp_get_choice(make_request(), 5)
     assert result == {'domain': 'XFcp', 'name': 'fcpname', 'updated_at': datetime(2024, 3, 4, 5, 6, 7),
-                      'title': 'My Title', 'desc': 'Some description', 'value': '<svg>f</svg>',
+                      'title': 'My Title', 'desc': 'Some description', 'value': '<svg xmlns="http://www.w3.org/2000/svg"><desc>f</desc></svg>',
                       'n1': 5, 'n2': 6, 'n3': 5}
     assert fake_db.conn.sql == ['SELECT * FROM diagrams WHERE ID = 5']
     assert fake_db.conn.closed is True
@@ -459,7 +459,7 @@ def test_fcp_refresh_query_error(fake_db):
 
 
 def test_fcp_refresh_no_change(fake_db):
-    fake_db.responder = lambda sql: [diagram(7, 'n', 'XFcp', svg='<svg>old</svg>',
+    fake_db.responder = lambda sql: [diagram(7, 'n', 'XFcp', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>',
                                              json_rep=fcp_json('XFcp', 'Title: T\nd'))]
     assert ext_cats.ext_fcp_refresh(make_request(), make_item()) == 'NO_CHANGE'
 
@@ -469,14 +469,14 @@ def test_fcp_refresh_changed_raises_name_error(fake_db):
     # ext_fcp_refresh writes into an undefined variable 'ext_item_dict' (copy/paste from
     # ext_fcp_get_choice) so any real refresh raises NameError. By then domain and name of
     # the spec_item have already been overwritten, and the connection is left open.
-    fake_db.responder = lambda sql: [diagram(7, 'newname', 'NewFcp', svg='<svg>new</svg>',
+    fake_db.responder = lambda sql: [diagram(7, 'newname', 'NewFcp', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>',
                                              json_rep=fcp_json('NewFcp', 'Title: T\nd'))]
     item = make_item()
     with pytest.raises(NameError) as excinfo:
         ext_cats.ext_fcp_refresh(make_request(), item)
     assert 'ext_item_dict' in str(excinfo.value)
     assert (item.domain, item.name) == ('NewFcp', 'newname')
-    assert item.value == '<svg>old</svg>'
+    assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
     assert fake_db.conn.closed is False
 
 
@@ -506,7 +506,7 @@ SCRATCH_HOST = os.environ.get('CORDETFW_TEST_MYSQL_HOST', '127.0.0.1')
 SCRATCH_USER = os.environ.get('CORDETFW_TEST_MYSQL_USER', '')
 SCRATCH_PWD = os.environ.get('CORDETFW_TEST_MYSQL_PASSWORD', '')
 
-REAL_SVG = '<svg width="10"/>'
+REAL_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="10"></svg>'
 REAL_JSON = model_json('Dom')
 REAL_UPDATED = datetime(2024, 3, 4, 5, 6, 7)
 
@@ -529,7 +529,7 @@ def real_fwprofile(monkeypatch, tmp_path):
     cur.execute("INSERT INTO diagrams VALUES (7, 42, 'Sm1', 'x', 'State Machine', %s, %s, %s, 100, 200)",
                 (REAL_UPDATED, REAL_JSON, REAL_SVG))
     cur.execute("INSERT INTO diagrams VALUES (8, 42, 'Pr1', 'x', 'Procedure', %s, %s, %s, 11, 22)",
-                (REAL_UPDATED, model_json('Dom2'), '<svg id="p"/>'))
+                (REAL_UPDATED, model_json('Dom2'), '<svg xmlns="http://www.w3.org/2000/svg" width="11"></svg>'))
     admin.commit()
 
     config = {'FWPROFILE_DB': {'HOST': SCRATCH_HOST, 'USER': SCRATCH_USER, 'PWD': SCRATCH_PWD,
@@ -608,7 +608,7 @@ class TestRealDriver:
         assert (item.domain, item.name, item.n1, item.n2) == ('Old', 'Old', 1, 2)
         assert msgs(request) == []
 
-        item.value = '<svg old/>'
+        item.value = '<svg xmlns="http://www.w3.org/2000/svg" width="12"></svg>'
         assert ext_cats.ext_model_refresh(request, item) == 'REFRESH'
         assert (item.domain, item.name, item.value) == ('Dom', 'Sm1', REAL_SVG)
         assert (item.n1, item.n2, item.n3) == (100, 200, 7)

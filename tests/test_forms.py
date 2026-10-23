@@ -377,7 +377,7 @@ def fake_fw_db(monkeypatch):
     smtags = 'DomFcp'
     fw_json = json.dumps({'globals': {'fwprop': {'smTags': smtags}},
                           'states': [{'fwprop': {'note': 'Title: My FCP\nLong\ndescription'}}]})
-    diagram = (11, 0, 'mname', 0, 'StateMachine', 'upd', fw_json, '<svg>1</svg>', 10, 20)
+    diagram = (11, 0, 'mname', 0, 'StateMachine', 'upd', fw_json, '<svg xmlns="http://www.w3.org/2000/svg"><desc>1</desc></svg>', 10, 20)
 
     class Cur:
         rows = []
@@ -1090,7 +1090,7 @@ def test_model_add_mode_uses_ext_item(world, fake_fw_db):
     assert form.is_valid(), form.errors
     cd = form.cleaned_data
     assert cd['domain'] == 'DomFcp' and cd['name'] == 'mname'
-    assert cd['value'] == '<svg>1</svg>'
+    assert cd['value'] == '<svg xmlns="http://www.w3.org/2000/svg"><desc>1</desc></svg>'
     assert (cd['n1'], cd['n2'], cd['n3']) == (10, 20, 11)
 
 

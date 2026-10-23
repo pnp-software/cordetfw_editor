@@ -20,7 +20,7 @@ conv_db_disp_func = {"plain_text": "conv_db_disp_plain_text",
                      'spec_item_ref': "conv_db_disp_spec_item_ref",
                      'eval_ref': 'conv_db_disp_eval_ref',
                      'int': "conv_do_nothing",
-                     'image': "conv_do_nothing",
+                     'image': "conv_db_disp_image",
                      'date': "conv_db_disp_date",
                      'table': "conv_db_disp_table"}
 
