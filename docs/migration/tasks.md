@@ -74,14 +74,16 @@ decision recorded here.
   editor_* rows/checksums unchanged by migrate; 41/41 exports byte-identical old vs new; HTML differs only in the
   logout control; old sessions and passwords work; rollback (old code on migrated DB, no restore) 55/55 identical.
   Note: a user's other sessions are logged out once when their password hash is upgraded at first login.
-- [ ] **Task 4.2b** (external) Same rehearsal on a sanitized copy of the PRODUCTION database (`REHEARSAL_DUMP=...`)
+- [x] **Task 4.2b** Rehearsal on the production dump of 2026-10-21: 11 projects / 328 exports / 165 pages, old vs new
+  404 identical + 164 logout-only, rollback 568 identical. Repeat with a fresh dump before cutover.
 - [x] **Task 4.3** tryout: `python:3.12-bookworm` + lock file, `mysql:8.4` pinned, healthcheck/`service_healthy` instead of
   `sleep 5`, removed `--default-authentication-plugin` (MySQL 8.4 refuses it), new data dir `mysql84_db_persist/`.
   Verified: isolated `up --build` migrates the 2022 dump schema and serves `/editor/` (HTTP 200).
-- [ ] **Task 4.4** Apache/mod_wsgi staging, `check --deploy`, browser walkthrough
+- [ ] **Task 4.4** (external, operator) Apache/mod_wsgi staging, `check --deploy`, browser walkthrough: `ROLLOUT.md` §1
 
 ## Phase 5: Handoff
-- [ ] **Task 5.1** Code + security review, release note, rollout/rollback, README
+- [x] **Task 5.1** Independent Opus review of the full diff (no correctness bugs; 9 deployment/UX findings addressed or
+  documented), release notes, rollout/rollback procedure, README
 
 ## Decisions
 - 2026-10-23 (operator): commit one checkpoint per gate on `upgrade/django-lts`, never pushed.
