@@ -113,6 +113,11 @@ decision recorded here.
   only, never rewrite) on every write path + placeholder on render for stored values that fail; replaces the deny-list. Elements: 7 observed + inert shapes;
   CSS keywords only as observed (position relative, overflow hidden, display none, white-space pre, cursor default/move/
   nw-resize). Production: 240/240 accepted. Gate 1534 SQLite / 1543 MySQL. Test fixtures `<svg/>` -> namespaced documents
+- [x] **Task 6.6d** `6d86301` Review fixes for the validator: ReDoS-free number/transform patterns + per-attribute length caps,
+  validate only in add mode (invalid stored diagrams can be deleted/edited), no `linebreaksbr` on SVG cells (0 of 240
+  production diagrams contain newlines: no byte change), prefixed elements and extra namespace declarations rejected,
+  XML-only whitespace, category escaped in link_suggest. Allowlist spec: `docs/fixes/svg-allowlist.md`. Production:
+  240/240 accepted. Gate 1884 SQLite / 1893 MySQL
 - [x] **Task 6.7** `509d5d8` Optional `AXES_LOCKOUT_PARAMETERS` config key (default unchanged; recommended
   `["ip_address", "username"]`, trade-off: a known username can be locked out for the cool-off); pip-audit 2.10.1:
   no known vulnerabilities (2026-10-23). Gate 1437 SQLite / 1446 MySQL; ROLLOUT §0: pip-audit before cutover.
