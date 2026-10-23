@@ -260,10 +260,13 @@ class SpecItemForm(forms.Form):
                 else:
                     cd[ext_attr] = ''
  
-        # Defence in depth: fields of kind 'image' must not hold active content
-        for field in self.config['attrs']:
-            if (self.config['attrs'][field]['kind'] == 'image') and (field in cd):
-                check_svg_value(cd[field])
+        # Only add mode takes the value from outside (FW Profile choice): validate it there. In edit/copy/split
+        # it comes from the source item and in del nothing is written, so an item whose stored diagram is
+        # invalid (shown as placeholder) can still be edited, copied, split and deleted (Task 6.6d).
+        if self.mode == 'add':
+            for field in self.config['attrs']:
+                if (self.config['attrs'][field]['kind'] == 'image') and (field in cd):
+                    check_svg_value(cd[field])
 
         # Fields F of kind 'eval_ref' may only contain internal references to spec_items with the following
         # characteristics: (a) they contain field F and (b) field F is of type 'eval_ref'

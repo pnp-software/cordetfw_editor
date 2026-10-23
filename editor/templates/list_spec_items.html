@@ -270,13 +270,13 @@
                     {% if 'attrs' in disp_item %} <!-- Display item attributes -->
                         {% conv_db_disp item disp_item.attrs as attr_values %}
                         {% if attr_values|length == 1 %}
-                            {{ attr_values.0.1|linebreaksbr }}
+                            {{ attr_values.0.1|linebreaksbr_cell }}
                         {% else %}
                             {% for attr_value in attr_values %}
                                 {% if forloop.first %}
-                                    <strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr }}
+                                    <strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr_cell }}
                                 {% else %}
-                                    <br><strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr }}
+                                    <br><strong>{{ attr_value.0 }}</strong> {{ attr_value.1|linebreaksbr_cell }}
                                 {% endif %}
                             {% endfor %}
                         {% endif %}

@@ -1,10 +1,13 @@
 """
 Strict allowlist validator for the SVG held in `image` fields (Model/FCP `value`).
 
-Task 6.6c (replaces the 6.6b deny-list): `image` values are rendered unescaped, so every write path
-rejects anything that is not a plain SVG built from the elements, attributes and CSS properties the
-FW Profile diagrams use (derived from the 240 production diagrams, operator-approved 2026-10-24).
-The validator only validates; it never rewrites a value.
+Task 6.6c (replaces the 6.6b deny-list), hardened in Task 6.6d: `image` values are rendered unescaped, so
+the write paths that take a value from outside reject anything that is not a plain SVG built from the
+allowlisted elements, attributes and CSS properties. Provenance: 7 elements observed in the 240 production
+diagrams (dump 2026-10-21) + operator-approved inert shapes g, line, circle, ellipse, polyline, polygon
+(2026-10-24); keyword values as observed. The complete allowlist is documented in
+docs/fixes/svg-allowlist.md (any addition must be inert as an SVG element and as an unknown HTML-namespace
+element). The validator only validates; it never rewrites a value.
 
 `svg_rule_violation(value)` returns None or the short name of the first rule broken;
 `check_svg_value(value)` raises ValidationError.
@@ -49,9 +52,11 @@ ATTRIBUTES = {
 ATTRIBUTES = {k: frozenset(v.split()) for k, v in ATTRIBUTES.items()}
 
 _A = re.ASCII
-_NUMBER = re.compile(r'-?\d*\.?\d+([eE][-+]?\d+)?(px|%)?', _A)
+# Patterns must not have overlapping quantifiers (ReDoS): every repetition is over a single character class
+# or over alternatives that start with distinct characters.
+_NUMBER = re.compile(r'-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][-+]?\d+)?(?:px|%)?', _A)
 _COLOR = re.compile(r'#[0-9a-fA-F]{3,8}|none', _A)
-_TRANSFORM_ITEM = r'(translate|scale|rotate|matrix)\(\s*[-0-9eE.,\s]*\)'
+_TRANSFORM_ITEM = r'(?:translate|scale|rotate|matrix)\([-0-9eE.,\s]*\)'
 _TRANSFORM = re.compile(r'\s*%s(?:[\s,]*%s)*\s*' % (_TRANSFORM_ITEM, _TRANSFORM_ITEM), _A)
 _FONT = re.compile(r'[\w\s\-.,%#"\']*', _A)
 
@@ -86,18 +91,41 @@ STYLE_PROPERTIES.update({
 })
 _STYLE_BAD = re.compile(r'url\(|expression|@import|javascript|\\|<', re.IGNORECASE)
 
+_PREFIXED_ELEMENT = re.compile(r'</?[^\s>/!?]*:')
 _ENTITY = re.compile(r'&(?!(?:quot|amp|lt|gt|apos);|#[0-9]+;|#x[0-9a-fA-F]+;)')
-_BLANK = re.compile(r'\s*')
+_BLANK = re.compile(r'[ \t\r\n]*')
+_XML_SPACE = ' \t\r\n'
+
+# maximum length of an attribute value (production maxima: numbers 19, d 110, transform 57, style 184)
+MAX_VALUE_LENGTH = 256
+MAX_NUMBER_LENGTH = 64
+MAX_LONG_VALUE_LENGTH = {'d': 50_000, 'points': 50_000, 'transform': 2_000, 'style': 2_000}
+
+
+def _parse(s):
+    """Parse `s`; returns (root, bad_ns) where bad_ns is True for any namespace declaration other than the
+    default xmlns="http://www.w3.org/2000/svg" on the root element."""
+    parser = ET.XMLPullParser(events=('start', 'start-ns'))
+    parser.feed(s)
+    parser.close()
+    root, bad_ns = None, False
+    for event, data in parser.read_events():
+        if event == 'start':
+            if root is None:
+                root = data
+        elif root is not None or data != ('', SVG_NS):
+            bad_ns = True
+    return root, bad_ns
 
 
 def _style_violation(style):
     for declaration in style.split(';'):
-        if not declaration.strip():
+        if not declaration.strip(_XML_SPACE):
             continue
         prop, sep, value = declaration.partition(':')
         if not sep:
             return 'style declaration'
-        prop, value = prop.strip(), value.strip()
+        prop, value = prop.strip(_XML_SPACE), value.strip(_XML_SPACE)
         if prop not in STYLE_PROPERTIES:
             return 'style property'
         if _STYLE_BAD.search(value):
@@ -110,11 +138,19 @@ def _style_violation(style):
     return None
 
 
+def _length_cap(name):
+    if name in MAX_LONG_VALUE_LENGTH:
+        return MAX_LONG_VALUE_LENGTH[name]
+    return MAX_NUMBER_LENGTH if VALUE_PATTERNS.get(name) is _NUMBER else MAX_VALUE_LENGTH
+
+
 def _attribute_violation(name, value, element):
     if name.startswith('{') or ':' in name:
         return 'prefixed attribute'
     if name not in ATTRIBUTES[element]:
         return 'attribute not allowed'
+    if len(value) > _length_cap(name):
+        return 'attribute too long'
     if name == 'style':
         return _style_violation(value)
     if not VALUE_PATTERNS[name].fullmatch(value):
@@ -155,7 +191,7 @@ def svg_rule_violation(value):
         return 'not a string'
     if len(value) > MAX_LENGTH:
         return 'too long'
-    s = value.strip()
+    s = value.strip(_XML_SPACE)
     if not (s.startswith('<svg') and s.endswith('</svg>')):
         return 'not an svg document'
     if '<!' in s:
@@ -164,10 +200,14 @@ def svg_rule_violation(value):
         return 'processing instruction'
     if _ENTITY.search(s):
         return 'entity reference'
+    if _PREFIXED_ELEMENT.search(s):
+        return 'prefixed element'
     try:
-        root = ET.fromstring(s)
+        root, bad_ns = _parse(s)
     except (ET.ParseError, ValueError, RecursionError):
         return 'malformed xml'
+    if bad_ns:
+        return 'namespace declaration'
     if root.tag != '{%s}svg' % SVG_NS:
         return 'root element'
     count = sum(1 for _ in root.iter())

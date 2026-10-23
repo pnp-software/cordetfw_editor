@@ -1121,3 +1121,14 @@ def test_s_data_hidden_value_resubmission_is_equivalent(posted):
     from django import forms as django_forms
     field = django_forms.JSONField(required=False)
     assert field.clean(posted) is None   # SpecItemForm.clean_s_data maps None -> '{}'
+
+
+def test_model_add_mode_rejects_invalid_ext_value(world, fake_fw_db, monkeypatch):
+    # Task 6.6d: add mode (value from the FW Profile db) is the only mode that validates the diagram
+    from editor import ext_cats
+    real = ext_cats.ext_model_get_choice
+    monkeypatch.setattr(ext_cats, 'ext_model_get_choice',
+                        lambda request, ext_item: dict(real(request, ext_item), value='<svg onload="x"/>'))
+    form = build(world, 'add', 'Model', data={'ext_item': '11', 'title': 'T', 'p_kind': 'SM'})
+    assert not form.is_valid()
+    assert 'disallowed content' in str(form.errors)

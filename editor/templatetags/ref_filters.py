@@ -1,5 +1,6 @@
 from django import template
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
+from django.template.defaultfilters import linebreaksbr
 from django.utils.html import escape
 from django.db.models import Q
 from ..models import SpecItem
@@ -25,6 +26,18 @@ conv_db_disp_func = {"plain_text": "conv_db_disp_plain_text",
                      'table': "conv_db_disp_table"}
 
 
+class ImageHtml(SafeString):
+    """Display value of an `image` (inline SVG) attribute: must not get <br> inserted for newlines."""
+
+
+@register.filter(needs_autoescape=True, is_safe=True)
+def linebreaksbr_cell(value, autoescape=True):
+    """linebreaksbr for table cells, except for `image` values which are output unchanged (Task 6.6d)."""
+    if isinstance(value, ImageHtml):
+        return value
+    return linebreaksbr(value, autoescape=autoescape)
+
+
 @register.simple_tag(takes_context=True)
 def conv_db_disp(context, spec_item, attr_names):
     """ 
@@ -41,7 +54,8 @@ def conv_db_disp(context, spec_item, attr_names):
         conv_func = conv_db_disp_func[attr_content_kind]
         s = getattr(convert, conv_func)(context, spec_item, attr_name, context['sel_rel'])
         if s != '':
-            values.append((context['config']['attrs'][attr_name]['label'], mark_safe(s)))
+            value = ImageHtml(s) if attr_content_kind == 'image' else mark_safe(s)
+            values.append((context['config']['attrs'][attr_name]['label'], value))
     return values
 
  

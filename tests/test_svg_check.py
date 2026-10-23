@@ -136,10 +136,11 @@ def test_deny_list_cases_as_written_are_rejected(value):
     (OPEN + '<blink/></svg>', 'element not allowed'),
     (OPEN + '<rect onclick="x"/></svg>', 'attribute not allowed'),
     (OPEN + '<rect fill="red"/></svg>', 'attribute value'),
-    ('<svg ' + NS + ' xmlns:xlink="http://www.w3.org/1999/xlink"><rect xlink:href="#a"/></svg>', 'prefixed attribute'),
+    # Task 6.6d: namespace/prefix checks run before the element and attribute rules, so these report the earlier rule (was: prefixed attribute / foreign namespace / root element)
+    ('<svg ' + NS + ' xmlns:xlink="http://www.w3.org/1999/xlink"><rect xlink:href="#a"/></svg>', 'namespace declaration'),
     ('<svg ' + NS + ' xml:space="preserve"></svg>', 'prefixed attribute'),
-    (OPEN + '<g xmlns="http://example.org/x"/></svg>', 'foreign namespace'),
-    (OPEN + '<h:p xmlns:h="http://www.w3.org/1999/xhtml">x</h:p></svg>', 'foreign namespace'),
+    (OPEN + '<g xmlns="http://example.org/x"/></svg>', 'namespace declaration'),
+    (OPEN + '<h:p xmlns:h="http://www.w3.org/1999/xhtml">x</h:p></svg>', 'prefixed element'),
     (OPEN + 'loose text<g/></svg>', 'text not allowed'),
     (OPEN + '<g>loose text</g></svg>', 'text not allowed'),
     (OPEN + '<g/>loose tail</svg>', 'text not allowed'),
@@ -154,7 +155,7 @@ def test_deny_list_cases_as_written_are_rejected(value):
     (OPEN + '</svg>after', 'not an svg document'),
     (OPEN + '</svg><g/>', 'not an svg document'),
     ('<html xmlns="http://www.w3.org/1999/xhtml"><svg></svg></html>', 'not an svg document'),
-    ('<svg xmlns="http://example.org/x"></svg>', 'root element'),
+    ('<svg xmlns="http://example.org/x"></svg>', 'namespace declaration'),
     ('<svg></svg>', 'root element'),
     ('<svgx ' + NS + '></svgx></svg>', 'malformed xml'),
     (OPEN + '<rect style="fill-opacity: url(#a)"/></svg>', 'style value (url/expression/import/script)'),
@@ -203,3 +204,102 @@ def test_value_is_never_rewritten():
     before = value
     assert svg_rule_violation(value) is None
     assert value == before
+
+
+# ------------------------------------------------------------ Task 6.6d hardening
+import time
+
+from editor.svg_check import MAX_NUMBER_LENGTH, VALUE_PATTERNS, _TRANSFORM
+
+BIG = 190_000
+
+
+def _timed(fn):
+    start = time.perf_counter()
+    result = fn()
+    return result, time.perf_counter() - start
+
+
+@pytest.mark.parametrize('name', sorted(VALUE_PATTERNS))
+@pytest.mark.parametrize('filler', ['1', ' ', '1 ', '.', '1.', '-', '1e', ',', '(', '1,'])
+def test_redos_every_value_pattern_fullmatch_is_fast(name, filler):
+    # F1: overlapping quantifiers backtracked quadratically (16k digits + a bad char took ~6 s)
+    adversarial = filler * (BIG // len(filler)) + '\x01!'
+    _, elapsed = _timed(lambda: VALUE_PATTERNS[name].fullmatch(adversarial))
+    assert elapsed < 0.5, (name, filler, elapsed)
+
+
+@pytest.mark.parametrize('filler', ['1', ' ', '1 ', '.', '-', 'e'])
+def test_redos_transform_with_items_is_fast(filler):
+    for adversarial in ('translate(' + filler * (BIG // len(filler)) + '!)',
+                        'translate(1)' + filler * (BIG // len(filler)) + '!',
+                        'translate(1) ' * 15_000 + '!'):
+        _, elapsed = _timed(lambda: _TRANSFORM.fullmatch(adversarial))
+        assert elapsed < 0.5, (filler, elapsed)
+
+
+@pytest.mark.parametrize('attr,element', [
+    ('x', 'rect'), ('width', 'rect'), ('d', 'path'), ('points', 'polyline'), ('transform', 'g'),
+    ('style', 'g'), ('viewBox', 'svg'), ('stroke-dasharray', 'rect'), ('font', 'text'),
+    ('preserveAspectRatio', 'svg'),
+])
+def test_redos_whole_validator_is_fast(attr, element):
+    for filler in ('1', ' ', '1 '):
+        value = filler * (BIG // len(filler) // 2) + '!'
+        if element == 'svg':
+            doc = '<svg %s %s="%s"/>' % (NS, attr, value)
+        else:
+            doc = OPEN + '<%s %s="%s"/></svg>' % (element, attr, value)
+        rule, elapsed = _timed(lambda: svg_rule_violation(doc))
+        assert rule is not None and elapsed < 0.5, (attr, filler, rule, elapsed)
+
+
+def test_value_length_caps():
+    assert svg_rule_violation(OPEN + '<rect x="%s"/></svg>' % ('1' * MAX_NUMBER_LENGTH)) is None
+    assert svg_rule_violation(OPEN + '<rect x="%s"/></svg>' % ('1' * (MAX_NUMBER_LENGTH + 1))) == 'attribute too long'
+    assert svg_rule_violation(OPEN + '<path d="%s"/></svg>' % ('M0 0 ' * 8000)) is None
+    assert svg_rule_violation(OPEN + '<path d="%s"/></svg>' % ('M0 0 ' * 11000)) == 'attribute too long'
+    assert svg_rule_violation(OPEN + '<g transform="%s"/></svg>' % ('scale(1) ' * 300)) == 'attribute too long'
+    assert svg_rule_violation(OPEN + '<g style="%s"/></svg>' % ('cursor: move;' * 200)) == 'attribute too long'
+    assert svg_rule_violation(OPEN + '<text font="%s"/></svg>' % ('a' * 300)) == 'attribute too long'
+
+
+@pytest.mark.parametrize('value', [
+    OPEN + '<s:rect xmlns:s="http://www.w3.org/2000/svg"/></svg>',
+    OPEN + '<g><s:rect/></g></svg>',
+    OPEN + '<g><rect/></s:g></svg>',
+])
+def test_rejects_prefixed_elements(value):
+    assert svg_rule_violation(value) == 'prefixed element'
+
+
+@pytest.mark.parametrize('value', [
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:x="http://www.w3.org/2000/svg"></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg>',
+    OPEN + '<g xmlns="http://www.w3.org/2000/svg"/></svg>',
+    OPEN + '<g xmlns:x="http://www.w3.org/2000/svg"/></svg>',
+    OPEN + '<g xmlns=""/></svg>',
+])
+def test_rejects_namespace_declarations_other_than_root_default(value):
+    assert svg_rule_violation(value) == 'namespace declaration'
+
+
+@pytest.mark.parametrize('ws', [' ', '　', '\x1c', '\x0b', '\x0c', ' '])
+def test_only_xml_whitespace_is_stripped(ws):
+    assert svg_rule_violation(ws + OPEN + '</svg>') == 'not an svg document'
+    assert svg_rule_violation(OPEN + '</svg>' + ws) == 'not an svg document'
+    assert svg_rule_violation(OPEN + ws + '<g/></svg>') is not None
+    assert svg_rule_violation(OPEN + '<g/>' + ws + '</svg>') is not None
+
+
+def test_xml_whitespace_is_allowed():
+    assert svg_rule_violation(' \t\r\n' + OPEN + ' \t\r\n<g/> \t\r\n</svg> \t\r\n') is None
+
+
+def test_style_whitespace_behaviour():
+    # XML whitespace around property and value is ignored, any other whitespace is rejected
+    assert svg_rule_violation(OPEN + '<g style=" display: none"/></svg>') is None
+    assert svg_rule_violation(OPEN + '<g style="display :\tnone ;\n cursor:move"/></svg>') is None
+    assert svg_rule_violation(OPEN + '<g style=" display: none"/></svg>') == 'style property'
+    assert svg_rule_violation(OPEN + '<g style="display: none"/></svg>') == 'style value'
+    assert svg_rule_violation(OPEN + '<g style="display: none　"/></svg>') == 'style value'

@@ -3,7 +3,7 @@
 <script>
 var linkElements = [
   {% for spec_item in spec_items %}
-    {path: '{{spec_item.cat}}:{{spec_item.domain|escape|js_str_after_html_escape}}:{{spec_item.name|escape|js_str_after_html_escape}}', comment: '{{spec_item.title|escape|js_str_after_html_escape}}'},
+    {path: '{{spec_item.cat|escape|js_str_after_html_escape}}:{{spec_item.domain|escape|js_str_after_html_escape}}:{{spec_item.name|escape|js_str_after_html_escape}}', comment: '{{spec_item.title|escape|js_str_after_html_escape}}'},
   {% endfor %}
 ];
 $('.link-suggest').suggest('#', {

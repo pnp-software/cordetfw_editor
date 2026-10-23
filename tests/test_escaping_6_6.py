@@ -536,3 +536,78 @@ def test_conv_db_disp_image_unit():
     assert conv_db_disp_image(None, SimpleNamespace(value=GOOD_SVG), 'value', None) == GOOD_SVG
     assert conv_db_disp_image(None, SimpleNamespace(value=''), 'value', None) == ''
     assert conv_db_disp_image(None, SimpleNamespace(value=SVG), 'value', None) == IMAGE_PLACEHOLDER
+
+
+# ------------------------------------------------------------ Task 6.6d
+MULTILINE_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">\n'
+                 '  <g>\r\n    <rect x="1" y="1" width="8" height="8"/>\n  </g>\n</svg>')
+
+
+def test_list_page_renders_multiline_svg_without_br(client):
+    # F3: |linebreaksbr turned the newlines inside the svg into <br> (HTML breakout in foreign content)
+    s, app, item = model_setup()[:3]
+    item.value = MULTILINE_SVG
+    item.save()
+    client.force_login(s.w.user('rw'))
+    html = _model_page(client, s, app, item)
+    start = html.index('<svg')
+    svg = html[start:html.index('</svg>', start) + len('</svg>')]
+    assert '<br' not in svg
+    assert svg == MULTILINE_SVG
+
+
+def test_list_page_other_cells_still_get_linebreaksbr(client):
+    s, app, item = model_setup()[:3]
+    item.title = 'line1\nline2'
+    item.save()
+    client.force_login(s.w.user('rw'))
+    assert 'line1<br>line2' in _model_page(client, s, app, item)
+
+
+def test_image_cell_filter_unit():
+    from editor.templatetags.ref_filters import ImageHtml, linebreaksbr_cell
+    assert linebreaksbr_cell(ImageHtml('a\nb')) == 'a\nb'
+    assert linebreaksbr_cell(SafeString('a\nb')) == 'a<br>b'
+    assert linebreaksbr_cell('a\nb<') == 'a<br>b&lt;'
+
+
+INVALID_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+
+
+def _invalid_model_item():
+    s, app, item = model_setup()[:3]
+    item.value = INVALID_SVG
+    item.status = 'CNF'
+    item.save()
+    return s, app, item
+
+
+def test_delete_item_with_invalid_stored_diagram_works(client):
+    # F2: the validator ran in every mode, so such an item could not even be deleted
+    s, app, item = _invalid_model_item()
+    client.force_login(s.w.user('rw'))
+    resp = client.post('/editor/Model/%d/%d/%d/Sel_All/0/del_spec_item' % (s.pid, app.id, item.id),
+                       {'change_log': 'bye'})
+    assert resp.status_code == 302, getattr(resp, 'context', None) and resp.context['form'].errors
+    item.refresh_from_db()
+    assert item.status == 'DEL' and item.value == INVALID_SVG
+
+
+def test_edit_item_with_invalid_stored_diagram_keeps_value_byte_identical(client):
+    s, app, item = _invalid_model_item()
+    client.force_login(s.w.user('rw'))
+    url = '/editor/Model/%d/%d/%d/Sel_All/0/edit_spec_item' % (s.pid, app.id, item.id)
+    resp = client.post(url, dict(POST_BASE, domain='OldDom', name='OldName', title='New title',
+                                 val_set=item.val_set_id))
+    assert resp.status_code == 302, getattr(resp, 'context', None) and resp.context['form'].errors
+    stored = SpecItem.objects.filter(project_id=s.pid, cat='Model').exclude(status='OBS').get()
+    assert (stored.title, stored.value) == ('New title', INVALID_SVG)
+
+
+def test_link_suggest_escapes_cat():
+    from django.template.loader import render_to_string
+    crafted = SpecItem(cat='x\\x3cimg\nq', domain='D', name='N', title='T')
+    out = render_to_string('link_suggest.html', {'spec_items': [crafted]})
+    assert "path: 'x\\\\x3cimg\\nq:D:N'" in out          # backslash doubled, newline escaped: stays JS string text
+    normal = SpecItem(cat='DataItem', domain='D', name='N', title='T')
+    assert "path: 'DataItem:D:N'" in render_to_string('link_suggest.html', {'spec_items': [normal]})
