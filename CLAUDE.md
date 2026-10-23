@@ -74,7 +74,8 @@ K = `fix/known-issues`), checked by `scripts/known_issue_check.py` (part of the 
    first; they must fail on the old code.
 2. A `# KNOWN-ISSUE: <id>` test changes only in the commit that fixes that id: replace the
    assertion and mark it `# FIXED: <id> (was: <old behaviour>)`. Set the register row to
-   `FIXED in <commit>` in the same commit.
+   `FIXED (Task <n>)` in the same commit (a commit cannot name its own hash); the task line in
+   `docs/migration/tasks.md` records the commit hash.
 3. Every other failing test is a regression. Harness rules 3-7 above still apply.
 4. Exports stay byte-identical and exports of the current production version must still import,
    unless the export itself is the fixed bug and the operator approved it. Page/golden changes

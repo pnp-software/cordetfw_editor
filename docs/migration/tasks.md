@@ -92,8 +92,9 @@ decision recorded here.
 - [x] **Task 6.2** Pin audit findings as `KNOWN-ISSUE` tests, `known-issues/security-audit.md`, `known_issue_check.py` in the gate (1179 SQLite / 1188 MySQL)
 - [x] **Task 6.3** `1b2bb5a` merge of upstream #86 (deletes via POST; its project scoping of `del_user_id`/`del_val_set_id`
   kept, fixing `edit-project-del-user-unscoped`) + `b22d64e` refresh, del_project, member add/role via POST, role must be
-  RO/RW. GET: 405 (del_project, refresh) or confirmation page / ignored parameters. 33 goldens promoted, mechanically
-  proven to differ only in the converted controls + delete modal. Gate 1254 SQLite / 1263 MySQL. Opus review: pending
+  RO/RW. GET: 405 (del_project, refresh) or confirmation page / ignored parameters. 32 goldens promoted, mechanically
+  proven to differ only in the converted controls + delete modal. Gate 1254 SQLite / 1263 MySQL. Opus review: no blocking findings; low-severity follow-ups in Task 6.3b
+- [ ] **Task 6.3b** Review follow-ups: confirm fallback without Bootstrap/requestSubmit, stronger GET sweep test, button group/alignment, warning for old GET member links, release notes + ROLLOUT walkthrough
 - [ ] **Task 6.4** Cross-project scoping of every id (item, application, ValSet, parent, release, ProjectUser); find/replace needs write access
 - [ ] **Task 6.5** `add-app-releases-null-app-items`
 - [ ] **Task 6.6** XSS escaping (HTML path): text nodes escape `&<>` only, attributes full `escape()`, `image` (SVG) exempt;
