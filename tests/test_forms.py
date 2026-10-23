@@ -1112,3 +1112,12 @@ def test_model_edit_mode_does_not_load_ext_choices(world):
     m = make_spec_item(world['project'], 'Model', 'DomFcp', 'mname', status='CNF')
     form = build(world, 'edit', 'Model', item=m)
     assert type(form.fields['ext_item'].widget).__name__ == 'HiddenInput'
+
+
+# Added in Task 3.4: Django 4.x renders the hidden s_data input of a re-rendered invalid form
+# as value="null" (Django 3.2 rendered no value, resubmitted as ''). Both must store the same data.
+@pytest.mark.parametrize('posted', ['', 'null'])
+def test_s_data_hidden_value_resubmission_is_equivalent(posted):
+    from django import forms as django_forms
+    field = django_forms.JSONField(required=False)
+    assert field.clean(posted) is None   # SpecItemForm.clean_s_data maps None -> '{}'

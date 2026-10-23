@@ -11,6 +11,9 @@ Local changes (behaviour-neutral, for Django 4.0+ compatibility):
 - `urls.py`: `django.conf.urls.url()` → `django.urls.re_path()` (same regexes).
 - `admin.py`, `models.py`, `views.py`: `ugettext[_lazy]` → `gettext[_lazy]`.
 - `signals.py`: dropped the documentation-only `providing_args` argument.
+- `django-upgrade --target-version 4.2`: `@admin.register` / `@admin.display` instead of
+  attribute assignments (the dead `allow_tags` attributes went with them; output unchanged),
+  `path('login/')` for `re_path(r'^login/$')`, `request.headers` for `META['HTTP_USER_AGENT']`.
 
-The dead `allow_tags` attributes in `admin.py` are kept: the admin output they produce
-(escaped HTML in the changelist) is pinned by the test suite.
+The changelist output (escaped HTML links, as with upstream on Django >= 2.0) is pinned by
+the test suite.

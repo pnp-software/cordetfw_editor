@@ -30,7 +30,15 @@ decision recorded here.
 - [x] **Task 3.2** Django 3.2.0 → 3.2.25: 1 expected change accepted (CVE-2022-36359 filename quote escaping)
 - [x] **Task 3.3** Honeypot vendored unchanged (gate), then patched: url→re_path, ugettext→gettext, Signal providing_args
 - [x] **Task 3.3b** `queryset=` keyword for Resource.export (import-export 4 prerequisite)
-- [ ] **Task 3.4** Django 4.2 bridge (+ django-upgrade); import-export stays 3.3.9 (4.1.1 breaks on Django 3.2)
+- [x] **Task 3.4** Django 4.2.30 bridge + django-upgrade 1.33.0 (vendored honeypot only); import-export stays 3.3.9.
+  Accepted upstream changes (invisible to normal users, no stored-data change):
+  - CSRF Origin checking: 4 matrix cases flipped. **Deployment action:** set `CSRF_TRUSTED_ORIGINS`
+    (or `SECURE_PROXY_SSL_HEADER`) for the Apache TLS proxy, see Task 4.4.
+  - `Cross-Origin-Opener-Policy: same-origin` on every response; CSRF cookie holds 32 chars (old 64-char cookies still accepted).
+  - Password rehash 260000 → 600000 PBKDF2 iterations on login/check. Verified that Django 3.2 accepts the new hashes (rollback-safe).
+  - Logout with an unsafe `?next=` now redirects to `/editor` (upstream fix of the self-redirect loop).
+  - Honeypot decoy follows the Django 4.2 admin login template (matches the real `/pnpAdmin/`).
+  - Hidden `s_data` input of a re-rendered invalid form: `value="null"` instead of empty; proven to store identical data.
 - [ ] **Task 3.4b** import-export 3.3.9 → 4.x on Django 4.2
 - [ ] **Task 3.5** Django 5.2 LTS: USE_L10N removal (decide date rendering: app templates use explicit `|date`, admin
   currently shows broken strftime output), POST logout, MySQL utf8mb4 connection default, CSRF Origin

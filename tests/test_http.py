@@ -19,7 +19,8 @@ NO_CACHE = 'max-age=0, no-cache, no-store, must-revalidate, private'
 # Headers that are identical on every response of the stack (SecurityMiddleware,
 # XFrameOptionsMiddleware, SessionMiddleware).
 COMMON = [
-    # EXPECTED-CHANGE: Django 4.0 SecurityMiddleware adds Cross-Origin-Opener-Policy: same-origin
+    # Changed in Task 3.4 (Django 4.2): SecurityMiddleware adds Cross-Origin-Opener-Policy.
+    ('Cross-Origin-Opener-Policy', 'same-origin'),
     ('Referrer-Policy', 'same-origin'),
     ('Vary', 'Cookie'),
     ('X-Content-Type-Options', 'nosniff'),
@@ -175,9 +176,10 @@ def test_csrf_cookie_attributes_and_length(client, prod_cookies):
     morsel = response.cookies['csrftoken']
     assert cookie_attrs(morsel) == {'path': '/', 'max-age': 31449600, 'secure': True,
                                     'httponly': '', 'samesite': 'Lax', 'domain': ''}
-    # EXPECTED-CHANGE: Django 4.1+ stores a 32 character secret in the cookie (64 before)
-    assert len(morsel.value) == 64
-    assert re.fullmatch(r'[A-Za-z0-9]{64}', morsel.value)
+    # Changed in Task 3.4 (Django 4.2): the cookie stores the unmasked 32 character secret
+    # (Django 3.2 stored 64 characters). Existing 64-character cookies are still accepted.
+    assert len(morsel.value) == 32
+    assert re.fullmatch(r'[A-Za-z0-9]{32}', morsel.value)
     # the token embedded in the form is masked and differs from the cookie value
     token = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', response.content.decode()).group(1)
     assert len(token) == 64

@@ -19,7 +19,9 @@ step "pytest sqlite"   "$PY" -m pytest -q -p no:warnings
 step "pytest mysql"    env "${MYSQL_ENV[@]}" "$PY" -m pytest -q -p no:warnings --ds=cordetfw_editor.settings_test_mysql
 step "no golden diffs" bash -c '! find tests/golden -name "*.actual" | grep .'
 step "diff --check"    git diff --check HEAD
-echo "== warnings (unique, first 25)"
-"$PY" -m pytest -q -W default 2>&1 | grep -E "Warning:" | sed -E 's/^\s+//' | sort -u | head -25
+echo "== warnings by location (count, location, category)"
+"$PY" -m pytest -q -W default 2>&1 | grep -E "^\s*/.*:[0-9]+: [A-Za-z]+Warning:" \
+  | sed -E "s|^\s*||; s|$PWD/||; s|^\.venv[^/]*/lib/python[0-9.]+/site-packages/||; s|^([^:]+:[0-9]+): ([A-Za-z]+Warning):.*|\1 \2|" \
+  | sort | uniq -c | sort -rn | head -30
 [ $status -eq 0 ] && echo "GATE PASSED" || echo "GATE FAILED"
 exit $status

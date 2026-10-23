@@ -542,21 +542,22 @@ GOOD_REFERER = 'https://testserver/editor/login/'
 CSRF_MATRIX = [
     pytest.param({}, {}, 302, id='http-no-origin'),
     pytest.param({}, {'HTTP_ORIGIN': 'http://testserver'}, 302, id='http-origin-same'),
-    # EXPECTED-CHANGE: Django 4.0 checks the Origin header of every unsafe request;
-    # an Origin that does not match the host (or CSRF_TRUSTED_ORIGINS) is rejected with 403.
-    pytest.param({}, {'HTTP_ORIGIN': 'http://evil.example'}, 302, id='http-origin-evil'),
-    # EXPECTED-CHANGE: Django 4.0 compares scheme and host of Origin with the request. Behind the
-    # Apache TLS proxy Django sees plain HTTP while the browser sends 'Origin: https://host',
-    # so production needs CSRF_TRUSTED_ORIGINS = ['https://<host>'] (or SECURE_PROXY_SSL_HEADER).
-    pytest.param({}, {'HTTP_ORIGIN': 'https://testserver'}, 302, id='http-origin-https-scheme'),
-    # EXPECTED-CHANGE: Django 4.0 accepts a matching Origin on a secure request without a Referer
-    # (3.2 always requires a Referer on HTTPS).
-    pytest.param({'secure': True}, {'HTTP_ORIGIN': 'https://testserver'}, 403,
+    # Changed in Task 3.4 (Django 4.2, was 302): the Origin header of every unsafe request is
+    # checked; an Origin not matching the host (or CSRF_TRUSTED_ORIGINS) is rejected with 403.
+    pytest.param({}, {'HTTP_ORIGIN': 'http://evil.example'}, 403, id='http-origin-evil'),
+    # Changed in Task 3.4 (Django 4.2, was 302): scheme and host of Origin are compared with the
+    # request. Behind the Apache TLS proxy Django sees plain HTTP while the browser sends
+    # 'Origin: https://host', so production needs CSRF_TRUSTED_ORIGINS = ['https://<host>']
+    # (or SECURE_PROXY_SSL_HEADER). Deployment item, see docs/migration/tasks.md Task 4.4.
+    pytest.param({}, {'HTTP_ORIGIN': 'https://testserver'}, 403, id='http-origin-https-scheme'),
+    # Changed in Task 3.4 (Django 4.2, was 403): a matching Origin on a secure request is
+    # accepted without a Referer (3.2 always required a Referer on HTTPS).
+    pytest.param({'secure': True}, {'HTTP_ORIGIN': 'https://testserver'}, 302,
                  id='https-origin-good-no-referer'),
-    # EXPECTED-CHANGE: Django 4.0 trusts the Origin header and does not fall back to the Referer
-    # when Origin is present but untrusted.
+    # Changed in Task 3.4 (Django 4.2, was 302): an untrusted Origin is rejected without falling
+    # back to the Referer.
     pytest.param({'secure': True}, {'HTTP_ORIGIN': 'https://evil.example', 'HTTP_REFERER': GOOD_REFERER},
-                 302, id='https-origin-evil-referer-good'),
+                 403, id='https-origin-evil-referer-good'),
     pytest.param({'secure': True}, {'HTTP_REFERER': GOOD_REFERER}, 302, id='https-referer-good'),
     pytest.param({'secure': True}, {'HTTP_REFERER': 'https://evil.example/'}, 403,
                  id='https-referer-evil'),
@@ -703,13 +704,13 @@ def test_logout_safe_next_is_honoured(client):
 
 
 @pytest.mark.parametrize('next_url', ['//evil.example/', 'https://evil.example/'])
-def test_logout_unsafe_next_redirects_to_logout_itself(client, next_url):
-    # KNOWN-ISSUE: logout-unsafe-next-self-redirect
-    # An unsafe ?next= makes LogoutView fall back to request.path instead of LOGOUT_REDIRECT_URL,
-    # so the (already logged out) user is redirected to /editor/logout/ again: a redirect loop.
+def test_logout_unsafe_next_falls_back_to_logout_redirect_url(client, next_url):
+    # Changed in Task 3.4 (Django 4.2): an unsafe ?next= now falls back to LOGOUT_REDIRECT_URL.
+    # Django 3.2 redirected to request.path (/editor/logout/), a redirect loop
+    # (KNOWN-ISSUE logout-unsafe-next-self-redirect, fixed upstream).
     # EXPECTED-CHANGE: Django 5 requires POST for logout (GET -> 405).
     client.force_login(make_user('alice'))
     response = client.get('/editor/logout/', {'next': next_url})
     assert response.status_code == 302
-    assert response['Location'] == '/editor/logout/'
+    assert response['Location'] == '/editor'
     assert '_auth_user_id' not in client.session
