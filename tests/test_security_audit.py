@@ -132,10 +132,12 @@ def test_01_idor_app_valset_cross_project_export(w):
 def test_01_idor_app_valset_cross_project_find_replace(w):
     # FIXED: idor-app-valset-cross-project (was: a RO member of A rewrote B's application items)
     c = w.client(w.rw_a)
+    before = snapshot()
     resp = c.post(lurl('Requirement', w.a.id, w.app_b.id, w.dvs_b.id),
                   {'field': 'title', 'find': 'secret', 'replace': 'PWNED'},
                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
     assert resp.status_code == 404
+    assert snapshot() == before
     w.b_req.refresh_from_db()
     assert w.b_req.title == 'B secret requirement'
     assert w.b_req.owner != w.rw_a
@@ -144,9 +146,10 @@ def test_01_idor_app_valset_cross_project_find_replace(w):
 def test_01_project_level_cats_not_affected(w):
     # FIXED: idor-app-valset-cross-project (was: 200, the foreign ValSet object leaked its name)
     c = w.client(w.ro_a)
+    before = snapshot()
     resp = c.get(lurl('DataItem', w.a.id, 0, w.dvs_b.id))
     assert resp.status_code == 404
-    assert b'Default' not in resp.content or b'ProjB' not in resp.content
+    assert snapshot() == before
 
 
 # ---------------------------------------------------------------------------------------------

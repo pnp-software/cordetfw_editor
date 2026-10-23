@@ -47,7 +47,7 @@ from editor.resources import ProjectResource, ApplicationResource, ProjectUserRe
 from editor.ext_cats import ext_model_refresh
 from editor.access import is_project_owner, has_read_access_to_project, \
                     can_create_project, can_add_val_set, has_write_access_to_project, \
-                    can_repair, user_has_write_access_to_project, get_spec_item_in_project_or_404, get_application_in_project_or_404, \
+                    can_repair, user_has_write_access_to_project, val_set_name_is_default_in_db, get_spec_item_in_project_or_404, get_application_in_project_or_404, \
                     get_val_set_in_project_or_404, get_release_for_project_or_404, \
                     check_parents_in_project_or_404, is_default_val_set_name
 
@@ -403,7 +403,8 @@ def add_val_set(request, project_id):
     redirect_url = '/editor/'+str(project_id)+'/edit_project'
     if request.method == 'POST':    
         form = ValSetForm(request.POST)
-        if form.is_valid() and is_default_val_set_name(form.cleaned_data['name']):
+        if form.is_valid() and (is_default_val_set_name(form.cleaned_data['name'])
+                                or val_set_name_is_default_in_db(project, form.cleaned_data['name'])):
             form.add_error('name', 'The name Default is reserved for the Default ValSet of the project')
         if form.is_valid():
             new_val_set = ValSet(name = form.cleaned_data['name'],
@@ -428,7 +429,8 @@ def edit_val_set(request, project_id, val_set_id):
     redirect_url = '/editor/'+str(project_id)+'/edit_project'
     if request.method == 'POST':    
         form = ValSetForm(request.POST)
-        if form.is_valid() and (is_default_val_set_name(form.cleaned_data['name']) or is_default_val_set_name(val_set.name)) \
+        if form.is_valid() and (is_default_val_set_name(form.cleaned_data['name']) or is_default_val_set_name(val_set.name)
+                                or val_set_name_is_default_in_db(project, form.cleaned_data['name'], exclude_id=val_set.id)) \
                 and (form.cleaned_data['name'] != val_set.name):
             form.add_error('name', 'The Default ValSet cannot be renamed and no other ValSet can be named Default')
         if form.is_valid():

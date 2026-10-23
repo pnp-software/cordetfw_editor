@@ -25,20 +25,31 @@ def has_read_access_to_project(request, project):
 
 
 def user_has_write_access_to_project(user_id, project):
-    """ Silent variant of has_write_access_to_project: no message is queued """
+    """ Silent variant of has_write_access_to_project (same logic, no message queued) """
     if user_id == project.owner.id:
         return True
-    project_user = ProjectUser.objects.filter(user_id=user_id, project_id=project.id).first()
-    return project_user is not None and project_user.role == 'RW'
+    try:
+        user = ProjectUser.objects.filter(user_id=user_id, project_id=project.id)
+        return user[0].role == 'RW'
+    except Exception:
+        return False
 
 
 def has_write_access_to_project(request, project):
     """ Return True if user owns the project or is assigned to it with read/write access """
-    if user_has_write_access_to_project(request.user.id, project):
+    if (request.user.id == project.owner.id):
         return True
-    messages.error(request, 'This operation requires read/write access to project '+project.name)
-    return False
-        
+    try:
+        user = ProjectUser.objects.filter(user_id=request.user.id, project_id=project.id)
+        if user[0].role == 'RW':
+            return True
+        else:
+            messages.error(request, 'This operation requires read/write access to project '+project.name)
+            return False
+    except Exception as e:
+        messages.error(request, 'This operation requires read/write access to project '+project.name)
+        return False
+
 
 def can_create_project(request):
     """ Return True if user is admin """
@@ -128,6 +139,17 @@ def check_parents_in_project_or_404(project, s_parent_id, p_parent_id):
             raise Http404('Invalid parent id')
         parents.append(get_spec_item_in_project_or_404(project, parent_id))
     return parents[0], parents[1]
+
+
+def val_set_name_is_default_in_db(project, name, exclude_id=None):
+    """
+    Return True if the database (column collation) considers name equal to the name of a Default
+    ValSet of the project. On MySQL with utf8mb4_unicode_ci this catches 'Défault' and full-width
+    variants that the Python comparison in is_default_val_set_name misses; on SQLite it only
+    matches the exact string.
+    """
+    return ValSet.objects.filter(project_id=project.id, name=name).filter(name='Default') \
+        .exclude(id=exclude_id).exists()
 
 
 def is_default_val_set_name(name):

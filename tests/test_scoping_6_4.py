@@ -14,6 +14,7 @@ from django.test import Client
 from editor.configs import get_p_link_choices, get_s_link_choices
 from editor.models import Application, Project, ProjectUser, Release, SpecItem, ValSet
 from editor.utilities import get_domains, get_redirect_url, get_spec_item_query
+from tests.backend import is_mysql
 from tests.factories import (default_val_set, make_application, make_project, make_project_user,
                              make_release, make_spec_item, make_user, make_val_set)
 
@@ -178,6 +179,49 @@ def test_own_item_edit_unchanged(w):
     assert (w.a_item.title, w.a_item.owner) == ('new title', w.rw)
 
 
+def test_own_item_edit_foreign_p_link_is_form_error(w):
+    c = w.client(w.rw)
+    before = snapshot()
+    resp = c.post(iurl('edit_spec_item', 'DataItem', w.a.id, w.a_item.id),
+                  {'domain': 'AD', 'name': 'AItem', 'title': 'new title', 'desc': 'x', 'value': '1', 'rationale': '',
+                   'remarks': '', 'implementation': '', 'p_kind': 'CNS', 't1': '', 't2': '', 'change_log': 'c',
+                   'n1': '0', 'n2': '0', 'n3': '0', 's_kind': 'INV', 's_data': '{}', 'p_link': w.b_type.id})
+    assert resp.status_code == 200
+    assert 'Select a valid choice' in str(resp.context['form'].errors['p_link'])
+    assert snapshot() == before
+
+
+def test_split_foreign_val_set_is_form_error(w):
+    c = w.client(w.rw)
+    before = snapshot()
+    resp = c.post(iurl('split_spec_item', 'DataItem', w.a.id, w.a_item.id),
+                  {'domain': 'AD', 'name': 'AItem', 'title': 't', 'desc': 'x', 'value': '2', 'rationale': '',
+                   'remarks': '', 'implementation': '', 'p_kind': 'CNS', 't1': '', 't2': '', 'change_log': 'c',
+                   'n1': '0', 'n2': '0', 'n3': '0', 's_kind': 'INV', 's_data': '{}', 'p_link': w.a_type.id,
+                   'val_set': w.dvs_b.id})
+    assert resp.status_code == 200
+    assert 'Select a valid choice' in str(resp.context['form'].errors['val_set'])
+    assert snapshot() == before
+
+
+def test_find_replace_read_only_member_foreign_ids_refused_by_write_check(w):
+    ro = make_user('ro')
+    make_project_user(w.a, ro, 'RO')
+    c = w.client(ro)
+    before = snapshot()
+    url = '/editor/Requirement/%d/%d/%d/Sel_All/0/list_spec_items' % (w.a.id, w.app_b.id, w.dvs_b.id)
+    data = {'field': 'title', 'find': 'secret', 'replace': 'PWNED'}
+    # XHR: 403 JSON with the write-access error (the write check comes before any id lookup)
+    resp = c.post(url, data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.status_code == 403
+    assert list(resp.json()['errors']) == ['__all__']
+    # no XHR: redirect with the access message
+    resp = c.post(url, data)
+    assert resp.status_code == 302
+    assert msgs(resp) == ['This operation requires read/write access to project ProjA']
+    assert snapshot() == before
+
+
 def test_no_access_still_redirects_not_404(w):
     # access is checked first: an outsider learns nothing about ids
     outsider = make_user('outsider')
@@ -325,6 +369,59 @@ def test_default_val_set_cannot_be_deleted(w):
     assert r.status_code == 302
     assert ValSet.objects.filter(id=w.dvs_a.id).exists()
     assert msgs(r) == ['The Default ValSet cannot be deleted']
+
+
+def test_add_val_set_db_collation_variant_of_default(w):
+    # 'Défault' differs from 'Default' in Python; utf8mb4_unicode_ci (MySQL) treats them as equal,
+    # which would give the project two Default ValSets.
+    c = w.client(w.staff)
+    r = c.post('/editor/%d/add_val_set' % w.a.id, {'name': 'D\u00e9fault', 'description': 'dup'})
+    if is_mysql():
+        assert r.status_code == 200 and r.context['form'].errors.get('name')
+        assert ValSet.objects.filter(project=w.a).count() == 1
+    else:
+        assert r.status_code == 302
+        assert ValSet.objects.filter(project=w.a).count() == 2
+
+
+def test_rename_to_db_collation_variant_of_default(w):
+    c = w.client(w.staff)
+    vs = make_val_set(w.a, 'Mine')
+    r = c.post('/editor/%d/%d/edit_val_set' % (w.a.id, vs.id), {'name': 'D\u00e9fault', 'description': 'd'})
+    vs.refresh_from_db()
+    if is_mysql():
+        assert r.status_code == 200 and r.context['form'].errors.get('name')
+        assert vs.name == 'Mine'
+    else:
+        assert r.status_code == 302 and vs.name == 'D\u00e9fault'
+
+
+def test_default_val_set_description_edit_still_allowed_with_db_check(w):
+    c = w.client(w.staff)
+    r = c.post('/editor/%d/%d/edit_val_set' % (w.a.id, w.dvs_a.id), {'name': 'Default', 'description': 'd2'})
+    assert r.status_code == 302
+    w.dvs_a.refresh_from_db()
+    assert (w.dvs_a.name, w.dvs_a.desc) == ('Default', 'd2')
+
+
+def test_default_val_set_cannot_be_renamed_to_variant(w):
+    c = w.client(w.staff)
+    r = c.post('/editor/%d/%d/edit_val_set' % (w.a.id, w.dvs_a.id), {'name': 'D\u00e9fault', 'description': 'd'})
+    assert r.status_code == 200 and r.context['form'].errors.get('name')
+    w.dvs_a.refresh_from_db()
+    assert w.dvs_a.name == 'Default'
+
+
+def test_legacy_lowercase_default_val_set_saved_unchanged_is_allowed(w):
+    # a legacy ValSet named 'default' (other project, no Default clash there) keeps its name
+    c = w.client(w.staff)
+    project = make_project(w.owner_a, 'ProjLegacy', cats=CATS)
+    legacy = ValSet.objects.create(name='default', desc='old', project=project,
+                                   updated_at=w.dvs_a.updated_at)
+    r = c.post('/editor/%d/%d/edit_val_set' % (project.id, legacy.id), {'name': 'default', 'description': 'new'})
+    assert r.status_code == 302
+    legacy.refresh_from_db()
+    assert (legacy.name, legacy.desc) == ('default', 'new')
 
 
 def test_add_ordinary_val_set_unchanged(w):

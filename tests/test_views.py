@@ -732,7 +732,7 @@ def test_find_replace_domain_rename_no_conflict(client, owner, project, dvs, ite
     assert SpecItem.objects.get(id=items[2].id).domain == 'A2'
 
 
-def test_find_replace_read_only_user_can_replace(client, owner, project, dvs, items):
+def test_find_replace_read_only_user_is_refused(client, owner, project, dvs, items):
     ro = make_user('ro')
     make_project_user(project, ro, 'RO')
     client.force_login(ro)
