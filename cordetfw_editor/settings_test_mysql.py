@@ -8,7 +8,8 @@ The account only needs rights on the disposable test database.
 
 import os
 
-from .settings_test import *  # noqa: F401,F403
+from .settings_test import *  # noqa: F401,F403  (first: it points the config path at the test config)
+from .settings import apply_mysql_connection_defaults  # noqa: E402
 
 DATABASES = {
     'default': {
@@ -21,3 +22,4 @@ DATABASES = {
         'TEST': {'NAME': 'test_cordetfw_migration_test'},
     }
 }
+apply_mysql_connection_defaults(DATABASES)

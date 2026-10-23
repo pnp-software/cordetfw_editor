@@ -52,10 +52,9 @@ def _mysql_one(sql, params=None):
 
 def test_connection_charset_and_collation():
     # Records the character set / collation the connection actually uses.
-    # EXPECTED-CHANGE: Django 5.2's MySQL backend defaults the connection charset to utf8mb4
-    # (3.2 sends 'utf8', which MySQL 8 reports as utf8mb3); the expected MySQL value below changes to
-    # ('utf8mb4', 'utf8mb4_general_ci'/'utf8mb4_0900_ai_ci' as negotiated by the server) and
-    # test_four_byte_unicode_storage then stores emoji instead of failing.
+    # Task 3.5: Django 5.2 would default to utf8mb4; settings.apply_mysql_connection_defaults()
+    # keeps the Django 3.2 charset 'utf8' (reported as utf8mb3) for compatibility and rollback
+    # safety, so this value and test_four_byte_unicode_storage are unchanged.
     from django.db import connection
     if not is_mysql():
         assert connection.vendor == 'sqlite'
@@ -85,3 +84,17 @@ def test_mysql_specitem_table_and_column_charset():
     assert [c[0] for c in cols] == ['cat', 'name', 'domain', 'title', 'desc', 'status', 'rationale',
                                     'remarks', 'p_kind', 's_kind', 'value',
                                     't1', 't2', 't3', 't4', 't5', 'change_log', 'implementation']
+
+
+def test_mysql_connection_defaults_keep_old_charset_unless_configured():
+    # Task 3.5: Django 5.2 defaults MySQL connections to utf8mb4; the settings keep 'utf8'
+    # (the Django 3.2 behaviour) unless the deployment config sets a charset explicitly.
+    from cordetfw_editor.settings import apply_mysql_connection_defaults
+    dbs = apply_mysql_connection_defaults({
+        'default': {'ENGINE': 'django.db.backends.mysql', 'NAME': 'a'},
+        'explicit': {'ENGINE': 'django.db.backends.mysql', 'NAME': 'b', 'OPTIONS': {'charset': 'utf8mb4'}},
+        'sqlite': {'ENGINE': 'django.db.backends.sqlite3', 'NAME': ':memory:'},
+    })
+    assert dbs['default']['OPTIONS'] == {'charset': 'utf8'}
+    assert dbs['explicit']['OPTIONS'] == {'charset': 'utf8mb4'}
+    assert 'OPTIONS' not in dbs['sqlite']

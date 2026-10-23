@@ -72,8 +72,8 @@ def test_old_pbkdf2_hash_checks_and_logs_in(client, default_hashers, old_user):
     assert old_user.check_password(PASSWORD)
     old_user.refresh_from_db()
     # Changed in Task 3.4 (Django 4.2): check_password() already upgrades the outdated
-    # 260000-iteration hash (Django 3.2 left it unchanged).
-    assert old_user.password.startswith('pbkdf2_sha256$600000$')
+    # 260000-iteration hash (Django 3.2 left it unchanged); 1,000,000 iterations since 5.2.
+    assert old_user.password.startswith('pbkdf2_sha256$1000000$')
     response = client.post('/editor/login/', {'username': 'alice', 'password': PASSWORD})
     assert response.status_code == 302
     assert response['Location'] == '/editor'
@@ -82,8 +82,8 @@ def test_old_pbkdf2_hash_checks_and_logs_in(client, default_hashers, old_user):
     # Changed in Task 3.4 (Django 4.2, was 260000): the password is rehashed on login with the
     # current default iterations. Django 3.2 can still verify the new hash (iterations are
     # stored in it), so a rollback does not lock users out.
-    # EXPECTED-CHANGE: Django 5.2 raises the default to 1,000,000 iterations.
-    assert old_user.password.startswith('pbkdf2_sha256$600000$')
+    # Changed again in Task 3.5: Django 5.2 uses 1,000,000 iterations.
+    assert old_user.password.startswith('pbkdf2_sha256$1000000$')
 
 
 def test_old_pbkdf2_hash_wrong_password_rejected(client, default_hashers, old_user):

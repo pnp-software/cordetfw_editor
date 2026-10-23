@@ -93,9 +93,10 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/editor/logout/">
-                            Logout
-                        </a>
+                        <form method="post" action="/editor/logout/">
+                            <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                            <button type="submit" class="nav-link btn btn-link">Logout</button>
+                        </form>
                     </li>
                 </ul>
                 

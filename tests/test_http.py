@@ -68,7 +68,7 @@ def test_headers_logged_in_index(client):
     assert response.status_code == 200
     assert 'Expires' not in response
     assert headers(response) == sorted([
-        ('Content-Length', '3350'),
+        ('Content-Length', '3566'),   # Task 3.5: POST logout form (was 3350)
         ('Content-Type', 'text/html; charset=utf-8'),
     ] + COMMON)
 
@@ -84,8 +84,8 @@ def test_headers_anonymous_index(client):
 
 def test_headers_redirect(client):
     client.force_login(make_user('alice'))
-    # EXPECTED-CHANGE: Django 5 requires POST for logout, GET returns 405
-    response = client.get('/editor/logout/')
+    # POST since Task 3.5 (Django 5 removed GET logout)
+    response = client.post('/editor/logout/')
     assert response.status_code == 302
     assert headers(response) == sorted([
         ('Cache-Control', NO_CACHE),
@@ -206,8 +206,8 @@ def test_session_cookie_not_secure_with_test_settings(client):
 
 def test_logout_clears_session_cookie(client, prod_cookies):
     client.force_login(make_user('alice'))
-    # EXPECTED-CHANGE: Django 5 requires POST for logout
-    response = client.get('/editor/logout/', secure=True)
+    # POST since Task 3.5 (Django 5 removed GET logout)
+    response = client.post('/editor/logout/', secure=True)
     morsel = response.cookies['sessionid']
     assert morsel.value == ''
     assert morsel['max-age'] == 0

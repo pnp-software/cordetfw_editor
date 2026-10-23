@@ -91,22 +91,54 @@ def test_login_required_redirects_to_default_login_url_which_does_not_exist(clie
 # Logout
 # ---------------------------------------------------------------------------
 
-def test_logout_link_in_base_template_is_an_anchor(client):
+# Changed in Task 3.5 (Django 5.2, operator-approved): Django 5 removed GET logout, so the
+# navbar link became a POST form with a CSRF token (Django 3.2: <a class="nav-link"
+# href="/editor/logout/">Logout</a>).
+def test_logout_control_in_base_template_is_a_post_form(client):
     owner = make_user('alice')
     client.force_login(owner)
     content = client.get('/editor/').content.decode()
-    assert re.search(r'<a class="nav-link" href="/editor/logout/">\s*Logout\s*</a>', content)
-    assert '<form method="post" action="/editor/logout/"' not in content
+    assert re.search(r'<form method="post" action="/editor/logout/">\s*'
+                     r'<input type="hidden" name="csrfmiddlewaretoken" value="[^"]+">\s*'
+                     r'<button type="submit" class="nav-link btn btn-link">Logout</button>\s*</form>',
+                     content)
+    assert 'href="/editor/logout/"' not in content
 
 
-# EXPECTED-CHANGE: Django 5 requires POST logout
-def test_logout_via_get_logs_out_and_redirects(client):
+def test_logout_via_post_logs_out_and_redirects(client):
     owner = make_user('alice')
     client.force_login(owner)
     assert '_auth_user_id' in client.session
-    response = client.get('/editor/logout/')
+    response = client.post('/editor/logout/')
     assert response.status_code == 302
     assert response['Location'] == '/editor'
+    assert '_auth_user_id' not in client.session
+
+
+def test_logout_via_get_is_rejected_and_keeps_session(client):
+    # Changed in Task 3.5 (Django 5.2): GET used to log out (302 to /editor).
+    owner = make_user('alice')
+    client.force_login(owner)
+    response = client.get('/editor/logout/')
+    assert response.status_code == 405
+    assert '_auth_user_id' in client.session
+
+
+def test_logout_post_without_csrf_token_is_rejected():
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(make_user('alice'))
+    assert client.post('/editor/logout/').status_code == 403
+    assert '_auth_user_id' in client.session
+
+
+def test_logout_post_with_csrf_token_from_page_works():
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(make_user('alice'))
+    page = client.get('/editor/').content.decode()
+    token = re.search(r'action="/editor/logout/">\s*<input type="hidden" name="csrfmiddlewaretoken" '
+                      r'value="([^"]+)"', page).group(1)
+    response = client.post('/editor/logout/', {'csrfmiddlewaretoken': token})
+    assert response.status_code == 302 and response['Location'] == '/editor'
     assert '_auth_user_id' not in client.session
 
 
@@ -403,7 +435,7 @@ def test_honeypot_post_records_attempt_and_never_authenticates(client, caplog):
 def test_honeypot_signal_has_no_receivers(client):
     # KNOWN-ISSUE: honeypot-logger-not-connected
     from admin_honeypot.signals import honeypot
-    assert honeypot._live_receivers(LoginAttempt) == []
+    assert not honeypot.has_listeners(LoginAttempt)
 
 
 def test_honeypot_records_each_attempt_with_path_and_next(client):
@@ -459,16 +491,14 @@ FIXED_TIME_2 = FIXED_TIME + timedelta(days=1, hours=2, minutes=3, seconds=4)
 # Bare datetime / number rendering (USE_L10N=False, strftime-style DATETIME_FORMAT)
 # ---------------------------------------------------------------------------
 
-# EXPECTED-CHANGE: Django 5 always localizes (USE_L10N is gone), so the strftime-style
-# DATETIME_FORMAT '%d-%m-%Y %H:%M:%S' is interpreted as date() format characters in a
-# different way / ignored in favour of the locale format. The migration must decide
-# explicitly how to keep these timestamps (e.g. a date-format-style DATETIME_FORMAT).
+# Changed in Task 3.5 (Django 5.2, operator-approved): DATETIME_FORMAT is now the Django
+# format 'd-m-Y H:i:s' (settings + cordetfw_editor/formats/en). Django 3.2 rendered the
+# strftime-style '%d-%m-%Y %H:%M:%S' literally as '%15-%01-%2024 %10:%Jan:%th'.
+# |date (DATE_FORMAT), integers and floats are unchanged.
 def test_bare_datetime_and_number_rendering():
     out = Template('{{ d }}|{{ d|date }}|{{ n }}|{{ f }}').render(
         Context({'d': FIXED_TIME, 'n': 1234567, 'f': 1234.5}))
-    # The strftime '%d' etc. are fed to date(): '%' is literal, 'd' is the day ('15'),
-    # 'm' -> '01', 'Y' -> '2024', 'H' -> '10', 'M' -> 'Jan', 'S' -> 'th' (ordinal suffix)
-    assert out == '%15-%01-%2024 %10:%Jan:%th|Jan. 15, 2024|1234567|1234.5'
+    assert out == '15-01-2024 10:30:00|Jan. 15, 2024|1234567|1234.5'
 
 
 def changelist_table(html):
@@ -492,8 +522,8 @@ def superuser_client():
     return client
 
 
-# EXPECTED-CHANGE: see test_bare_datetime_and_number_rendering (Django 5 always localizes,
-# the admin timestamp cells will no longer show the '%15-%01-%2024 ...' strings).
+# Changed in Task 3.5: admin timestamp cells show '15-01-2024 10:30:00' (see
+# test_bare_datetime_and_number_rendering); Django 5.2 also adds an aria-label to row checkboxes.
 def test_admin_honeypot_loginattempt_changelist(superuser_client):
     for username, stamp in (('first', FIXED_TIME), ('second', FIXED_TIME_2)):
         superuser_client.post('/admin/login/', {'username': username, 'password': 'x'},
@@ -508,7 +538,7 @@ def test_admin_honeypot_loginattempt_changelist(superuser_client):
     assert_golden('auth/admin_honeypot_loginattempt_rows.html', rows)
 
 
-# EXPECTED-CHANGE: see test_bare_datetime_and_number_rendering.
+# Changed in Task 3.5: see test_bare_datetime_and_number_rendering.
 def test_admin_axes_accessattempt_and_accesslog_changelists(superuser_client):
     # one failure from another user name (AccessAttempt) ...
     Client().post(LOGIN_URL, {'username': 'ghost', 'password': 'bad'})
@@ -698,7 +728,7 @@ def test_login_unsafe_next_is_ignored(client, next_url):
 
 def test_logout_safe_next_is_honoured(client):
     client.force_login(make_user('alice'))
-    response = client.get('/editor/logout/?next=/editor/help/')
+    response = client.post('/editor/logout/?next=/editor/help/')   # POST since Task 3.5
     assert response.status_code == 302
     assert response['Location'] == '/editor/help/'
 
@@ -708,9 +738,9 @@ def test_logout_unsafe_next_falls_back_to_logout_redirect_url(client, next_url):
     # Changed in Task 3.4 (Django 4.2): an unsafe ?next= now falls back to LOGOUT_REDIRECT_URL.
     # Django 3.2 redirected to request.path (/editor/logout/), a redirect loop
     # (KNOWN-ISSUE logout-unsafe-next-self-redirect, fixed upstream).
-    # EXPECTED-CHANGE: Django 5 requires POST for logout (GET -> 405).
+    # POST since Task 3.5 (Django 5 removed GET logout).
     client.force_login(make_user('alice'))
-    response = client.get('/editor/logout/', {'next': next_url})
+    response = client.post('/editor/logout/', {'next': next_url})
     assert response.status_code == 302
     assert response['Location'] == '/editor'
     assert '_auth_user_id' not in client.session

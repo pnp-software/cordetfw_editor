@@ -112,7 +112,23 @@ WSGI_APPLICATION = 'cordetfw_editor.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-DATABASES = config['DATABASES']
+
+
+def apply_mysql_connection_defaults(databases):
+    """Keep the MySQL connection charset used before Django 5.2.
+
+    Django < 5.2 connected with charset 'utf8' (utf8mb3); Django 5.2 defaults to utf8mb4.
+    Switching changes which characters can be stored (4-byte characters such as emoji),
+    and data written that way would be mangled by a rollback to the old version, so the
+    old charset is kept unless the configuration sets OPTIONS['charset'] explicitly.
+    """
+    for db in databases.values():
+        if db.get('ENGINE') == 'django.db.backends.mysql':
+            db.setdefault('OPTIONS', {}).setdefault('charset', 'utf8')
+    return databases
+
+
+DATABASES = apply_mysql_connection_defaults(config['DATABASES'])
 
 
 # Password validation
@@ -139,14 +155,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
+# Django >= 5.0 always applies the locale's formats (USE_L10N was removed), so the
+# date/time format is set in the format module for LANGUAGE_CODE as well.
+DATETIME_FORMAT = 'd-m-Y H:i:s'
+FORMAT_MODULE_PATH = ['cordetfw_editor.formats']
 
 TIME_ZONE = 'UTC'
 
 # Disable internationalization
 USE_I18N = False
-# Disable local time formatting
-USE_L10N = False
 
 USE_TZ = True
 

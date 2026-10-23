@@ -270,13 +270,13 @@ def _reset_url(client):
 
 
 def test_snapshot_password_reset_confirm_get(client):
-    # EXPECTED-CHANGE: Django 5.x widgets/help text/errors gain aria-describedby, ids and new markup
+    # Changed in Task 3.5 (Django 5.2): inputs gain aria-describedby/aria-invalid, error lists an id
     set_url = _reset_url(client)
     snap('password_reset_confirm', client.get(set_url))
 
 
 def test_snapshot_password_reset_confirm_mismatch_post(client):
-    # EXPECTED-CHANGE: Django 5.x widgets/help text/errors gain aria-describedby, ids and new markup
+    # Changed in Task 3.5 (Django 5.2): inputs gain aria-describedby/aria-invalid, error lists an id
     set_url = _reset_url(client)
     response = client.post(set_url, {'new_password1': 'N3w-Passw0rd-xyz', 'new_password2': 'Different-Pw-987'})
     assert response.status_code == 200

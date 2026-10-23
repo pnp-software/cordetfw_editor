@@ -41,9 +41,18 @@ decision recorded here.
   - Hidden `s_data` input of a re-rendered invalid form: `value="null"` instead of empty; proven to store identical data.
 - [x] **Task 3.4b** import-export 3.3.9 → 4.4.3 + tablib 3.5.0 → 3.10.0 on Django 4.2: all export files byte-identical;
   only the intermediate Dataset holds some ints as strings (tests compare cell text; verified against 3.3.9 output)
-- [ ] **Task 3.5** Django 5.2 LTS: USE_L10N removal (decide date rendering: app templates use explicit `|date`, admin
-  currently shows broken strftime output), POST logout, MySQL utf8mb4 connection default, CSRF Origin
-  checking → `CSRF_TRUSTED_ORIGINS` for the Apache proxy
+- [x] **Task 3.5** Django 4.2.30 → **5.2.18 LTS**. Code changes:
+  - `USE_L10N` removed; `DATETIME_FORMAT = 'd-m-Y H:i:s'` + `cordetfw_editor/formats/en/formats.py`
+    (**operator-approved visible change**: admin shows `15-01-2024 10:30:00` instead of `%15-%01-%2024 %10:%Jan:%th`;
+    app pages, `|date`, numbers unchanged).
+  - Logout is a POST form with CSRF token in `base_generic.html` (**operator-approved visible change**); GET → 405.
+  - `apply_mysql_connection_defaults()` keeps the MySQL connection charset `utf8` (Django 5.2 would switch to utf8mb4,
+    allowing emoji that a rollback would mangle). Switching to utf8mb4 is a separate later decision (needs the
+    production table charset, still pending).
+  - Test-only: public `Signal.has_listeners()` instead of the private `_live_receivers()`.
+  Accepted upstream changes: PBKDF2 1,000,000 iterations (Django 3.2 verifies them: rollback-safe),
+  aria attributes on password-reset-confirm inputs and admin row checkboxes, Django 5.2 admin/decoy template.
+  All 24 logged-in page goldens differ only in the logout block (checked mechanically).
 - [ ] **Task 3.6** crispy + crispy-bootstrap4
 - [ ] **Task 3.7** axes / ipware
 - [x] **Task 3.8** import-export / tablib (done as Task 3.4b)
