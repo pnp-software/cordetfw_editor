@@ -215,9 +215,9 @@ def test_do_application_release_for_new_application_without_release(sc):
     assert versions(app.release) == (0, 0)
     assert app.release.previous is None
     assert Application.objects.filter(name='Fresh').count() == 1
-    # KNOWN-ISSUE: add-app-releases-null-app-items (see test_add_application_releases_all_items_without_application)
-    assert status_of(sc.p_new) == 'CNF'
-    assert status_of(sc.o_new) == 'CNF'
+    # FIXED: add-app-releases-null-app-items (was: p_new and o_new, items without application, became CNF)
+    assert status_of(sc.p_new) == 'NEW'
+    assert status_of(sc.o_new) == 'NEW'
     assert status_of(sc.a1_new) == 'NEW'
 
 
@@ -441,23 +441,42 @@ def test_add_application_after_project_release_uses_project_version(client, sc):
     assert versions(app.release) == (1, 0)
 
 
-def test_add_application_releases_all_items_without_application(client, sc):
-    """KNOWN-ISSUE: add-app-releases-null-app-items. add_application calls
-    do_application_release on the not-yet-saved Application (id None), so
-    filter(application_id=None) matches every NEW/MOD spec item that has no application,
-    in ALL projects: they are silently turned into CNF. Items of existing applications
-    are not touched."""
+def test_add_application_does_not_release_items_without_application(client, sc):
+    """FIXED: add-app-releases-null-app-items (was: add_application called
+    do_application_release on the unsaved Application (id None), so filter(application_id=None)
+    turned every NEW/MOD item without application, in ALL projects, into CNF)."""
+    def snapshot():
+        return sorted((i.pk, i.name, i.status, i.updated_at, i.previous_id, i.application_id,
+                       i.project_id) for i in SpecItem.objects.all())
+    before = snapshot()
+    n_releases = Release.objects.count()
+    proj_release, other_release = sc.project.release_id, sc.other.release_id
     client.force_login(sc.owner)
+    t0 = now_window()
     client.post(f'/editor/{sc.project.id}/add_application',
                 {'name': 'NewApp', 'description': 'd', 'cats': 'DataItem'})
+    t1 = now_window()
+    assert snapshot() == before
     assert sc.statuses() == {
-        'pnew': 'CNF', 'pmod': 'CNF', 'pcnf': 'CNF', 'pdel': 'DEL', 'pobs': 'OBS',
-        'pnewvs': 'CNF',
+        'pnew': 'NEW', 'pmod': 'MOD', 'pcnf': 'CNF', 'pdel': 'DEL', 'pobs': 'OBS',
+        'pnewvs': 'NEW',
         'a1new': 'NEW', 'a1mod': 'MOD', 'a1cnf': 'CNF', 'a1del': 'DEL', 'a1obs': 'OBS',
         'a2new': 'NEW',
-        'onew': 'CNF',     # item of ANOTHER project is released as well
-        'oanew': 'NEW',
+        'onew': 'NEW', 'oanew': 'NEW',
     }
+    # exactly one new Release (the application's first one), fields as before the fix
+    assert Release.objects.count() == n_releases + 1
+    app = Application.objects.get(name='NewApp')
+    rel = app.release
+    assert (rel.desc, rel.release_author, rel.previous) == (
+        'Initial release for application NewApp', sc.owner, None)
+    assert versions(rel) == (0, 0)
+    assert t0 <= rel.updated_at <= t1
+    assert (app.desc, app.cats, app.project_id) == ('d', 'DataItem', sc.project.id)
+    # projects and their releases untouched
+    sc.project.refresh_from_db()
+    sc.other.refresh_from_db()
+    assert (sc.project.release_id, sc.other.release_id) == (proj_release, other_release)
 
 
 def test_add_application_invalid_category_rerenders_form(client, sc):

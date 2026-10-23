@@ -7,7 +7,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | id | aliases | doc | tests | track | status | decision |
 | --- | --- | --- | --- | --- | --- | --- |
 | access-first-row | — | models-access-releases-query.md | tests/test_access.py | K | OPEN |  |
-| add-app-releases-null-app-items | — | models-access-releases-query.md | tests/test_releases.py | S | OPEN |  |
+| add-app-releases-null-app-items | — | models-access-releases-query.md | tests/test_releases.py | S | FIXED (Task 6.5) |  |
 | add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | OPEN |  |
 | add-spec-item-val-set-post | — | views.md | — | K | OPEN |  |
 | appform-cats-substring | app-cats-substring | forms-convert-utilities.md, models-access-releases-query.md | tests/test_forms.py, tests/test_releases.py | K | OPEN |  |

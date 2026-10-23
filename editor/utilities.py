@@ -254,11 +254,14 @@ def do_application_release(request, application, description, is_proj_release = 
     """ 
     Do an application release by updating the status of the application requirements, models and test cases.
     """
-    spec_items = SpecItem.objects.filter(application_id=application.id)
-    for spec_item in spec_items:
-       if (spec_item.status == 'NEW') or (spec_item.status == 'MOD'):
-          spec_item.status = 'CNF'
-          spec_item.save()
+    # A new, unsaved application (id None) has no items. Filtering on application_id=None would
+    # match the project-level items of every project (add-app-releases-null-app-items).
+    if application.id is not None:
+       spec_items = SpecItem.objects.filter(application_id=application.id)
+       for spec_item in spec_items:
+          if (spec_item.status == 'NEW') or (spec_item.status == 'MOD'):
+             spec_item.status = 'CNF'
+             spec_item.save()
 
     if application.release_id == None:    # Application has just been created
        new_application_version = 0

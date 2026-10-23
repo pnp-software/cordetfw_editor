@@ -15,8 +15,8 @@ corresponding test in the same commit.
 
 ## Highest priority (recommend fixing soon, independent of the migration)
 
-1. **`add-app-releases-null-app-items`** (`views.py:166` → `utilities.py:257`):
-   adding an application calls `do_application_release` before the application is
+1. **`add-app-releases-null-app-items`** (`views.py:166` → `utilities.py:257`) **fixed in Task 6.5**:
+   (was) adding an application calls `do_application_release` before the application is
    saved, so it filters `application_id=None` and sets **every NEW/MOD project-level
    item in every project to CNF**. Silent data change in production.
 2. **`idor-item-project`** (`views.py:646`, `:819`): item ids are not checked against
