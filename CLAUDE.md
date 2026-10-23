@@ -64,3 +64,20 @@ reviewed change, promote only the reviewed `*.actual` files; never re-record eve
 7. Mock only the external FW Profile MySQL database (`MySQLdb` in
    `editor/ext_cats.py`). Use the real cexprtk, tablib, import-export and
    templates.
+
+## Fix-phase rules (known issues, after the characterization suite)
+
+Plan and status: `docs/fixes/register.md` (one row per issue, track S = with the migration,
+K = `fix/known-issues`), checked by `scripts/known_issue_check.py` (part of the gate).
+
+1. One issue (or one tightly coupled group) per commit. Write the tests for the fixed behaviour
+   first; they must fail on the old code.
+2. A `# KNOWN-ISSUE: <id>` test changes only in the commit that fixes that id: replace the
+   assertion and mark it `# FIXED: <id> (was: <old behaviour>)`. Set the register row to
+   `FIXED in <commit>` in the same commit.
+3. Every other failing test is a regression. Harness rules 3-7 above still apply.
+4. Exports stay byte-identical and exports of the current production version must still import,
+   unless the export itself is the fixed bug and the operator approved it. Page/golden changes
+   are allowed only for the fixed id and are promoted one file at a time after review.
+5. Track S (on `upgrade/django-lts`): no schema migrations (rollback runs the old code on the
+   migrated database).

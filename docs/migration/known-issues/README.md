@@ -11,6 +11,7 @@ corresponding test in the same commit.
 | [forms-convert-utilities.md](forms-convert-utilities.md) | Forms, reference conversion, markdown, template filters, utilities |
 | [views.md](views.md) | Views |
 | [import-export-auth.md](import-export-auth.md) | Project/CSV import-export, FW Profile DB, auth |
+| [security-audit.md](security-audit.md) | Security audit (Task 6.2): cross-project access, DoS, injection, operator checks |
 
 ## Highest priority (recommend fixing soon, independent of the migration)
 

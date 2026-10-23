@@ -85,6 +85,19 @@ decision recorded here.
 - [x] **Task 5.1** Independent Opus review of the full diff (no correctness bugs; 9 deployment/UX findings addressed or
   documented), release notes, rollout/rollback procedure, README
 
+## Phase 6: Security fixes for the migration release (track S, plan: docs/fixes/register.md)
+- [x] **Task 6.0** Gate green on `8c05151`, local tag `migration-rc1`; draft fix register (62 known ids)
+- [x] **Task 6.1** Additional security audit: 3 Opus auditors (authz, injection/output, files/config), 23 findings,
+  all reproduced by an independent Opus verifier (38 tests); 10 narrowed, 5 operator checks
+- [x] **Task 6.2** Pin audit findings as `KNOWN-ISSUE` tests, `known-issues/security-audit.md`, `known_issue_check.py` in the gate (1179 SQLite / 1188 MySQL)
+- [ ] **Task 6.3** Merge `origin/86` (delete -> POST) + extend to refresh, edit_project user/ValSet actions, role validation
+- [ ] **Task 6.4** Cross-project scoping of every id (item, application, ValSet, parent, release, ProjectUser); find/replace needs write access
+- [ ] **Task 6.5** `add-app-releases-null-app-items`
+- [ ] **Task 6.6** XSS escaping (HTML path), after a local scan of the production dump for stored markup
+- [ ] **Task 6.7** Optional config keys (proxy SSL header, axes lockout parameters, HSTS) defaulting to today's behaviour;
+  ROLLOUT §0 operator checks (#17 proxy, #18 axes, #19 tracked dev SECRET_KEY, #23 HSTS/sessions, pip-audit)
+- [ ] **Task 6.8** Release gate: SQLite/MySQL 8.0/8.4, rehearsal on production dump with expected-diffs allowlist, Opus review
+
 ## Decisions
 - 2026-10-23 (operator): commit one checkpoint per gate on `upgrade/django-lts`, never pushed.
   Stop and ask on EXPECTED-CHANGE decisions or on gates that cannot pass without a behaviour change.
@@ -94,3 +107,9 @@ decision recorded here.
 - 2026-10-23 (operator): accepted the CVE-2022-36359 change from Task 3.2. Upstream security/protocol
   changes that are invisible to users and don't touch stored data may be accepted without asking,
   and are listed in the gate commit and here. User-visible or data-affecting changes need approval.
+- 2026-10-23 (operator): after the extra security audit, these fixes ship WITH the migration (track S, Phase 6):
+  cross-project scoping, add-app-releases-null-app-items, GET->POST for state changes (upstream branch 86 merged
+  and extended; delete/remove links become buttons, old bookmarks to those actions get 405), XSS escaping after
+  the production-dump scan, and optional deployment config keys + ROLLOUT checks. Everything else, including
+  iref-cross-project-disclosure and eval-ref-dos, goes to `fix/known-issues` (track K). No schema migration in
+  track S; exports stay byte-identical.

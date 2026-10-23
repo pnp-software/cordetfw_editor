@@ -18,6 +18,7 @@ step "migration drift" "$PY" manage.py makemigrations --check --dry-run --settin
 step "pytest sqlite"   "$PY" -m pytest -q -p no:warnings
 step "pytest mysql"    env "${MYSQL_ENV[@]}" "$PY" -m pytest -q -p no:warnings --ds=cordetfw_editor.settings_test_mysql
 step "no golden diffs" bash -c '! find tests/golden -name "*.actual" | grep .'
+step "known issues"   "$PY" scripts/known_issue_check.py
 step "diff --check"    git diff --check HEAD
 echo "== warnings by location (count, location, category)"
 "$PY" -m pytest -q -W default 2>&1 | grep -E "^\s*/.*:[0-9]+: [A-Za-z]+Warning:" \
