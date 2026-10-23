@@ -72,7 +72,7 @@ def convert_db_to_display(s, sel_rel):
             sel_rel_id = sel_rel.id if sel_rel != None else 0
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
-                    item.domain+'/'+str(sel_rel_id)+'\list_spec_items'
+                    item.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
             title_attrs = configs['cats'][item.cat]['short_desc']['href_tip']
             title = ''
             for title_attr in title_attrs:
