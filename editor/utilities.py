@@ -218,12 +218,12 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
     hence the re-direct is to the list_spec_items view with an expand_id. 
     """
     if (s_parent_id != None):
-        s_parent = SpecItem.objects.get(id=s_parent_id)
+        s_parent = SpecItem.objects.get(id=s_parent_id, project_id=project_id)
         target = '#'+s_parent.domain+':'+s_parent.name
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
                            '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
     if (p_parent_id != None):
-        p_parent = SpecItem.objects.get(id=p_parent_id)
+        p_parent = SpecItem.objects.get(id=p_parent_id, project_id=project_id)
         target = '#'+p_parent.domain+':'+p_parent.name 
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
                            '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
@@ -244,7 +244,7 @@ def get_domains(cat, application_id, project_id):
                                 exclude(status='OBS').order_by('domain').values_list('domain').distinct():
           domains.append(domain[0])
     else:
-         for domain in SpecItem.objects.filter(application_id=application_id).filter(cat=cat).exclude(domain='').exclude(status='DEL'). \
+         for domain in SpecItem.objects.filter(project_id=project_id, application_id=application_id).filter(cat=cat).exclude(domain='').exclude(status='DEL'). \
                                 exclude(status='OBS').order_by('domain').values_list('domain').distinct():
           domains.append(domain[0])
     return domains    
@@ -479,14 +479,14 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
             items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='DEL').exclude(status='OBS') 
         else:               # Items to be listed are 'application items'
-            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+            items = SpecItem.objects.filter(project_id=project_id, application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='DEL').exclude(status='OBS')
     else:
         if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
             items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='NEW').exclude(status='MOD')            
         else:               
-            items = SpecItem.objects.filter(application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
+            items = SpecItem.objects.filter(project_id=project_id, application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='NEW').exclude(status='MOD')
         # Only retain items created before the release date
         items = items.filter(created_at__lte=sel_rel.updated_at)

@@ -290,14 +290,24 @@ def test_edit_project_del_val_set(client, owner, project):
 
 
 def test_edit_project_del_val_set_protected(client, owner, project, dvs):
-    make_spec_item(project, cat='InfoItem', name='X')
+    # Task 6.4 (edit-project-valset-unscoped): was the Default ValSet; the Default ValSet can no longer
+    # be deleted at all (see test_edit_project_del_default_val_set_refused), so a ValSet in use is used.
+    vs1 = make_val_set(project, 'VS1')
+    make_spec_item(project, cat='InfoItem', name='X', val_set=vs1)
     # FIXED: mutation-via-get (was: GET ?del_val_set_id=) — upstream #86
+    resp = client.post('/editor/%d/edit_project' % project.id, {'del_val_set_id': vs1.id})
+    assert resp.status_code == 302
+    assert ValSet.objects.filter(id=vs1.id).exists()
+    [(level, text)] = msgs(resp)
+    assert level == 'alert-danger'
+    assert text.startswith('Failure to delete ValSet with id %d, possibly because it is still in use: ProtectedError(' % vs1.id)
+
+
+def test_edit_project_del_default_val_set_refused(client, owner, project, dvs):
     resp = client.post('/editor/%d/edit_project' % project.id, {'del_val_set_id': dvs.id})
     assert resp.status_code == 302
     assert ValSet.objects.filter(id=dvs.id).exists()
-    [(level, text)] = msgs(resp)
-    assert level == 'alert-danger'
-    assert text.startswith('Failure to delete ValSet with id %d, possibly because it is still in use: ProtectedError(' % dvs.id)
+    assert [t for _, t in msgs(resp)] == ['The Default ValSet cannot be deleted']
 
 
 def test_del_project_full_cascade(client, owner, project, dvs, dtype):
@@ -726,11 +736,19 @@ def test_find_replace_read_only_user_can_replace(client, owner, project, dvs, it
     ro = make_user('ro')
     make_project_user(project, ro, 'RO')
     client.force_login(ro)
+    # FIXED: find-replace-no-write-check (was: {'updated_count': 2}, items changed by a RO member)
     resp = client.post(lurl('DataItem', project, dvs), {'field': 'title', 'find': 'foo', 'replace': 'qux'}, **XHR)
-    # KNOWN-ISSUE: find-replace-no-write-check
-    assert resp.json() == {'updated_count': 2}
-    assert SpecItem.objects.get(id=items[0].id).title == 'qux bar'
-    assert SpecItem.objects.get(id=items[0].id).owner == ro
+    assert resp.status_code == 403
+    assert list(resp.json()['errors']) == ['__all__']
+    assert SpecItem.objects.get(id=items[0].id).title == 'foo bar'
+    assert SpecItem.objects.get(id=items[0].id).owner == owner
+    # without XHR: redirect with the access message
+    resp = client.post(lurl('DataItem', project, dvs), {'field': 'title', 'find': 'foo', 'replace': 'qux'})
+    assert resp.status_code == 302
+    assert msgs(resp) == [('alert-danger', 'This operation requires read/write access to project Proj')]
+    assert SpecItem.objects.get(id=items[0].id).title == 'foo bar'
+    # a RO member can still list
+    assert client.get(lurl('DataItem', project, dvs)).status_code == 200
 
 
 def test_find_replace_applies_to_current_domain_filter_only(client, owner, project, dvs, items):

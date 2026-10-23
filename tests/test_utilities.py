@@ -270,28 +270,32 @@ def test_get_redirect_url_plain(world):
         '/editor/DataItem/1/0/1/Sel_All/0/list_spec_items'
 
 
+# Task 6.4 (idor-parent-link-cross-project): the parent is looked up inside the project, so these tests pass
+# the real project id of the parent instead of a literal 1 (the URLs are otherwise unchanged).
 def test_get_redirect_url_s_parent(world):
     e = world['etype']
-    assert get_redirect_url('DataItem', 1, 0, 1, 'Sel_All', 3, str(e.id), None, world['item']) == \
-        '/editor/EnumType/1/0/1/Sel_All/3/list_spec_items?expand_id=%d&expand_link=s_link#D:T1' % e.id
+    pid = e.project_id
+    assert get_redirect_url('DataItem', pid, 0, 1, 'Sel_All', 3, str(e.id), None, world['item']) == \
+        '/editor/EnumType/%d/0/1/Sel_All/3/list_spec_items?expand_id=%d&expand_link=s_link#D:T1' % (pid, e.id)
 
 
 def test_get_redirect_url_p_parent(world):
     e = world['etype']
-    assert get_redirect_url('DataItem', 1, 0, 1, 'Sel_All', 0, None, str(e.id), None) == \
-        '/editor/EnumType/1/0/1/Sel_All/0/list_spec_items?expand_id=%d&expand_link=p_link#D:T1' % e.id
+    pid = e.project_id
+    assert get_redirect_url('DataItem', pid, 0, 1, 'Sel_All', 0, None, str(e.id), None) == \
+        '/editor/EnumType/%d/0/1/Sel_All/0/list_spec_items?expand_id=%d&expand_link=p_link#D:T1' % (pid, e.id)
 
 
 def test_get_redirect_url_s_parent_wins_over_p_parent(world):
     it, e = world['item'], world['etype']
-    url = get_redirect_url('DataItem', 1, 0, 1, 'Sel_All', 0, str(e.id), str(it.id), None)
+    url = get_redirect_url('DataItem', e.project_id, 0, 1, 'Sel_All', 0, str(e.id), str(it.id), None)
     assert url.endswith('expand_link=s_link#D:T1')
 
 
 def test_get_redirect_url_int_parent_id_crashes(world):
     # KNOWN-ISSUE: redirect-int-parent  (parent id must be str: concatenation with int raises)
     with pytest.raises(TypeError):
-        get_redirect_url('DataItem', 1, 0, 1, 'Sel_All', 0, world['etype'].id, None, None)
+        get_redirect_url('DataItem', world['etype'].project_id, 0, 1, 'Sel_All', 0, world['etype'].id, None, None)
 
 
 # ----------------------------------------------------------------- make_temp_dir

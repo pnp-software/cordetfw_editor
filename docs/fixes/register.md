@@ -19,7 +19,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
 | edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | FIXED in 1b2bb5a | the merged upstream #86 branch scopes the delete to the URL's project (Task 6.3) |
-| edit-project-valset-unscoped | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
+| edit-project-valset-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | enum-value-no-type | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | eval-ref-dos | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | exp-ref-no-dots | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
@@ -34,14 +34,14 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | ext-cats-null-domain | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN |  |
 | ext-cats-sql-injection | — | import-export-auth.md, security-audit.md | tests/test_ext_cats.py, tests/test_security_audit.py | K | OPEN |  |
 | ext-fcp-refresh-nameerror | ext-fcp-refresh-undefined-name | import-export-auth.md, views.md | tests/test_ext_cats.py | K | OPEN |  |
-| find-replace-no-write-check | — | views.md | tests/test_views.py | S | OPEN |  |
+| find-replace-no-write-check | — | views.md | tests/test_views.py | S | FIXED (Task 6.4) |  |
 | form-none-literal | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | help-double-space | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | honeypot-logger-not-connected | — | import-export-auth.md | tests/test_auth.py | K | OPEN |  |
-| idor-app-valset-cross-project | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
-| idor-app-write-cross-project | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
-| idor-item-project | — | models-access-releases-query.md, security-audit.md | tests/test_access.py, tests/test_security_audit.py | S | OPEN |  |
-| idor-parent-link-cross-project | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
+| idor-app-valset-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
+| idor-app-write-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
+| idor-item-project | — | models-access-releases-query.md, security-audit.md | tests/test_access.py, tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
+| idor-parent-link-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | image-svg-unsanitised | — | security-audit.md | — | K | OPEN | Kind `image` (Model/FCP SVG from FW Profile) rendered raw; exempt from Task 6.6 escaping (operator 2026-10-23); add SVG allowlist sanitiser |
 | import-link-ambiguous | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-no-login-required | import-spec-items-no-login-required | import-export-auth.md, models-access-releases-query.md | tests/test_access.py | K | OPEN |  |
@@ -81,7 +81,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
 | ref-link-backslash | — | forms-convert-utilities.md, views.md | tests/test_convert.py, tests/test_rendering_snapshots.py | K | OPEN |  |
 | refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | OPEN |  |
-| release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
+| release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | OPEN | HSTS + port 80 redirect done by Apache (operator 2026-10-23); session length/CSP defaults remain, low |

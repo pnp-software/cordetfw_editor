@@ -457,19 +457,20 @@ def test_owner_of_a_cannot_release_project_b(client, two_projects):
 
 
 def test_item_of_project_b_editable_through_project_a_url(client, two_projects):
-    """KNOWN-ISSUE: idor-item-project. The item id is not checked against the project in the
-    URL: a user with write access to project A can open the edit form of (and delete NEW)
-    items that belong to project B by putting A's project id in the URL."""
+    """FIXED: idor-item-project (was: the item id was not checked against the project in the URL: a
+    user with write access to project A could open the edit form of, and delete NEW, items that
+    belong to project B by putting A's project id in the URL). Now 404, nothing changes."""
     w, b, item_b, new_b = two_projects
     client.force_login(w.rw)
     a = w.project.id
+    before = db_snapshot()
     response = client.get(f'/editor/DataItem/{a}/0/{item_b.id}/Sel_All/0/edit_spec_item')
-    assert response.status_code == 200
+    assert response.status_code == 404
     # FIXED: mutation-via-get (was: GET deleted the NEW item) — upstream #86: GET only shows the form
     response = client.get(f'/editor/DataItem/{a}/0/{new_b.id}/Sel_All/0/del_spec_item')
-    assert response.status_code == 200
-    assert SpecItem.objects.filter(id=new_b.id).exists()
+    assert response.status_code == 404
     response = client.post(f'/editor/DataItem/{a}/0/{new_b.id}/Sel_All/0/del_spec_item')
-    assert response.status_code == 302
-    assert not SpecItem.objects.filter(id=new_b.id).exists()
+    assert response.status_code == 404
+    assert SpecItem.objects.filter(id=new_b.id).exists()
     assert SpecItem.objects.get(id=item_b.id).project_id == b.id
+    assert db_snapshot() == before
