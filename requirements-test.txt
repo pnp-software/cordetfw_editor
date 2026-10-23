@@ -1,0 +1,5 @@
+# Test tools pinned to releases that support both the Python 3.9 / Django 3.2
+# baseline and the target stack. Revisit in the final library-upgrade gate.
+pytest==8.3.5
+pytest-django==4.8.0
+pytest-cov==5.0.0

@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
+        <link href="/static/bootstrap-suggest.css" rel="stylesheet">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+
+        <header class="container-fluid px-md-4">
+            <nav class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-3 border-bottom">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/editor/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/pnpAdmin/">Admin</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/editor/repair/">Repair</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/editor/help/">Help</a>
+                    </li>
+                </ul>
+                
+                <div aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        
+                        <li class="breadcrumb-item">
+                            <a href="/editor/">
+                                Cordet FW Editor: Projects
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item dropdown me-3" aria-current="page">
+                            <div class="dropdown-toggle" id="catAllDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Proj
+                            </div>
+                            <ul class="dropdown-menu" aria-labelledby="catAllDropdown">
+                                
+                            </ul>
+                        </li>
+                        
+                        
+                        <li class="breadcrumb-item active" aria-current="page">
+                            Split Data Item in Project Proj
+                        </li>
+                        
+                        
+                    </ol>
+                </div>
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link disabled">
+                            owner
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/editor/logout/">
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+                
+            </nav>
+        </header>
+
+        <main class="flex-grow-1">
+            
+
+            
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            
+            <h2 class="my-3">Split Data Item in Project Proj</h2>
+            <p class="mb-4 fs-5 fst-italic"></p>
+
+            <form method="post">
+                <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                <div class="mb-3 row">
+                    <label for="id_domain"
+                           class="col-form-label col-2">
+                        Domain*
+                    </label>
+                    <div class="col-3 col-lg-3">
+                        <input type="text" id="id_domain"
+                               class="form-control "
+                               name="domain" value="Alpha"
+                               maxlength="255"
+                               required
+                               disabled>
+                        
+                    </div>
+                    <label for="id_name"
+                           class="col-form-label col-2 text-end">
+                        Name*
+                    </label>
+                    <div class="col-5 col-lg-5">
+                        <input type="text" id="id_name"
+                               class="form-control "
+                               name="name" value="colour"
+                               maxlength="255"
+                               required
+                               disabled>
+                        
+                    </div>
+                </div>
+                
+                
+                
+                
+                
+                
+                
+<div class="mb-3 row">
+    <label for="id_title"
+           class="col-form-label col-2">
+        Title
+    </label>
+    <div class="col-10 col-lg-10">
+        <input type="text" id="id_title"
+               class="form-control "
+               name="title"
+               value="Current colour"
+               maxlength="255"
+               
+               >
+        
+        
+    </div>
+</div>
+
+
+
+
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_desc"
+           class="col-form-label col-2">
+        Description
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_desc"
+                  class="form-control  link-suggest"
+                  name="desc"
+                  rows="1"
+                  
+                  
+                  >Uses #EnumValue:Enums:Red</textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_value"
+           class="col-form-label col-2">
+        Value*
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_value"
+                  class="form-control  link-suggest"
+                  name="value"
+                  rows="1"
+                  
+                  required
+                  >#EnumValue:Enums:Red</textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_rationale"
+           class="col-form-label col-2">
+        Rationale
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_rationale"
+                  class="form-control  link-suggest"
+                  name="rationale"
+                  rows="1"
+                  
+                  
+                  ></textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_implementation"
+           class="col-form-label col-2">
+        Implementation
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_implementation"
+                  class="form-control  link-suggest"
+                  name="implementation"
+                  rows="1"
+                  
+                  
+                  ></textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_remarks"
+           class="col-form-label col-2">
+        Remarks
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_remarks"
+                  class="form-control  link-suggest"
+                  name="remarks"
+                  rows="1"
+                  
+                  
+                  ></textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_change_log"
+           class="col-form-label col-2">
+        Change Log
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_change_log"
+                  class="form-control  link-suggest"
+                  name="change_log"
+                  rows="1"
+                  
+                  
+                  ></textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_s_data" name="s_data"
+       value="{}">
+
+
+                
+                
+                
+                
+
+
+
+<div class="mb-3 row">
+    <label for="id_p_kind"
+           class="col-form-label col-2">
+        Kind*
+    </label>
+    <div class="col-10 col-lg-10">
+        <select id="id_p_kind"
+                class="form-select "
+                name="p_kind"
+                required
+                >
+            
+                
+                    <option value="CNS">Constant</option>
+                
+            
+                
+                    <option value="PAR">Configuration Parameter</option>
+                
+            
+                
+                    <option value="VAR">Global Variable</option>
+                
+            
+                
+                    <option value="CTX" selected>Context Variable</option>
+                
+            
+                
+                    <option value="PCK">Packet Parameter</option>
+                
+            
+        </select>
+        
+        
+    </div>
+</div>
+
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_s_kind" name="s_kind"
+       value="">
+
+
+                
+                
+                
+                
+
+
+
+<div class="mb-3 row">
+    <label for="id_val_set"
+           class="col-form-label col-2">
+        ValSet
+    </label>
+    <div class="col-10 col-lg-10">
+        <select id="id_val_set"
+                class="form-select "
+                name="val_set"
+                
+                >
+            
+                
+                    <option value="1" selected>Default</option>
+                
+            
+                
+                    <option value="2">VS1</option>
+                
+            
+        </select>
+        
+        
+    </div>
+</div>
+
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_p_link" name="p_link"
+       value="2">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_s_link" name="s_link"
+       ">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_n1" name="n1"
+       value="0">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_n2" name="n2"
+       value="0">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_n3" name="n3"
+       value="0">
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_t1"
+           class="col-form-label col-2">
+        Multiplicity
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_t1"
+                  class="form-control  link-suggest"
+                  name="t1"
+                  rows="1"
+                  
+                  
+                  ></textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_t2"
+           class="col-form-label col-2">
+        Unit
+    </label>
+    <div class="col-10 col-lg-10">
+        <textarea type="text" id="id_t2"
+                  class="form-control  link-suggest"
+                  name="t2"
+                  rows="1"
+                  
+                  
+                  ></textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_t3" name="t3"
+       value="">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_t4" name="t4"
+       value="">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_t5" name="t5"
+       value="">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_ext_item" name="ext_item"
+       ">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_submit" name="submit"
+       ">
+
+
+                
+                
+                
+                
+
+
+
+
+<input type="hidden" id="id_cancel" name="cancel"
+       ">
+
+
+                
+                
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="button" class="btn btn-outline-danger ms-2"
+                        onclick="location.href='/editor/DataItem/1/0/1/Sel_All/0/list_spec_items';">Cancel</button>
+            </form>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="/static/bootstrap-suggest.min.js"></script>
+<script>
+var linkElements = [
+  
+    {path: 'DataItem:Alpha:colour', comment: 'Current colour'},
+  
+    {path: 'DataItem:Alpha:count', comment: 'Counter'},
+  
+    {path: 'DataItem:Beta:level', comment: 'Level v2'},
+  
+    {path: 'DataItemType:Types:Int32', comment: '32-bit integer'},
+  
+    {path: 'EnumType:Enums:Colour', comment: 'Colour type'},
+  
+    {path: 'EnumValue:Enums:Green', comment: 'Green'},
+  
+    {path: 'EnumValue:Enums:Red', comment: 'Red'},
+  
+    {path: 'InfoItem:Info:note', comment: 'A note'},
+  
+];
+$('.link-suggest').suggest('#', {
+  data: linkElements,
+  map: function(element) {
+    return {
+      value: element.path,
+      text: '<strong>'+element.path+'</strong>'+'&Tab;<small>'+element.comment+'</small>'
+    }
+  },
+  filter: {
+    casesensitive: false,
+    limit: 16
+  }
+})
+</script>
+
+
+
+        </div>
+    </div>
+</div>
+
+        </main>
+
+        <div class="container-fluid px-md-4">
+            <footer class="py-3 my-4 border-top">
+                <p class="text-center text-muted">© 2022 
+                    <a class="link-primary text-decoration-none"
+                       href="https://www.pnp-software.com"
+                       target="_blank" >P&P Software GmbH</a>. All Rights Reserved.
+                </p>
+            </footer>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+    </body>
+</html>

@@ -8,3 +8,8 @@ mysql_db_persist/
 **/cordetfwvenv/
 /editorvenv/bin/**
 /editorvenv/**
+.venv*/
+.pytest_cache/
+.coverage
+htmlcov/
+*.actual

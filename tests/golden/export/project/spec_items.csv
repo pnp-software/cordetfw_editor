@@ -1,0 +1,16 @@
+id,cat,name,domain,project,application,title,desc,owner,status,updated_at,created_at,previous,rationale,remarks,implementation,val_set,p_link,s_link,p_kind,s_kind,value,s_data,t1,t2,t3,t4,t5,n1,n2,n3,change_log
+101,DataItemType,uint8,Types,1,,Unsigned 8,"Plain with | pipe and ""quotes"" and 'single'",owner,CNF,2024-02-20 16:45:30,2023-12-01 08:00:00,,,,unsigned char,1,,,,,,,,,,,,1,0,0,
+102,EnumType,Color,Types,1,,Colour,"Colors ä µ ☺ and **markdown**
+
+- bullet one
+- bullet two",owner,CNF,2024-02-20 16:45:30,2023-12-01 08:00:00,103,,,,1,,,,,,,,,,,,4,0,0,"changed
+with CRLF"
+103,EnumType,Color,Types,1,,Colour (old),old description,owner,OBS,2023-12-01 08:00:00,2023-12-01 08:00:00,,,,,1,,,,,,,,,,,,4,0,0,
+104,EnumValue,Red,Types,1,,Red,,owner,NEW,2024-03-03 03:03:03,2023-12-01 08:00:00,,,,,1,,102,,,0,,,,,,,0,0,0,
+105,EnumValue,Green,Types,1,,Green,,owner,CNF,2024-02-20 16:45:30,2023-12-01 08:00:00,,,,,1,,102,,,1,,,,,,,0,0,0,
+106,DataItem,ColorVar,Dom,1,,Title of ColorVar,"See #EnumValue:Types:Red and #DataItemType:Types:uint8 and **bold**
+newline ""q"" | pipe; dangling ERROR:9999",owner,MOD,2024-03-03 03:03:03,2023-12-01 08:00:00,,x | y,  padded  ,,1,102,,VAR,,#EnumValue:Types:Red,"{""a"": 1, ""k"": [1, 2], ""u"": ""\u00e4""}",1,µm,,,,0,0,7,
+107,DataItem,Count,Dom,1,,Title of Count,,owner,CNF,2024-02-20 16:45:30,2023-12-01 08:00:00,,,,,1,101,,CNS,,42,,,,,,,0,0,0,
+108,DataItem,Calc,Dom,1,,Title of Calc,,owner,CNF,2024-02-20 16:45:30,2023-12-01 08:00:00,,,,,1,101,,CNS,,#DataItem:Dom:Count * 2,,,,,,,0,0,0,
+109,DataItem,Count,Dom,1,,Title of Count,,owner,NEW,2024-02-20 16:45:30,2023-12-01 08:00:00,,,,,2,101,,CNS,,43,,,,,,,0,0,0,
+110,Requirement,R1,AppDom,1,1,Req 1,,writer,NEW,2024-02-20 16:45:30,2023-12-01 08:00:00,,,,,1,,,STD,TST,The app shall use #DataItem:Dom:Count and ä,,close,valid,,,,0,0,0,

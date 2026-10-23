@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+
+        <link href="/static/bootstrap-suggest.css" rel="stylesheet">
+    </head>
+    <body class="d-flex flex-column min-vh-100">
+
+        <header class="container-fluid px-md-4">
+            <nav class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-3 border-bottom">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/editor/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/pnpAdmin/">Admin</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/editor/repair/">Repair</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        
+                        <a class="nav-link " href="/editor/help/">Help</a>
+                    </li>
+                </ul>
+                
+                <div aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        
+                        <li class="breadcrumb-item">
+                            <a href="/editor/">
+                                Cordet FW Editor: Projects
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item dropdown me-3" aria-current="page">
+                            <div class="dropdown-toggle" id="catAllDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Proj
+                            </div>
+                            <ul class="dropdown-menu" aria-labelledby="catAllDropdown">
+                                
+                            </ul>
+                        </li>
+                        
+                        
+                        
+                    </ol>
+                </div>
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link disabled">
+                            owner
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/editor/logout/">
+                            Logout
+                        </a>
+                    </li>
+                </ul>
+                
+            </nav>
+        </header>
+
+        <main class="flex-grow-1">
+            
+
+            
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <h2 class="my-3">Add or Edit a Project</h2>
+            <form method="post">
+                <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                
+                
+<div class="mb-3 row">
+    <label for="id_name"
+           class="col-form-label col-2">
+        Name*
+    </label>
+    <div class="col-10 col-lg-8">
+        <input type="text" id="id_name"
+               class="form-control "
+               name="name"
+               value="Proj"
+               
+               required
+               >
+        
+        
+    </div>
+</div>
+
+
+
+
+
+
+                
+                
+
+
+
+<div class="mb-3 row">
+    <label for="id_owner"
+           class="col-form-label col-2">
+        Owner*
+    </label>
+    <div class="col-10 col-lg-8">
+        <select id="id_owner"
+                class="form-select "
+                name="owner"
+                required
+                >
+            
+                
+                    <option value="1">owner (Olga Owner)</option>
+                
+            
+                
+                    <option value="3">reader</option>
+                
+            
+                
+                    <option value="2">writer</option>
+                
+            
+        </select>
+        
+        
+    </div>
+</div>
+
+
+
+                
+                
+<div class="mb-3 row">
+    <label for="id_cats"
+           class="col-form-label col-2">
+        Categories*
+    </label>
+    <div class="col-10 col-lg-8">
+        <input type="text" id="id_cats"
+               class="form-control "
+               name="cats"
+               value="DataItem,EnumType,EnumValue,DataItemType,InfoItem,Model"
+               
+               required
+               >
+        
+        
+        <div class="form-text">A subset of: ParReq,  DerReq,  VerItem,  VerStep,  VerLink,  TracLink,  AdaptPoint,  Requirement,  InfoItem,  FCP,  SysReq,  Service,  Packet,  DerPacket,  PacketPar,  InCommand,  OutComponent,  FmeaItem,  ComIntRep,  ComIntCmd,  ComIntFdir,  ComIntEvt,  DataItemType,  EnumType,  Model,  EnumValue,  OpContext,  DisrEvt,  RiskScenario,  DataItem</div>
+        
+    </div>
+</div>
+
+
+
+
+
+
+                
+                
+
+
+<div class="mb-3 row">
+    <label for="id_description"
+           class="col-form-label col-2">
+        Description*
+    </label>
+    <div class="col-10 col-lg-8">
+        <textarea type="text" id="id_description"
+                  class="form-control  "
+                  name="description"
+                  rows="2"
+                  
+                  required
+                  >Project for snapshots</textarea>
+        
+        
+    </div>
+</div>
+
+
+
+
+                
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+            
+
+
+            <div class="row mt-5">
+                <!-- user table -->
+                <div class="col-12 col-md-6">
+                    <div class="d-flex mb-2">
+                        <div class="dropdown me-2">
+                            <button class="btn btn-outline-secondary dropdown-toggle"
+                                    type="button"
+                                    id="dropdownAddRWUser" data-bs-toggle="dropdown">
+                                Add R/W User
+                            </button>
+                            <ul class="dropdown-menu"
+                                aria-labelledby="dropdownAddRWUser">
+                                
+                                <li><a class="dropdown-item"
+                                       href="/editor/1/edit_project?user_id=3&role=RW">
+                                    reader</a>
+                                </li>
+                                
+                                <li><a class="dropdown-item"
+                                       href="/editor/1/edit_project?user_id=2&role=RW">
+                                    writer</a>
+                                </li>
+                                
+                            </ul>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle"
+                                    type="button"
+                                    id="dropdownAddROUser" data-bs-toggle="dropdown">
+                                Add R/O User
+                            </button>
+                            <ul class="dropdown-menu"
+                                aria-labelledby="dropdownAddROUser">
+                                
+                                <li><a class="dropdown-item"
+                                       href="/editor/1/edit_project?user_id=3&role=RO">
+                                    reader</a>
+                                </li>
+                                
+                                <li><a class="dropdown-item"
+                                       href="/editor/1/edit_project?user_id=2&role=RO">
+                                    writer</a>
+                                </li>
+                                
+                            </ul>
+                        </div>
+                    </div>
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr class="table-primary">
+                                <th>User Name</th>
+                                <th>Last Name</th>
+                                <th>First Name</th>
+                                <th>Role</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>writer</td>
+                                <td></td>
+                                <td></td>
+                                <td>RW</td>
+                                <td>
+                                    <a class="bi-trash-fill link-danger text-decoration-none"
+                                       role="button"
+                                       href="/editor/1/edit_project?del_user_id=1"
+                                       onclick="return confirm('Are you sure you want to remove this user from the project?');"
+                                       title="Delete Project User">
+                                    </a>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>reader</td>
+                                <td></td>
+                                <td></td>
+                                <td>RO</td>
+                                <td>
+                                    <a class="bi-trash-fill link-danger text-decoration-none"
+                                       role="button"
+                                       href="/editor/1/edit_project?del_user_id=2"
+                                       onclick="return confirm('Are you sure you want to remove this user from the project?');"
+                                       title="Delete Project User">
+                                    </a>
+                                </td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+                <!-- ValSet table -->
+                <div class="col-12 col-md-6">
+                    <a class="btn btn-outline-secondary mb-2"
+                       href="/editor/1/add_val_set">
+                        Add ValSet
+                    </a>
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr class="table-primary">
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            <tr>
+                                <td>Default</td>
+                                <td>Default ValSet</td>
+                                <td>
+                                    <nobr class="float-end">
+                                        
+                                        <span class="bi-trash-fill link-secondary me-1"
+                                              aria-disabled="true">
+                                        </span>
+                                        <span class="bi-pencil-fill link-secondary"
+                                              aria-disabled="true">
+                                        </span>
+                                        
+                                    </nobr>
+                                </td>
+                            </tr>
+                            
+                            <tr>
+                                <td>VS1</td>
+                                <td>Alternative values</td>
+                                <td>
+                                    <nobr class="float-end">
+                                        
+                                        <a class="bi-trash-fill link-danger text-decoration-none me-1"
+                                           href="/editor/1/edit_project?del_val_set_id=2"
+                                           title="Delete ValSet">
+                                        </a>
+                                        <a class="bi-pencil-fill text-decoration-none"
+                                           href="/editor/1/2/edit_val_set"
+                                           title="Edit ValSet">
+                                        </a>
+                                        
+                                    </nobr>
+                                </td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        </main>
+
+        <div class="container-fluid px-md-4">
+            <footer class="py-3 my-4 border-top">
+                <p class="text-center text-muted">© 2022 
+                    <a class="link-primary text-decoration-none"
+                       href="https://www.pnp-software.com"
+                       target="_blank" >P&P Software GmbH</a>. All Rights Reserved.
+                </p>
+            </footer>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+    </body>
+</html>
