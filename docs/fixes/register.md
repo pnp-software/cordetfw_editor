@@ -42,6 +42,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | idor-app-write-cross-project | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
 | idor-item-project | — | models-access-releases-query.md, security-audit.md | tests/test_access.py, tests/test_security_audit.py | S | OPEN |  |
 | idor-parent-link-cross-project | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
+| image-svg-unsanitised | — | security-audit.md | — | K | OPEN | Kind `image` (Model/FCP SVG from FW Profile) rendered raw; exempt from Task 6.6 escaping (operator 2026-10-23); add SVG allowlist sanitiser |
 | import-link-ambiguous | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-no-login-required | import-spec-items-no-login-required | import-export-auth.md, models-access-releases-query.md | tests/test_access.py | K | OPEN |  |
 | import-project-application-version-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
@@ -74,6 +75,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | S | OPEN | optional config key / ROLLOUT operator check |
 | order-by-unrestricted | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| outcomponent-disp-short-keyerror | — | views.md | — | K | OPEN | configs.json OutComponent `disp_short` lists `value`, not in its attrs: conv_db_disp KeyError (500). Found by the Task 6.6 scan |
 | owner-empty-names | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
 | p-link-selection-lost | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
