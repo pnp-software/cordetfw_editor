@@ -70,7 +70,11 @@ decision recorded here.
 ## Phase 4: Real-environment validation (external gates)
 - [x] **Task 4.1** Full suite on MySQL 8.0.42 (every gate) and **MySQL 8.4.13 LTS: 1150 passed**. Note: the MySQL 8.0
   series reached end of life in April 2026; production (8.0.46) should plan a move to 8.4 LTS (separate change).
-- [ ] **Task 4.2** Sanitized production DB copy: migrate rehearsal, export ZIP old vs new identical
+- [x] **Task 4.2a** Local rehearsal on MySQL 8.0 from the 2022 tryout dump + realistic data (`docs/migration/rehearsal/`):
+  editor_* rows/checksums unchanged by migrate; 41/41 exports byte-identical old vs new; HTML differs only in the
+  logout control; old sessions and passwords work; rollback (old code on migrated DB, no restore) 55/55 identical.
+  Note: a user's other sessions are logged out once when their password hash is upgraded at first login.
+- [ ] **Task 4.2b** (external) Same rehearsal on a sanitized copy of the PRODUCTION database (`REHEARSAL_DUMP=...`)
 - [x] **Task 4.3** tryout: `python:3.12-bookworm` + lock file, `mysql:8.4` pinned, healthcheck/`service_healthy` instead of
   `sleep 5`, removed `--default-authentication-plugin` (MySQL 8.4 refuses it), new data dir `mysql84_db_persist/`.
   Verified: isolated `up --build` migrates the 2022 dump schema and serves `/editor/` (HTTP 200).
