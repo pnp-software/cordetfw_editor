@@ -107,8 +107,13 @@ decision recorded here.
   (forms, CSV import, ZIP import, refresh) rejects dangerous SVG content; checked to reject none of the 240 production diagrams.
   Plus follow-ups from the 6.6 review: `link-suggest-js-string` was stored XSS (HIGH, misjudged by the audit), fixed with a
   JS-string filter that leaves ordinary titles byte-identical. Find & Replace refuses all FW-Profile attributes. Production
-  check: 0 of 240 diagrams rejected. Gate 1419 SQLite / 1428 MySQL. Opus review: pending
-- [ ] **Task 6.7** Optional `AXES_LOCKOUT_PARAMETERS` config key (default unchanged); ROLLOUT §0: pip-audit before cutover.
+  check: 0 of 240 diagrams rejected. Gate 1419 SQLite / 1428 MySQL. Opus review: stopped before payload testing; its
+  design finding (a deny-list is fragile for a field rendered raw) leads to Task 6.6c
+- [ ] **Task 6.6c** SVG allowlist validator (strict XML, element/attribute allowlist from the production diagrams, validate
+  only, never rewrite) on every write path + placeholder on render for stored values that fail; replaces the deny-list
+- [x] **Task 6.7** `509d5d8` Optional `AXES_LOCKOUT_PARAMETERS` config key (default unchanged; recommended
+  `["ip_address", "username"]`, trade-off: a known username can be locked out for the cool-off); pip-audit 2.10.1:
+  no known vulnerabilities (2026-10-23). Gate 1437 SQLite / 1446 MySQL; ROLLOUT §0: pip-audit before cutover.
   Operator answers 2026-10-23: TLS ends at Apache, no proxy (#17 not applicable); HSTS + port 80 redirect by Apache (#23);
   production SECURE_KEY differs from the tracked one (#19 -> K cleanup)
 - [ ] **Task 6.8** Release gate: SQLite/MySQL 8.0/8.4, rehearsal on production dump with expected-diffs allowlist, Opus review
@@ -142,3 +147,5 @@ decision recorded here.
   does) and reject dangerous content on every write path (script, event-handler attributes, javascript:, foreignObject,
   iframe/embed/object, href, plus other active SVG elements, provided no production diagram is rejected). Full allowlist
   sanitiser stays in track K (`image-svg-unsanitised`).
+- 2026-10-23 (operator), Task 6.6c: replace the SVG deny-list by an allowlist validator in track S (validate, never rewrite;
+  must accept all 240 production diagrams; operator approves the allowlist).
