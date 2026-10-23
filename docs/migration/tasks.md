@@ -100,8 +100,12 @@ decision recorded here.
 - [x] **Task 6.5** `ce003fd` `add-app-releases-null-app-items`: no item loop for an unsaved application; Release/Application rows as before.
   Production impact (dump 2026-10-21): 80 project-level items in 4 projects probably confirmed by the bug (74 were NEW,
   6 MOD); operator decision: report only, `docs/fixes/add-app-release-data-impact.md`
-- [ ] **Task 6.6** XSS escaping (HTML path): text nodes escape `&<>` only, attributes full `escape()`, `image` (SVG) exempt;
-  escape before #iref substitution and markdown; pin which paths can write `image` fields
+- [x] **Task 6.6** `0a7523c` XSS escaping (HTML path): text nodes escape `&<>` only, attributes full `escape()`, `image` (SVG)
+  exempt; escape before #iref substitution and markdown. Byte proof: identical output for text without `&<>"'`.
+  Gate 1360 SQLite / 1369 MySQL. Found: RW users can store arbitrary markup in `image` fields (forged edit POST, CSV import)
+- [ ] **Task 6.6b** `image` fields: edit/copy/split ignore a posted value for FW-Profile attributes (like add); every write path
+  (forms, CSV import, ZIP import, refresh) rejects dangerous SVG content; checked to reject none of the 240 production diagrams.
+  Plus follow-ups from the 6.6 review
 - [ ] **Task 6.7** Optional `AXES_LOCKOUT_PARAMETERS` config key (default unchanged); ROLLOUT §0: pip-audit before cutover.
   Operator answers 2026-10-23: TLS ends at Apache, no proxy (#17 not applicable); HSTS + port 80 redirect by Apache (#23);
   production SECURE_KEY differs from the tracked one (#19 -> K cleanup)
@@ -131,3 +135,8 @@ decision recorded here.
 - 2026-10-23: the scan also showed 0 cross-project `#iref` (11 dangling), no loop/assignment keywords in eval_ref
   values (`[` 139 rows, `;` 8: must stay allowed), max #iref depth 4. Input for K fixes of `iref-cross-project-disclosure`
   and `eval-ref-dos`.
+- 2026-10-23 (operator), Task 6.6b: `image` (SVG) fields can be written with arbitrary markup by RW users (forged edit POST,
+  CSV import), and they render raw. Close the form path (ignore posted FW-Profile attributes in edit/copy/split, as add
+  does) and reject dangerous content on every write path (script, event-handler attributes, javascript:, foreignObject,
+  iframe/embed/object, href, plus other active SVG elements, provided no production diagram is rejected). Full allowlist
+  sanitiser stays in track K (`image-svg-unsanitised`).
