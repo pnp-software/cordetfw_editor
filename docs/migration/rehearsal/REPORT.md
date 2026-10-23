@@ -1,5 +1,43 @@
 # MySQL migration rehearsal: Django 3.2 -> 5.2 (branch upgrade/django-lts)
 
+## Security fixes (Phase 6) run (2026-10-24)
+
+Task 6.8a. OLD = baseline `cd87ccb` (`.venv-baseline`), NEW = branch `upgrade/django-lts` at `db56be0` (`.venv`), ROLLBACK = old
+code on the migrated database. Same production dump (2026-10-21) and the same disposable MySQL 8.0 container; the
+`.sql.bz2` dump is decompressed into the scratch directory and deleted by the script. Only aggregates are recorded here.
+Command: `REHEARSAL_DUMP=<dump>.sql.bz2 python3 docs/migration/rehearsal/rehearse.py --allow docs/fixes/expected-diffs.json`
+(runtime about 15 minutes on the production-size data). The script exits non-zero if any page is UNEXPLAINED, any export differs,
+or a rollback comparison differs; this run: **PASS (exit 0)**. `worker.py` needed no change (it only GETs pages and exports; the
+POST-only mutations are not driven by the snapshot).
+
+Every HTML page is classified identical / differs only by allowed ids / UNEXPLAINED. The allowlist is
+`docs/fixes/expected-diffs.json`; each id is a named normaliser in `rehearse.py`, applied to both old and new HTML. Exports
+(spec-item CSV and LaTeX, project ZIP members, Content-Disposition headers, ZIP name lists) have no normaliser and must be
+byte-identical.
+
+| Check | Result |
+| --- | --- |
+| Old `migrate`; new `migrate --plan`; editor_* rows and checksums across migrate | no-op; only `axes.0010_accessattemptexpiration`; identical |
+| Snapshot coverage (old / new / rollback) | 11 projects, 328 spec-item CSV/LaTeX exports, 164 saved list/index pages (165 requests), 0 failing requests each |
+| Exports old vs new | 404 of 404 byte-identical (0 different) |
+| HTML old vs new | 164 pages: 0 identical, 164 allowed, **0 UNEXPLAINED** |
+| Allowed by id (a page can have several) | `logout-post` 164, `post-only-mutations` 164, `escape-stored-text` 17, `link-suggest-js` 0 (that template is only in the forms, not in the snapshot) |
+| Combinations | `logout-post`+`post-only-mutations` 147; those two plus `escape-stored-text` 17 |
+| `escape-stored-text` detail | 17 list pages, 151 diff hunks (one changed line each), 35 distinct changed lines; hunks containing `&amp;` 137, `&gt;` 14, `&lt;` 10 (a hunk can contain several) |
+| Rollback (old code on migrated DB) vs old | 568 of 568 identical (404 exports + 164 pages), 0 different |
+| Data written by new code, read by old code | 404 exports identical; the write changed 7 files vs the earlier new export |
+| Sessions / passwords | saved old cookie valid under new code before any password login; 4/4 password logins under new and under rollback (plus the new-stack user under old code); cookie invalidated after the hash upgrade, as documented above; a cookie minted by the new code is accepted by the old code |
+| Fingerprints | new vs old: editor rows and checksums identical; new vs rollback: editor rows identical, same migrations |
+| Admin (axes / honeypot) | honeypot: 319 attempts listed under old, new and rollback. axes: the one attempt populated under the old stack was visible there (1) but already expired when the new stack was checked (0). `AXES_COOLOFF_TIME` is 3 minutes and about 10 minutes elapse between populate and the new-stack check on production-size data (old snapshot, migrate); this is cool-off expiry, not a migration effect (the earlier runs finished faster). A rollback-side failed login created a normal attempt (1) |
+
+`escape-stored-text` accepts a diff hunk only if `html.unescape` of the old and the new hunk are identical and the new hunk
+contains an entity (`&amp; &lt; &gt; &quot; &#x27;`) whose raw character the old hunk contained; anything else leaves the page
+UNEXPLAINED. In this run every remaining difference after the other normalisers was of that kind. Note the whitespace
+handling in `post-only-mutations`: whitespace-only lines are dropped (outside textarea/pre) and marker lines are stripped, because the old
+and new templates leave different template-tag blank lines around the converted controls; the normaliser was checked against
+the 32 goldens changed by Task 6.3 (old vs new: 32/32 explained) before use. The snapshot pages are the index and the
+list pages; `edit_project` is covered by that golden check only.
+
 ## Production data run (2026-10-23)
 
 Run with `REHEARSAL_DUMP=<production dump of 2026-10-21, mysqldump 8.0.46>` on the disposable MySQL 8.0
@@ -23,7 +61,7 @@ read every project, and it fails if the old and new runs have different failing 
 Run date 2026-10-23, repo HEAD 3993327 (working tree had uncommitted edits in settings.py and tests/test_auth.py that were not made by this rehearsal). Result: **all checks PASS**, no unexplained differences.
 
 ## Re-running
-    python3 docs/migration/rehearsal/rehearse.py [--keep]     # ~1 minute, needs docker + both venvs
+    python3 docs/migration/rehearsal/rehearse.py [--keep] [--allow docs/fixes/expected-diffs.json]     # ~1 minute (2022 dump), needs docker + both venvs
 Files: `rehearse.py` (driver, comparisons, cleanup), `worker.py` (runs inside one Django stack: populate, fingerprint, snapshot, checks). Scratch output (logs per step, old/ new/ rollback/ trees, results.json, fingerprints) is under
 `/tmp/claude-1000/-home-pstump-Projects-cordetfweditor-migration/2d4443f2-25ba-4bd2-b5c9-d9a3aa33ed64/scratchpad/rehearsal/` (override with REHEARSAL_SCRATCH). The script drops the database and removes the worktree at the end (`--keep` skips this).
 
