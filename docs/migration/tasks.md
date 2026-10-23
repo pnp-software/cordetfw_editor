@@ -103,9 +103,11 @@ decision recorded here.
 - [x] **Task 6.6** `0a7523c` XSS escaping (HTML path): text nodes escape `&<>` only, attributes full `escape()`, `image` (SVG)
   exempt; escape before #iref substitution and markdown. Byte proof: identical output for text without `&<>"'`.
   Gate 1360 SQLite / 1369 MySQL. Found: RW users can store arbitrary markup in `image` fields (forged edit POST, CSV import)
-- [ ] **Task 6.6b** `image` fields: edit/copy/split ignore a posted value for FW-Profile attributes (like add); every write path
+- [x] **Task 6.6b** `69c111d` `image` fields: edit/copy/split ignore a posted value for FW-Profile attributes (like add); every write path
   (forms, CSV import, ZIP import, refresh) rejects dangerous SVG content; checked to reject none of the 240 production diagrams.
-  Plus follow-ups from the 6.6 review
+  Plus follow-ups from the 6.6 review: `link-suggest-js-string` was stored XSS (HIGH, misjudged by the audit), fixed with a
+  JS-string filter that leaves ordinary titles byte-identical. Find & Replace refuses all FW-Profile attributes. Production
+  check: 0 of 240 diagrams rejected. Gate 1419 SQLite / 1428 MySQL. Opus review: pending
 - [ ] **Task 6.7** Optional `AXES_LOCKOUT_PARAMETERS` config key (default unchanged); ROLLOUT §0: pip-audit before cutover.
   Operator answers 2026-10-23: TLS ends at Apache, no proxy (#17 not applicable); HSTS + port 80 redirect by Apache (#23);
   production SECURE_KEY differs from the tracked one (#19 -> K cleanup)
