@@ -28,7 +28,7 @@ decision recorded here.
 ## Phase 3: Upgrade gates
 - [x] **Task 3.1** Behaviour-neutral escape-sequence fixes (constants proven identical)
 - [x] **Task 3.2** Django 3.2.0 → 3.2.25: 1 expected change accepted (CVE-2022-36359 filename quote escaping)
-- [ ] **Task 3.3** Honeypot replacement
+- [x] **Task 3.3** Honeypot vendored unchanged (gate), then patched: url→re_path, ugettext→gettext, Signal providing_args
 - [ ] **Task 3.4** Django 4.2 bridge (+ bridge library versions, django-upgrade)
 - [ ] **Task 3.5** Django 5.2 LTS: USE_L10N removal (decide date rendering: app templates use explicit `|date`, admin
   currently shows broken strftime output), POST logout, MySQL utf8mb4 connection default, CSRF Origin
