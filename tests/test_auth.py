@@ -551,7 +551,8 @@ def test_admin_axes_accessattempt_and_accesslog_changelists(superuser_client):
     columns, rows = changelist_table(response.content.decode())
     assert [c.split()[-1] for c in columns] == [
         'action-checkbox-column', 'column-attempt_time', 'column-ip_address', 'column-user_agent',
-        'column-username', 'column-path_info', 'column-failures_since_start']
+        'column-username', 'column-path_info', 'column-failures_since_start',
+        'column-status']   # Task 3.7: django-axes 8 adds a read-only 'status' column
     assert_golden('auth/admin_axes_accessattempt_rows.html', rows)
 
     response = superuser_client.get('/pnpAdmin/axes/accesslog/')
@@ -744,3 +745,12 @@ def test_logout_unsafe_next_falls_back_to_logout_redirect_url(client, next_url):
     assert response.status_code == 302
     assert response['Location'] == '/editor'
     assert '_auth_user_id' not in client.session
+
+
+
+def test_axes_resolves_client_ip_through_ipware():
+    # Task 3.7: django-axes 8 no longer depends on django-ipware; production had it installed
+    # (axes 7 dependency), so it is kept via the 'django-axes[ipware]' extra. axes uses ipware
+    # when it is importable; with the default precedence ('REMOTE_ADDR',) both paths agree.
+    from axes import helpers
+    assert helpers.IPWARE_INSTALLED
