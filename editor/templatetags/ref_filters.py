@@ -169,3 +169,18 @@ def get_short_desc(spec_item):
         return desc[:configs['general']['short_desc_len']]+' ...'
     else:
         return desc[:-2]
+
+
+@register.filter
+def js_str_after_html_escape(value):
+    """
+    For a value already HTML-escaped by autoescape and placed in a single-quoted JS string literal
+    that later reaches an `html:` sink (link_suggest.html). Autoescape already encodes < > & ' ";
+    this protects the literal itself: backslash, CR, LF, U+2028 and U+2029 become literal backslash
+    sequences, so the JS string decodes back to the HTML-escaped text. Other bytes are unchanged
+    (Task 6.6b, link-suggest-js-string).
+    """
+    s = str(value)
+    s = s.replace('\\', '\\\\').replace('\r', '\\r').replace('\n', '\\n')
+    s = s.replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
+    return mark_safe(s)

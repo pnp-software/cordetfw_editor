@@ -3,10 +3,12 @@ Task 6.6: stored text is escaped in HTML output (xss-display, xss-tag, md-no-esc
 
 Text nodes escape only & < > (quotes unchanged), attributes use the full django escape().
 Kind `image` (Model/FCP `value`, inline SVG) is exempt in track S: the pins marked
-`# KNOWN-ISSUE: image-svg-unsanitised` are input for the track K sanitiser.
+`# KNOWN-ISSUE: image-svg-unsanitised` are input for the track K sanitiser. Task 6.6b closed the
+write paths (tests marked `# Task 6.6b write path closed`); accepted SVG is still rendered raw.
 """
 import csv
 import io
+import re
 
 import pytest
 from django.utils.safestring import SafeString
@@ -17,7 +19,7 @@ from editor.convert import (convert_db_to_display, conv_db_disp_eval_ref, conv_d
                             conv_db_disp_ref_text, conv_do_nothing)
 from editor.templatetags import ref_filters
 from tests.factories import (default_val_set, make_application, make_project, make_spec_item,
-                             make_user)
+                             make_user, make_val_set)
 from tests.test_convert import world, _tag_ctx, CATS            # noqa: F401  (fixture)
 from tests.test_import_export import export_zip, upload_zip, fresh_temp   # noqa: F401
 from tests.test_post_only_mutations import model_setup, fake_connect, ROW
@@ -273,38 +275,27 @@ def test_page_expand_tip_attribute_not_broken(client, world):
     assert 'data-x="1' not in html
 
 
-# ------------------------------------------------------------ image write paths (characterization)
+# ------------------------------------------------------------ image write paths (Task 6.6b)
+# Rendering of `value` stays raw (allowlist sanitiser: track K, image-svg-unsanitised); the write paths
+# are closed with the deny-list in editor/svg_check.py and by ignoring posted FW Profile attributes.
+GOOD_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10">'
+            '<g fill="#fff" style="font-family:Arial;font-size:12px"><rect x="1" y="1" width="8" height="8" '
+            'fill="none" stroke="black"/><text x="2" y="5"><tspan dy="1">a&quot;b&#160;c &amp; d</tspan></text>'
+            '</g></svg>')
+POST_BASE = {'n1': '1', 'n2': '2', 'n3': '77', 'p_kind': 'SM', 'change_log': 'c', 'title': 't', 'desc': '',
+             'rationale': '', 'remarks': '', 'implementation': '', 't1': '', 'ext_item': ''}
+
+
 def _model_page(client, s, app, item):
     return client.get('/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items' % (
         s.pid, app.id, default_val_set(s.w.project).id)).content.decode()
 
 
-def test_image_edit_form_value_is_hidden_but_accepted_from_post(client):
-    # KNOWN-ISSUE: image-svg-unsanitised  (the edit form renders `value` as a hidden input, so it is not
-    # editable in the UI, but the field is still bound: a forged POST stores any string)
-    s, app, item = model_setup()[:3]
-    client.force_login(s.w.user('rw'))
-    url = '/editor/Model/%d/%d/%d/Sel_All/0/edit_spec_item' % (s.pid, app.id, item.id)
-    html = client.get(url).content.decode()
-    assert 'name="value"' in html and 'type="hidden"' in html.split('name="value"')[0][-200:] + 'type="hidden"'
-    resp = client.post(url, {'domain': 'OldDom', 'name': 'OldName', 'value': SVG, 'n1': '1', 'n2': '2',
-                             'n3': '77', 'p_kind': 'SM', 'change_log': 'c', 'val_set': item.val_set_id,
-                             'title': 't', 'desc': '', 'rationale': '', 'remarks': '', 'implementation': '',
-                             't1': '', 'ext_item': ''})
-    assert resp.status_code == 302, getattr(resp, 'context', None) and resp.context['form'].errors
-    stored = SpecItem.objects.filter(project_id=s.pid, cat='Model').order_by('-id')[0]
-    assert stored.value == SVG
-    assert SVG in _model_page(client, s, app, stored)           # rendered raw
-
-
-def test_image_csv_import_spec_items_stores_value_raw(client):
-    # KNOWN-ISSUE: image-svg-unsanitised  (CSV import copies the `Diagram` column unchanged)
-    s, app, item = model_setup()[:3]
-    client.force_login(s.w.user('rw'))
+def _csv_upload(client, s, app, value, name='ImpName'):
     attrs = configs['cats']['Model']['attrs']
     row = {a['label']: ('0' if a['kind'] == 'int' else '') for a in attrs.values()}
-    row.update({attrs['domain']['label']: 'ImpDom', attrs['name']['label']: 'ImpName',
-                attrs['value']['label']: SVG, attrs['val_set']['label']: 'Default',
+    row.update({attrs['domain']['label']: 'ImpDom', attrs['name']['label']: name,
+                attrs['value']['label']: value, attrs['val_set']['label']: 'Default',
                 attrs['title']['label']: 'T', attrs['p_kind']['label']: 'SM'})
     buf = io.StringIO()
     w = csv.DictWriter(buf, fieldnames=list(row), delimiter=configs['general']['csv_sep'])
@@ -314,43 +305,194 @@ def test_image_csv_import_spec_items_stores_value_raw(client):
     resp = client.post(url, {'upload_file': SimpleUploadedFile('m.csv', buf.getvalue().encode())})
     assert resp.status_code == 302, resp
     from django.contrib.messages import get_messages
-    assert [m.message for m in get_messages(resp.wsgi_request)] == ['1 row(s) imported successfully']
-    imported = SpecItem.objects.get(project_id=s.pid, cat='Model', name='ImpName')
-    assert imported.value == SVG
-    assert SVG in _model_page(client, s, app, imported)
+    return [m.message for m in get_messages(resp.wsgi_request)]
 
 
-def test_image_project_zip_import_stores_value_raw(client, fresh_temp):
-    # KNOWN-ISSUE: image-svg-unsanitised  (project ZIP import restores spec_items.csv verbatim)
+def test_image_edit_form_value_is_hidden_and_ignored_in_post(client):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): edit path (was: the hidden `value` input was bound, so a forged
+    # POST by a project writer stored any string)
     s, app, item = model_setup()[:3]
-    SpecItem.objects.filter(id=item.id).update(value=SVG)
+    client.force_login(s.w.user('rw'))
+    url = '/editor/Model/%d/%d/%d/Sel_All/0/edit_spec_item' % (s.pid, app.id, item.id)
+    html = client.get(url).content.decode()
+    tags = [t for t in re.findall(r'<input[^>]*>', html) if 'name="value"' in t]
+    assert len(tags) == 1 and 'type="hidden"' in tags[0]
+    resp = client.post(url, dict(POST_BASE, domain='Forged', name='Forged', value=SVG, n1='5', n2='6',
+                                 n3='99', val_set=item.val_set_id))
+    assert resp.status_code == 302, getattr(resp, 'context', None) and resp.context['form'].errors
+    stored = SpecItem.objects.filter(project_id=s.pid, cat='Model').order_by('-id')[0]
+    assert (stored.value, stored.domain, stored.name, stored.n3) == ('<svg>old</svg>', 'OldDom', 'OldName', 77)
+    assert (stored.n1, stored.n2) == (item.n1, item.n2)
+    assert 'onload' not in _model_page(client, s, app, stored)
+
+
+def test_image_copy_ignores_posted_ext_attrs(client):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): copy path
+    s, app, item = model_setup()[:3]
+    client.force_login(s.w.user('rw'))
+    url = '/editor/Model/%d/%d/%d/Sel_All/0/copy_spec_item' % (s.pid, app.id, item.id)
+    client.post(url, dict(POST_BASE, domain='CpDom', name='CpName', value=SVG, val_set=item.val_set_id))
+    assert not SpecItem.objects.filter(project_id=s.pid, cat='Model', value=SVG).exists()
+    assert not SpecItem.objects.filter(project_id=s.pid, name='CpName').exists()   # name comes from the source: duplicate
+
+
+def test_image_split_ignores_posted_ext_attrs(client):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): split path
+    s, app, item = model_setup()[:3]
+    vs2 = make_val_set(s.w.project, 'VS2')
+    client.force_login(s.w.user('rw'))
+    url = '/editor/Model/%d/%d/%d/Sel_All/0/split_spec_item' % (s.pid, app.id, item.id)
+    resp = client.post(url, dict(POST_BASE, domain='OldDom', name='OldName', value=SVG, n3='99', val_set=vs2.id))
+    assert resp.status_code == 302, getattr(resp, 'context', None) and resp.context['form'].errors
+    split = SpecItem.objects.get(project_id=s.pid, cat='Model', val_set=vs2)
+    assert (split.value, split.n3) == ('<svg>old</svg>', 77)
+    assert not SpecItem.objects.filter(project_id=s.pid, value=SVG).exists()
+
+
+@pytest.mark.parametrize('field', ['value', 'name', 'domain', 'n1'])
+def test_find_replace_refuses_ext_attrs_and_image(client, field):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): Find & Replace path (FW Profile attributes are not editable)
+    s, app, item = model_setup()[:3]
+    client.force_login(s.w.user('rw'))
+    url = '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items' % (s.pid, app.id, default_val_set(s.w.project).id)
+    find, rep = {'value': ('<svg>old', SVG), 'name': ('Old', 'New'), 'domain': ('Old', 'New'), 'n1': ('0', '1')}[field]
+    resp = client.post(url, {'field': field, 'find': find, 'replace': rep}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.status_code == 400
+    assert 'field' in resp.json()['errors']
+    again = SpecItem.objects.get(id=item.id)
+    assert (again.value, again.name, again.domain) == (item.value, item.name, item.domain)
+
+
+def test_find_replace_read_only_user_still_refused(client):
+    s, app, item = model_setup()[:3]
+    client.force_login(s.w.user('ro'))
+    url = '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items' % (s.pid, app.id, default_val_set(s.w.project).id)
+    resp = client.post(url, {'field': 'value', 'find': '<svg>old', 'replace': SVG}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.status_code == 403
+    assert SpecItem.objects.get(id=item.id).value == '<svg>old</svg>'
+
+
+def test_find_replace_still_works_on_other_fields(client):
+    s, app, item = model_setup()[:3]
+    SpecItem.objects.filter(id=item.id).update(title='alpha')
+    client.force_login(s.w.user('rw'))
+    url = '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items' % (s.pid, app.id, default_val_set(s.w.project).id)
+    resp = client.post(url, {'field': 'title', 'find': 'alp', 'replace': 'bet'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.status_code == 200 and resp.json() == {'updated_count': 1}
+
+
+def test_image_csv_import_rejects_active_svg(client):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): CSV path (was: the Diagram column was copied unchanged)
+    s, app, item = model_setup()[:3]
+    client.force_login(s.w.user('rw'))
+    msgs = _csv_upload(client, s, app, SVG)
+    assert msgs == ['1 row(s) could not be imported: 1 disallowed content in image (script element)']
+    assert not SpecItem.objects.filter(project_id=s.pid, cat='Model', name='ImpName').exists()
+
+
+def test_image_csv_import_rejects_active_svg_for_existing_item_without_obs_copy(client):
+    s, app, item = model_setup()[:3]
+    SpecItem.objects.filter(id=item.id).update(status='CNF')
+    client.force_login(s.w.user('rw'))
+    n = SpecItem.objects.filter(project_id=s.pid).count()
+    msgs = _csv_upload(client, s, app, '<svg onload="x()"/>', name='OldName')
+    assert msgs[0].startswith('1 row(s) could not be imported: 1 disallowed content in image')
+    assert SpecItem.objects.filter(project_id=s.pid).count() == n
+    assert SpecItem.objects.get(id=item.id).value == '<svg>old</svg>'
+
+
+def test_image_csv_import_accepts_real_svg_unchanged(client):
+    # KNOWN-ISSUE: image-svg-unsanitised  (accepted SVG is still rendered raw; allowlist sanitiser: track K)
+    s, app, item = model_setup()[:3]
+    client.force_login(s.w.user('rw'))
+    assert _csv_upload(client, s, app, GOOD_SVG) == ['1 row(s) imported successfully']
+    imported = SpecItem.objects.get(project_id=s.pid, cat='Model', name='ImpName')
+    assert imported.value == GOOD_SVG
+    assert GOOD_SVG in _model_page(client, s, app, imported)      # rendered raw (track K: sanitiser)
+
+
+def _zip_roundtrip(client, s, fresh_temp, value):
+    SpecItem.objects.filter(id=s.item_id).update(value=value)
     client.force_login(s.w.owner)
     response, data, zf = export_zip(client, s.pid, fresh_temp)
     Project.objects.filter(id=s.pid).update(name='renamed original')
-    admin = make_user('zipadmin', is_staff=True)
-    client.force_login(admin)
-    upload_zip(client, data, fresh_temp)
+    client.force_login(make_user('zipadmin', is_staff=True))
+    resp = upload_zip(client, data, fresh_temp)
+    from django.contrib.messages import get_messages
+    return [m.message for m in get_messages(resp.wsgi_request)]
+
+
+def test_image_project_zip_import_rejects_active_svg(client, fresh_temp):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): project ZIP path (was: spec_items.csv restored verbatim)
+    s, app, item = model_setup()[:3]
+    s.item_id = item.id
+    msgs = _zip_roundtrip(client, s, fresh_temp, SVG)
+    assert any('Failure to import spec_item Model:OldDom:OldName' in m and 'disallowed content' in m for m in msgs)
     new = Project.objects.exclude(id=s.pid).get()
-    imported = SpecItem.objects.get(project=new, cat='Model', name='OldName')
-    assert imported.value == SVG
-    client.force_login(s.w.owner)
-    new_app = imported.application
-    page = client.get('/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items' % (
-        new.id, new_app.id, default_val_set(new).id)).content.decode()
-    assert SVG in page
+    assert not SpecItem.objects.filter(project=new, cat='Model', name='OldName').exists()
+    assert not SpecItem.objects.filter(project=new, value__contains='onload').exists()
 
 
-def test_image_refresh_from_fw_profile_stores_value_raw(client):
-    # KNOWN-ISSUE: image-svg-unsanitised  (refresh copies the FW Profile `diagrams.svg` column; the
-    # same column is copied by ext_model_get_choice / ext_fcp_get_choice when an item is added)
+def test_image_project_zip_import_accepts_real_svg_unchanged(client, fresh_temp):
+    s, app, item = model_setup()[:3]
+    s.item_id = item.id
+    msgs = _zip_roundtrip(client, s, fresh_temp, GOOD_SVG)
+    assert not any('Failure to import' in m for m in msgs)
+    new = Project.objects.exclude(id=s.pid).get()
+    assert SpecItem.objects.get(project=new, cat='Model', name='OldName').value == GOOD_SVG
+
+
+def test_image_refresh_from_fw_profile_rejects_active_svg(client):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): refresh path (was: the FW Profile `diagrams.svg` column was copied)
     s, app, item, url = model_setup()
     client.force_login(s.w.user('rw'))
     row = ROW[:7] + (SVG,) + ROW[8:]
     with fake_connect([row]):
         assert client.post(url).status_code == 302
-    stored = SpecItem.objects.filter(project_id=s.pid, cat='Model').order_by('-id')[0]
-    assert stored.value == SVG
-    assert SVG in _model_page(client, s, app, stored)
+    stored = SpecItem.objects.get(id=item.id)
+    assert (stored.value, stored.name, stored.domain, stored.n1) == ('<svg>old</svg>', 'OldName', 'OldDom', item.n1)
+    assert SpecItem.objects.filter(project_id=s.pid, cat='Model').count() == 1
+
+
+def test_image_refresh_error_message(client):
+    s, app, item, url = model_setup()
+    client.force_login(s.w.user('rw'))
+    row = ROW[:7] + ('<svg onload="x()"/>',) + ROW[8:]
+    with fake_connect([row]):
+        resp = client.post(url)
+    from django.contrib.messages import get_messages
+    msgs = [m.message for m in get_messages(resp.wsgi_request)]
+    assert msgs == ['Model with ID "77" not refreshed: its image contains disallowed content (event handler attribute)']
+
+
+def test_image_refresh_accepts_real_svg_unchanged(client):
+    s, app, item, url = model_setup()
+    client.force_login(s.w.user('rw'))
+    row = ROW[:7] + (GOOD_SVG,) + ROW[8:]
+    with fake_connect([row]):
+        assert client.post(url).status_code == 302
+    assert SpecItem.objects.get(id=item.id).value == GOOD_SVG
+
+
+def test_image_add_from_fw_profile_rejects_active_svg(client):
+    # Task 6.6b write path closed (image-svg-unsanitised stays open for the track K sanitiser): ext choice path (the form rejects the FW Profile value)
+    s, app, item, _ = model_setup()
+    client.force_login(s.w.user('rw'))
+    row = ROW[:7] + (SVG,) + ROW[8:]
+    url = '/editor/Model/%d/%d/Sel_All/0/add_spec_item' % (s.pid, app.id)
+    with fake_connect([row]):
+        resp = client.post(url, {'ext_item': '77', 'title': 't', 'p_kind': 'SM'})
+    assert resp.status_code == 200 and 'disallowed content' in str(resp.context['form'].errors)
+    assert SpecItem.objects.filter(project_id=s.pid, cat='Model').count() == 1
+
+
+def test_form_clean_check_applies_to_image_fields_in_every_mode():
+    from editor.svg_check import check_svg_value
+    from django.core.exceptions import ValidationError
+    with pytest.raises(ValidationError):
+        check_svg_value(SVG)
+    check_svg_value(GOOD_SVG)
+    check_svg_value('')
 
 
 def test_image_add_form_value_comes_from_fw_profile_not_from_post(client):
@@ -358,7 +500,7 @@ def test_image_add_form_value_comes_from_fw_profile_not_from_post(client):
     # KNOWN-ISSUE: image-svg-unsanitised  (the FW Profile column is trusted)
     s, app, item, _ = model_setup()
     client.force_login(s.w.user('rw'))
-    row = ROW[:7] + (SVG,) + ROW[8:]
+    row = ROW[:7] + (GOOD_SVG,) + ROW[8:]
     url = '/editor/Model/%d/%d/Sel_All/0/add_spec_item' % (s.pid, app.id)
     # the choice list query and the choice query both hit the fake DB
     with fake_connect([row]):

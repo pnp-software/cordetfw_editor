@@ -45,6 +45,7 @@ from editor.imports import import_project_tables
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
+from editor.svg_check import svg_rule_violation
 from editor.access import is_project_owner, has_read_access_to_project, \
                     can_create_project, can_add_val_set, has_write_access_to_project, \
                     can_repair, user_has_write_access_to_project, val_set_name_is_default_in_db, get_spec_item_in_project_or_404, get_application_in_project_or_404, \
@@ -554,7 +555,10 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             field_to_search = find_replace_form.cleaned_data['field']
             find_string = find_replace_form.cleaned_data['find']
             replace_string = find_replace_form.cleaned_data['replace']
-            if field_to_search in configs['cats'][cat]['attrs'].keys():
+            cat_cfg = configs['cats'][cat]
+            # Task 6.6b: FW Profile attributes (ext_attrs, incl. the SVG `image` field) are not editable
+            if field_to_search in cat_cfg['attrs'] and field_to_search not in cat_cfg['ext_attrs'] \
+                    and cat_cfg['attrs'][field_to_search]['kind'] != 'image':
                 try:
                     with transaction.atomic():
                         item_ids = items.values_list('id', flat=True)
@@ -757,6 +761,8 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
         spec_item.save()
     elif refresh_outcome == 'NOT_FOUND':
         messages.warning(request,'External spec_item no longer exists -- no refresh can be done')
+    elif refresh_outcome == 'INVALID':
+        pass        # ext_model_refresh has issued the error message; the item is unchanged
     elif refresh_outcome == 'NO_CHANGE':
         messages.warning(request,'External spec_item has not changed -- no refresh needed')
  
@@ -789,7 +795,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
   
     if request.method == 'POST':   
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, \
-                            p_parent_id, request.POST, initial=spec_item_to_edit(spec_item))
+                            p_parent_id, request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
         if form.is_valid():
             new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
@@ -836,7 +842,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
   
     if request.method == 'POST':   
         form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                             request.POST, initial=spec_item_to_edit(spec_item))
+                             request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
         if form.is_valid():
             new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
@@ -1026,6 +1032,16 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     validate_identifier(item[csv_name])
                 except ValidationError as error:
                     error = str(error)
+                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
+                    continue
+                svg_error = None
+                for attr_key, attr_cfg in configs['cats'][cat]['attrs'].items():
+                    if attr_cfg['kind'] == 'image':         # Task 6.6b: image-svg-unsanitised
+                        svg_error = svg_rule_violation(item[attr_cfg['label']])
+                        if svg_error:
+                            break
+                if svg_error:
+                    error = 'disallowed content in image (' + svg_error + ')'
                     import_error_counts[error] = import_error_counts.get(error, 0) + 1
                     continue
                 if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):

@@ -9,6 +9,7 @@ from django.contrib import messages
 from operator import itemgetter
 from datetime import datetime
 from editor.choices import MODEL_KIND
+from editor.svg_check import svg_rule_violation
 
 #--------------------------------------------------------------------------------
 def connect(request):
@@ -69,6 +70,11 @@ def ext_model_refresh(request, spec_item):
     if diagrams[0][7] == spec_item.value:
         return 'NO_CHANGE'
     
+    svg_error = svg_rule_violation(diagrams[0][7])        # Task 6.6b: image-svg-unsanitised
+    if svg_error:
+        messages.error(request, 'Model with ID \"'+str(model_id)+'\" not refreshed: its image contains disallowed content ('+svg_error+')')
+        return 'INVALID'
+
     spec_item.domain = get_model_domain(diagrams[0][6])        
     spec_item.name = diagrams[0][2]
     if diagrams[0][4] == 'Procedure':
@@ -288,6 +294,11 @@ def ext_fcp_refresh(request, spec_item):
     if diagrams[0][7] == spec_item.value:
         return 'NO_CHANGE'
     
+    svg_error = svg_rule_violation(diagrams[0][7])        # Task 6.6b: image-svg-unsanitised
+    if svg_error:
+        messages.error(request, 'FCP with ID \"'+str(model_id)+'\" not refreshed: its image contains disallowed content ('+svg_error+')')
+        return 'INVALID'
+
     spec_item.domain = get_model_domain(diagrams[0][6])        
     spec_item.name = diagrams[0][2]
     fcp_desc = get_fcp_desc(diagrams[0][6])

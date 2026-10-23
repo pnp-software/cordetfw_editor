@@ -511,16 +511,46 @@ def test_13_csv_formula_injection(w):
 # 14 link-suggest-js-string
 # ---------------------------------------------------------------------------------------------
 
+def _link_suggest_literal(body):
+    start = body.index('var linkElements = [')
+    return body[start + len('var linkElements = '):body.index('];', start) + 1]
+
+
+def _eval_titles(literal):
+    import json, shutil, subprocess
+    node = shutil.which('node')
+    if not node:
+        return None
+    out = subprocess.run([node, '-e', 'console.log(JSON.stringify(%s))' % literal],
+                         capture_output=True, text=True, check=True).stdout
+    return [e['comment'] for e in json.loads(out)]
+
+
 def test_14_link_suggest_js_string(w):
-    # KNOWN-ISSUE: link-suggest-js-string
+    # FIXED: link-suggest-js-string (was: backslash/newline in a title broke the JS string, and a
+    # `\x3c` sequence decoded to `<` before the html: sink = stored XSS)
+    make_spec_item(w.a, cat='DataItemType', domain='J', name='xss', title='\\x3cimg src=x onerror=alert(1)\\x3e')
     make_spec_item(w.a, cat='DataItemType', domain='J', name='bs', title='ends with backslash\\')
     make_spec_item(w.a, cat='DataItemType', domain='J', name='nl', title="line1\nline2")
+    make_spec_item(w.a, cat='DataItemType', domain='J', name='crl', title="a\r\nb\u2028c\u2029d")
     make_spec_item(w.a, cat='DataItemType', domain='J', name='q', title="it's <b>")
+    make_spec_item(w.a, cat='DataItemType', domain='J', name='plain', title='normal - ; = \' " & <')
     r = w.client(w.rw_a).get(aurl('DataItemType', w.a.id))
     body = r.content.decode()
-    assert "comment: 'ends with backslash\\'}" in body       # backslash escapes the closing quote
-    assert "comment: 'line1\nline2'}" in body                # raw newline inside a JS string literal
-    assert "comment: 'it&#x27;s &lt;b&gt;'}" in body         # quotes/tags are HTML-escaped: no XSS
+    assert r"comment: '\\x3cimg src=x onerror=alert(1)\\x3e'}" in body     # backslash doubled: stays text
+    assert r"comment: 'ends with backslash\\'}" in body
+    assert r"comment: 'line1\nline2'}" in body                    # literal backslash-n, no raw newline
+    assert r"comment: 'a\r\nb\u2028c\u2029d'}" in body
+    assert "comment: 'it&#x27;s &lt;b&gt;'}" in body
+    assert "comment: 'normal - ; = &#x27; &quot; &amp; &lt;'}" in body   # no other byte changes
+    titles = _eval_titles(_link_suggest_literal(body))
+    if titles is not None:      # what the html: sink receives
+        joined = '\n'.join(titles)
+        assert '<img' not in joined and '<b' not in joined
+        assert '\\x3cimg src=x onerror=alert(1)\\x3e' in titles
+        assert 'ends with backslash\\' in titles
+        assert 'line1\nline2' in titles
+        assert "it&#x27;s &lt;b&gt;" in titles
 
 
 # ---------------------------------------------------------------------------------------------

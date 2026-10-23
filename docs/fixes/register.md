@@ -43,7 +43,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | idor-app-write-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | idor-item-project | — | models-access-releases-query.md, security-audit.md | tests/test_access.py, tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | idor-parent-link-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
-| image-svg-unsanitised | — | security-audit.md | tests/test_escaping_6_6.py | K | OPEN | Kind `image` (Model/FCP SVG from FW Profile) rendered raw; exempt from Task 6.6 escaping (operator 2026-10-23); add SVG allowlist sanitiser |
+| image-svg-unsanitised | — | security-audit.md | tests/test_escaping_6_6.py | K | OPEN | Kind `image` (Model/FCP SVG from FW Profile) rendered raw; exempt from Task 6.6 escaping (operator 2026-10-23). Write paths closed/deny-list in Task 6.6b (editor/svg_check.py; edit/copy/split ignore posted FW Profile attributes; Find & Replace refuses them); allowlist sanitiser K |
 | import-link-ambiguous | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-no-login-required | import-spec-items-no-login-required | import-export-auth.md, models-access-releases-query.md | tests/test_access.py | K | OPEN |  |
 | import-project-application-version-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
@@ -65,7 +65,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | index-username-substring | — | views.md | tests/test_views.py | K | OPEN |  |
 | iref-cross-project-disclosure | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | latex-export-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
-| link-suggest-js-string | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| link-suggest-js-string | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.6b) | Stored XSS (`\x3c` in a title decoded to `<` before the jQuery html: sink); template filter js_str_after_html_escape |
 | list-500s | — | views.md | tests/test_views.py | K | OPEN |  |
 | login-echoes-password | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | login-url-default | — | import-export-auth.md | tests/test_auth.py | K | OPEN |  |
