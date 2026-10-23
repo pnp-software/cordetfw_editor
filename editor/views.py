@@ -1105,19 +1105,19 @@ def export_project(request, project_id):
     if exp_dir == '':
         return redirect(base_url)
     
-    project_exp = ProjectResource().export(Project.objects.filter(id=project_id))
+    project_exp = ProjectResource().export(queryset=Project.objects.filter(id=project_id))
     with open(os.path.join(exp_dir,'project.csv'),'w', encoding='utf-8') as fd:
         fd.write(project_exp.csv)
 
-    spec_items_exp = SpecItemResource().export(SpecItem.objects.filter(project_id=project_id))
+    spec_items_exp = SpecItemResource().export(queryset=SpecItem.objects.filter(project_id=project_id))
     with open(os.path.join(exp_dir,'spec_items.csv'),'w', encoding='utf-8') as fd:
         fd.write(spec_items_exp.csv)
 
-    val_set_exp = ValSetResource().export(ValSet.objects.filter(project_id=project_id))
+    val_set_exp = ValSetResource().export(queryset=ValSet.objects.filter(project_id=project_id))
     with open(os.path.join(exp_dir,'val_sets.csv'),'w', encoding='utf-8') as fd:
         fd.write(val_set_exp.csv)
 
-    project_users_exp = ProjectUserResource().export(ProjectUser.objects.filter(project_id=project_id))
+    project_users_exp = ProjectUserResource().export(queryset=ProjectUser.objects.filter(project_id=project_id))
     with open(os.path.join(exp_dir,'project_users.csv'),'w', encoding='utf-8') as fd:
         fd.write(project_users_exp.csv)
 
@@ -1134,11 +1134,11 @@ def export_project(request, project_id):
             release = release.previous
     releases = Release.objects.filter(id__in=release_list)
     
-    releases_exp = ReleaseResource().export(releases)
+    releases_exp = ReleaseResource().export(queryset=releases)
     with open(os.path.join(exp_dir,'releases.csv'),'w', encoding='utf-8') as fd:
         fd.write(releases_exp.csv)
 
-    applications_exp = ApplicationResource().export(applications)
+    applications_exp = ApplicationResource().export(queryset=applications)
     with open(os.path.join(exp_dir,'applications.csv'),'w', encoding='utf-8') as fd:
         fd.write(applications_exp.csv)
 

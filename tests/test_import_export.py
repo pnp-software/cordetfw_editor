@@ -370,7 +370,7 @@ from editor import resources as R
 
 
 def test_resource_project(world):
-    ds = R.ProjectResource().export(Project.objects.all())
+    ds = R.ProjectResource().export(queryset=Project.objects.all())
     assert ds.headers == ['id', 'name', 'desc', 'cats', 'updated_at', 'owner', 'release']
     assert len(ds) == 1
     assert ds[0] == (1, 'Demo Proj', 'Demo project with unicode ä µ \u263A\nsecond line',
@@ -381,7 +381,7 @@ def test_resource_project(world):
 
 
 def test_resource_release(world):
-    ds = R.ReleaseResource().export(Release.objects.all())
+    ds = R.ReleaseResource().export(queryset=Release.objects.all())
     assert ds.headers == ['id', 'release_author', 'desc', 'updated_at', 'project_version',
                           'application_version', 'previous']
     assert list(ds) == [
@@ -393,19 +393,19 @@ def test_resource_release(world):
 
 
 def test_resource_application(world):
-    ds = R.ApplicationResource().export(Application.objects.all())
+    ds = R.ApplicationResource().export(queryset=Application.objects.all())
     assert ds.headers == ['id', 'name', 'desc', 'cats', 'project', 'updated_at', 'release']
     assert list(ds) == [(1, 'App One', 'Application | desc', 'Requirement', 1, '2024-02-20 16:45:30', 4)]
 
 
 def test_resource_project_user(world):
-    ds = R.ProjectUserResource().export(ProjectUser.objects.all())
+    ds = R.ProjectUserResource().export(queryset=ProjectUser.objects.all())
     assert ds.headers == ['id', 'updated_at', 'user', 'project', 'role']
     assert list(ds) == [(1, '2024-01-15', 'reader', 1, 'RO'), (2, '2024-01-15', 'writer', 1, 'RW')]
 
 
 def test_resource_val_set(world):
-    ds = R.ValSetResource().export(ValSet.objects.all())
+    ds = R.ValSetResource().export(queryset=ValSet.objects.all())
     assert ds.headers == ['id', 'updated_at', 'project', 'name', 'desc']
     assert list(ds) == [(1, '2024-01-15', 1, 'Default', 'Default ValSet'),
                         (2, '2024-01-15', 1, 'VS1', 'Alternative "values"')]
@@ -418,7 +418,7 @@ SPEC_HEADERS = ['id', 'cat', 'name', 'domain', 'project', 'application', 'title'
 
 
 def test_resource_spec_item_headers_and_dehydrate(world):
-    ds = R.SpecItemResource().export(SpecItem.objects.filter(id__in=[102, 106]).order_by('id'))
+    ds = R.SpecItemResource().export(queryset=SpecItem.objects.filter(id__in=[102, 106]).order_by('id'))
     assert ds.headers == SPEC_HEADERS
     enum_type, color_var = list(ds)
     # an empty JSON value is exported as None (-> empty CSV cell); FKs as ids; None FKs as ''
@@ -436,7 +436,7 @@ def test_resource_spec_item_headers_and_dehydrate(world):
 
 
 def test_resource_spec_item_dict_rows_are_ordered(world):
-    ds = R.SpecItemResource().export(SpecItem.objects.filter(id=104))
+    ds = R.SpecItemResource().export(queryset=SpecItem.objects.filter(id=104))
     row = ds.dict[0]
     assert list(row.keys()) == SPEC_HEADERS
     assert row['s_link'] == 102 and row['value'] == '0' and row['status'] == 'NEW'
@@ -445,8 +445,8 @@ def test_resource_spec_item_dict_rows_are_ordered(world):
 
 def test_resource_export_without_queryset_exports_all_rows(world):
     assert len(R.SpecItemResource().export()) == 10
-    assert len(R.SpecItemResource().export(SpecItem.objects.none())) == 0
-    assert R.SpecItemResource().export(SpecItem.objects.none()).headers == SPEC_HEADERS
+    assert len(R.SpecItemResource().export(queryset=SpecItem.objects.none())) == 0
+    assert R.SpecItemResource().export(queryset=SpecItem.objects.none()).headers == SPEC_HEADERS
 
 
 def test_resource_field_names_and_headers(world):
@@ -459,7 +459,7 @@ def test_resource_field_names_and_headers(world):
 def test_resource_csv_matches_zip_member(client, fresh_temp, world):
     client.force_login(world.owner)
     response, data, zf = export_zip(client, world.project.id, fresh_temp)
-    csv_text = R.SpecItemResource().export(SpecItem.objects.filter(project_id=1)).csv
+    csv_text = R.SpecItemResource().export(queryset=SpecItem.objects.filter(project_id=1)).csv
     assert csv_text.encode('utf-8') == zf.read('spec_items.csv')
 
 
