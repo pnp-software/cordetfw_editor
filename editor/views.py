@@ -215,26 +215,34 @@ def edit_project(request, project_id):
         return redirect(base_url)
     project = Project.objects.get(id=project_id)
     
-    # Handle case where edit_project is invoked to add a new user to the project or to change its role.
-    # If the new user is not yet attached to the project, it is added to it in the specified role.
-    # If the specified user is already attached to the project, it is checked whether it is necessary
-    # to change its role
-    user_id = request.GET.get('user_id')
-    user_role = request.GET.get('role')
-    if user_id != None:    
-        user =  ProjectUser.objects.filter(project_id=project_id, user_id=user_id)
-        if not ProjectUser.objects.filter(project_id=project_id, user_id=user_id).exists():
+    # Handle case where edit_project is invoked (by POST only) to add a new user to the project or
+    # to change its role. If the new user is not yet attached to the project, it is added to it in
+    # the specified role. If the specified user is already attached to the project, it is checked
+    # whether it is necessary to change its role. The role must be 'RO' or 'RW'.
+    user_id = request.POST.get('user_id')
+    user_role = request.POST.get('role')
+    if user_id != None:
+        if user_role not in ('RO', 'RW'):
+            messages.error(request, 'Invalid role '+repr(user_role)+': it must be RO or RW')
+            return redirect('edit_project', project_id=project_id)
+        try:
+            new_user = User.objects.get(id=user_id)
+        except (User.DoesNotExist, ValueError):
+            messages.error(request, 'Invalid user: '+repr(user_id))
+            return redirect('edit_project', project_id=project_id)
+        if not ProjectUser.objects.filter(project_id=project_id, user_id=new_user.id).exists():
             new_project_user = ProjectUser(updated_at = datetime.now(tz=get_current_timezone()),
-                                           user = User.objects.get(id=user_id),
+                                           user = new_user,
                                            project = project,
                                            role = user_role)
             new_project_user.save()
         else:
-            user =  ProjectUser.objects.get(project_id=project_id, user_id=user_id)
+            user =  ProjectUser.objects.get(project_id=project_id, user_id=new_user.id)
             if user.role != user_role:
                 user.role = user_role
                 user.save()
-    
+        return redirect('edit_project', project_id=project_id)
+
     # Handle case where edit_project is invoked to delete a user or ValSet.
     del_user_id = request.POST.get('del_user_id')
     if del_user_id != None:
@@ -701,6 +709,7 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
 
 
 @login_required         
+@require_POST
 def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')

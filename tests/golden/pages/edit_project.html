@@ -218,14 +218,22 @@
                             <ul class="dropdown-menu"
                                 aria-labelledby="dropdownAddRWUser">
                                 
-                                <li><a class="dropdown-item"
-                                       href="/editor/1/edit_project?user_id=3&role=RW">
-                                    reader</a>
+                                <li>
+                                    <form method="post" action="/editor/1/edit_project">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                                        <input type="hidden" name="user_id" value="3">
+                                        <input type="hidden" name="role" value="RW">
+                                        <button type="submit" class="dropdown-item">reader</button>
+                                    </form>
                                 </li>
                                 
-                                <li><a class="dropdown-item"
-                                       href="/editor/1/edit_project?user_id=2&role=RW">
-                                    writer</a>
+                                <li>
+                                    <form method="post" action="/editor/1/edit_project">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                                        <input type="hidden" name="user_id" value="2">
+                                        <input type="hidden" name="role" value="RW">
+                                        <button type="submit" class="dropdown-item">writer</button>
+                                    </form>
                                 </li>
                                 
                             </ul>
@@ -239,14 +247,22 @@
                             <ul class="dropdown-menu"
                                 aria-labelledby="dropdownAddROUser">
                                 
-                                <li><a class="dropdown-item"
-                                       href="/editor/1/edit_project?user_id=3&role=RO">
-                                    reader</a>
+                                <li>
+                                    <form method="post" action="/editor/1/edit_project">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                                        <input type="hidden" name="user_id" value="3">
+                                        <input type="hidden" name="role" value="RO">
+                                        <button type="submit" class="dropdown-item">reader</button>
+                                    </form>
                                 </li>
                                 
-                                <li><a class="dropdown-item"
-                                       href="/editor/1/edit_project?user_id=2&role=RO">
-                                    writer</a>
+                                <li>
+                                    <form method="post" action="/editor/1/edit_project">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="CSRF">
+                                        <input type="hidden" name="user_id" value="2">
+                                        <input type="hidden" name="role" value="RO">
+                                        <button type="submit" class="dropdown-item">writer</button>
+                                    </form>
                                 </li>
                                 
                             </ul>

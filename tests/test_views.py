@@ -244,16 +244,18 @@ def test_edit_project_post_invalid(client, owner, project):
     assert project.name == 'Proj'
 
 
-def test_edit_project_get_adds_and_updates_user(client, owner, project):
+def test_edit_project_post_adds_and_updates_user(client, owner, project):
+    # FIXED: mutation-via-get (was: GET ?user_id=&role= added/changed the member and rendered 200)
     u2 = make_user('u2')
     url = '/editor/%d/edit_project' % project.id
-    resp = client.get(url, {'user_id': u2.id, 'role': 'RW'})
-    assert resp.status_code == 200
+    resp = client.post(url, {'user_id': u2.id, 'role': 'RW'})
+    assert resp.status_code == 302 and resp.url == url
     pu = ProjectUser.objects.get(project=project, user=u2)
     assert pu.role == 'RW'
-    resp = client.get(url, {'user_id': u2.id, 'role': 'RO'})
+    resp = client.post(url, {'user_id': u2.id, 'role': 'RO'})
     assert ProjectUser.objects.get(project=project, user=u2).role == 'RO'
     assert ProjectUser.objects.filter(project=project).count() == 1
+    resp = client.get(url)
     assert resp.context['project_users'][0].role == 'RO'
 
 
@@ -270,7 +272,7 @@ def test_edit_project_del_user_id_is_unscoped(client, owner, project):
 def test_edit_project_del_user(client, owner, project):
     u2 = make_user('u2')
     pu = make_project_user(project, u2, 'RO')
-    # FIXED (step A of mutation-via-get; was: GET ?del_user_id=) — upstream #86
+    # FIXED: mutation-via-get (was: GET ?del_user_id=) — upstream #86
     resp = client.post('/editor/%d/edit_project' % project.id, {'del_user_id': pu.id})
     assert resp.status_code == 302
     assert resp.url == '/editor/%d/edit_project' % project.id
@@ -279,7 +281,7 @@ def test_edit_project_del_user(client, owner, project):
 
 def test_edit_project_del_val_set(client, owner, project):
     vs = make_val_set(project, 'VS1')
-    # FIXED (step A of mutation-via-get; was: GET ?del_val_set_id=) — upstream #86
+    # FIXED: mutation-via-get (was: GET ?del_val_set_id=) — upstream #86
     resp = client.post('/editor/%d/edit_project' % project.id, {'del_val_set_id': vs.id})
     assert resp.status_code == 302
     assert resp.url == '/editor/%d/edit_project' % project.id
@@ -289,7 +291,7 @@ def test_edit_project_del_val_set(client, owner, project):
 
 def test_edit_project_del_val_set_protected(client, owner, project, dvs):
     make_spec_item(project, cat='InfoItem', name='X')
-    # FIXED (step A of mutation-via-get; was: GET ?del_val_set_id=) — upstream #86
+    # FIXED: mutation-via-get (was: GET ?del_val_set_id=) — upstream #86
     resp = client.post('/editor/%d/edit_project' % project.id, {'del_val_set_id': dvs.id})
     assert resp.status_code == 302
     assert ValSet.objects.filter(id=dvs.id).exists()
@@ -299,7 +301,7 @@ def test_edit_project_del_val_set_protected(client, owner, project, dvs):
 
 
 def test_del_project_full_cascade(client, owner, project, dvs, dtype):
-    # FIXED (step A of mutation-via-get; was: GET /del_project deleted the project) — upstream #86
+    # FIXED: mutation-via-get (was: GET /del_project deleted the project) — upstream #86
     app = make_application(project, 'App', cats='InfoItem')
     app_rel2 = make_release(owner, previous=app.release, application_version=1)
     app.release = app_rel2
@@ -1120,7 +1122,7 @@ def test_split_del_not_allowed_status(client, owner, project, dvs, dtype, view, 
 # ----------------------------------------------------------------------------
 
 def test_del_new_item_hard_deleted_on_post(client, owner, project, dvs, dtype):
-    # FIXED (step A of mutation-via-get; was: GET hard-deleted the NEW item) — upstream #86
+    # FIXED: mutation-via-get (was: GET hard-deleted the NEW item) — upstream #86
     item = make_spec_item(project, domain='Dom', name='It', status='NEW', p_link=dtype)
     resp = client.get(item_url('del_spec_item', 'DataItem', project, item, sel_val='Dom'))
     assert resp.status_code == 200      # GET only renders the confirmation form
@@ -1135,20 +1137,20 @@ def test_del_new_item_removes_aliases(client, owner, project, dvs, dtype):
     vs1 = make_val_set(project, 'VS1')
     item = make_spec_item(project, status='NEW', p_link=dtype)
     alias = make_spec_item(project, val_set=vs1, p_link=item)
-    client.post(item_url('del_spec_item', 'DataItem', project, item))   # FIXED (step A of mutation-via-get; was: GET) — upstream #86
+    client.post(item_url('del_spec_item', 'DataItem', project, item))   # FIXED: mutation-via-get (was: GET) — upstream #86
     assert not SpecItem.objects.filter(id__in=[item.id, alias.id]).exists()
 
 
 def test_del_new_item_in_non_default_val_set_keeps_aliases_untouched(client, owner, project, dvs, dtype):
     vs1 = make_val_set(project, 'VS1')
     item = make_spec_item(project, val_set=vs1, status='NEW', p_link=dtype)
-    client.post(item_url('del_spec_item', 'DataItem', project, item))   # FIXED (step A of mutation-via-get; was: GET) — upstream #86
+    client.post(item_url('del_spec_item', 'DataItem', project, item))   # FIXED: mutation-via-get (was: GET) — upstream #86
     assert not SpecItem.objects.filter(id=item.id).exists()
 
 
 def test_del_new_item_referenced_keeps_item_and_reports_error(client, owner, project, dvs, dtype):
     item = make_spec_item(project, domain='Dom', name='It', status='NEW', p_link=dtype)
-    resp = client.post(item_url('del_spec_item', 'DataItem', project, dtype))   # FIXED (step A of mutation-via-get; was: GET) — upstream #86; dtype is referenced by item
+    resp = client.post(item_url('del_spec_item', 'DataItem', project, dtype))   # FIXED: mutation-via-get (was: GET) — upstream #86; dtype is referenced by item
     assert resp.status_code == 302
     assert SpecItem.objects.filter(id=dtype.id).exists()
     [(level, text)] = msgs(resp)
@@ -1225,11 +1227,13 @@ def refresh_url(project, app, item):
     return item_url('refresh_spec_item', 'Model', project, item, app=app.id, sel_val='Sel_All')
 
 
+# FIXED: mutation-via-get (was: GET refresh_spec_item overwrote the item from the FW Profile DB):
+# all refresh tests below POST.
 def test_refresh_changed(client, owner, project, dvs, model_item):
     app, item = model_item
     patcher, cursor, conn = fake_connect([diagram_row()])
     with patcher:
-        resp = client.get(refresh_url(project, app, item))
+        resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert resp.url == '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items#NewDom:NewName' % (project.id, app.id, dvs.id)
     cursor.execute.assert_called_once_with('SELECT * FROM diagrams WHERE ID = 77')
@@ -1248,7 +1252,7 @@ def test_refresh_changed_cnf_creates_obs_copy(client, owner, project, dvs, model
     SpecItem.objects.filter(id=item.id).update(status='CNF')
     patcher, cursor, conn = fake_connect([diagram_row(kind='StateMachine')])
     with patcher:
-        client.get(refresh_url(project, app, item))
+        client.post(refresh_url(project, app, item))
     item.refresh_from_db()
     assert item.status == 'MOD'
     assert item.value == SVG_NEW and item.p_kind == 'SM'
@@ -1259,7 +1263,7 @@ def test_refresh_not_found(client, owner, project, dvs, model_item):
     app, item = model_item
     patcher, cursor, conn = fake_connect([])
     with patcher:
-        resp = client.get(refresh_url(project, app, item))
+        resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert resp.url == '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items#OldDom:OldName' % (project.id, app.id, dvs.id)
     assert msgs(resp) == [
@@ -1273,7 +1277,7 @@ def test_refresh_no_change(client, owner, project, dvs, model_item):
     app, item = model_item
     patcher, cursor, conn = fake_connect([diagram_row(svg='<svg>old</svg>')])
     with patcher:
-        resp = client.get(refresh_url(project, app, item))
+        resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert msgs(resp) == [('alert-warning', 'External spec_item has not changed -- no refresh needed')]
     item.refresh_from_db()
@@ -1285,7 +1289,7 @@ def test_refresh_db_error_reports_not_found(client, owner, project, dvs, model_i
     patcher, cursor, conn = fake_connect([])
     cursor.execute.side_effect = RuntimeError('db down')
     with patcher:
-        resp = client.get(refresh_url(project, app, item))
+        resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert msgs(resp) == [
         ('alert-danger', 'Error while accessing model with ID "77: db down'),

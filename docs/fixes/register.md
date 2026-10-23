@@ -18,7 +18,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
-| edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | FIXED in merge of upstream #86 (Task 6.3 step A) | the upstream branch scopes the delete to the URL's project |
+| edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | FIXED in 1b2bb5a | the merged upstream #86 branch scopes the delete to the URL's project (Task 6.3) |
 | edit-project-valset-unscoped | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
 | enum-value-no-type | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | eval-ref-dos | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
@@ -70,7 +70,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | logout-unsafe-next-self-redirect | — | import-export-auth.md | tests/test_auth.py | — | FIXED in 040e103 (upstream Django 4.2, Task 3.4) | Accepted upstream change; test marker is the old free-text form |
 | make-temp-dir-nameerror | make-temp-dir-name-error, temp-dir-collision | forms-convert-utilities.md, import-export-auth.md, models-access-releases-query.md | tests/test_import_export.py, tests/test_query.py, tests/test_utilities.py | K | OPEN |  |
 | md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN | HTML escaping only in S; LaTeX escaping and markdown nesting/first-list-item -> K |
-| mutation-via-get | — | views.md, security-audit.md | tests/test_views.py, tests/test_security_audit.py | S | OPEN |  |
+| mutation-via-get | — | views.md, security-audit.md | tests/test_views.py, tests/test_security_audit.py, tests/test_access.py, tests/test_post_only_mutations.py | S | FIXED (Task 6.3) | merge of upstream #86 + POST-only refresh/member add/role validation |
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | S | OPEN | optional config key / ROLLOUT operator check |
 | order-by-unrestricted | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |

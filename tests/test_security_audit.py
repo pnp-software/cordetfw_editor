@@ -208,9 +208,10 @@ def test_02_idor_item_project_refresh_get(w):
                                      '{"globals": {"fwprop": {"smTags": "NewDom"}}}', '<svg>new</svg>', 1, 2)]
     conn = mock.Mock()
     conn.cursor.return_value = cursor
-    c = w.client(w.rw_a, csrf=True)
+    c = w.client(w.rw_a)
     with mock.patch('editor.ext_cats.mdb.connect', return_value=conn):
-        resp = c.get(iurl('refresh_spec_item', 'Model', w.a.id, b_model.id, app_id=w.app_a.id))
+        # FIXED: mutation-via-get (was: GET; the client enforced CSRF, which does not apply to GET)
+        resp = c.post(iurl('refresh_spec_item', 'Model', w.a.id, b_model.id, app_id=w.app_a.id))
     assert resp.status_code == 302
     b_model.refresh_from_db()
     assert (b_model.project, b_model.name, b_model.value, b_model.status) == (w.b, 'NewName', '<svg>new</svg>', 'MOD')
@@ -257,7 +258,7 @@ def test_03_idor_parent_link_cross_project(w):
     assert new.s_link == b_enum
     # B's owner can no longer delete its NEW item (PROTECT), only an error message
     cb = w.client(w.owner_b)
-    d = cb.post(iurl('del_spec_item', 'EnumType', w.b.id, b_enum.id))   # FIXED (step A of mutation-via-get; was: GET) — upstream #86
+    d = cb.post(iurl('del_spec_item', 'EnumType', w.b.id, b_enum.id))   # FIXED: mutation-via-get (was: GET) — upstream #86
     assert d.status_code == 302
     assert SpecItem.objects.filter(id=b_enum.id).exists()
     assert any(m.startswith('Failure to delete BE:BEnum') for m in msgs(d))
@@ -287,7 +288,7 @@ def test_04_idor_app_write_cross_project(w):
     # staff deleting project B fails half-way
     cs = w.client(w.staff)
     with pytest.raises(ProtectedError):
-        cs.post('/editor/%d/del_project' % w.b.id)   # FIXED (step A of mutation-via-get; was: GET) — upstream #86
+        cs.post('/editor/%d/del_project' % w.b.id)   # FIXED: mutation-via-get (was: GET) — upstream #86
     assert Project.objects.filter(id=w.b.id).exists()
     assert not ValSet.objects.filter(project=w.b).exists()
     assert not SpecItem.objects.filter(project=w.b).exists()
@@ -300,24 +301,32 @@ def test_04_idor_app_write_cross_project(w):
 def test_05_mutation_via_get_del_val_set_and_roles(w):
     vs = make_val_set(w.a, 'Tmp')
     c = w.client(w.staff, csrf=True)          # CSRF enforcement does not apply to GET
-    # FIXED (step A of mutation-via-get; was: GET ?del_val_set_id= deleted the ValSet) — upstream #86
+    # FIXED: mutation-via-get (was: GET ?del_val_set_id= deleted the ValSet) — upstream #86
     r = c.get('/editor/%d/edit_project?del_val_set_id=%d' % (w.a.id, vs.id))
     assert r.status_code == 200
     assert ValSet.objects.filter(id=vs.id).exists()
     r = c.post('/editor/%d/edit_project' % w.a.id, {'del_val_set_id': vs.id})
     assert r.status_code == 403               # enforce_csrf_checks client, no token
     assert ValSet.objects.filter(id=vs.id).exists()
-    # KNOWN-ISSUE: mutation-via-get (role add via GET ?user_id=&role= still open)
-    r = c.get('/editor/%d/edit_project?user_id=%d&role=ADMIN' % (w.a.id, w.outsider.id))
-    assert ProjectUser.objects.get(project=w.a, user=w.outsider).role == 'ADMIN'
+    # FIXED: mutation-via-get (was: GET ?user_id=&role=ADMIN added the member with an arbitrary role)
+    c.get('/editor/%d/edit_project?user_id=%d&role=RW' % (w.a.id, w.outsider.id))
+    assert not ProjectUser.objects.filter(project=w.a, user=w.outsider).exists()
+    r = c.post('/editor/%d/edit_project' % w.a.id, {'user_id': w.outsider.id, 'role': 'ADMIN'})
+    assert r.status_code == 403               # enforce_csrf_checks client, no token
+    c = w.client(w.staff)
+    r = c.post('/editor/%d/edit_project' % w.a.id, {'user_id': w.outsider.id, 'role': 'ADMIN'})
+    assert r.status_code == 302               # invalid role: error message, no row
+    assert msgs(r) == ["Invalid role 'ADMIN': it must be RO or RW"]
+    assert not ProjectUser.objects.filter(project=w.a, user=w.outsider).exists()
 
 
 def test_05_mutation_via_get_user_id_without_role_500(w):
-    # KNOWN-ISSUE: mutation-via-get
-    from django.db import IntegrityError
+    # FIXED: mutation-via-get (was: IntegrityError / HTTP 500 for ?user_id= without role)
     c = w.client(w.staff)
-    with pytest.raises(IntegrityError):
-        c.get('/editor/%d/edit_project?user_id=%d' % (w.a.id, w.outsider.id))
+    r = c.post('/editor/%d/edit_project' % w.a.id, {'user_id': w.outsider.id})
+    assert r.status_code == 302
+    assert msgs(r) == ["Invalid role None: it must be RO or RW"]
+    assert not ProjectUser.objects.filter(project=w.a, user=w.outsider).exists()
 
 
 # ---------------------------------------------------------------------------------------------

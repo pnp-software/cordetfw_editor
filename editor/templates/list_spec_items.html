@@ -309,10 +309,13 @@
                         {% endif %}
                     {% endif %}
                     {% if config.ext_attrs|length != 0 and sel_rel_id == 0 %}
-                    <a class="bi-arrow-clockwise me-1 text-decoration-none"
-                       href="{% url 'refresh_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}"
-                       title="Refresh {{config.name}}">
-                    </a>
+                    <form class="d-inline" method="post"
+                          action="{% url 'refresh_spec_item' cat project.id application_id item.id sel_val sel_rel_id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link bi-arrow-clockwise me-1 text-decoration-none p-0 align-baseline"
+                                title="Refresh {{config.name}}">
+                        </button>
+                    </form>
                     {% endif %}
                     <a class="bi-clock-fill me-1 text-decoration-none {% if item.status != 'CNF' %}link-warning{% endif %}"
                        href="{% url 'list_spec_item_history' cat project.id application_id item.id sel_val %}"

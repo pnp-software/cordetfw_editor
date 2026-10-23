@@ -31,9 +31,13 @@
                             <ul class="dropdown-menu"
                                 aria-labelledby="dropdownAddRWUser">
                                 {% for user in users %}
-                                <li><a class="dropdown-item"
-                                       href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RW">
-                                    {{user.username}}</a>
+                                <li>
+                                    <form method="post" action="{% url 'edit_project' project.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{user.id}}">
+                                        <input type="hidden" name="role" value="RW">
+                                        <button type="submit" class="dropdown-item">{{user.username}}</button>
+                                    </form>
                                 </li>
                                 {% endfor %}
                             </ul>
@@ -47,9 +51,13 @@
                             <ul class="dropdown-menu"
                                 aria-labelledby="dropdownAddROUser">
                                 {% for user in users %}
-                                <li><a class="dropdown-item"
-                                       href="{% url 'edit_project' project.id %}?user_id={{user.id}}&role=RO">
-                                    {{user.username}}</a>
+                                <li>
+                                    <form method="post" action="{% url 'edit_project' project.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{user.id}}">
+                                        <input type="hidden" name="role" value="RO">
+                                        <button type="submit" class="dropdown-item">{{user.username}}</button>
+                                    </form>
                                 </li>
                                 {% endfor %}
                             </ul>
