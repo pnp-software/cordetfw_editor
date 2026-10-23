@@ -28,7 +28,7 @@ deployable versions.
       (default without the key: lockout by IP only, so one account can be guessed from many IPs). With the
       recommended value a username is also locked after 3 failures from any IPs, which stops distributed guessing but
       lets an attacker who knows a username lock that user out for the 3-minute cool-off (DoS): operator's choice.
-- [ ] Inform users that they will need to log in again once (password rehash), and that logout bookmarks no longer work.
+- [ ] Inform users that they will need to log in again once (password rehash), and that logout bookmarks and old delete / refresh / member links no longer work (405 or a warning).
 
 ## 1. Staging (copy of the production server setup)
 
@@ -70,6 +70,10 @@ deployable versions.
    - [ ] import spec items from CSV; import a project ZIP (as staff)
    - [ ] `/pnpAdmin/`: users, access attempts, honeypot login attempts (timestamps readable)
    - [ ] `/admin/` shows the decoy login; three wrong logins at `/editor/login/` show the lockout page
+   - [ ] Model/FCP lists show their diagrams (no placeholder)
+   - [ ] a read-only user's Find & Replace is refused
+   - [ ] a URL with an item id of another project returns 404
+   - [ ] `curl -sI https://<host>/static/style.css` returns 200 (linked from `base_generic.html`)
    - [ ] static files and styling load
 
 ## 2. Production cutover
@@ -93,6 +97,10 @@ extra axes table that the old code ignores. Passwords rehashed by the new code s
   more (password rehash back to 260000 iterations).
 - **Full rollback (only if data is damaged):** restore `pre-dj52.sql`. Writes made since the backup are lost
   unless they are exported first (project ZIP exports).
+- A rollback to the old version reopens every track-S issue (GET mutations, cross-project access, XSS, the
+  add-application release bug). The rollback itself stays safe: no migrations in range, data written by the new code
+  is readable by the old code, the old settings ignore the AXES key, and `collectstatic --clear` removes
+  `confirm-delete.js`.
 - Leave `axes.0010` in place after a quick rollback. Do not run `migrate` with the old code (it has nothing to apply).
   Its table stays empty as long as `AXES_USE_ATTEMPT_EXPIRATION` is not enabled; keep it disabled until rollback is
   no longer an option.

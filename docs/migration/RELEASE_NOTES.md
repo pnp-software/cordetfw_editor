@@ -40,6 +40,32 @@ Exact resolved set: `requirements-lock.txt`. Tested database servers: MySQL 8.0.
    - The dialog needs `/static/confirm-delete.js` (run `collectstatic`); if the Bootstrap script from the CDN does
      not load, the browser's own confirm dialog is used instead.
 
+## Security fixes shipped with the migration (Phase 6)
+
+Behaviour changes users can notice (register: `docs/fixes/register.md`, track S):
+
+- **POST buttons and confirmation dialogs** for delete / remove / refresh / member actions (see "Intended visible
+  changes", item 3). Old links return 405 or show a warning.
+- **Other projects' ids return 404:** an item, application, ValSet, parent or release id that belongs to another
+  project gives 404, including old bookmarks that pointed across projects.
+- **Find & Replace:** read-only members are refused (403 JSON for XHR; otherwise a redirect with "This operation
+  requires read/write access..."). FW-Profile fields of Model/FCP items are refused with "Select a valid field"
+  (the field dropdown still offers them: known, follow-up in track K).
+- **SVG diagrams are validated** (allowlist: `docs/fixes/svg-allowlist.md`): on add from FW Profile (form error),
+  CSV import ("disallowed content in image (...)"), ZIP import ("Failure to import spec_item ..."), and refresh
+  ("... not refreshed: its image contains disallowed content"). A stored invalid diagram shows
+  "[diagram not shown: invalid content]" (none in production: 0 of 240). Model/FCP lists show their diagrams.
+- **Stored text is escaped.** Visible only where text contained markup (e.g. a literal `<code>`), and 4 tooltips are
+  no longer cut off at a `"`.
+- **Default ValSet:** cannot be deleted or renamed, and no other ValSet may be named Default (also case/accent
+  variants on MySQL).
+- **Member role** must be RO or RW ("Invalid role ...", "Invalid user ...").
+- **Spec-item delete** has its own page plus a confirmation dialog (two confirmations).
+- **Adding an application** no longer sets the items of all projects to CNF. The old bug probably affected 80 items in
+  4 projects in the past; report only (read-only query): `docs/fixes/add-app-release-data-impact.md`.
+- **Optional `AXES_LOCKOUT_PARAMETERS`** (see "Other changes you may notice").
+- **pip-audit** (2026-10-23): no known vulnerabilities in the pinned packages.
+
 ## Other changes you may notice
 
 - **Admin:** the Django 5.2 admin look (dark-mode toggle, accessibility attributes). The access-attempt list
@@ -66,12 +92,13 @@ Exact resolved set: `requirements-lock.txt`. Tested database servers: MySQL 8.0.
 
 ## Unchanged (verified)
 
-- Every project ZIP export and spec-item CSV/LaTeX export is **byte-identical**. Evidence: the golden files, and
-  the rehearsal on the **production database dump of 2026-10-21**. In that rehearsal, all 11 projects were exported
-  without errors (328 CSV/LaTeX exports, 165 pages): 404 files are byte-identical and 164 pages differ only in the
-  logout control. With the old code on the migrated database (rollback), all 568 files are identical.
-- All editor pages are identical apart from the logout control (33 golden pages).
-- Permissions, releases, history chains, value sets, import rules, find/replace, ext. FW Profile refresh.
+- Every project ZIP export and spec-item CSV/LaTeX export was **byte-identical** at rc1 (`migration-rc1`, before
+  Phase 6). Evidence: the golden files, and the rehearsal on the **production database dump of 2026-10-21**. In that
+  rehearsal, all 11 projects were exported without errors (328 CSV/LaTeX exports, 165 pages): 404 files were
+  byte-identical and 164 pages differed only in the logout control. With the old code on the migrated database
+  (rollback), all 568 files were identical. These figures were measured at rc1 and are re-measured in Task 6.8.
+  Phase 6 rehearsal: see `docs/migration/rehearsal/REPORT.md`.
+- Releases, history chains and import rules (apart from the changes listed above and below).
 - The MySQL connection charset stays `utf8` (Django 5.2 would default to utf8mb4). So, as before, 4-byte
   characters (emoji) cannot be stored. Switching is a separate decision: see "Follow-ups".
 - Existing passwords, sessions and password-reset links remain valid.
@@ -97,13 +124,14 @@ table or column is altered. The old code runs unchanged on the migrated database
 - **Pending external checks:** Apache/mod_wsgi staging and a browser walkthrough (see `ROLLOUT.md`).
 - Production collation (from the dump): `editor_*` tables use `utf8mb4_unicode_ci`, as in the tests. One table,
   `axes_accessfailurelog`, is `latin1` (created that way before the migration; not altered).
-- 65 pre-existing issues were found and deliberately **not** fixed (`known-issues/README.md`). Several are
-  security-relevant or change data: application creation sets items of all projects to CNF, an IDOR on spec items,
-  XSS, and SQL injection in the FW Profile queries.
+- Pre-existing issues were found during the migration (`known-issues/README.md`). The track-S ones are fixed
+  (see above); the rest are tracked in `docs/fixes/register.md`. Highlights still open (track K):
+  `iref-cross-project-disclosure`, `eval-ref-dos`, LaTeX/CSV export injection, import fidelity issues,
+  `find-replace-on-release-view`, `index-lists-all-projects`, pages that fail with 500 on some inputs (list-500s).
 
 ## Follow-ups (separate changes)
 
-1. Fix the high-priority known issues, starting with `add-app-releases-null-app-items` and `idor-item-project`.
+1. Work through the remaining known issues (track K, `fix/known-issues`), see `docs/fixes/register.md`.
 2. Decide on utf8mb4 connections (the production tables are already utf8mb4, so this is possible).
 3. Plan MySQL 8.0 → 8.4 LTS (MySQL 8.0 reached end of life in April 2026; the suite passes on 8.4.13).
 4. Next Django LTS: 6.2 (April 2027). Re-run this suite as the gate.

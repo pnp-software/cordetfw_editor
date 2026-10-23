@@ -112,3 +112,5 @@ text-anchor. Properties with keyword values (as observed in production) [style k
 | display | none |
 | cursor | default, move, nw-resize |
 | white-space | pre |
+
+Items whose stored diagram is invalid can still be edited, copied and split (Task 6.6d), but their project ZIP export does not re-import: the item is dropped with a message (if an older version in a previous-chain is dropped, this hits the pre-existing `import-project-dangling-link-crash`). None exist in production (0 of 240).

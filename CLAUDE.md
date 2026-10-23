@@ -34,7 +34,8 @@ server (case-insensitive collation; never point this at a real database):
       -e MYSQL_ROOT_PASSWORD=rootpw-test -e MYSQL_USER=cftest -e MYSQL_PASSWORD=cftest-pw \
       mysql:8.0 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     docker exec cordetfw-mysql-test mysql -uroot -prootpw-test \
-      -e "GRANT ALL ON \`test_cordetfw_migration_test\`.* TO 'cftest'@'%'"
+      -e "GRANT ALL ON \`test_cordetfw_migration_test\`.* TO 'cftest'@'%'; \
+      GRANT ALL ON \`test_fwprofile_scratch\`.* TO 'cftest'@'%'"   # 2nd: FW Profile driver tests (tests/test_ext_cats.py)
     CORDETFW_TEST_MYSQL_PORT=33306 CORDETFW_TEST_MYSQL_USER=cftest CORDETFW_TEST_MYSQL_PASSWORD=cftest-pw \
       .venv-baseline/bin/python -m pytest -q --ds=cordetfw_editor.settings_test_mysql
 
