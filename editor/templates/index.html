@@ -42,11 +42,13 @@
                     </div>
                     <div class="btn-group me-3" role="group" aria-label="project controls">
                         {% if user.is_staff %}
-                        <a class="btn btn-outline-danger bi-trash-fill"
-                           href="{% url 'del_project' item.project.id %}"
-                           onclick="return confirm('Are you sure you want to delete this item?');"
-                           title="Delete {{item.project.name}} Project">
-                        </a>
+                        <form class="d-inline" method="post" action="{% url 'del_project' item.project.id %}"
+                            data-confirm-message="Are you sure you want to delete this project?">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger bi-trash-fill"
+                                title="Delete {{item.project.name}} Project">
+                            </button>
+                        </form>
                         {% endif %}
                         {% if item.user_has_access or request.user == item.project.owner %}
                         <a class="btn btn-outline-primary bi-cloud-download-fill"

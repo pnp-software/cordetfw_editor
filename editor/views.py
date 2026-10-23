@@ -19,6 +19,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import update_session_auth_hash, get_user
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.forms.models import model_to_dict
@@ -234,19 +235,20 @@ def edit_project(request, project_id):
                 user.role = user_role
                 user.save()
     
-    # Handle case where edit_project is invoked to delete a user from the project 
-    del_user_id = request.GET.get('del_user_id')
-    if del_user_id != None:     
-        ProjectUser.objects.filter(id=del_user_id).delete()
+    # Handle case where edit_project is invoked to delete a user or ValSet.
+    del_user_id = request.POST.get('del_user_id')
+    if del_user_id != None:
+        ProjectUser.objects.filter(id=del_user_id, project_id=project_id).delete()
+        return redirect('edit_project', project_id=project_id)
 
-    # Handle case where edit_project is invoked to delete a ValSet from the project 
-    del_val_set_id = request.GET.get('del_val_set_id')
-    if del_val_set_id != None:     
+    del_val_set_id = request.POST.get('del_val_set_id')
+    if del_val_set_id != None:
         try:
-            ValSet.objects.filter(id=del_val_set_id).delete()    
+            ValSet.objects.filter(id=del_val_set_id, project_id=project_id).delete()
         except Exception as e:
             messages.error(request, 'Failure to delete ValSet with id '+str(del_val_set_id)+\
                                     ', possibly because it is still in use: '+repr(e))
+        return redirect('edit_project', project_id=project_id)
 
     if request.method == 'POST':    # Bind form to posted data 
         form = ProjectForm(project, request.POST)
@@ -272,6 +274,7 @@ def edit_project(request, project_id):
 
 
 @login_required         
+@require_POST
 def del_project(request, project_id):
     if not can_create_project(request):
         return redirect(base_url)
@@ -834,7 +837,7 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
         messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be deleted ')
         return redirect(base_url)
 
-    if spec_item.status == 'NEW':
+    if request.method == 'POST' and spec_item.status == 'NEW':
         if spec_item.val_set.name == 'Default':
             remove_spec_item_aliases(request, spec_item)
         remove_spec_item(request, spec_item)
@@ -863,7 +866,8 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
     # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
-    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items,
+               'confirm_delete': True}
     return render(request, 'spec_item_form.html', context) 
 
         

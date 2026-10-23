@@ -235,6 +235,13 @@ def test_access_matrix_get(client, endpoint, role):
         assert db_snapshot() == before
         return
 
+    if endpoint == 'del_project':
+        # FIXED (step A of mutation-via-get; was: GET deleted the project for staff) — upstream #86
+        # Only POST is accepted; every logged-in role gets 405 and nothing changes.
+        assert response.status_code == 405
+        assert db_snapshot() == before
+        return
+
     if role in allowed_roles:
         if endpoint == 'refresh_spec_item':
             # FW Profile DB unreachable -> NOT_FOUND outcome -> redirect to the item in the list
@@ -243,11 +250,6 @@ def test_access_matrix_get(client, endpoint, role):
                                             'list_spec_items#Dom:Cnf')
             assert msgs(response.wsgi_request)[0].startswith('Unable to connect to the FW Profile database')
             assert db_snapshot() == before
-        elif endpoint == 'del_project':
-            # Allowed: the project is deleted and the user is sent to the index
-            assert response.status_code == 302
-            assert response['Location'] == '/editor'
-            assert not Project.objects.filter(id=s.pid).exists()
         elif endpoint == 'export_project':
             assert response.status_code == 200
             assert response.streaming
@@ -321,7 +323,9 @@ def test_del_project_denied_for_owner_non_staff(client):
     s = Setup()
     client.force_login(s.w.owner)
     before = db_snapshot()
-    response = client.get(s.url('del_project'))
+    # FIXED (step A of mutation-via-get; was: GET) — upstream #86
+    assert client.get(s.url('del_project')).status_code == 405
+    response = client.post(s.url('del_project'))
     assert response['Location'] == '/editor'
     assert msgs(response.wsgi_request) == [MSG_STAFF]
     assert db_snapshot() == before
@@ -339,12 +343,16 @@ def test_del_new_spec_item_get_denied_keeps_item(client, role):
 
 
 @pytest.mark.parametrize('role', ['owner', 'rw'])
-def test_del_new_spec_item_get_by_writer_deletes_immediately(client, role):
-    """Deleting a NEW item happens on a plain GET (no confirmation, no CSRF protection)."""
+def test_del_new_spec_item_by_writer_needs_post(client, role):
+    """FIXED (step A of mutation-via-get; was: a plain GET deleted a NEW item immediately) — upstream #86.
+    GET renders the confirmation form (200) and deletes nothing; POST deletes."""
     s = Setup()
     client.force_login(s.w.user(role))
     url = f'/editor/DataItem/{s.pid}/0/{s.new_item.id}/Sel_All/0/del_spec_item'
     response = client.get(url)
+    assert response.status_code == 200
+    assert SpecItem.objects.filter(id=s.new_item.id).exists()
+    response = client.post(url)
     assert response.status_code == 302
     assert response['Location'] == f'/editor/DataItem/{s.pid}/0/{s.vs}/Sel_All/0/list_spec_items'
     assert not SpecItem.objects.filter(id=s.new_item.id).exists()
@@ -407,7 +415,9 @@ def test_staff_actions_on_other_project_unaffected_for_non_staff(client, two_pro
     w, b, _, _ = two_projects
     client.force_login(w.owner)   # owner of project A, not staff
     before = db_snapshot()
-    response = client.get(url_fmt.format(b=b.id))
+    # FIXED (step A of mutation-via-get; was: GET for del_project) — upstream #86: del_project only takes POST
+    send = client.post if url_fmt.endswith('del_project') else client.get
+    response = send(url_fmt.format(b=b.id))
     assert response['Location'] == '/editor'
     assert msgs(response.wsgi_request) == [MSG_STAFF]
     assert db_snapshot() == before
@@ -432,7 +442,11 @@ def test_item_of_project_b_editable_through_project_a_url(client, two_projects):
     a = w.project.id
     response = client.get(f'/editor/DataItem/{a}/0/{item_b.id}/Sel_All/0/edit_spec_item')
     assert response.status_code == 200
+    # FIXED (step A of mutation-via-get; was: GET deleted the NEW item) — upstream #86: GET only shows the form
     response = client.get(f'/editor/DataItem/{a}/0/{new_b.id}/Sel_All/0/del_spec_item')
+    assert response.status_code == 200
+    assert SpecItem.objects.filter(id=new_b.id).exists()
+    response = client.post(f'/editor/DataItem/{a}/0/{new_b.id}/Sel_All/0/del_spec_item')
     assert response.status_code == 302
     assert not SpecItem.objects.filter(id=new_b.id).exists()
     assert SpecItem.objects.get(id=item_b.id).project_id == b.id

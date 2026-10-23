@@ -18,7 +18,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
-| edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | OPEN |  |
+| edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | FIXED in merge of upstream #86 (Task 6.3 step A) | the upstream branch scopes the delete to the URL's project |
 | edit-project-valset-unscoped | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
 | enum-value-no-type | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | eval-ref-dos | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |

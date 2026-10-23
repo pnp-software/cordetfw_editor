@@ -57,7 +57,7 @@ def test_headers_login_page_get(client):
     assert 'Expires' in response   # Date is added by the WSGI server, not present here
     assert headers(response) == sorted([
         ('Cache-Control', NO_CACHE),
-        ('Content-Length', '4046'),
+        ('Content-Length', '5679'),   # upstream #86: delete-confirm modal + script in base_generic (+1633)
         ('Content-Type', 'text/html; charset=utf-8'),
     ] + COMMON)
 
@@ -68,7 +68,7 @@ def test_headers_logged_in_index(client):
     assert response.status_code == 200
     assert 'Expires' not in response
     assert headers(response) == sorted([
-        ('Content-Length', '3566'),   # Task 3.5: POST logout form (was 3350)
+        ('Content-Length', '5199'),   # upstream #86: delete-confirm modal + script in base_generic (+1633)
         ('Content-Type', 'text/html; charset=utf-8'),
     ] + COMMON)
 
@@ -77,7 +77,7 @@ def test_headers_anonymous_index(client):
     response = client.get('/editor/')
     assert response.status_code == 200
     assert headers(response) == sorted([
-        ('Content-Length', '4184'),
+        ('Content-Length', '5817'),   # upstream #86: delete-confirm modal + script in base_generic (+1633)
         ('Content-Type', 'text/html; charset=utf-8'),
     ] + COMMON)
 
@@ -156,7 +156,7 @@ def test_headers_axes_lockout_429(client):
     response = client.post('/editor/login/', {'username': 'alice', 'password': 'bad'})
     assert response.status_code == 429
     assert headers(response) == sorted([
-        ('Content-Length', '2535'),
+        ('Content-Length', '4168'),   # upstream #86: delete-confirm modal + script in base_generic (+1633)
         ('Content-Type', 'text/html; charset=utf-8'),
     ] + COMMON)
 

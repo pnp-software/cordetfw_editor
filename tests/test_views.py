@@ -261,32 +261,37 @@ def test_edit_project_del_user_id_is_unscoped(client, owner, project):
     other_project = make_project(owner, 'Other')
     u2 = make_user('u2')
     pu_other = make_project_user(other_project, u2, 'RO')
-    resp = client.get('/editor/%d/edit_project' % project.id, {'del_user_id': pu_other.id})
-    assert resp.status_code == 200
-    # KNOWN-ISSUE: edit-project-del-user-unscoped
-    assert not ProjectUser.objects.filter(id=pu_other.id).exists()
+    resp = client.post('/editor/%d/edit_project' % project.id, {'del_user_id': pu_other.id})
+    assert resp.status_code == 302
+    # FIXED: edit-project-del-user-unscoped (was: the other project's ProjectUser was deleted) — upstream #86
+    assert ProjectUser.objects.filter(id=pu_other.id).exists()
 
 
 def test_edit_project_del_user(client, owner, project):
     u2 = make_user('u2')
     pu = make_project_user(project, u2, 'RO')
-    resp = client.get('/editor/%d/edit_project' % project.id, {'del_user_id': pu.id})
-    assert resp.context['project_users'] == []
+    # FIXED (step A of mutation-via-get; was: GET ?del_user_id=) — upstream #86
+    resp = client.post('/editor/%d/edit_project' % project.id, {'del_user_id': pu.id})
+    assert resp.status_code == 302
+    assert resp.url == '/editor/%d/edit_project' % project.id
     assert not ProjectUser.objects.filter(id=pu.id).exists()
 
 
 def test_edit_project_del_val_set(client, owner, project):
     vs = make_val_set(project, 'VS1')
-    resp = client.get('/editor/%d/edit_project' % project.id, {'del_val_set_id': vs.id})
-    assert resp.status_code == 200
+    # FIXED (step A of mutation-via-get; was: GET ?del_val_set_id=) — upstream #86
+    resp = client.post('/editor/%d/edit_project' % project.id, {'del_val_set_id': vs.id})
+    assert resp.status_code == 302
+    assert resp.url == '/editor/%d/edit_project' % project.id
     assert not ValSet.objects.filter(id=vs.id).exists()
     assert msgs(resp) == []
 
 
 def test_edit_project_del_val_set_protected(client, owner, project, dvs):
     make_spec_item(project, cat='InfoItem', name='X')
-    resp = client.get('/editor/%d/edit_project' % project.id, {'del_val_set_id': dvs.id})
-    assert resp.status_code == 200
+    # FIXED (step A of mutation-via-get; was: GET ?del_val_set_id=) — upstream #86
+    resp = client.post('/editor/%d/edit_project' % project.id, {'del_val_set_id': dvs.id})
+    assert resp.status_code == 302
     assert ValSet.objects.filter(id=dvs.id).exists()
     [(level, text)] = msgs(resp)
     assert level == 'alert-danger'
@@ -294,7 +299,7 @@ def test_edit_project_del_val_set_protected(client, owner, project, dvs):
 
 
 def test_del_project_full_cascade(client, owner, project, dvs, dtype):
-    # KNOWN-ISSUE: mutation-via-get
+    # FIXED (step A of mutation-via-get; was: GET /del_project deleted the project) — upstream #86
     app = make_application(project, 'App', cats='InfoItem')
     app_rel2 = make_release(owner, previous=app.release, application_version=1)
     app.release = app_rel2
@@ -314,7 +319,7 @@ def test_del_project_full_cascade(client, owner, project, dvs, dtype):
     keep_item = make_spec_item(other, cat='InfoItem', name='K')
     n_releases_before = Release.objects.count()
 
-    resp = client.get('/editor/%d/del_project' % project.id)
+    resp = client.post('/editor/%d/del_project' % project.id)
     assert resp.status_code == 302
     assert resp.url == '/editor'
     assert not Project.objects.filter(id=project.id).exists()
@@ -1114,10 +1119,13 @@ def test_split_del_not_allowed_status(client, owner, project, dvs, dtype, view, 
 # del_spec_item
 # ----------------------------------------------------------------------------
 
-def test_del_new_item_hard_deleted_on_get(client, owner, project, dvs, dtype):
-    # KNOWN-ISSUE: mutation-via-get
+def test_del_new_item_hard_deleted_on_post(client, owner, project, dvs, dtype):
+    # FIXED (step A of mutation-via-get; was: GET hard-deleted the NEW item) — upstream #86
     item = make_spec_item(project, domain='Dom', name='It', status='NEW', p_link=dtype)
     resp = client.get(item_url('del_spec_item', 'DataItem', project, item, sel_val='Dom'))
+    assert resp.status_code == 200      # GET only renders the confirmation form
+    assert SpecItem.objects.filter(id=item.id).exists()
+    resp = client.post(item_url('del_spec_item', 'DataItem', project, item, sel_val='Dom'))
     assert resp.status_code == 302
     assert resp.url == '/editor/DataItem/%d/0/%d/Dom/0/list_spec_items' % (project.id, dvs.id)
     assert not SpecItem.objects.filter(id=item.id).exists()
@@ -1127,20 +1135,20 @@ def test_del_new_item_removes_aliases(client, owner, project, dvs, dtype):
     vs1 = make_val_set(project, 'VS1')
     item = make_spec_item(project, status='NEW', p_link=dtype)
     alias = make_spec_item(project, val_set=vs1, p_link=item)
-    client.get(item_url('del_spec_item', 'DataItem', project, item))
+    client.post(item_url('del_spec_item', 'DataItem', project, item))   # FIXED (step A of mutation-via-get; was: GET) — upstream #86
     assert not SpecItem.objects.filter(id__in=[item.id, alias.id]).exists()
 
 
 def test_del_new_item_in_non_default_val_set_keeps_aliases_untouched(client, owner, project, dvs, dtype):
     vs1 = make_val_set(project, 'VS1')
     item = make_spec_item(project, val_set=vs1, status='NEW', p_link=dtype)
-    client.get(item_url('del_spec_item', 'DataItem', project, item))
+    client.post(item_url('del_spec_item', 'DataItem', project, item))   # FIXED (step A of mutation-via-get; was: GET) — upstream #86
     assert not SpecItem.objects.filter(id=item.id).exists()
 
 
 def test_del_new_item_referenced_keeps_item_and_reports_error(client, owner, project, dvs, dtype):
     item = make_spec_item(project, domain='Dom', name='It', status='NEW', p_link=dtype)
-    resp = client.get(item_url('del_spec_item', 'DataItem', project, dtype))   # dtype is referenced by item
+    resp = client.post(item_url('del_spec_item', 'DataItem', project, dtype))   # FIXED (step A of mutation-via-get; was: GET) — upstream #86; dtype is referenced by item
     assert resp.status_code == 302
     assert SpecItem.objects.filter(id=dtype.id).exists()
     [(level, text)] = msgs(resp)
