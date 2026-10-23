@@ -788,3 +788,65 @@ def test_logout_from_stale_tab_with_rotated_csrf_token_is_rejected():
     response = client.post('/editor/logout/', {'csrfmiddlewaretoken': stale})
     assert response.status_code == 403
     assert '_auth_user_id' in client.session
+
+
+# ---------------------------------------------------------------------------------------------
+# Task 6.7: optional config key AXES_LOCKOUT_PARAMETERS
+# ---------------------------------------------------------------------------------------------
+
+def test_axes_lockout_parameters_absent_key_leaves_default():
+    from django.conf import settings
+    from cordetfw_editor.config_helpers import parse_axes_lockout_parameters
+    assert parse_axes_lockout_parameters({}) is None
+    assert settings.AXES_LOCKOUT_PARAMETERS == ['ip_address']      # same as before Task 6.7
+
+
+@pytest.mark.parametrize('value', [
+    ['ip_address'], ['ip_address', 'username'], [['ip_address', 'username']],
+    ['username', ['ip_address', 'user_agent']],
+])
+def test_axes_lockout_parameters_valid_shapes_pass_through(value):
+    from cordetfw_editor.config_helpers import parse_axes_lockout_parameters
+    assert parse_axes_lockout_parameters({'AXES_LOCKOUT_PARAMETERS': value}) == value
+
+
+@pytest.mark.parametrize('value', [
+    None, 'ip_address', [], ['ip'], [[]], [['ip_address', 'nope']], [1], [['username', 1]],
+    {'a': 1}, [['ip_address', ['username']]], ['IP_ADDRESS'],
+])
+def test_axes_lockout_parameters_invalid_shapes_are_rejected(value):
+    from django.core.exceptions import ImproperlyConfigured
+    from cordetfw_editor.config_helpers import parse_axes_lockout_parameters
+    with pytest.raises(ImproperlyConfigured, match='AXES_LOCKOUT_PARAMETERS'):
+        parse_axes_lockout_parameters({'AXES_LOCKOUT_PARAMETERS': value})
+
+
+def _fail_login(ip, n, password='bad'):
+    c = Client(REMOTE_ADDR=ip)
+    for _ in range(n):
+        c.post(LOGIN_URL, {'username': 'alice', 'password': password})
+    return c
+
+
+def test_axes_lockout_by_ip_or_username_stops_distributed_guessing(settings):
+    # Recommended value: any IP reaching 3 failures is locked, and so is a username that reaches 3
+    # failures in total, whatever the source IPs.
+    settings.AXES_LOCKOUT_PARAMETERS = ['ip_address', 'username']
+    make_user('alice')
+    for ip in ('10.0.0.1', '10.0.0.2', '10.0.0.3'):
+        _fail_login(ip, 1)
+    r = Client(REMOTE_ADDR='10.0.0.4').post(LOGIN_URL, {'username': 'alice', 'password': PASSWORD})
+    assert r.status_code == 429
+    # trade-off: the legitimate user is locked too, from any IP, until the cool-off ends
+    r = Client(REMOTE_ADDR='10.0.0.99').post(LOGIN_URL, {'username': 'alice', 'password': PASSWORD})
+    assert r.status_code == 429
+
+
+def test_axes_lockout_by_combination_does_not_stop_distributed_guessing(settings):
+    # [["ip_address", "username"]] counts per (IP, username) pair: no better than IP only here.
+    settings.AXES_LOCKOUT_PARAMETERS = [['ip_address', 'username']]
+    make_user('alice')
+    for ip in ('10.0.0.1', '10.0.0.2', '10.0.0.3'):
+        _fail_login(ip, 2)
+    r = Client(REMOTE_ADDR='10.0.0.4').post(LOGIN_URL, {'username': 'alice', 'password': PASSWORD})
+    assert r.status_code == 302

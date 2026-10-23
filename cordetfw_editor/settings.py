@@ -15,6 +15,8 @@ import datetime
 from django.contrib.messages import constants as messages
 import json
 
+from .config_helpers import parse_axes_lockout_parameters
+
 with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
     config = json.load(config_file)
 
@@ -90,6 +92,12 @@ AUTHENTICATION_BACKENDS = [
 
 AXES_COOLOFF_TIME = datetime.timedelta(minutes = 3)
 AXES_LOCKOUT_TEMPLATE = '../templates/lockout.html'
+
+# Optional config key AXES_LOCKOUT_PARAMETERS. Absent = axes default (lock by client IP only).
+# Recommended: ["ip_address", "username"] (see docs/migration/ROLLOUT.md). Validated at startup.
+_axes_lockout_parameters = parse_axes_lockout_parameters(config)
+if _axes_lockout_parameters is not None:
+    AXES_LOCKOUT_PARAMETERS = _axes_lockout_parameters
 
 ROOT_URLCONF = 'cordetfw_editor.urls'
 

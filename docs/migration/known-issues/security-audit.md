@@ -39,7 +39,8 @@ described here, see the original doc for the rest.
 
 - `no-secure-proxy-ssl-header`: if TLS ends at a proxy, set `SECURE_PROXY_SSL_HEADER` (and
   make the proxy strip the client's `X-Forwarded-Proto`), otherwise password reset mails contain `http://` links.
-- `axes-ip-only-lockout`: decide on `AXES_LOCKOUT_PARAMETERS` (e.g. `[["ip_address", "username"]]`) and
+- `axes-ip-only-lockout`: decide on the optional config key `AXES_LOCKOUT_PARAMETERS` (Task 6.7; recommended
+  `["ip_address", "username"]`; the combination `[["ip_address", "username"]]` does not stop distributed guessing) and
   make sure axes sees the real client IP behind the proxy (e.g. `AXES_IPWARE_PROXY_COUNT`/trusted header).
 - `tracked-dev-secret-key`: confirm that `/etc/dj_cordetfw_config.json` has its own `SECURE_KEY`,
   `DEBUG: false`, and that the key in git is not the production key (rotate otherwise).

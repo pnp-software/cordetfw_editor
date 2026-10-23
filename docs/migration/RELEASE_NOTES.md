@@ -53,6 +53,12 @@ Exact resolved set: `requirements-lock.txt`. Tested database servers: MySQL 8.0.
 - **CSRF:** Django ≥ 4.0 also checks the `Origin` header. Direct HTTPS through Apache + mod_wsgi works
   unchanged. If TLS is terminated by a separate proxy, set the new optional config key
   `"CSRF_TRUSTED_ORIGINS": ["https://<host>"]` in `/etc/dj_cordetfw_config.json`.
+- **Optional config key `AXES_LOCKOUT_PARAMETERS`** (Task 6.7): without it, login lockout stays as today (3 failures
+  per client IP, 3-minute cool-off). `"AXES_LOCKOUT_PARAMETERS": ["ip_address", "username"]` additionally locks a
+  username after 3 failures from any IPs (stops distributed guessing; an attacker can lock out a known user, so
+  it is the operator's choice). A list of strings = lock on any of them; a nested list = lock on the combination
+  (`[["ip_address", "username"]]` does not stop distributed guessing). Allowed names: `ip_address`, `username`,
+  `user_agent`; anything else stops startup with an error.
 - **Response headers:** new `Cross-Origin-Opener-Policy: same-origin` header; the CSRF cookie value is 32 characters (old
   cookies keep working).
 - **Export ZIP filenames:** download names containing double quotes are now escaped (CVE-2022-36359).

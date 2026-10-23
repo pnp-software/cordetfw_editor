@@ -16,6 +16,7 @@
   .venv/bin/pip install -r requirements.txt -c requirements-lock.txt
   ```
 - Configuration is read from `/etc/dj_cordetfw_config.json` (override the path with `CORDETFW_CONFIG_PATH`)
+  - Optional keys: `CSRF_TRUSTED_ORIGINS`, `AXES_LOCKOUT_PARAMETERS` (see `docs/migration/ROLLOUT.md`)
 - Set up a MySQL server (8.0.11 or later; tested with 8.0 and 8.4)
 - If no database is available for import:
   - Create database cordetfw

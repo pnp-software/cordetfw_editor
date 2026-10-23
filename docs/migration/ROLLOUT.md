@@ -20,6 +20,14 @@ deployable versions.
       `site-packages`, the old libraries would load first: change it together with `python-home`.
 - [ ] Check that the server has time zone data (`ls /usr/share/zoneinfo/UTC`). Django ≥ 4 uses the system tz
       database instead of `pytz`.
+- [ ] Run `pip-audit -r requirements-lock.txt` in a throwaway venv (not the app venv: `python3.12 -m venv /tmp/pa &&
+      /tmp/pa/bin/pip install pip-audit`) shortly before cutover and review the result.
+      **2026-10-23 (pip-audit 2.10.1): "No known vulnerabilities found"** for all pinned packages. Repeat before cutover,
+      the advisory database changes daily.
+- [ ] Optional: decide on `"AXES_LOCKOUT_PARAMETERS": ["ip_address", "username"]` in `/etc/dj_cordetfw_config.json`
+      (default without the key: lockout by IP only, so one account can be guessed from many IPs). With the
+      recommended value a username is also locked after 3 failures from any IPs, which stops distributed guessing but
+      lets an attacker who knows a username lock that user out for the 3-minute cool-off (DoS): operator's choice.
 - [ ] Inform users that they will need to log in again once (password rehash), and that logout bookmarks no longer work.
 
 ## 1. Staging (copy of the production server setup)

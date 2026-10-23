@@ -11,7 +11,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | OPEN |  |
 | add-spec-item-val-set-post | — | views.md | — | K | OPEN |  |
 | appform-cats-substring | app-cats-substring | forms-convert-utilities.md, models-access-releases-query.md | tests/test_forms.py, tests/test_releases.py | K | OPEN |  |
-| axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | No proxy, so REMOTE_ADDR is the client IP: shared-lockout DoS not applicable; distributed brute force remains. Task 6.7: optional AXES_LOCKOUT_PARAMETERS key, default unchanged |
+| axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | No proxy, so REMOTE_ADDR is the client IP: shared-lockout DoS not applicable; distributed brute force remains. optional AXES_LOCKOUT_PARAMETERS key added in Task 6.7; default unchanged (operator choice) |
 | change-password-no-response | — | views.md | tests/test_views.py | K | OPEN |  |
 | conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | OPEN |  |
