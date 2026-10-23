@@ -772,3 +772,19 @@ def test_csrf_trusted_origins_config_key_allows_proxy_https_origin(settings):
 def test_csrf_trusted_origins_defaults_to_empty():
     from django.conf import settings
     assert settings.CSRF_TRUSTED_ORIGINS == []
+
+
+def test_logout_from_stale_tab_with_rotated_csrf_token_is_rejected():
+    # Known limitation since Task 3.5 (documented in RELEASE_NOTES.md): a tab rendered before a
+    # re-login carries an outdated CSRF token, so its logout button gets Django's CSRF 403 page;
+    # reloading the page fixes it. LogoutView enforces CSRF itself (csrf_protect on dispatch).
+    client = Client(enforce_csrf_checks=True)
+    user = make_user('alice')
+    client.force_login(user)
+    stale = re.search(r'action="/editor/logout/">\s*<input type="hidden" name="csrfmiddlewaretoken" '
+                      r'value="([^"]+)"', client.get('/editor/').content.decode()).group(1)
+    client.logout()
+    client.force_login(user)          # login rotates the CSRF secret
+    response = client.post('/editor/logout/', {'csrfmiddlewaretoken': stale})
+    assert response.status_code == 403
+    assert '_auth_user_id' in client.session

@@ -153,6 +153,17 @@ def compare_trees(a, b, html_logout_normalize=False, skip=('_raw.zip',)):
     return res
 
 
+def snapshot_summary(name, snap, reference=None):
+    """Print what a snapshot covered; with a reference, require the same set of failing requests
+    (pre-existing crashes on real data are allowed, but must not appear or disappear)."""
+    print('  %s: zip=%d csv=%d html=%d errors=%d' % (name, snap['zip'], snap['csv'], snap['html'], len(snap['errors'])))
+    if reference is not None and sorted(snap['errors']) != sorted(reference['errors']):
+        added = sorted(set(snap['errors']) - set(reference['errors']))
+        gone = sorted(set(reference['errors']) - set(snap['errors']))
+        RESULTS.setdefault('error_set_mismatch', {})[name] = {'added': added, 'gone': gone}
+        raise SystemExit('%s: failing requests differ from the reference (added %d, gone %d)' % (name, len(added), len(gone)))
+
+
 def summarize_tree(name, r):
     print('  %s: identical=%d logout_only=%d different=%d only_a=%d only_b=%d' % (
         name, r['identical'], len(r['logout_only']), len(r['different']), len(r['only_a']), len(r['only_b'])))
@@ -203,6 +214,7 @@ def main():
         RESULTS['old_admin'] = worker('old', 'admin_check')
         worker('old', 'fingerprint', os.path.join(SCRATCH, 'fp_old.json'))
         RESULTS['old_snapshot'] = worker('old', 'snapshot', os.path.join(SCRATCH, 'old'))
+        snapshot_summary('old snapshot', RESULTS['old_snapshot'])
 
         # ---- Step 5: NEW stack
         manage('new', 'showmigrations_before', 'showmigrations')
@@ -216,6 +228,7 @@ def main():
 
         # ---- Step 6
         RESULTS['new_snapshot'] = worker('new', 'snapshot', os.path.join(SCRATCH, 'new'))
+        snapshot_summary('new snapshot', RESULTS['new_snapshot'], RESULTS['old_snapshot'])
         RESULTS['cmp_old_new'] = compare_trees(os.path.join(SCRATCH, 'old'), os.path.join(SCRATCH, 'new'), html_logout_normalize=True)
         summarize_tree('old vs new', RESULTS['cmp_old_new'])
         # session cookie BEFORE password logins (a hash upgrade invalidates the owner's old sessions)
@@ -230,6 +243,7 @@ def main():
         manage('old', 'rb_showmigrations', 'showmigrations')
         manage('old', 'rb_migrate_plan', 'migrate', '--plan')
         RESULTS['rb_snapshot'] = worker('old', 'snapshot', os.path.join(SCRATCH, 'rollback'))
+        snapshot_summary('rollback snapshot', RESULTS['rb_snapshot'], RESULTS['old_snapshot'])
         RESULTS['cmp_old_rollback'] = compare_trees(os.path.join(SCRATCH, 'old'), os.path.join(SCRATCH, 'rollback'))
         summarize_tree('old vs rollback', RESULTS['cmp_old_rollback'])
         worker('old', 'fingerprint', os.path.join(SCRATCH, 'fp_rollback.json'))

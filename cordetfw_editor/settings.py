@@ -160,8 +160,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-# Django >= 5.0 always applies the locale's formats (USE_L10N was removed), so the
-# date/time format is set in the format module for LANGUAGE_CODE as well.
+# Django >= 5.0 always applies the locale's formats (USE_L10N was removed): the format module
+# cordetfw_editor/formats/en/formats.py is what takes effect; keep this value identical to it.
 DATETIME_FORMAT = 'd-m-Y H:i:s'
 FORMAT_MODULE_PATH = ['cordetfw_editor.formats']
 

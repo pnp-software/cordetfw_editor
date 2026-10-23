@@ -1,5 +1,25 @@
 # MySQL migration rehearsal: Django 3.2 -> 5.2 (branch upgrade/django-lts)
 
+## Production data run (2026-10-23)
+
+Run with `REHEARSAL_DUMP=<production dump of 2026-10-21, mysqldump 8.0.46>` on the disposable MySQL 8.0
+container. The production data never left the developer machine and is not stored in the repository; only
+aggregate results are recorded here. Since this run, the script logs in as each project's owner, so it can
+read every project, and it fails if the old and new runs have different failing requests.
+
+| Check | Result |
+| --- | --- |
+| Old `migrate` on the production schema | no-op (already current) |
+| New `migrate --plan` | only `axes.0010_accessattemptexpiration` |
+| editor_* rows across new migrate | identical |
+| Snapshot coverage (old / new / rollback) | 11 projects, 328 spec-item CSV/LaTeX exports, 165 pages, 0 failing requests each |
+| Old vs new | 404 byte-identical files, 164 pages differ only in the logout control, 0 other differences |
+| Rollback (old code on migrated DB) vs old | 568 identical, 0 different |
+| Data written by new code, read by old code | 404 identical |
+| Sessions, passwords, axes/honeypot admin | PASS (as below) |
+
+## Initial run (2022 tryout dump)
+
 Run date 2026-10-23, repo HEAD 3993327 (working tree had uncommitted edits in settings.py and tests/test_auth.py that were not made by this rehearsal). Result: **all checks PASS**, no unexplained differences.
 
 ## Re-running

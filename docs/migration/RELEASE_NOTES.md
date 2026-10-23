@@ -30,6 +30,10 @@ Exact resolved set: `requirements-lock.txt`. Tested database servers: MySQL 8.0.
 
 - **Admin:** the Django 5.2 admin look (dark-mode toggle, accessibility attributes). The access-attempt list
   has a new read-only "status" column (django-axes 8). The `/admin/` decoy follows the same templates.
+- **Logout from an outdated tab:** a page rendered before the user logged in again (e.g. in another tab) has an
+  outdated CSRF token, and its Logout button shows Django's "CSRF verification failed" page. Reloading the page
+  fixes it. Django enforces CSRF on logout itself, so this is not worked around.
+- **`manage.py dbshell`** now connects with `--default-character-set=utf8`, the same as the application.
 - **Login sessions:** the first login after the upgrade rehashes each password (PBKDF2, 260000 →
   1,000,000 iterations). The user's *other* open sessions are logged out once. No data is affected.
 - **CSRF:** Django ≥ 4.0 also checks the `Origin` header. Direct HTTPS through Apache + mod_wsgi works
@@ -42,8 +46,10 @@ Exact resolved set: `requirements-lock.txt`. Tested database servers: MySQL 8.0.
 
 ## Unchanged (verified)
 
-- Every project ZIP export and spec-item CSV/LaTeX export is **byte-identical** (golden files, plus the MySQL
-  rehearsal on realistic data: 41/41 files).
+- Every project ZIP export and spec-item CSV/LaTeX export is **byte-identical**. Evidence: the golden files, and
+  the rehearsal on the **production database dump of 2026-10-21**. In that rehearsal, all 11 projects were exported
+  without errors (328 CSV/LaTeX exports, 165 pages): 404 files are byte-identical and 164 pages differ only in the
+  logout control. With the old code on the migrated database (rollback), all 568 files are identical.
 - All editor pages are identical apart from the logout control (33 golden pages).
 - Permissions, releases, history chains, value sets, import rules, find/replace, ext. FW Profile refresh.
 - The MySQL connection charset stays `utf8` (Django 5.2 would default to utf8mb4). So, as before, 4-byte
@@ -68,11 +74,9 @@ table or column is altered. The old code runs unchanged on the migrated database
 
 ## Known limitations / pending
 
-- **Pending external checks:** the rehearsal on a sanitized copy of the *production* database
-  (`REHEARSAL_DUMP=… python3 docs/migration/rehearsal/rehearse.py`), Apache/mod_wsgi staging, and a browser
-  walkthrough (see `ROLLOUT.md`).
-- **The production table charset/collation is not confirmed.** The rehearsal used `utf8mb4_unicode_ci`
-  (as in the tryout dump).
+- **Pending external checks:** Apache/mod_wsgi staging and a browser walkthrough (see `ROLLOUT.md`).
+- Production collation (from the dump): `editor_*` tables use `utf8mb4_unicode_ci`, as in the tests. One table,
+  `axes_accessfailurelog`, is `latin1` (created that way before the migration; not altered).
 - 65 pre-existing issues were found and deliberately **not** fixed (`known-issues/README.md`). Several are
   security-relevant or change data: application creation sets items of all projects to CNF, an IDOR on spec items,
   XSS, and SQL injection in the FW Profile queries.
@@ -80,6 +84,6 @@ table or column is altered. The old code runs unchanged on the migrated database
 ## Follow-ups (separate changes)
 
 1. Fix the high-priority known issues, starting with `add-app-releases-null-app-items` and `idor-item-project`.
-2. Decide on utf8mb4 connections (requires utf8mb4 tables in production).
+2. Decide on utf8mb4 connections (the production tables are already utf8mb4, so this is possible).
 3. Plan MySQL 8.0 → 8.4 LTS (MySQL 8.0 reached end of life in April 2026; the suite passes on 8.4.13).
 4. Next Django LTS: 6.2 (April 2027). Re-run this suite as the gate.

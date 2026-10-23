@@ -1,1 +1,9 @@
 tryout/
+.venv*/
+*.sqlite3
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+mysql*_db_persist/
+.git/

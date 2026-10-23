@@ -181,13 +181,15 @@ def populate():
     old_o = item(p1, 'DataItem', 'Dom', 'Chained', status='OBS', p_link=uint8, value='1', updated_at=T0)
     old_o2 = item(p1, 'DataItem', 'Dom', 'Chained', status='OBS', p_link=uint8, value='2', previous=old_o)
     item(p1, 'DataItem', 'Dom', 'Chained', status='MOD', p_link=uint8, value='3', previous=old_o2)
-    SpecItem.objects.create(id=1000, cat='PacketPar', domain='Pkt', name='Edge', title='Edge numbers', project=p1,
+    # explicit ids (>= 1000, for number rendering) placed above existing rows (production dumps)
+    id_base = max(0, (SpecItem.objects.order_by('-id').values_list('id', flat=True).first() or 0) + 1 - 1000)
+    SpecItem.objects.create(id=id_base + 1000, cat='PacketPar', domain='Pkt', name='Edge', title='Edge numbers', project=p1,
                             owner=owner, val_set=vs_def, status='CNF', updated_at=T1, created_at=T0,
                             n1=2147483647, n2=-2147483648, n3=1000000)
-    SpecItem.objects.create(id=1234, cat='PacketPar', domain='Pkt', name='Big', title='Big numbers', project=p1,
+    SpecItem.objects.create(id=id_base + 1234, cat='PacketPar', domain='Pkt', name='Big', title='Big numbers', project=p1,
                             owner=owner, val_set=vs_def, status='NEW', updated_at=T2, created_at=T0,
                             n1=12345, n2=-7, n3=0, s_data={'zz': 1, 'a': 2, 'nested': {'y': 1, 'b': [1, 2]}})
-    SpecItem.objects.create(id=2001, cat='DataItem', domain='Json', name='Order', title='Json order', project=p1,
+    SpecItem.objects.create(id=id_base + 2001, cat='DataItem', domain='Json', name='Order', title='Json order', project=p1,
                             owner=owner, val_set=vs_def, status='NEW', updated_at=T1, created_at=T0,
                             s_data={'list': [3, 1, 2], 'text': 'ä☺ "q"', 'empty': {}, 'num': -1.5})
     item(p2, 'DataItem', 'D', 'Y', status='MOD', value='1000')
@@ -263,6 +265,7 @@ def snapshot(outdir, exports_only=False):
 
     for p in Project.objects.order_by('id'):
         pid = p.id
+        c.force_login(p.owner)   # read access requires ownership/membership; staff alone is not enough
         r = c.get('/editor/%d/export_project' % pid) if fresh_temp_dir() else None
         data = b''.join(r.streaming_content) if r.status_code == 200 else b''
         if r.status_code != 200:

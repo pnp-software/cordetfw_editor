@@ -72,10 +72,14 @@ Both are stable over repeated runs. Line coverage of `editor/` + `cordetfw_edito
 | `SpecItem.created_at` default, test data | naive datetime RuntimeWarning | KNOWN-ISSUE `naive-created-at-default`; not changed (schema) |
 | `editor/convert.py`, `markdown.py`, `ref_filters.py` | SyntaxWarning invalid escape | Task 3.1 (raw strings, behaviour-neutral) |
 
-## Pending: production DB collation
+## Production DB collation (resolved 2026-10-23)
 
-TODO (operator): the MySQL charset/collation of the PRODUCTION database has not been compared
-with the test database yet. Run on production and record the values here:
+From the production dump of 2026-10-21 (mysqldump 8.0.46): all `editor_*` tables and their text columns
+use `utf8mb4` / `utf8mb4_unicode_ci`, the same as the test databases. 19 of 20 tables are
+`utf8mb4_unicode_ci`; `axes_accessfailurelog` is `latin1` (pre-existing, not altered by the migration).
+The dump does not record the live connection charset; Django 3.2 sends 'utf8' (utf8mb3).
+
+Queries used for the check:
 
     SELECT @@character_set_connection, @@collation_connection;
     SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_NAME = 'editor_specitem';
