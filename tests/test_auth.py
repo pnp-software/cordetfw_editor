@@ -754,3 +754,21 @@ def test_axes_resolves_client_ip_through_ipware():
     # when it is importable; with the default precedence ('REMOTE_ADDR',) both paths agree.
     from axes import helpers
     assert helpers.IPWARE_INSTALLED
+
+
+def test_csrf_trusted_origins_config_key_allows_proxy_https_origin(settings):
+    # Optional config key CSRF_TRUSTED_ORIGINS (default [] = unchanged behaviour) fixes the
+    # 'http-origin-https-scheme' case of the CSRF matrix for a TLS-terminating proxy.
+    settings.CSRF_TRUSTED_ORIGINS = ['https://testserver']
+    make_user('alice')
+    client = Client(enforce_csrf_checks=True)
+    page = client.get(LOGIN_URL)
+    token = re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', page.content.decode()).group(1)
+    response = client.post(LOGIN_URL, {'username': 'alice', 'password': PASSWORD,
+                                       'csrfmiddlewaretoken': token}, HTTP_ORIGIN='https://testserver')
+    assert response.status_code == 302
+
+
+def test_csrf_trusted_origins_defaults_to_empty():
+    from django.conf import settings
+    assert settings.CSRF_TRUSTED_ORIGINS == []

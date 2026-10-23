@@ -33,6 +33,10 @@ DEBUG = config['DEBUG']
 
 ALLOWED_HOSTS = config['ALLOWED_HOSTS']
 
+# Django >= 4.0 checks the Origin header of unsafe requests. Behind a TLS-terminating proxy the
+# HTTPS origin must be listed here, e.g. ["https://editor.example.com"]. Optional config key.
+CSRF_TRUSTED_ORIGINS = config.get('CSRF_TRUSTED_ORIGINS', [])
+
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
