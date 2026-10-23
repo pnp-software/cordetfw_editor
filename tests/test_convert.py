@@ -103,7 +103,9 @@ def test_frmt_string(src, expected):
      '- a \\textbf{b}\\begin{itemize}\\item c\\end{itemize} \\ '),
     ('t\n- a **b**\n- c', 't<ul><li>a <b>b</b></li><li>c</li></ul>',
      't\\begin{itemize}\\item a \\textbf{b}\\item c\\end{itemize} \\ '),
-    # no escaping whatsoever
+    # no escaping whatsoever in the markdown functions themselves (LaTeX part and nesting stay open, track K).
+    # md-no-escape HTML part FIXED in Task 6.6: markdown_to_html receives text already escaped by
+    # convert_db_to_display (its only caller), see tests/test_escaping_6_6.py
     # KNOWN-ISSUE: md-no-escape
     ('<script>alert(1)</script> <b>&"x</b>', '<script>alert(1)</script> <b>&"x</b>',
      '<script>alert(1)</script> <b>&"x</b>'),
@@ -170,9 +172,9 @@ def test_display_application_id_in_link(world):
 
 
 def test_display_html_special_chars_in_names_escaped_but_text_not(world):
-    # KNOWN-ISSUE: xss-display  (text outside references is not escaped; only link parts are)
+    # FIXED: xss-display (was: '<script>x</script> & <b>' returned raw)
     out = convert_db_to_display('<script>x</script> & <b>', None)
-    assert out == '<script>x</script> & <b>'
+    assert out == '&lt;script&gt;x&lt;/script&gt; &amp; &lt;b&gt;'
 
 
 def test_display_ref_escapes_domain_name_title(world):
@@ -453,11 +455,11 @@ def test_tag_conv_db_disp(world):
 
 
 def test_tag_conv_db_disp_mark_safe_does_not_escape(world):
-    # KNOWN-ISSUE: xss-tag  (values are marked safe without escaping)
+    # FIXED: xss-tag (was: values marked safe without escaping, out == [('Title', '<script>1</script>')])
     item = make_spec_item(world['project'], 'DataItem', 'D', 'xss', p_link=world['etype'],
                           title='<script>1</script>')
     out = ref_filters.conv_db_disp(_tag_ctx(world), item, ['title'])
-    assert out == [('Title', '<script>1</script>')]
+    assert out == [('Title', '&lt;script&gt;1&lt;/script&gt;')]
     assert isinstance(out[0][1], SafeString)
 
 
@@ -545,11 +547,11 @@ def test_disp_trac_application_id(world):
 
 def test_filter_expand_tip(world):
     x = world['x']
-    # expand_tip of DataItem: title, desc, value ; refs converted to edit format; NOT escaped
+    # expand_tip of DataItem: title, desc, value ; refs converted to edit format; escaped (Task 6.6)
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip', p_link=world['etype'],
                           desc='see #iref:%d <b>' % world['etype'].id, value='1')
     out = ref_filters.filter_expand_tip(item)
-    assert out == 'Title: Title of tip&#13;Description: see #EnumType:D:T1 <b>&#13;Value: 1&#13;'
+    assert out == 'Title: Title of tip&#13;Description: see #EnumType:D:T1 &lt;b&gt;&#13;Value: 1&#13;'
     assert isinstance(out, SafeString)
 
 

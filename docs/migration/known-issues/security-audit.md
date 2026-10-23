@@ -33,6 +33,7 @@ described here, see the original doc for the rest.
 | `import-project-no-limits` | views.py 1074-1082 | Staff-only ZIP import: no limits on size or member count (a 20 MB member compresses to about 20 KB); `extractall` is used (zip-slip is neutralised on Python 3.12). | staff | LOW | `test_21_*` |
 | `import-project-attribution-forgery` | imports.py | Staff-only: owner, release author, `cat` and `status` from the CSV are not validated; bad values cause later 500s (`spec_item_to_edit` KeyError). | staff | LOW | `test_22_*` |
 | `session-and-reset-hardening` | settings.py | Defaults: sessions last two weeks, no CSP, no HSTS and no SSL redirect configured in the app. | operator | INFO | `test_23_*` |
+| `image-svg-unsanitised` | convert.py `conv_do_nothing` via `ref_filters.conv_db_disp` (kind `image`: Model/FCP `value`) | Inline SVG is rendered unescaped and unsanitised (exempt from the Task 6.6 escaping by operator decision; production holds 240 FW Profile diagrams). Write paths (pinned in tests/test_escaping_6_6.py): the edit/copy/split forms render `value` as a hidden input (not editable in the UI) but the field is bound, so a forged POST by a project writer stores any string; CSV `import_spec_items` copies the Diagram column; project ZIP import restores it; `ext_model_refresh` / `ext_*_get_choice` copy the FW Profile `diagrams` column (trusted source). Track K: SVG allowlist sanitiser (on write and/or render). | RW in the project (forged POST / CSV), staff (ZIP) | MEDIUM | `tests/test_escaping_6_6.py` |
 
 ## Operator checks (before cutover)
 

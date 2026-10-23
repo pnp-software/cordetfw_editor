@@ -43,7 +43,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | idor-app-write-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | idor-item-project | — | models-access-releases-query.md, security-audit.md | tests/test_access.py, tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | idor-parent-link-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
-| image-svg-unsanitised | — | security-audit.md | — | K | OPEN | Kind `image` (Model/FCP SVG from FW Profile) rendered raw; exempt from Task 6.6 escaping (operator 2026-10-23); add SVG allowlist sanitiser |
+| image-svg-unsanitised | — | security-audit.md | tests/test_escaping_6_6.py | K | OPEN | Kind `image` (Model/FCP SVG from FW Profile) rendered raw; exempt from Task 6.6 escaping (operator 2026-10-23); add SVG allowlist sanitiser |
 | import-link-ambiguous | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-no-login-required | import-spec-items-no-login-required | import-export-auth.md, models-access-releases-query.md | tests/test_access.py | K | OPEN |  |
 | import-project-application-version-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
@@ -71,7 +71,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | login-url-default | — | import-export-auth.md | tests/test_auth.py | K | OPEN |  |
 | logout-unsafe-next-self-redirect | — | import-export-auth.md | tests/test_auth.py | — | FIXED in 040e103 (upstream Django 4.2, Task 3.4) | Accepted upstream change; test marker is the old free-text form |
 | make-temp-dir-nameerror | make-temp-dir-name-error, temp-dir-collision | forms-convert-utilities.md, import-export-auth.md, models-access-releases-query.md | tests/test_import_export.py, tests/test_query.py, tests/test_utilities.py | K | OPEN |  |
-| md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN | HTML escaping only in S; LaTeX escaping and markdown nesting/first-list-item -> K |
+| md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN | HTML part fixed in Task 6.6 (convert_db_to_display escapes before markdown_to_html; tests/test_escaping_6_6.py). Still open for track K: LaTeX escaping in markdown_to_latex (export bytes must stay identical until then) and markdown nesting/first-list-item |
 | mutation-via-get | — | views.md, security-audit.md | tests/test_views.py, tests/test_security_audit.py, tests/test_access.py, tests/test_post_only_mutations.py | S | FIXED (Task 6.3) | merge of upstream #86 + POST-only refresh/member add/role validation |
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | — | WONTFIX | Not applicable: TLS ends at Apache (mod_ssl + mod_wsgi in the same vhost, no proxy); operator 2026-10-23 |
@@ -89,8 +89,8 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Production uses a different SECURE_KEY (operator 2026-10-23): not exploitable. Cleanup: replace tracked file by an .example |
-| xss-display | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN |  |
-| xss-tag | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN |  |
+| xss-display | — | forms-convert-utilities.md | tests/test_convert.py, tests/test_escaping_6_6.py | S | FIXED (Task 6.6) | Text nodes escape only & < > (escape_text), attributes full escape(); kind `image` exempt |
+| xss-tag | — | forms-convert-utilities.md | tests/test_convert.py, tests/test_escaping_6_6.py | S | FIXED (Task 6.6) | conv_db_disp, filter_expand_tip (attribute), disp_trac; kind `image` exempt |
 
 ## Marker ids not in any doc
 

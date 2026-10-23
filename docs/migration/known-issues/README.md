@@ -22,7 +22,7 @@ corresponding test in the same commit.
 2. **`idor-item-project`** (`views.py:646`, `:819`): item ids are not checked against
    the project in the URL; write access to project A allows editing or deleting
    NEW items of project B.
-3. **XSS**: `xss-display`, `xss-tag`, `md-no-escape`: user text is `mark_safe`d unescaped.
+3. **XSS**: `xss-display`, `xss-tag` (FIXED in Task 6.6), `md-no-escape` (HTML part fixed in 6.6, LaTeX part open): user text was `mark_safe`d unescaped.
 4. **SQL injection** in `editor/ext_cats.py` (string-built SQL against the FW Profile DB).
 5. **`find-replace-no-write-check`**, **`import-no-login-required`**,
    **`edit-project-del-user-unscoped`**, **`mutation-via-get`**: missing or wrong
