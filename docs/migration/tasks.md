@@ -96,7 +96,7 @@ decision recorded here.
   proven to differ only in the converted controls + delete modal. Gate 1254 SQLite / 1263 MySQL. Opus review: no blocking findings; low-severity follow-ups in Task 6.3b
 - [x] **Task 6.3b** `0eb5a54` Review follow-ups: confirm fallback without Bootstrap/requestSubmit, stronger GET sweep test, button group/alignment, warning for old GET member links, release notes + ROLLOUT walkthrough. Gate 1257 SQLite / 1266 MySQL
 - [x] **Task 6.4** `56ac216` Cross-project scoping of every id (item, application, ValSet, parent, release, ProjectUser); find/replace needs write access
-- [ ] **Task 6.4b** Review follow-ups: Default ValSet check via DB collation (MySQL `Défault`), keep `access-first-row` (K) untouched, stronger tests
+- [x] **Task 6.4b** `e7af220` Review follow-ups: Default ValSet check via DB collation (MySQL `Défault`), keep `access-first-row` (K) untouched, stronger tests. Gate 1313 SQLite / 1322 MySQL
 - [x] **Task 6.5** `ce003fd` `add-app-releases-null-app-items`: no item loop for an unsaved application; Release/Application rows as before.
   Production impact (dump 2026-10-21): 80 project-level items in 4 projects probably confirmed by the bug (74 were NEW,
   6 MOD); operator decision: report only, `docs/fixes/add-app-release-data-impact.md`
