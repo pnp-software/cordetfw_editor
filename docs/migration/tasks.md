@@ -98,8 +98,9 @@ decision recorded here.
 - [ ] **Task 6.5** `add-app-releases-null-app-items`
 - [ ] **Task 6.6** XSS escaping (HTML path): text nodes escape `&<>` only, attributes full `escape()`, `image` (SVG) exempt;
   escape before #iref substitution and markdown; pin which paths can write `image` fields
-- [ ] **Task 6.7** Optional config keys (proxy SSL header, axes lockout parameters, HSTS) defaulting to today's behaviour;
-  ROLLOUT §0 operator checks (#17 proxy, #18 axes, #19 tracked dev SECRET_KEY, #23 HSTS/sessions, pip-audit)
+- [ ] **Task 6.7** Optional `AXES_LOCKOUT_PARAMETERS` config key (default unchanged); ROLLOUT §0: pip-audit before cutover.
+  Operator answers 2026-10-23: TLS ends at Apache, no proxy (#17 not applicable); HSTS + port 80 redirect by Apache (#23);
+  production SECURE_KEY differs from the tracked one (#19 -> K cleanup)
 - [ ] **Task 6.8** Release gate: SQLite/MySQL 8.0/8.4, rehearsal on production dump with expected-diffs allowlist, Opus review
 
 ## Decisions

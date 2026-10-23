@@ -10,8 +10,11 @@ deployable versions.
 - [x] Production collation confirmed from that dump: all `editor_*` tables `utf8mb4_unicode_ci`.
 - [ ] Check whether `DATABASES.default.OPTIONS` in `/etc/dj_cordetfw_config.json` sets a charset. Without one,
       the new code keeps `utf8`, the same as today.
-- [ ] Find out how TLS reaches Django. With Apache + mod_wsgi serving HTTPS directly, nothing is needed. With a separate
+- [x] Find out how TLS reaches Django. With Apache + mod_wsgi serving HTTPS directly, nothing is needed. With a separate
       TLS proxy, add `"CSRF_TRUSTED_ORIGINS": ["https://<host>"]` to the config file.
+      **Confirmed 2026-10-23:** TLS ends at Apache (mod_ssl, Let's Encrypt, mod_wsgi in the same `*:443` vhost, no proxy;
+      port 80 only redirects; HSTS sent by Apache). Neither `CSRF_TRUSTED_ORIGINS` nor `SECURE_PROXY_SSL_HEADER` is needed.
+- [x] Production `SECURE_KEY` differs from the key in the tracked `dj_cordetfw_config.json` (confirmed 2026-10-23).
 - [ ] Note the Apache vhost's `WSGIDaemonProcess … python-home=` (or `WSGIPythonHome`) and the current venv path.
       Also grep the Apache config for `python-path` / `WSGIPythonPath`. If either points into the old venv's
       `site-packages`, the old libraries would load first: change it together with `python-home`.

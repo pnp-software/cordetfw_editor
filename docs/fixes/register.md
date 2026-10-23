@@ -11,7 +11,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | OPEN |  |
 | add-spec-item-val-set-post | — | views.md | — | K | OPEN |  |
 | appform-cats-substring | app-cats-substring | forms-convert-utilities.md, models-access-releases-query.md | tests/test_forms.py, tests/test_releases.py | K | OPEN |  |
-| axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | optional config key / ROLLOUT operator check |
+| axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | No proxy, so REMOTE_ADDR is the client IP: shared-lockout DoS not applicable; distributed brute force remains. Task 6.7: optional AXES_LOCKOUT_PARAMETERS key, default unchanged |
 | change-password-no-response | — | views.md | tests/test_views.py | K | OPEN |  |
 | conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | OPEN |  |
@@ -73,7 +73,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN | HTML escaping only in S; LaTeX escaping and markdown nesting/first-list-item -> K |
 | mutation-via-get | — | views.md, security-audit.md | tests/test_views.py, tests/test_security_audit.py, tests/test_access.py, tests/test_post_only_mutations.py | S | FIXED (Task 6.3) | merge of upstream #86 + POST-only refresh/member add/role validation |
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
-| no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | S | OPEN | optional config key / ROLLOUT operator check |
+| no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | — | WONTFIX | Not applicable: TLS ends at Apache (mod_ssl + mod_wsgi in the same vhost, no proxy); operator 2026-10-23 |
 | order-by-unrestricted | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | outcomponent-disp-short-keyerror | — | views.md | — | K | OPEN | configs.json OutComponent `disp_short` lists `value`, not in its attrs: conv_db_disp KeyError (500). Found by the Task 6.6 scan |
 | owner-empty-names | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
@@ -84,10 +84,10 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | OPEN |  |
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
-| session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | S | OPEN | optional config key / ROLLOUT operator check |
+| session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | OPEN | HSTS + port 80 redirect done by Apache (operator 2026-10-23); session length/CSP defaults remain, low |
 | temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
-| tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | S | OPEN | optional config key / ROLLOUT operator check |
+| tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Production uses a different SECURE_KEY (operator 2026-10-23): not exploitable. Cleanup: replace tracked file by an .example |
 | xss-display | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN |  |
 | xss-tag | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN |  |
 
