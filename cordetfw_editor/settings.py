@@ -51,6 +51,7 @@ DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 INSTALLED_APPS = [
     'editor.apps.EditorConfig',
     'crispy_forms',
+    'crispy_bootstrap4',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -183,6 +184,7 @@ STATIC_URL = '/static/'
 LOGIN_REDIRECT_URL = '/editor'
 LOGOUT_REDIRECT_URL = '/editor'
 
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap4'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # reconfigure messages tags to fit boostrap

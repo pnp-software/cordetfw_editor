@@ -53,7 +53,7 @@ decision recorded here.
   Accepted upstream changes: PBKDF2 1,000,000 iterations (Django 3.2 verifies them: rollback-safe),
   aria attributes on password-reset-confirm inputs and admin row checkboxes, Django 5.2 admin/decoy template.
   All 24 logged-in page goldens differ only in the logout block (checked mechanically).
-- [ ] **Task 3.6** crispy + crispy-bootstrap4
+- [x] **Task 3.6** crispy 2.0 → 2.7 + crispy-bootstrap4 2026.2 (`crispy_bootstrap4` app, `CRISPY_ALLOWED_TEMPLATE_PACKS`); no rendering in app templates, suite unchanged
 - [ ] **Task 3.7** axes / ipware
 - [x] **Task 3.8** import-export / tablib (done as Task 3.4b)
 - [ ] **Task 3.9** mysqlclient, cexprtk, remaining packages, test tools
