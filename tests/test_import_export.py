@@ -1377,7 +1377,9 @@ SPEC_APP_LEVEL_NOAPP_URL = '/editor/Requirement/1/0/1/Sel_All/0/export_spec_item
 
 # project name -> expected export_project Content-Disposition (FileResponse)
 PROJECT_DISPOSITIONS = {
-    'A "q" B': 'inline; filename="cordetfw_editor_A "q" B.zip"',
+    # Changed in Task 3.2 (Django 3.2.0 -> 3.2.25): CVE-2022-36359 fix escapes the quotes.
+    # Django 3.2.0 sent: inline; filename="cordetfw_editor_A "q" B.zip"
+    'A "q" B': 'inline; filename="cordetfw_editor_A \\"q\\" B.zip"',
     'Größe': "inline; filename*=utf-8''cordetfw_editor_Gr%C3%B6%C3%9Fe.zip",
     '日本 X': "inline; filename*=utf-8''cordetfw_editor_%E6%97%A5%E6%9C%AC%20X.zip",
 }
@@ -1385,9 +1387,8 @@ PROJECT_DISPOSITIONS = {
 
 @pytest.mark.parametrize('name', list(PROJECT_DISPOSITIONS), ids=['quotes', 'latin1', 'cjk'])
 def test_export_project_content_disposition_special_names(client, fresh_temp, name):
-    # EXPECTED-CHANGE: Django 3.2.15+ (security patch releases) escapes double quotes in
-    # FileResponse filenames (backslash-escaped, or percent-encoded in filename*) so the
-    # 'quotes' case changes; Django 4.2+ also emits a plain ASCII fallback 'filename="..."'
+    # 'quotes' changed as expected in Task 3.2 (CVE-2022-36359), accepted by the operator.
+    # EXPECTED-CHANGE: Django 4.2+ also emits a plain ASCII fallback 'filename="..."'
     # next to filename*=utf-8'' for non-ASCII names, so 'latin1' and 'cjk' change too.
     w = build_world(name)
     client.force_login(w.owner)

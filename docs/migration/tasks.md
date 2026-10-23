@@ -26,8 +26,8 @@ decision recorded here.
 - [x] **Task 2.1** `dependency-matrix.md`, honeypot decision (vendor)
 
 ## Phase 3: Upgrade gates
-- [ ] **Task 3.1** Behaviour-neutral warning fixes (raw strings)
-- [ ] **Task 3.2** Django 3.2.0 → 3.2.25
+- [x] **Task 3.1** Behaviour-neutral escape-sequence fixes (constants proven identical)
+- [x] **Task 3.2** Django 3.2.0 → 3.2.25: 1 expected change accepted (CVE-2022-36359 filename quote escaping)
 - [ ] **Task 3.3** Honeypot replacement
 - [ ] **Task 3.4** Django 4.2 bridge (+ bridge library versions, django-upgrade)
 - [ ] **Task 3.5** Django 5.2 LTS: USE_L10N removal (decide date rendering: app templates use explicit `|date`, admin
@@ -54,3 +54,6 @@ decision recorded here.
 - 2026-10-23 (operator): Task 3.5 converts `DATETIME_FORMAT` to Django format syntax
   (`d-m-Y H:i:s`), so the admin shows real dates instead of the broken strftime output. App
   pages must stay byte-identical. Together with POST logout, this is an intended visible change.
+- 2026-10-23 (operator): accepted the CVE-2022-36359 change from Task 3.2. Upstream security/protocol
+  changes that are invisible to users and don't touch stored data may be accepted without asking,
+  and are listed in the gate commit and here. User-visible or data-affecting changes need approval.
