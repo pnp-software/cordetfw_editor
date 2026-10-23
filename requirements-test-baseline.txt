@@ -1,0 +1,5 @@
+# Test tools for the Python 3.12 / Django 3.2 baseline venv (.venv-baseline) only.
+# pytest-django 4.8.0 is the last release supporting Django 3.2.
+pytest==8.3.5
+pytest-django==4.8.0
+pytest-cov==5.0.0

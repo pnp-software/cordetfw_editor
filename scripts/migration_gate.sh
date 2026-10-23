@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Common migration gate: run from the repo root.
-#   scripts/migration_gate.sh [venv-dir]     (default: .venv-upgrade)
+#   scripts/migration_gate.sh [venv-dir]     (default: .venv)
 # Requires the disposable MySQL test container described in CLAUDE.md.
 set -uo pipefail
-VENV=${1:-.venv-upgrade}
+VENV=${1:-.venv}
 PY="$VENV/bin/python"
 MYSQL_ENV=(CORDETFW_TEST_MYSQL_PORT=${CORDETFW_TEST_MYSQL_PORT:-33306}
            CORDETFW_TEST_MYSQL_USER=${CORDETFW_TEST_MYSQL_USER:-cftest}

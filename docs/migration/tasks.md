@@ -60,8 +60,12 @@ decision recorded here.
   **Schema:** adds third-party migration `axes.0010_accessattemptexpiration` (new table; old code ignores it) →
   rehearse in Task 4.2.
 - [x] **Task 3.8** import-export / tablib (done as Task 3.4b)
-- [ ] **Task 3.9** mysqlclient, cexprtk, remaining packages, test tools
-- [ ] **Task 3.10** Exact pins, `requirements-lock.txt`, fresh-venv reproduction
+- [x] **Task 3.9** mysqlclient 2.2.7 → 2.3.0 (source build OK), cexprtk 0.4.2 (latest). Removed unused direct pins:
+  pytz, setuptools, django-appconf, tablib format extras (MarkupPy, odfpy, openpyxl, et_xmlfile, xlrd, xlwt, PyYAML,
+  defusedxml; only CSV is used), asgiref/sqlparse/diff-match-patch now transitive. Test tools pytest 9.1.1,
+  pytest-django 4.14.0, pytest-cov 7.1.0 (`requirements-test-baseline.txt` keeps the old pins for `.venv-baseline`).
+- [x] **Task 3.10** Exact direct pins + `requirements-lock.txt`; fresh venv from the files reproduces the environment exactly;
+  gate green (1141 SQLite / 1150 MySQL), strict DeprecationWarning run green, coverage 97%.
 
 ## Phase 4: Real-environment validation (external gates)
 - [ ] **Task 4.1** Full suite on MySQL 8.0.x (matching production) and 8.4

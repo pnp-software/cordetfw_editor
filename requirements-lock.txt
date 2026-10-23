@@ -1,0 +1,15 @@
+# Resolved runtime environment, verified 2026-10-23 on Python 3.12.3, Linux x86_64 (developer host; re-verify on the Ubuntu 24.04 server).
+# Install: pip install -r requirements.txt -c requirements-lock.txt
+asgiref==3.13.0
+cexprtk==0.4.2
+crispy-bootstrap4==2026.2
+diff-match-patch==20241021
+Django==5.2.18
+django-axes==8.3.1
+django-crispy-forms==2.7
+django-import-export==4.4.3
+django-ipware==8.0.0
+mysqlclient==2.3.0
+python-ipware==4.1.1
+sqlparse==0.6.0
+tablib==3.10.0

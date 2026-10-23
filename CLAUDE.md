@@ -13,12 +13,19 @@ Category definitions live in `editor/static/json/configs.json`.
 
 ## Tests
 
-Baseline = exact production environment (Python 3.12.3, Django 3.2.0), pinned in
-`requirements-baseline.txt`:
+Current stack (Python 3.12, Django 5.2 LTS):
+
+    python3.12 -m venv .venv
+    .venv/bin/pip install -r requirements.txt -r requirements-test.txt -c requirements-lock.txt
+    .venv/bin/python -m pytest -q
+    scripts/migration_gate.sh .venv        # full gate: checks, SQLite + MySQL, goldens, warnings
+
+Reference baseline = the pre-migration production environment (Python 3.12.3, Django 3.2.0),
+for comparing behaviour with the old stack:
 
     python3.12 -m venv .venv-baseline
-    .venv-baseline/bin/pip install -r requirements-baseline.txt -r requirements-test.txt
-    .venv-baseline/bin/python -m pytest -q
+    .venv-baseline/bin/pip install -r requirements-baseline.txt -r requirements-test-baseline.txt
+    .venv-baseline/bin/python -m pytest -q   # expected: the tests changed during the migration fail
 
 Production uses MySQL, so the suite must also pass on a disposable MySQL 8.0
 server (case-insensitive collation; never point this at a real database):
@@ -33,8 +40,8 @@ server (case-insensitive collation; never point this at a real database):
 
 Backend-dependent expectations use `tests/backend.py:is_mysql()`.
 
-Golden files in `tests/golden/` are recorded with `UPDATE_GOLDEN=1` on the
-baseline only.
+Golden files in `tests/golden/` were recorded with `UPDATE_GOLDEN=1` on the baseline. After a
+reviewed change, promote only the reviewed `*.actual` files; never re-record everything blindly.
 
 ## Migration harness rules
 
