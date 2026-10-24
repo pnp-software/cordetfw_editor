@@ -184,7 +184,12 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   owner-empty-names, form-none-literal, p-link-selection-lost, copy-unreachable-valset-message,
   refresh-not-shared-double-message, refresh-timestamp-overwritten, ref-link-backslash (browsers already treated `\`
   as `/`). Goldens promoted one by one (help text, `value="None"` -> empty, p_link/owner `selected`, `\list_spec_items`
-  -> `/list_spec_items`). `s-data-string` not fixed: changes stored data/export -> ticket docs/fixes/tickets/s-data-string.md
+  -> `/list_spec_items`). `s-data-string` not fixed: changes stored data/export -> ticket docs/fixes/tickets/s-data-string.md.
+  Opus review of 7.6 + 7.7: refresh-timestamp-overwritten fix reverted (`af4c9af`, WONTFIX: release views filter CNF
+  items by `updated_at`; an older external timestamp listed an item twice in an old release); migrations 0012/0013
+  verified no-op on MySQL and old code runs on the migrated DB. New row `refresh-cnf-obs-copy-new-content`.
+  7.6b `e2789e3` + `aa36b90`: form-choice-empty-silent-default (blank option in edit/copy/split when a required
+  choice is stored empty or invalid; add mode unchanged)
 - [x] **Task 7.7** Model defaults (K6): naive-created-at-default (migration 0012, aware UTC default) and
   release-version-default-str (migration 0013, int defaults). sqlmigrate: MySQL no-op for both; SQLite rebuilds the
   table with rows copied unchanged. No data migration; rollback with the old code works (no MySQL DDL)
