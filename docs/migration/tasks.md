@@ -179,6 +179,14 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   page via get_page, invalid expand params ignored). Gate 1980 SQLite / 1990 MySQL. Opus review: nothing blocking;
   follow-ups 7.3b (Unicode-digit expand_id, `i` defined before the import loop, register test columns)
 - [ ] **Task 7.4** Import fidelity and atomicity (K3)
+  - 7.4b spec-item CSV import (`8f521d4`..`1af4aa9`): exp-ref-no-dots (link references with dots/dashes resolve),
+    import-spec-items-no-rollback + -abort-no-summary (per-row atomic import, one summary "N imported, M rejected"
+    with line numbers and reasons, warnings), csv-export-not-reimportable (empty required text/choice fields
+    imported with a warning), import-link-ambiguous (unknown/ambiguous links reported). Opus review: nothing
+    blocking; follow-ups 7.4c: empty or non-numeric integer cells rejected with a clear reason (they cannot be
+    stored empty), echoed link text truncated to 80 chars. Production (aggregates): 0 live items link to a target
+    whose domain/name contains characters outside [A-Za-z0-9_], so the wider link pattern changes no import result
+    of production exports
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)
 - [x] **Task 7.6** UI/behaviour bugs (K5): 8 ids (`fba05cb`.. as cherry-picked, ending `ccefe19`): help-double-space,
   owner-empty-names, form-none-literal, p-link-selection-lost, copy-unreachable-valset-message,

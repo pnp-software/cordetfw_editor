@@ -13,6 +13,7 @@ import zipfile
 from datetime import datetime, timezone
 
 import pytest
+from unittest import mock
 from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 
@@ -1354,6 +1355,27 @@ def test_import_spec_items_duplicate_rows_in_file_second_updates_first(client, w
     assert item.value == '2' and item.status == 'NEW'
 
 
+def test_import_spec_items_bad_number_cell_rejected_with_reason(client, world):
+    # Task 7.4b review: an integer column (Size) that is empty or not a whole number is rejected with a clear
+    # reason instead of 'unexpected error' (empty required number fields cannot be accepted like text fields)
+    client.force_login(world.rw)
+    row = {'Domain': 'Types', 'Title': 't', 'Description': '', 'Default Value': '', 'Rationale': '',
+           'Remarks': '', 'Native Type': '', 'ValSet': 'Default', 'Change Log': '', 'Owner': 'x', 'Size': '1'}
+    rows = [dict(row, Name='N1', Size=''), dict(row, Name='N2', Size='abc'), dict(row, Name='N3', Size=' -4 ')]
+    response = post_csv(client, '/editor/EnumType/1/0/1/Sel_All/import_spec_items', csv_bytes(ET_LABELS, rows))
+    assert messages_of(response) == [(
+        'alert-danger', '1 imported, 2 rejected. Rejected: line 2: missing Size (number); '
+                        'line 3: Size is not a whole number')]
+    assert get_item(world, 'EnumType', 'Types', 'N3').n1 == -4
+
+
+def test_import_spec_items_link_warning_truncates_long_cell(client, world):
+    client.force_login(world.rw)
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L1', Type='X:' + 'y' * 200)]))
+    [(level, text)] = messages_of(response)
+    assert 'y' * 78 + '...' in text and 'y' * 81 not in text
+
+
 def test_import_spec_items_exception_in_row_rejects_that_row_only(client, world, caplog):
     # FIXED: import-spec-items-abort-no-summary (was: a row that raises aborted the whole loop with a
     # message 'Unable to read or process uploaded file at line 3'; neither the success nor the error
@@ -1362,8 +1384,14 @@ def test_import_spec_items_exception_in_row_rejects_that_row_only(client, world,
     client.force_login(world.rw)
     row = {'Domain': 'Types', 'Title': 't', 'Description': '', 'Default Value': '', 'Rationale': '',
            'Remarks': '', 'Native Type': '', 'ValSet': 'Default', 'Change Log': '', 'Owner': 'x', 'Size': '1'}
-    rows = [dict(row, Name='E1'), dict(row, Name='E2', Size='abc'), dict(row, Name='E3')]
-    with caplog.at_level(logging.ERROR, logger='editor.views'):
+    rows = [dict(row, Name='E1'), dict(row, Name='E2'), dict(row, Name='E3')]
+    original_save = SpecItem.save
+
+    def failing_save(self, *args, **kwargs):     # an unexpected error while saving row E2
+        if self.name == 'E2':
+            raise ValueError('simulated failure')
+        return original_save(self, *args, **kwargs)
+    with caplog.at_level(logging.ERROR, logger='editor.views'), mock.patch.object(SpecItem, 'save', failing_save):
         response = post_csv(client, '/editor/EnumType/1/0/1/Sel_All/import_spec_items', csv_bytes(ET_LABELS, rows))
     assert response['Location'] == '/editor/EnumType/1/0/1/Sel_All/0/list_spec_items'
     assert messages_of(response) == [(

@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import csv
 import traceback
@@ -1016,9 +1017,17 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
         return 'row has fewer columns than the header', warnings
     missing_fields = sorted(
         field_config['label'] for field_config in attrs.values()
-        if field_config['req_in_form'] and not item.get(field_config['label'], '').strip())
+        if field_config['req_in_form'] and field_config['kind'] != 'int'
+        and not item.get(field_config['label'], '').strip())
     if missing_fields:      # csv-export-not-reimportable: accepted again (the web form still requires them)
         warnings.append('empty required field(s) '+', '.join(missing_fields))
+    for field_config in attrs.values():     # integer columns cannot be stored empty (Task 7.4b review)
+        if field_config['kind'] == 'int' and field_config['label'] in item:
+            cell = item[field_config['label']].strip()
+            if cell == '':
+                return 'missing '+field_config['label']+' (number)', warnings
+            if cell != '' and not re.fullmatch(r'[+-]?[0-9]+', cell):
+                return field_config['label']+' is not a whole number', warnings
     try:
         validate_identifier(item[csv_domain])
         validate_identifier(item[csv_name])

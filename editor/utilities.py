@@ -141,7 +141,8 @@ def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
             target, problem = resolve_exp_ref(project, imp_dict[label])
             setattr(spec_item, key, target)
             if problem and warnings is not None:
-                warnings.append('link '+label+' "'+imp_dict[label]+'" '+(
+                shown = imp_dict[label] if len(imp_dict[label]) <= 80 else imp_dict[label][:80]+'...'
+                warnings.append('link '+label+' "'+shown+'" '+(
                     'is ambiguous (several items have this domain:name)' if problem == 'ambiguous'
                     else 'matches no item')+', imported without link')
         else:
