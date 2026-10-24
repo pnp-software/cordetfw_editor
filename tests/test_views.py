@@ -1451,3 +1451,24 @@ def test_make_application_release(client, owner, project):
     assert item.status == 'CNF'
     project.refresh_from_db()
     assert str(project.release) == '0.0'
+
+
+# ------------------------------------------------------------------ outcomponent-disp-short-keyerror
+def test_configs_disp_lists_only_use_defined_attrs():
+    # FIXED: outcomponent-disp-short-keyerror (was: OutComponent disp_short listed `value`, not in its attrs)
+    from editor.configs import configs
+    for cat, cfg in configs['cats'].items():
+        for disp in ('disp_def', 'disp_short', 'disp_trac'):
+            for column in cfg.get(disp, []):
+                for attr in column.get('attrs', []):
+                    assert attr in cfg['attrs'], (cat, disp, attr)
+
+
+@pytest.mark.parametrize('disp', ['disp_def', 'disp_short'])
+def test_list_out_component_disp_variants(client, owner, project, dvs, disp):
+    # FIXED: outcomponent-disp-short-keyerror (was: KeyError, HTTP 500 for disp=disp_short)
+    pkt = make_spec_item(project, cat='Packet', domain='P', name='pk', p_kind='TM')
+    make_spec_item(project, cat='OutComponent', domain='O', name='oc', p_link=pkt, status='CNF')
+    resp = client.get(lurl('OutComponent', project, dvs), {'disp': disp})
+    assert resp.status_code == 200
+    assert resp.context['disp'] == disp

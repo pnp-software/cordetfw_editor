@@ -890,7 +890,7 @@
                                            ],
                               "disp_short": [{"header":"Domain", "attrs":["domain"]},
                                            {"header":"Name", "attrs":["name"]},
-                                           {"header":"Checks and Actions", "attrs":["value", "t1", "t2", "t3", "t5"]},
+                                           {"header":"Checks and Actions", "attrs":["t1", "t2", "t3", "t5"]},
                                            {"header":"Packet", "attrs":["p_link"], "order_by":"p_link"}
                                            ],
                               "disp_trac": [{"header":"Domain", "attrs":["domain"]},
