@@ -220,7 +220,16 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   unchanged); axes-ip-only-lockout, export-s-data-key-order, md-no-escape (markdown part) closed as WONTFIX; the
   export byte changes and s-data-string stay open as tickets (docs/fixes/tickets/). Also `ef2fd0c` refresh-cnf-obs-copy-new-content (the OBS copy made by
   a refresh of a CNF Model item keeps the previous version). Gate on 5e235a7: 2118 SQLite / 2128 MySQL
-- [ ] **Task 7.9** Release gate for track K
+- [x] **Task 7.9** Release gate for track K (HEAD d7c99d9):
+  - 7.9a `f2f4704` rehearsal on the production dump, OLD = track-s-rc1 vs NEW: 404/404 exports identical; 164 pages:
+    99 identical, 65 differ only by `ref-link-backslash`, 0 unexplained; rollback to track-s-rc1: 404/404 exports and
+    164/164 pages identical, migrate --plan empty, sessions/passwords valid both ways. Snapshot does not cover forms,
+    login, release views, non-staff index (-> staging checks in docs/fixes/RELEASE_NOTES_K.md)
+  - Opus review of track-s-rc1..ae6b0aa: nothing blocking in the code; 7.9b `599f3c8` known-issue docs updated for all
+    K rows; 7.9c `d7c99d9` foreign references removed by CSV import / Find & Replace are reported, ZIP abort message
+    without exception text, dead code removed
+  - Gate on d7c99d9: 2121 SQLite / 2131 MySQL 8.0; MySQL 8.4.13: 2131 passed
+  - Release notes: docs/fixes/RELEASE_NOTES_K.md. Still open (operator): export tickets + s-data-string
 
 ## Decisions
 - 2026-10-23 (operator): commit one checkpoint per gate on `upgrade/django-lts`, never pushed.
