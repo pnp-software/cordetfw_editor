@@ -3,7 +3,6 @@ import os
 import logging
 import csv
 import json
-import json
 import datetime
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -103,21 +102,49 @@ def import_project_tables(request, imp_dir):
         messages.error(request, 'Unable to import project: '+repr(e)+'; nothing was imported')
         return
     for note in notes:
-        messages.error(request, note)
+        if isinstance(note, InfoNote):
+            messages.warning(request, note)
+        else:
+            messages.error(request, note)
 
 
-def project_role(project_user):
+class InfoNote(str):
+    """ A note about a deviation that did not reject anything (shown as a warning, not as an error) """
+
+
+def project_role(project_user, notes=None):
     """ import-project-role-lost: the role of the exported project user; unknown values are read-only """
     role = project_user.get('role', 'RO')
-    return role if role in ('RO', 'RW') else 'RO'
+    if role in ('RO', 'RW'):
+        return role
+    if notes is not None:
+        notes.append(InfoNote('The role '+repr(role)+' of project user '+project_user.get('user', '')+
+                              ' is not known, the user was imported as read-only user'))
+    return 'RO'
 
 
-def created_at_kwargs(spec_item):
-    """ import-project-created-at-lost: the exported creation time; without one the model default applies """
+def parse_aware(value):
+    """ A timestamp of the export as a timezone-aware datetime; an unreadable value is returned unchanged """
+    try:
+        return make_aware(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S"))
+    except (ValueError, TypeError):
+        return value
+
+
+def created_at_kwargs(spec_item, item_notes):
+    """
+    import-project-created-at-lost: the exported creation time; without one, or with an unreadable one (a note
+    is added), the model default applies
+    """
     value = spec_item.get('created_at')
     if not value:
         return {}
-    return {'created_at': make_aware(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S"))}
+    try:
+        return {'created_at': make_aware(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S"))}
+    except ValueError:
+        item_notes.append(InfoNote('Spec_item '+item_full_name(spec_item)+': the creation time ('+value+
+                                   ') is not in format Y-m-d H:M:S, it was set to the import time'))
+        return {}
 
 
 def restore_updated_at(instance, value, is_date=False):
@@ -143,30 +170,8 @@ def parse_s_data(cell):
     text of a string ("{}" with the quotes). A string stays a string (s-data-string: "{}" is not normalised to
     {}), except for the double-encoded text written by the old importer (a JSON string whose content is a
     non-empty JSON object or list), which becomes the object. Text that is not JSON is kept as it is.
-    """
-    if cell.strip() == '':
-        return {}
-    try:
-        value = json.loads(cell)
-    except ValueError:
-        return cell
-    if isinstance(value, str):
-        try:
-            inner = json.loads(value)
-        except ValueError:
-            return value
-        if isinstance(inner, (dict, list)) and inner:
-            return inner
-    return value
-
-
-def parse_s_data(cell):
-    """
-    import-project-s-data-double-encoded: the JSON value of the s_data cell as the source database had it.
-    The export writes an empty cell for a falsy value ({}), the JSON text of an object ({"a": 1}) and the JSON
-    text of a string ("{}" with the quotes). A string stays a string (s-data-string: "{}" is not normalised to
-    {}), except for the double-encoded text written by the old importer (a JSON string whose content is a
-    non-empty JSON object or list), which becomes the object. Text that is not JSON is kept as it is.
+    Known limitation: a genuinely stored STRING whose content is a non-empty JSON object/list (e.g. the
+    string '{"a": 1}') is indistinguishable from the old double encoding and is imported as the object.
     """
     if cell.strip() == '':
         return {}
@@ -297,7 +302,7 @@ def _import_project_tables(imp_dir, notes):
             raise ImportAborted('The release author '+release['release_author']+' does not exist: '+str(e))
         new_release = Release(release_author = release_author,
                               desc = release['desc'],
-                              updated_at = release['updated_at'],
+                              updated_at = parse_aware(release['updated_at']),
                               project_version = release['project_version'],
                               application_version = release.get('application_version') or 0)
         new_release.save()
@@ -334,7 +339,7 @@ def _import_project_tables(imp_dir, notes):
         new_project_user = ProjectUser(updated_at = project_user['updated_at'],
                                        project = new_project,
                                        user = user_name_2_user[project_user['user']],
-                                       role = project_role(project_user))
+                                       role = project_role(project_user, notes))
         new_project_user.save()
         restore_updated_at(new_project_user, project_user['updated_at'], is_date=True)
         
@@ -359,19 +364,17 @@ def _import_project_tables(imp_dir, notes):
         # import-project-owner-not-member (operator decision 2026-10-24): an owner who is neither the project
         # owner nor a project user keeps the item if the user exists on this server (and becomes a read-only
         # project user), otherwise the item is assigned to the project owner. Users are never created.
+        # Returns (owner, add_member, note); the caller applies the side effects once the item is saved.
         name = spec_item['owner']
         if name in user_name_2_user:
-            return user_name_2_user[name]
+            return user_name_2_user[name], False, None
         user = User.objects.filter(username=name).first()
         if user is None:
-            notes.append('Spec_item '+item_full_name(spec_item)+': the owner '+name+' does not exist on this server, '+
-                         'the item was assigned to the project owner '+project_owner.username)
-            return project_owner
-        ProjectUser(project = new_project, user = user, role = 'RO').save()
-        user_name_2_user[name] = user
-        notes.append('The user '+name+' owns imported items but is not a user of the project: '+
-                     'added as read-only user of the project')
-        return user
+            return project_owner, False, InfoNote('Spec_item '+item_full_name(spec_item)+': the owner '+name+
+                                          ' does not exist on this server, the item was assigned to the project owner '+
+                                          project_owner.username)
+        return user, True, InfoNote('The user '+name+' owns imported items but is not a user of the project: '+
+                            'added as read-only user of the project')
 
     spec_item_old_id_2_new = {}
     spec_item_new_id_2_old = {}
@@ -387,6 +390,7 @@ def _import_project_tables(imp_dir, notes):
                            spec_item['name'] + ': the status ' + spec_item['status'] + ' is not valid (valid values are: '+
                            ', '.join(valid_status) + ')')
             continue
+        item_notes = []
         try:
             if configs['cats'].get(spec_item['cat'], {}).get('attrs', {}).get('value', {}).get('kind') == 'image':
                 check_svg_value(spec_item['value'])       # Task 6.6b: image-svg-unsanitised
@@ -397,11 +401,10 @@ def _import_project_tables(imp_dir, notes):
                                      application = application_old_id_2_new[spec_item['application']],
                                      title = spec_item['title'],
                                      desc = spec_item['desc'],
-                                     owner = resolve_item_owner(spec_item),
                                      val_set = val_set_old_id_2_new[spec_item['val_set']],
                                      status = spec_item['status'],
                                      updated_at = make_aware(datetime.datetime.strptime(spec_item['updated_at'], "%Y-%m-%d %H:%M:%S")),
-                                     **created_at_kwargs(spec_item),
+                                     **created_at_kwargs(spec_item, item_notes),
                                      rationale = spec_item['rationale'],
                                      implementation = spec_item['implementation'],
                                      remarks = spec_item['remarks'],
@@ -419,7 +422,17 @@ def _import_project_tables(imp_dir, notes):
                                      n3 = spec_item['n3'],
                                      change_log = spec_item['change_log'])
             with transaction.atomic():          # savepoint: a failing row must not break the import transaction
+                # The owner is resolved last: membership and notes only for rows that are actually saved
+                owner, add_member, owner_note = resolve_item_owner(spec_item)
+                new_spec_item.owner = owner
                 new_spec_item.save()
+                if add_member:
+                    ProjectUser(project = new_project, user = owner, role = 'RO').save()
+            if add_member:
+                user_name_2_user[owner.username] = owner
+            if owner_note:
+                notes.append(owner_note)
+            notes.extend(item_notes)
             spec_item_old_id_2_new[spec_item['id']] = new_spec_item
             spec_item_new_id_2_old[new_spec_item.id] = spec_item
         except Exception as e:
@@ -441,8 +454,8 @@ def _import_project_tables(imp_dir, notes):
                 continue
             target = spec_item_old_id_2_new.get(old_target)
             if target is None:      # import-project-dangling-link-crash: missing or rejected item
-                notes.append('Spec_item '+item_full_name(old_spec_item)+': the '+field+' (item id '+old_target+
-                             ') is not in the imported data, the '+field+' was set to None')
+                notes.append(InfoNote('Spec_item '+item_full_name(old_spec_item)+': the '+field+' (item id '+old_target+
+                                  ') is not in the imported data, the '+field+' was set to None'))
             setattr(new_spec_item, field, target)
 
         new_spec_item.desc = convert_edit_to_db(new_project, new_spec_item.desc)

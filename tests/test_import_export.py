@@ -7,6 +7,7 @@ The byte-level goldens under tests/golden/export/ are the contract.
 """
 
 import csv
+import re
 import io
 import json
 import zipfile
@@ -826,7 +827,7 @@ def test_import_project_unknown_project_user(client, renamed_original, fresh_tem
     assert Project.objects.count() == 1 and Release.objects.count() == 4
 
 
-def test_import_project_unknown_release_author_leaves_partial_data(client, renamed_original, fresh_temp):
+def test_import_project_unknown_release_author_aborts_without_data(client, renamed_original, fresh_temp):
     # FIXED: import-project-not-atomic (was: the two releases before the bad one were committed, Release.count()
     # == 4 + 2). The import is one transaction: a failure creates nothing and gives one error message.
     w = renamed_original
@@ -935,7 +936,7 @@ def test_import_project_item_owner_not_member_existing_user_becomes_ro_member(cl
     members = [(pu.user.username, pu.role) for pu in new.project_users.order_by('id')]
     assert members.count(('writer', 'RO')) == 1 and len(members) == 2
     assert messages_of(response) == [
-        ('alert-danger', 'The user writer owns imported items but is not a user of the project: '
+        ('alert-warning', 'The user writer owns imported items but is not a user of the project: '
                          'added as read-only user of the project')]
 
 
@@ -956,11 +957,11 @@ def test_import_project_item_owner_unknown_user_reassigned_to_project_owner(clie
     assert not User.objects.filter(username='ghost').exists()
     assert not new.project_users.filter(user__username='ghost').exists()
     assert messages_of(response) == [
-        ('alert-danger', 'Spec_item DataItem:Dom:Calc (status: CNF): the owner ghost does not exist on this server, '
+        ('alert-warning', 'Spec_item DataItem:Dom:Calc (status: CNF): the owner ghost does not exist on this server, '
                          'the item was assigned to the project owner owner')]
 
 
-def test_import_project_failing_referenced_spec_item_crashes(client, renamed_original, fresh_temp):
+def test_import_project_rejected_referenced_spec_item_clears_links(client, renamed_original, fresh_temp):
     # FIXED: import-project-dangling-link-crash (was: KeyError -> HTTP 500 and a half-imported project)
     # An item that is rejected (here: invalid status, as by the per-row check of Task 7.2c) and is the target
     # of previous/p_link/s_link: the links to it become None and are listed in the message.
@@ -1005,6 +1006,7 @@ def test_import_project_dangling_previous_is_none(client, renamed_original, fres
     assert new.project_spec_items.count() == 10
     assert new.project_spec_items.get(name=seen['name'], status='CNF').previous is None
     [(level, text)] = messages_of(response)
+    assert level == 'alert-warning'
     assert text.endswith('the previous (item id 9999) is not in the imported data, the previous was set to None')
 
 
@@ -1769,9 +1771,11 @@ def test_import_project_unknown_role_is_read_only(client, renamed_original, fres
     writer = csv.DictWriter(out, fieldnames=list(rows[0]), lineterminator='\r\n')
     writer.writeheader(); writer.writerows(rows)
     client.force_login(w.admin)
-    upload_zip(client, modified_zip(w.zip, **{'project_users.csv': out.getvalue().encode()}), fresh_temp)
+    response = upload_zip(client, modified_zip(w.zip, **{'project_users.csv': out.getvalue().encode()}), fresh_temp)
     new = Project.objects.get(name='Demo Proj')
     assert sorted((pu.user.username, pu.role) for pu in new.project_users.all()) == [('reader', 'RO'), ('writer', 'RO')]
+    assert messages_of(response) == [
+        ('alert-warning', "The role 'XX' of project user writer is not known, the user was imported as read-only user")]
 
 
 def test_import_project_restores_distinct_updated_at_values(client, renamed_original, fresh_temp):
@@ -1839,3 +1843,79 @@ def test_import_project_s_data_string_round_trips_exactly(client, renamed_origin
     new = Project.objects.get(name='Original (renamed)')
     assert new.project_spec_items.get(name='Calc').s_data == '{}'
     assert new.project_spec_items.get(name='Count', val_set__name='Default').s_data == {}
+
+
+def test_import_project_rejected_row_does_not_add_its_owner(client, renamed_original, fresh_temp):
+    # The owner is resolved only for rows that are saved: a non-member owner whose only item is rejected
+    # (bad val_set) is neither added as a project user nor mentioned in a note.
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['owner'] == 'writer':
+                row['val_set'] = '99'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{
+        'spec_items.csv': _spec_items_csv_with(w.zip, mutate),
+        'project_users.csv': _drop_project_user(w.zip, 'writer')}), fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert not new.project_spec_items.filter(owner__username='writer').exists()
+    assert not new.project_users.filter(user__username='writer').exists()
+    texts = [t for _, t in messages_of(response)]
+    assert texts and all(t.startswith('Failure to import spec_item') for t in texts)
+    assert not any('read-only user of the project' in t or 'assigned to the project owner' in t for t in texts)
+
+
+def test_import_project_unreadable_created_at_is_ignored_with_note(client, renamed_original, fresh_temp):
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['name'] == 'Calc':
+                row['created_at'] = 'yesterday'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 10
+    assert messages_of(response) == [
+        ('alert-warning', 'Spec_item DataItem:Dom:Calc (status: CNF): the creation time (yesterday) is not in '
+                          'format Y-m-d H:M:S, it was set to the import time')]
+
+
+def test_import_project_release_views_equal_after_round_trip(client, renamed_original, fresh_temp):
+    # The release views (get_spec_item_query for each release) of the source and of its copy are identical.
+    from editor.configs import configs
+    from editor.utilities import get_spec_item_query
+    w = renamed_original
+    for item in SpecItem.objects.filter(project=w.project):       # whole-second timestamps survive the export
+        SpecItem.objects.filter(pk=item.pk).update(created_at=item.created_at.replace(microsecond=0),
+                                                   updated_at=item.updated_at.replace(microsecond=0))
+    for rel in Release.objects.all():
+        Release.objects.filter(pk=rel.pk).update(updated_at=rel.updated_at.replace(microsecond=0))
+    client.force_login(w.owner)
+    _, data, _ = export_zip(client, w.project.id, fresh_temp)
+    Project.objects.filter(id=w.project.id).update(name='Source copy')       # make room for the import
+    client.force_login(w.admin)
+    upload_zip(client, data, fresh_temp)
+    old = Project.objects.get(id=w.project.id)
+    new = Project.objects.exclude(id=w.project.id).get()
+
+    def views(project):
+        result = {}
+        chain = []
+        rel = project.release
+        while rel is not None:
+            chain.append(rel)
+            rel = rel.previous
+        for n, rel in enumerate([None] + chain):
+            for cat in configs['cats']:
+                for vs in ValSet.objects.filter(project=project).order_by("id"):
+                    items = get_spec_item_query(project.id, 0, vs.id, cat, rel, 'Sel_All', None)
+                    key = [(i.domain, i.name, i.status, re.sub(r'#iref:\d+', '#iref:', i.value)) for i in items]   # ids differ
+                    if key:
+                        result[(n, cat, vs.name)] = key
+        return result
+    v_old, v_new = views(old), views(new)
+    assert v_old and any(k[0] > 0 for k in v_old)
+    assert v_old == v_new

@@ -3,7 +3,7 @@
   "exception": null,
   "messages": [
    [
-    "alert-danger",
+    "alert-warning",
     "The user om_outsider owns imported items but is not a user of the project: added as read-only user of the project"
    ]
   ],
