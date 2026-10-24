@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 import textwrap
+import time
 from pathlib import Path
 from unittest import mock
 
@@ -373,7 +374,8 @@ LOOP_SUM = 'var s:=0; for (var i:=0; i<1000; i+=1) { s+=i; }; s'
 
 
 def test_09_eval_ref_rw_can_store_loop_and_list_page_evaluates_it(w):
-    # KNOWN-ISSUE: eval-ref-dos
+    # FIXED: eval-ref-dos (was: the loop was executed during page render, b'= 499500.0' in the list
+    # page, and in the LaTeX export; the value is still stored as typed but is no longer evaluated)
     c = w.client(w.rw_a)
     one = make_spec_item(w.a, cat='DataItem', domain='AD', name='one', value='0', p_link=w.a_type, p_kind='CNS')
     resp = c.post(aurl('DataItem', w.a.id),
@@ -382,27 +384,96 @@ def test_09_eval_ref_rw_can_store_loop_and_list_page_evaluates_it(w):
     assert resp.status_code == 302
     item = SpecItem.objects.get(project=w.a, name='loop')
     assert item.value == '#iref:%d; %s' % (one.id, LOOP_SUM)
+    t0 = time.monotonic()
     r = w.client(w.ro_a).get(lurl('DataItem', w.a.id, 0, w.dvs_a.id))
-    assert b'= 499500.0' in r.content                   # arbitrary loop executed during page render
     e = w.client(w.ro_a).get(eurl('DataItem', w.a.id, 0, w.dvs_a.id) + '?export=latex_format')
-    assert b'499500.0' in e.content                      # and during LaTeX export (no iref needed)
+    assert time.monotonic() - t0 < 1
+    assert b'499500.0' not in r.content
+    assert b'499500.0' not in e.content
+    # displayed like any invalid expression: the expression itself follows the '='
+    assert b'= #iref:%d; var s:=0; for (var i:=0; i&lt;1000; i+=1) { s+=i; }; s' % one.id in r.content
 
 
 def test_09_eval_ref_fanout_is_exponential(w):
-    # KNOWN-ISSUE: eval-ref-dos
+    # FIXED: eval-ref-dos (was: eval_di_value returned '1024.0' using 2046 queries for 11 stored rows)
     from django.db import connection
     from django.test.utils import CaptureQueriesContext
     from editor.convert import eval_di_value
     leaf = make_spec_item(w.a, cat='DataItem', domain='F', name='l0', value='1', p_link=w.a_type)
     prev = leaf
+    rows = [leaf]
     for k in range(1, 11):
         prev = make_spec_item(w.a, cat='DataItem', domain='F', name='l%d' % k,
                               value='#iref:%d+#iref:%d' % (prev.id, prev.id), p_link=w.a_type)
+        rows.append(prev)
+    t0 = time.monotonic()
     with CaptureQueriesContext(connection) as q:
-        assert eval_di_value(prev.value) == '1024.0'
-    assert len(q.captured_queries) == 2 ** 11 - 2       # 2046 queries for 11 stored rows
+        assert eval_di_value(prev.value, w.a.id) == prev.value        # rejected: like an invalid expression
+    assert time.monotonic() - t0 < 1
+    assert len(q.captured_queries) <= 11                            # one query per distinct row
+    # a fan-out within the limits (depth 5, 32 leaves) still evaluates
+    assert eval_di_value(rows[5].value, w.a.id) == '32.0'
 
 
+def test_09_eval_ref_depth_and_length_are_capped(w):
+    from editor import convert
+    from editor.convert import eval_di_value
+    prev = make_spec_item(w.a, cat='DataItem', domain='F', name='d0', value='1', p_link=w.a_type)
+    for k in range(1, 4):
+        prev = make_spec_item(w.a, cat='DataItem', domain='F', name='d%d' % k,
+                              value='#iref:%d+1' % prev.id, p_link=w.a_type)
+    assert eval_di_value(prev.value, w.a.id) == '4.0'               # depth 4 as in production
+    # a chain longer than EVAL_MAX_DEPTH is not evaluated (the unexpanded reference is left, so the
+    # expression is invalid and yields itself, as for a depth beyond max_depth before)
+    deep = make_spec_item(w.a, cat='DataItem', domain='F', name='e0', value='1', p_link=w.a_type)
+    for k in range(1, convert.EVAL_MAX_DEPTH + 3):
+        deep = make_spec_item(w.a, cat='DataItem', domain='F', name='e%d' % k,
+                              value='#iref:%d+1' % deep.id, p_link=w.a_type)
+    assert eval_di_value(deep.value, w.a.id) == deep.value
+    # many references in one value
+    many = '+'.join(['#iref:%d' % prev.id] * (convert.EVAL_MAX_SUBSTITUTIONS // 4 + 1))
+    assert eval_di_value(many, w.a.id) == many                      # 4 substitutions each: over the cap
+    big = make_spec_item(w.a, cat='DataItem', domain='F', name='big', value='1' * 1000, p_link=w.a_type)
+    assert eval_di_value('+'.join(['#iref:%d' % big.id] * 150), w.a.id) == '+'.join(['#iref:%d' % big.id] * 150)
+
+
+def test_09_eval_ref_keywords_rejected_only_as_cexprtk_keywords():
+    import cexprtk
+    from editor.convert import eval_di_value
+
+    def old(s):
+        try:
+            return str(cexprtk.evaluate_expression(s, {}))
+        except Exception:
+            return s
+    same_as_before = [
+        '1+2', 'sqrt(16)*2', '1;2', 'if(1>0, 3, 4)', 'for the nominal case', 'var is the variance',
+        'format(3)', 'transform 2+2', 'x_for(1)', 'my_while(2)', 'forever', 'variable', 'invar+1',
+        'Fortran 77', '#iref:99999999+1', 'abs([1])', 'sum of [1] and [2]', 'for', 'while', 'repeat until',
+        '  2 * 3  ', '',
+    ]
+    for expr in same_as_before:
+        assert eval_di_value(expr) == old(expr), expr
+    assert eval_di_value('1;2') == '2.0' and eval_di_value('sqrt(16)*2') == '8.0'
+    rejected = [
+        LOOP_SUM, 'var x:=1; while (x>0) { x+=1; }; x', 'for (var i:=0; i<1e10; i+=1) { 0 }',
+        'WHILE(1){1}', 'For (var i:=0;i<2;i+=1) {1}', 'repeat 1 until (1); 5', 'switch { case 1 > 0: 7; }',
+        'var v[20000000]; v[0]:=7; v[0]', 'VAR x := 3; x', 'x := 3', 'while(1){}',
+    ]
+    t0 = time.monotonic()
+    for expr in rejected:
+        assert eval_di_value(expr) == expr, expr                  # same output as an invalid expression
+    assert time.monotonic() - t0 < 1
+
+
+def test_09_eval_ref_rejection_also_applies_after_reference_expansion(w):
+    from editor.convert import eval_di_value
+    loop = make_spec_item(w.a, cat='DataItem', domain='F', name='lp', p_link=w.a_type,
+                          value='var i:=0; while (i<1e12) { i+=1 }; i')
+    s = '1+#iref:%d' % loop.id
+    t0 = time.monotonic()
+    assert eval_di_value(s, w.a.id) == s
+    assert time.monotonic() - t0 < 1
 
 
 CEXPRTK_CHILD = textwrap.dedent('''
@@ -420,19 +491,26 @@ def run_cexprtk(expr, timeout):
 
 
 def test_09_eval_ref_unbounded_loop_never_returns():
-    # KNOWN-ISSUE: eval-ref-dos
-    # A stored value is passed to cexprtk without any limit on loops: it does not finish.
+    # FIXED: eval-ref-dos (was: this payload reached cexprtk and did not finish). The engine itself
+    # still loops, which is why the application refuses these expressions before calling it.
+    from editor.convert import eval_di_value
+    payloads = ['var x:=1; while (x>0) { x+=1; }; x', 'for (var i:=0; i<1e10; i+=1) { 0 }']
+    t0 = time.monotonic()
+    for p in payloads:
+        assert eval_di_value(p) == p
+    assert time.monotonic() - t0 < 1
     with pytest.raises(subprocess.TimeoutExpired):
-        run_cexprtk('var x:=1; while (x>0) { x+=1; }; x', timeout=2)
-    with pytest.raises(subprocess.TimeoutExpired):
-        run_cexprtk('for (var i:=0; i<1e10; i+=1) { 0 }', timeout=2)
+        run_cexprtk(payloads[0], timeout=1)
 
 
 def test_09_eval_ref_large_vector_is_allocated():
-    # KNOWN-ISSUE: eval-ref-dos
-    # 20M doubles (160 MB) are accepted by cexprtk; only the child's RLIMIT_AS stops larger ones.
-    r = run_cexprtk('var v[20000000]; v[0]:=7; v[0]', timeout=10)
-    assert r.stdout.strip() == '7.0'
+    # FIXED: eval-ref-dos (was: 20M doubles were accepted by cexprtk and the expression gave '7.0')
+    from editor.convert import eval_di_value
+    expr = 'var v[20000000]; v[0]:=7; v[0]'
+    t0 = time.monotonic()
+    assert eval_di_value(expr) == expr
+    assert time.monotonic() - t0 < 1
+    assert run_cexprtk(expr, timeout=10).stdout.strip() == '7.0'     # the engine would still allow it
 
 
 # ---------------------------------------------------------------------------------------------

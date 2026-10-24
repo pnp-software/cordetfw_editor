@@ -350,36 +350,62 @@ def convert_db_to_latex(s, project_id=UNSCOPED):
     return frmt_string(s_md)
  
 
-def render_for_eval(s, n, project_id=UNSCOPED):
+# Limits on the evaluation of data item values (eval-ref-dos)
+EVAL_MAX_DEPTH = 10            # nesting depth of #iref expansion (production uses 4)
+EVAL_MAX_SUBSTITUTIONS = 2000  # number of #iref substitutions for one value
+EVAL_MAX_LENGTH = 100000       # length of the expanded expression
+
+# cexprtk keywords which allow loops, assignments and allocation. exprtk is case-insensitive and
+# these are reserved words (they cannot be identifiers), so they are matched as whole words only
+# ('format', 'my_for(', 'invar' do not match; a text which merely contains the word 'for' is not
+# a valid expression anyway and is shown unevaluated, with or without this check). ':=' is the
+# assignment operator.
+_eval_forbidden = re.compile(r'\b(?:while|for|repeat|until|switch|var)\b|:=', re.IGNORECASE)
+
+
+class EvalLimitExceeded(Exception):
+    """ The expansion of the references in a value exceeded one of the EVAL_MAX_* limits """
+
+
+def render_for_eval(s, n, project_id=UNSCOPED, _state=None):
     """ 
     String s is a text field read from the database. 
     It contains internal references in the form #iref:n. This function
     assumes that all such references are pointing to data items and 
     replaces these references with the numerical values of the data items.
     This function is called recursively to handle all references in string s.
-    The argument n is the depth of recursion. This is limited to EVAL_MAX_REC.
+    The argument n is the depth of recursion. This is limited to EVAL_MAX_DEPTH.
     If the function finds an invalid reference (or a reference to an item of another project
     than project_id) or a reference to a specification item which is not a data item, it returns
-    the string unchanged.
+    the string unchanged. Raises EvalLimitExceeded if the number of substitutions or the length
+    of the result exceed the limits.
     """
-    if n > configs['general']['max_depth']:
-        logger.warning('Exceeded recursion depth when evaluating '+s)
+    if _state is None:
+        _state = {'subs': 0, 'values': {}}
+    if n > min(configs['general']['max_depth'], EVAL_MAX_DEPTH):
+        logger.warning('Exceeded recursion depth when evaluating '+s[:200])
         return s
 
-    match = pattern_db.search(s)
-    if match == None:
-        return s
-    ref = match.group().split(':')
-    try:
-        if ref[0] == '#iref': 
-            item = get_ref_item(ref[1], project_id)
-        else:
-            return s
-    except ObjectDoesNotExist:
-        return s
-
-    s_mod = s[:match.start()] + render_for_eval(item.value, n+1, project_id)
-    return s_mod + render_for_eval(s[match.end():], n, project_id)
+    out = ''
+    rest = s
+    while True:
+        match = pattern_db.search(rest)
+        if match == None:
+            return out + rest
+        ref_id = match.group(2)
+        try:
+            if ref_id not in _state['values']:
+                _state['values'][ref_id] = get_ref_item(ref_id, project_id).value
+            value = _state['values'][ref_id]
+        except ObjectDoesNotExist:
+            return out + rest
+        _state['subs'] += 1
+        if _state['subs'] > EVAL_MAX_SUBSTITUTIONS:
+            raise EvalLimitExceeded('too many references')
+        out += rest[:match.start()] + render_for_eval(value, n+1, project_id, _state)
+        if len(out) > EVAL_MAX_LENGTH:
+            raise EvalLimitExceeded('expression too long')
+        rest = rest[match.end():]
 
 
 def eval_di_value(s, project_id=UNSCOPED):
@@ -389,8 +415,16 @@ def eval_di_value(s, project_id=UNSCOPED):
     The function first replaces the references to the data items with their 
     values (this is done with function render_for_eval)
     and then it attempts to evaluate the resulting expression using package cexprtk.
+    Expressions with loops, assignments or variable declarations, and expressions which exceed
+    the expansion limits are not evaluated: like any invalid expression, they yield s itself.
     """
-    se = render_for_eval(s, 1, project_id)
+    try:
+        se = render_for_eval(s, 1, project_id)
+    except EvalLimitExceeded as e:
+        logger.warning('Expression not evaluated: '+str(e))
+        return s
+    if _eval_forbidden.search(se):
+        return s
     try:
         return str(cexprtk.evaluate_expression(se,{}))
     except:
