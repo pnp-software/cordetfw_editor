@@ -238,10 +238,11 @@ def test_snapshot_edit_spec_item_invalid_post(client, ds):
     })
     html = response.content.decode()
     assert 'is-invalid' in html and 'invalid-feedback' in html
-    # KNOWN-ISSUE: p-link-selection-lost (p_link selection not preserved on re-render, str vs int compare)
+    # FIXED: p-link-selection-lost (was: assert 'selected' not in p_link_select)
     p_link_select = html[html.index('id="id_p_link"'):]
     p_link_select = p_link_select[:p_link_select.index('</select>')]
-    assert 'selected' not in p_link_select
+    assert '<option value="%d" selected>' % ds['dtype'].id in p_link_select
+    assert p_link_select.count('selected') == 1
     snap('edit_spec_item_invalid_post', response)
 
 
