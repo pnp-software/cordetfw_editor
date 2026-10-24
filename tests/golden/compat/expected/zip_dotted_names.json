@@ -1,0 +1,110 @@
+{
+ "_outcome": {
+  "exception": null,
+  "messages": [],
+  "status": 302
+ },
+ "editor_application": [],
+ "editor_project": [
+  {
+   "cats": "DataItem,EnumType,EnumValue,DataItemType,Requirement",
+   "desc": "Synthetic project Proj.v1.2-rc",
+   "id": "#0",
+   "name": "Proj.v1.2-rc",
+   "owner": "dn_owner",
+   "release": "#0",
+   "updated_at": "<now>"
+  }
+ ],
+ "editor_projectuser": [],
+ "editor_release": [
+  {
+   "application_version": 0,
+   "desc": "Initial release for project Proj.v1.2-rc",
+   "id": "#0",
+   "previous": null,
+   "project_version": 0,
+   "release_author": "dn_owner",
+   "updated_at": "2023-12-01 08:00:00"
+  }
+ ],
+ "editor_specitem": [
+  {
+   "application": null,
+   "cat": "DataItem",
+   "change_log": "",
+   "created_at": "2000-01-01 00:00:00",
+   "desc": "",
+   "domain": "Dom.sub",
+   "id": "#0",
+   "implementation": "",
+   "n1": 0,
+   "n2": 0,
+   "n3": 0,
+   "name": "a.b",
+   "owner": "dn_owner",
+   "p_kind": "",
+   "p_link": null,
+   "previous": null,
+   "project": "#0",
+   "rationale": "",
+   "remarks": "",
+   "s_data": "",
+   "s_kind": "",
+   "s_link": null,
+   "status": "CNF",
+   "t1": "",
+   "t2": "",
+   "t3": "",
+   "t4": "",
+   "t5": "",
+   "title": "Title of a.b",
+   "updated_at": "2024-02-20 16:45:30",
+   "val_set": "#0",
+   "value": "1"
+  },
+  {
+   "application": null,
+   "cat": "DataItem",
+   "change_log": "",
+   "created_at": "2000-01-01 00:00:00",
+   "desc": "refers to #iref:1",
+   "domain": "Dom-x.y",
+   "id": "#1",
+   "implementation": "",
+   "n1": 0,
+   "n2": 0,
+   "n3": 0,
+   "name": "x-y.z",
+   "owner": "dn_owner",
+   "p_kind": "",
+   "p_link": null,
+   "previous": null,
+   "project": "#0",
+   "rationale": "",
+   "remarks": "",
+   "s_data": "",
+   "s_kind": "",
+   "s_link": null,
+   "status": "CNF",
+   "t1": "",
+   "t2": "",
+   "t3": "",
+   "t4": "",
+   "t5": "",
+   "title": "Title of x-y.z",
+   "updated_at": "2024-02-20 16:45:30",
+   "val_set": "#0",
+   "value": "#iref:1 + 1"
+  }
+ ],
+ "editor_valset": [
+  {
+   "desc": "Default ValSet",
+   "id": "#0",
+   "name": "Default",
+   "project": "#0",
+   "updated_at": "<now>"
+  }
+ ]
+}

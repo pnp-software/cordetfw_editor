@@ -1,0 +1,18 @@
+{
+ "_outcome": {
+  "exception": null,
+  "messages": [
+   [
+    "alert-danger",
+    "The category  in application Bare App is not defined in configs.json"
+   ]
+  ],
+  "status": 302
+ },
+ "editor_application": [],
+ "editor_project": [],
+ "editor_projectuser": [],
+ "editor_release": [],
+ "editor_specitem": [],
+ "editor_valset": []
+}

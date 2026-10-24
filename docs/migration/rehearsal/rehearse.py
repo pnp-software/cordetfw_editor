@@ -264,6 +264,8 @@ def load_allowlist(path):
         entries = json.load(f)
     ids = []
     for e in entries:
+        if e.get('applies_to') == 'compat':     # import-fingerprint allowlist, used only by tests/test_compat_corpus.py
+            continue
         if e.get('applies_to') != 'html':
             raise SystemExit('allowlist entry %r: only applies_to "html" is supported (exports must be byte-identical)' % e.get('id'))
         if NORMALISER_FUNCS.get(e.get('normaliser')) != e['id']:
