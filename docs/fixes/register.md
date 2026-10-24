@@ -15,7 +15,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | change-password-no-response | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
 | conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | FIXED (Task 7.3) |  |
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | OPEN |  |
-| csv-export-not-reimportable | — | import-export-auth.md | — | K | OPEN | Spec-item CSV exports of production data contain rows that the importer's row checks reject (identifier rule / empty required field): 448 of 11,046 rows, 436 in one project; 447 empty required field (Requirement 399), 1 identifier rule. Found in Task 6.8e; identical with the production code (Task 6.8f) |
+| csv-export-not-reimportable | — | import-export-auth.md | — | K | OPEN | Spec-item CSV exports of production data contain rows that the importer's row checks reject (identifier rule / empty required field): 448 of 11,046 rows, 436 in one project; 447 empty required field (Requirement 399), 1 identifier rule. Found in Task 6.8e; identical with the production code (Task 6.8f). Cause analysed in docs/fixes/csv-empty-required-fields.md (CSV imports before b4bf39d); operator 2026-10-24: accept empty required fields on import, list them as warnings |
 | csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/csv-formula-injection.md |
 | dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | FIXED (Task 7.3) |  |
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | FIXED (Task 7.3) |  |
@@ -37,6 +37,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | ext-fcp-refresh-nameerror | ext-fcp-refresh-undefined-name | import-export-auth.md, views.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) |  |
 | find-replace-no-write-check | — | views.md | tests/test_views.py | S | FIXED (Task 6.4) |  |
 | find-replace-on-release-view | — | views.md | tests/test_scoping_6_4.py | K | FIXED (Task 7.2a) | Find & Replace is offered on release views (sel_rel_id != 0) whose query includes CNF/OBS/DEL historical rows, so it could rewrite OBS versions. Found by the Task 6.4 review |
+| form-choice-empty-silent-default | — | docs/fixes/csv-empty-required-fields.md | — | K | OPEN | Editing an item whose required choice field (e.g. Requirement Ver, SysReq Compl/Ver, Packet Kind) is empty silently saves the first choice (select has no blank option). Found by the 2026-10-24 analysis; production: 408 live items with an empty required choice field |
 | form-none-literal | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | help-double-space | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | honeypot-logger-not-connected | — | import-export-auth.md | tests/test_auth.py | K | FIXED (Task 7.2a) |  |
