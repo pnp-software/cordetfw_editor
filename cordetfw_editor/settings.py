@@ -15,7 +15,7 @@ import datetime
 from django.contrib.messages import constants as messages
 import json
 
-from .config_helpers import check_secret_key, parse_axes_lockout_parameters
+from .config_helpers import check_secret_key, parse_axes_lockout_parameters, parse_session_cookie_age
 
 with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
     config = json.load(config_file)
@@ -99,6 +99,11 @@ AXES_LOCKOUT_TEMPLATE = '../templates/lockout.html'
 _axes_lockout_parameters = parse_axes_lockout_parameters(config)
 if _axes_lockout_parameters is not None:
     AXES_LOCKOUT_PARAMETERS = _axes_lockout_parameters
+
+# Optional config key SESSION_COOKIE_AGE (seconds). Absent = Django default (two weeks). Validated at startup.
+_session_cookie_age = parse_session_cookie_age(config)
+if _session_cookie_age is not None:
+    SESSION_COOKIE_AGE = _session_cookie_age
 
 ROOT_URLCONF = 'cordetfw_editor.urls'
 

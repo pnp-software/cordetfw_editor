@@ -11,7 +11,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
 | add-spec-item-val-set-post | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
 | appform-cats-substring | app-cats-substring | forms-convert-utilities.md, models-access-releases-query.md | tests/test_forms.py, tests/test_releases.py | K | FIXED (Task 7.2a) |  |
-| axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | No proxy, so REMOTE_ADDR is the client IP: shared-lockout DoS not applicable; distributed brute force remains. optional AXES_LOCKOUT_PARAMETERS key added in Task 6.7; default unchanged (operator choice) |
+| axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | WONTFIX | Operator 2026-10-24: closed; default unchanged, the optional AXES_LOCKOUT_PARAMETERS key (Task 6.7) lets the operator lock by username too |
 | change-password-no-response | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
 | conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | FIXED (Task 7.3) |  |
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | FIXED (Task 7.6) |  |
@@ -28,7 +28,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | export-eval-ref-raw | export-eval-ref-not-converted | forms-convert-utilities.md, import-export-auth.md | tests/test_import_export.py, tests/test_utilities.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-eval-ref-raw.md |
 | export-filename-not-escaped | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-filename-not-escaped.md |
 | export-none-string | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-none-string.md |
-| export-s-data-key-order | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
+| export-s-data-key-order | — | import-export-auth.md | tests/test_import_export.py | K | WONTFIX | Operator 2026-10-24: closed; JSON key order is a property of the database (MySQL normalises it), changing it would change export bytes |
 | ext-cats-connection-leak | — | import-export-auth.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) | Model paths fixed by upstream #91 (Task 7.1); FCP paths: FIXED (Task 7.2c) |
 | ext-cats-fcp-no-title | — | import-export-auth.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) |  |
 | ext-cats-get-choice-not-found | — | import-export-auth.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) | Model paths fixed by upstream #91 (Task 7.1); FCP paths: FIXED (Task 7.2c) |
@@ -74,7 +74,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | login-url-default | — | import-export-auth.md | tests/test_auth.py | K | FIXED (Task 7.2a) |  |
 | logout-unsafe-next-self-redirect | — | import-export-auth.md | tests/test_auth.py | — | FIXED in 040e103 (upstream Django 4.2, Task 3.4) | Accepted upstream change; test marker is the old free-text form |
 | make-temp-dir-nameerror | make-temp-dir-name-error, temp-dir-collision | forms-convert-utilities.md, import-export-auth.md, models-access-releases-query.md | tests/test_import_export.py, tests/test_query.py, tests/test_utilities.py | K | FIXED (Task 7.2c) |  |
-| md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN | HTML part fixed in Task 6.6 (convert_db_to_display escapes before markdown_to_html; tests/test_escaping_6_6.py). Still open for track K: LaTeX escaping in markdown_to_latex (export bytes must stay identical until then) and markdown nesting/first-list-item |
+| md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | WONTFIX | HTML part fixed in Task 6.6. Operator 2026-10-24: markdown nesting/first-list-item = feature work, later; LaTeX escaping is tracked by latex-export-injection (ticket) |
 | mutation-via-get | — | views.md, security-audit.md | tests/test_views.py, tests/test_security_audit.py, tests/test_access.py, tests/test_post_only_mutations.py | S | FIXED (Task 6.3) | merge of upstream #86 + POST-only refresh/member add/role validation |
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | FIXED (Task 7.7) |  |
 | no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | — | WONTFIX | Not applicable: TLS ends at Apache (mod_ssl + mod_wsgi in the same vhost, no proxy); operator 2026-10-23 |
@@ -90,7 +90,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | FIXED (Task 7.7) |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN | Changes stored data/export of new items; awaiting operator approval: docs/fixes/tickets/s-data-string.md |
-| session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | OPEN | HSTS + port 80 redirect done by Apache (operator 2026-10-23); session length/CSP defaults remain, low |
+| session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.8) | Operator 2026-10-24: optional config key SESSION_COOKIE_AGE (seconds, default unchanged = two weeks); HSTS + port 80 redirect by Apache; CSP not set (low) |
 | temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.2c) |  |
 | temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |
 | tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) | Production uses a different SECURE_KEY (operator 2026-10-23): not exploitable. Cleanup: replace tracked file by an .example |

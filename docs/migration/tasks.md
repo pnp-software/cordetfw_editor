@@ -216,7 +216,9 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
 - [x] **Task 7.7** Model defaults (K6): naive-created-at-default (migration 0012, aware UTC default) and
   release-version-default-str (migration 0013, int defaults). sqlmigrate: MySQL no-op for both; SQLite rebuilds the
   table with rows copied unchanged. No data migration; rollback with the old code works (no MySQL DDL)
-- [ ] **Task 7.8** Decide-only items (K7); also `ef2fd0c` refresh-cnf-obs-copy-new-content (the OBS copy made by
+- [x] **Task 7.8** Decide-only items (K7), operator 2026-10-24: optional config key SESSION_COOKIE_AGE (default
+  unchanged); axes-ip-only-lockout, export-s-data-key-order, md-no-escape (markdown part) closed as WONTFIX; the
+  export byte changes and s-data-string stay open as tickets (docs/fixes/tickets/). Also `ef2fd0c` refresh-cnf-obs-copy-new-content (the OBS copy made by
   a refresh of a CNF Model item keeps the previous version). Gate on 5e235a7: 2118 SQLite / 2128 MySQL
 - [ ] **Task 7.9** Release gate for track K
 

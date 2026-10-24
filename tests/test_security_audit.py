@@ -824,11 +824,22 @@ def test_19_tracked_dev_secret_key():
 
 
 def test_23_session_and_header_defaults(settings):
-    # KNOWN-ISSUE: session-and-reset-hardening
+    # FIXED: session-and-reset-hardening (was: session length fixed at Django's two weeks; operator 2026-10-24:
+    # optional config key SESSION_COOKIE_AGE, default unchanged; HSTS and the port 80 redirect are done by Apache)
     assert settings.SESSION_COOKIE_AGE == 1209600
     assert settings.SECURE_HSTS_SECONDS == 0
     assert settings.SECURE_SSL_REDIRECT is False
     assert 'csp' not in ' '.join(settings.MIDDLEWARE).lower()
+
+
+def test_23_session_cookie_age_config_key():
+    from django.core.exceptions import ImproperlyConfigured
+    from cordetfw_editor.config_helpers import parse_session_cookie_age
+    assert parse_session_cookie_age({}) is None
+    assert parse_session_cookie_age({'SESSION_COOKIE_AGE': 28800}) == 28800
+    for bad in (True, '28800', 28800.0, 0, 299, 365 * 24 * 3600 + 1, None):
+        with pytest.raises(ImproperlyConfigured, match='SESSION_COOKIE_AGE'):
+            parse_session_cookie_age({'SESSION_COOKIE_AGE': bad})
 
 
 # ---------------------------------------------------------------------------------------------

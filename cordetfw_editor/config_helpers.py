@@ -30,6 +30,24 @@ def parse_axes_lockout_parameters(config):
     return value
 
 
+SESSION_COOKIE_AGE_MIN = 300                   # 5 minutes
+SESSION_COOKIE_AGE_MAX = 365 * 24 * 3600       # one year
+
+
+def parse_session_cookie_age(config):
+    """Return the validated SESSION_COOKIE_AGE (seconds) from the config dict, or None when the optional
+    key is absent (the caller then leaves Django's default of two weeks)."""
+    if 'SESSION_COOKIE_AGE' not in config:
+        return None
+    value = config['SESSION_COOKIE_AGE']
+    if isinstance(value, bool) or not isinstance(value, int) or \
+            not SESSION_COOKIE_AGE_MIN <= value <= SESSION_COOKIE_AGE_MAX:
+        raise ImproperlyConfigured('SESSION_COOKIE_AGE in the config file must be a whole number of seconds '
+                                   'between %d and %d (e.g. 28800 for 8 hours); got %r'
+                                   % (SESSION_COOKIE_AGE_MIN, SESSION_COOKIE_AGE_MAX, value))
+    return value
+
+
 # Keys that must never be used with DEBUG off: the placeholder of the tracked dj_cordetfw_config.json
 # (tryout / development only) and the key that was tracked there before (tracked-dev-secret-key).
 INSECURE_KEY_PREFIX = 'insecure-dev-only-'
