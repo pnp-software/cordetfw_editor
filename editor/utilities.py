@@ -149,7 +149,11 @@ def get_user_choices(project):
     if project != None:
         users = User.objects.all().exclude(id=project.owner.id).order_by('username').\
                                            values_list('id', 'username', 'first_name', 'last_name')
-        user_choices.append((project.owner.id, project.owner.username+' ('+project.owner.first_name+' '+project.owner.last_name+')'))
+        owner = project.owner
+        if (owner.first_name != '') or (owner.last_name != ''):
+            user_choices.append((owner.id, owner.username+' ('+owner.first_name+' '+owner.last_name+')'))
+        else:
+            user_choices.append((owner.id, owner.username))
     else:
         users = User.objects.all().order_by('username').values_list('id','username', 'first_name', 'last_name')
     for user in users:

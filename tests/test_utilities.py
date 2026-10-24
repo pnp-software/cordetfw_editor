@@ -224,9 +224,9 @@ def test_get_user_choices_owner_first(world):
     u.save()
     ids = {x.username: x.id for x in User.objects.all()}
     # owner 'alice' (no names) first, then the others ordered by username
-    # KNOWN-ISSUE: owner-empty-names  (owner entry always shows ' ( )' parentheses; others do not)
+    # FIXED: owner-empty-names (was: owner entry 'alice ( )' with empty parentheses)
     assert get_user_choices(world['project']) == [
-        (ids['alice'], 'alice ( )'), (ids['bob'], 'bob (Bob Builder)'), (ids['zed'], 'zed')]
+        (ids['alice'], 'alice'), (ids['bob'], 'bob (Bob Builder)'), (ids['zed'], 'zed')]
 
 
 def test_get_user_choices_no_project():

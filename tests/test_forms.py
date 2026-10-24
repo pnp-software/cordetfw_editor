@@ -60,7 +60,8 @@ def test_project_form_owner_choices_owner_first():
     b = make_user('bob')
     project = make_project(owner)
     form = ProjectForm(project)
-    assert form.fields['owner'].choices == [(owner.id, 'zed ( )'), (a.id, 'alice'), (b.id, 'bob')]
+    # FIXED: owner-empty-names (was: 'zed ( )')
+    assert form.fields['owner'].choices == [(owner.id, 'zed'), (a.id, 'alice'), (b.id, 'bob')]
     # without a project all users are sorted by username
     form2 = ProjectForm(None)
     assert form2.fields['owner'].choices == [(a.id, 'alice'), (b.id, 'bob'), (owner.id, 'zed')]
