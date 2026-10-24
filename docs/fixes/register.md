@@ -85,7 +85,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | FIXED (Task 7.3) |  |
 | ref-link-backslash | — | forms-convert-utilities.md, views.md | tests/test_convert.py, tests/test_rendering_snapshots.py | K | OPEN |  |
 | refresh-not-shared-double-message | — | views.md | tests/test_views.py | K | FIXED (Task 7.6) | Refresh of a model that exists but is not shared with the user shows "Model not found or not shared with you..." followed by "External spec_item no longer exists -- no refresh can be done". Found by the Task 7.1 review |
-| refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | OPEN |  |
+| refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | FIXED (Task 7.6) |  |
 | release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | FIXED (Task 7.7) |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
