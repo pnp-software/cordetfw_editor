@@ -113,3 +113,47 @@ Files: `rehearse.py` (driver, comparisons, cleanup), `worker.py` (runs inside on
 - Real production data volume/timing, `import_project` roundtrip, FW Profile external DB (mocked/unused), email, HTTPS/cookie-secure behaviour (test client does not enforce SESSION_COOKIE_SECURE), static files and the real WSGI server.
 - Raw ZIP bytes (only extracted members compared, since ZIP timestamps differ).
 - Behaviour of the old code with non-empty `axes_accessattemptexpiration` rows.
+
+## Re-import of production exports (Task 6.8e/f)
+
+Driver: `docs/migration/rehearsal/reimport.py` (no data; aggregates only; projects numbered 1..9). Production dump of 2026-10-21,
+disposable MySQL 8.0, one database per stack (`cordetfw_reimport_old`, `cordetfw_reimport_new`), each migrated by its own stack
+(old: `cd87ccb` worktree + `.venv-baseline`, Django 3.2, no axes.0010; new: `upgrade/django-lts` + `.venv`).
+Sequence: export once with the OLD stack (= exports of the current production version), export again with NEW, compare, then
+import the SAME files with OLD and with NEW. Per project (as owner): project ZIP, and Default-ValSet spec-item CSV of every
+(category, application) with items; ZIP imported as staff user with the project renamed; each CSV imported into the imported copy
+(update path) and into a fresh empty project with the same applications (new-item path).
+
+**Exports old vs new:** 9 ZIPs (54 members) and 107 CSV files (plus manifest): all CSV files byte-identical, all ZIP member contents
+identical (container bytes differ only by timestamps). 0 differences.
+
+**Import outcome, OLD = NEW for every project and every counter** (the diff of the two result files has no difference except the stack label):
+
+| Item | Count (same OLD and NEW) |
+| --- | --- |
+| Projects imported from ZIP | 9 of 9 |
+| Items in source / imported | 16306 / 16271 |
+| ZIP import messages | 35 x `Failure to import spec_item [KeyError]`, all in project 8 |
+| SVG values (Model, FCP) identical to source | 240 of 240 |
+| Count groups (category, status, ValSet, application-or-not) that differ | 1 (project 8, the 35 missing items), 0 elsewhere |
+| Field differences after `#iref:N` and CRLF normalisation | identical OLD and NEW (listed per project in the result files; project 8: the 35 missing items) |
+| CSV files imported (per path) | 107 |
+| CSV rows / imported / rejected | 11046 / 10598 / 448 |
+| Net items added, new-item path / update path | 10212 / 9336 |
+| Rejected per project | project 1: 436, 2: 1, 5: 5, 9: 6, others 0 |
+
+The 35 items of project 8: their owner is neither the project owner nor a project member, so the ZIP import (which resolves the owner
+among the project's users) raises KeyError for exactly these 35 rows (the driver's pre-check of the ZIP's cross references predicted 35).
+Identical in both stacks, hence pre-existing.
+
+The 448 CSV rows rejected by the row checks (identical on both paths and stacks): **1** by the identifier rule (DataItem) and **447**
+by a missing required field (Requirement 399, DataItem 31, SysReq 8, Packet 7, DerPacket 2). No rejection by SVG rule, domain,
+ValSet or cross-category identifier checks.
+
+**Classification:** regressions 0; improvements (OLD-only failure fixed by NEW) 0; pre-existing failures: 35 ZIP items (KeyError, project 8)
+and 448 CSV rows (1 identifier + 447 missing required field). The compatibility promise holds for this data: exports of the current
+production version import with the same result on the new stack. (Both failure groups are import round-trip issues, tracked in the
+register as track K.)
+
+Commands: `REIMPORT_DUMP=<dump> REIMPORT_SCRATCH=<dir> python3 docs/migration/rehearsal/reimport.py <setup|export|run|cmp-exports|diff|cleanup> --stack old|new`
+(see the driver docstring; the old stack must be started with cwd = `<scratch>/old-code`). Runtime about 25 minutes per stack for `run`.

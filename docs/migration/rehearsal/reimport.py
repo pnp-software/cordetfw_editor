@@ -1,14 +1,24 @@
 """
-Task 6.8e: do exports of a production-shaped database still import with the new code?
+Task 6.8e/6.8f: do exports of a production-shaped database still import with the new code (and the old)?
 
 Contains NO data. Needs the new venv (.venv), the disposable MySQL container and a (sanitised or real)
 dump. Output is aggregate only (counts, hashes compared in-process, never printed); projects are
 referred to by index 1..N. Everything is created in a scratch directory and a database that are removed
 by the `cleanup` command.
 
-    REIMPORT_DUMP=<dump.sql[.bz2]> REIMPORT_SCRATCH=<dir> .venv/bin/python docs/migration/rehearsal/reimport.py setup
-    ... reimport.py run          # exports every project (ZIP + spec-item CSVs) and re-imports them
-    ... reimport.py cleanup      # DROP DATABASE, delete scratch
+    REIMPORT_DUMP=<dump.sql[.bz2]> REIMPORT_SCRATCH=<dir> python3 docs/migration/rehearsal/reimport.py <cmd> [--stack old|new]
+
+    setup   --stack S   database cordetfw_reimport_S from the dump, migrated by stack S (old = git worktree of
+                        cd87ccb in <scratch>/old-code + .venv-baseline, Django 3.2; new = this tree + .venv)
+    export  --stack S   write every project's ZIP and Default-ValSet spec-item CSVs to <scratch>/exports_S
+    cmp-exports         compare exports_old with exports_new (ZIP member contents, CSV bytes), aggregates only
+    run     --stack S --exports old|new
+                        import the files of exports_<X> with stack S, write <scratch>/results_S.json
+    diff                compare results_old.json with results_new.json
+    cleanup             DROP both databases, remove worktree and scratch
+
+Intended order: setup old, setup new, export old, export new, cmp-exports, run old, run new, diff, cleanup.
+Each command is run as its own process (the stack decides which interpreter/code tree is used).
 
 `run` for every project (as its owner): export_project ZIP, export_spec_items CSV (normal format) of the
 Default ValSet for every (category, application) that has items; then, as the project owner / a staff user:
@@ -32,10 +42,18 @@ from collections import Counter
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..', '..'))
 SCRATCH = os.environ['REIMPORT_SCRATCH']
-DB = 'cordetfw_reimport'
 ROOT_PW = 'rootpw-test'
 CONTAINER = 'cordetfw-mysql-test'
-CONFIG = os.path.join(SCRATCH, 'config.json')
+BASELINE_COMMIT = 'cd87ccb'
+OLD_CODE = os.path.join(SCRATCH, 'old-code')
+STACK = 'new'
+if '--stack' in sys.argv:
+    STACK = sys.argv[sys.argv.index('--stack') + 1]
+EXPORTS_FROM = sys.argv[sys.argv.index('--exports') + 1] if '--exports' in sys.argv else 'old'
+DB = 'cordetfw_reimport_' + STACK
+CONFIG = os.path.join(SCRATCH, 'config_%s.json' % STACK)
+CODE = OLD_CODE if STACK == 'old' else REPO
+PY = os.path.join(REPO, '.venv-baseline' if STACK == 'old' else '.venv', 'bin', 'python')
 
 os.environ.update(CORDETFW_CONFIG_PATH=CONFIG, DJANGO_SETTINGS_MODULE='cordetfw_editor.settings',
                   PYTHONDONTWRITEBYTECODE='1')
@@ -52,10 +70,13 @@ def mysql(sql=None, db=None, stdin=None):
 def setup():
     os.makedirs(os.path.join(SCRATCH, 'media'), exist_ok=True)
     os.makedirs(os.path.join(SCRATCH, 'tmp'), exist_ok=True)
+    if STACK == 'old' and not os.path.isdir(OLD_CODE):
+        subprocess.run(['git', 'worktree', 'add', '--detach', OLD_CODE, BASELINE_COMMIT], cwd=REPO, check=True,
+                       capture_output=True)
     cfg = {'SECURE_KEY': 'reimport-key', 'DEBUG': False, 'ALLOWED_HOSTS': ['testserver', 'localhost'],
            'DATABASES': {'default': {'ENGINE': 'django.db.backends.mysql', 'NAME': DB, 'USER': 'root',
                                      'PASSWORD': ROOT_PW, 'HOST': '127.0.0.1', 'PORT': '33306'}},
-           'MEDIA_ROOT': os.path.join(SCRATCH, 'media'), 'LOG_FILE': os.path.join(SCRATCH, 'editor.log'),
+           'MEDIA_ROOT': os.path.join(SCRATCH, 'media'), 'LOG_FILE': os.path.join(SCRATCH, 'editor_%s.log' % STACK),
            'BASE_URL': '/editor', 'FWPROFILE_DB': {'HOST': 'unused-host', 'USER': 'x', 'PWD': 'x', 'NAME': 'x'}}
     with open(CONFIG, 'w') as f:
         json.dump(cfg, f)
@@ -63,18 +84,23 @@ def setup():
     dump = os.environ['REIMPORT_DUMP']
     if dump.endswith('.bz2'):
         plain = os.path.join(SCRATCH, 'dump.sql')
-        with bz2.open(dump, 'rb') as src, open(plain, 'wb') as dst:
-            shutil.copyfileobj(src, dst)
+        if not os.path.exists(plain):
+            with bz2.open(dump, 'rb') as src, open(plain, 'wb') as dst:
+                shutil.copyfileobj(src, dst)
         dump = plain
     with open(dump, 'rb') as src:
         subprocess.run(['docker', 'exec', '-i', CONTAINER, 'mysql', '-uroot', '-p' + ROOT_PW, DB],
                        stdin=src, check=True, capture_output=True)
-    p = subprocess.run([sys.executable, 'manage.py', 'migrate', '--noinput'], cwd=REPO, capture_output=True, text=True)
+    p = subprocess.run([PY, 'manage.py', 'migrate', '--noinput'], cwd=CODE, capture_output=True, text=True)
     print(re.sub(r'\n+', '\n', p.stdout[-800:]), p.stderr[-800:], 'migrate exit', p.returncode)
 
 
 def cleanup():
-    mysql('DROP DATABASE IF EXISTS %s' % DB)
+    for st in ('old', 'new'):
+        mysql('DROP DATABASE IF EXISTS cordetfw_reimport_' + st)
+    if os.path.isdir(OLD_CODE):
+        subprocess.run(['git', 'worktree', 'remove', '--force', OLD_CODE], cwd=REPO)
+        subprocess.run(['git', 'worktree', 'prune'], cwd=REPO)
     shutil.rmtree(SCRATCH, ignore_errors=True)
     print('cleaned')
 
@@ -83,8 +109,91 @@ def sha(x):
     return hashlib.sha256(str(x).encode()).hexdigest()[:16]
 
 
+def _django():
+    sys.path.insert(0, CODE)
+    import django
+    django.setup()
+
+
+def export():
+    _django()
+    from django.test import Client
+    from editor.configs import configs
+    from editor.models import Application, Project, SpecItem, ValSet
+    outdir = os.path.join(SCRATCH, 'exports_' + STACK)
+    os.makedirs(outdir)
+    manifest = {}
+    for idx, pid in enumerate(Project.objects.order_by('id').values_list('id', flat=True), 1):
+        src = Project.objects.get(id=pid)
+        d = os.path.join(SCRATCH, 'tmp', 'x%s_%d' % (STACK, idx))
+        os.makedirs(d)
+        configs['general']['temp_dir'] = d
+        c = Client()
+        c.force_login(src.owner)
+        resp = c.get('/editor/%d/export_project' % pid)
+        assert resp.status_code == 200
+        with open(os.path.join(outdir, 'p%d.zip' % idx), 'wb') as fh:
+            fh.write(b''.join(resp.streaming_content))
+        vs_def = ValSet.objects.get(project=src, name='Default')
+        names = {a.id: a.name for a in Application.objects.filter(project=src)}
+        combos = sorted({(i.cat, i.application_id) for i in SpecItem.objects.filter(project=src, val_set=vs_def)},
+                        key=lambda t: (t[0], t[1] or 0))
+        mf = {'zip': 'p%d.zip' % idx, 'csvs': [], 'csv_empty': 0, 'csv_http_err': 0}
+        for k, (cat, aid) in enumerate(combos):
+            resp = c.get('/editor/%s/%d/%d/%d/Sel_All/0/export_spec_items' % (cat, pid, aid or 0, vs_def.id))
+            if resp.status_code != 200:
+                mf['csv_http_err'] += 1
+            elif not resp.content.strip():
+                mf['csv_empty'] += 1
+            else:
+                fn = 'p%d_%d.csv' % (idx, k)
+                with open(os.path.join(outdir, fn), 'wb') as fh:
+                    fh.write(resp.content)
+                mf['csvs'].append({'cat': cat, 'app': names.get(aid), 'file': fn})
+        manifest[str(idx)] = mf
+    with open(os.path.join(outdir, 'manifest.json'), 'w') as fh:
+        json.dump(manifest, fh)
+    print('exported projects:', len(manifest), 'csv files:', sum(len(m['csvs']) for m in manifest.values()))
+
+
+def cmp_exports():
+    a, b = (os.path.join(SCRATCH, 'exports_' + x) for x in ('old', 'new'))
+    res = Counter()
+    for fn in sorted(os.listdir(a)):
+        if not os.path.exists(os.path.join(b, fn)):
+            res['missing_in_new'] += 1
+        elif fn.endswith('.zip'):
+            za, zb = zipfile.ZipFile(os.path.join(a, fn)), zipfile.ZipFile(os.path.join(b, fn))
+            same = za.namelist() == zb.namelist() and all(za.read(n) == zb.read(n) for n in za.namelist())
+            res['zip_total'] += 1
+            res['zip_members_identical' if same else 'zip_DIFFERENT'] += 1
+            res['zip_members'] += len(za.namelist())
+            res['zip_bytes_identical'] += open(os.path.join(a, fn), 'rb').read() == open(os.path.join(b, fn), 'rb').read()
+        else:
+            res['file_total'] += 1
+            same = open(os.path.join(a, fn), 'rb').read() == open(os.path.join(b, fn), 'rb').read()
+            res['file_identical' if same else 'file_DIFFERENT'] += 1
+    res['extra_in_new'] = len(set(os.listdir(b)) - set(os.listdir(a)))
+    print(json.dumps(dict(res), sort_keys=True))
+
+
+def diff():
+    ra, rb = (json.load(open(os.path.join(SCRATCH, 'results_%s.json' % x))) for x in ('old', 'new'))
+    out = []
+
+    def walk(x, y, path):
+        if isinstance(x, dict) and isinstance(y, dict):
+            for k in sorted(set(x) | set(y), key=str):
+                walk(x.get(k, '<absent>'), y.get(k, '<absent>'), path + [str(k)])
+        elif x != y:
+            out.append('%s: old=%s new=%s' % (' / '.join(path), x, y))
+    walk(ra, rb, [])
+    print('differences OLD vs NEW:', len(out))
+    print('\n'.join(out))
+
+
 def run():
-    sys.path.insert(0, REPO)
+    sys.path.insert(0, CODE)
     import django
     django.setup()
     from django.contrib.auth.models import User
@@ -99,7 +208,7 @@ def run():
 
     def fresh_temp_dir():
         n[0] += 1
-        d = os.path.join(SCRATCH, 'tmp', 'd%d_%d' % (os.getpid(), n[0]))
+        d = os.path.join(SCRATCH, 'tmp', 'd%s_%d_%d' % (STACK, os.getpid(), n[0]))
         os.makedirs(d)
         configs['general']['temp_dir'] = d
 
@@ -174,38 +283,29 @@ def run():
 
     projects = list(Project.objects.order_by('id'))
     ids = [p.id for p in projects]
+    EXPDIR = os.path.join(SCRATCH, 'exports_' + EXPORTS_FROM)
+    with open(os.path.join(EXPDIR, 'manifest.json')) as fh:
+        manifest = json.load(fh)
     report = {'projects': {}, 'totals': Counter(), 'msg_kinds_zip': Counter(), 'msg_kinds_csv_update': Counter(),
-              'msg_kinds_csv_new': Counter()}
+              'msg_kinds_csv_new': Counter(),
+              'csv_rejections': {'update': Counter(), 'new': Counter()}}
     for idx, pid in enumerate(ids, 1):
         src = Project.objects.get(id=pid)
         r = {}
         report['projects'][idx] = r
-        c = Client()
-        c.force_login(src.owner)
-        fresh_temp_dir()
-        resp = c.get('/editor/%d/export_project' % pid)
-        if resp.status_code != 200:
-            r['export_zip'] = 'HTTP %s' % resp.status_code
-            continue
-        zdata = b''.join(resp.streaming_content)
-        # ---- spec item CSV exports (Default ValSet), every (cat, application) with items
+        mf = manifest[str(idx)]
+        with open(os.path.join(EXPDIR, mf['zip']), 'rb') as fh:
+            zdata = fh.read()
         vs_def = ValSet.objects.get(project=src, name='Default')
-        combos = sorted({(i.cat, i.application_id) for i in SpecItem.objects.filter(project=src, val_set=vs_def)},
-                        key=lambda t: (t[0], t[1] or 0))
+        appid_by_name = {a.name: a.id for a in Application.objects.filter(project=src)}
         csvs = []
-        r['csv_exports'] = 0
-        r['csv_empty'] = 0
-        for cat, aid in combos:
-            resp = c.get('/editor/%s/%d/%d/%d/Sel_All/0/export_spec_items' % (cat, pid, aid or 0, vs_def.id))
-            if resp.status_code != 200:
-                r.setdefault('csv_export_http_err', 0)
-                r['csv_export_http_err'] += 1
-                continue
-            if not resp.content.strip():
-                r['csv_empty'] += 1
-                continue
-            csvs.append((cat, aid, resp.content))
-            r['csv_exports'] += 1
+        for ent in mf['csvs']:
+            with open(os.path.join(EXPDIR, ent['file']), 'rb') as fh:
+                csvs.append((ent['cat'], appid_by_name[ent['app']] if ent['app'] else None, fh.read()))
+        r['csv_exports'] = len(csvs)
+        r['csv_empty'] = mf['csv_empty']
+        if mf['csv_http_err']:
+            r['csv_export_http_err'] = mf['csv_http_err']
         # ---- rename project in the ZIP copy
         zin = zipfile.ZipFile(io.BytesIO(zdata))
         buf = io.BytesIO()
@@ -301,6 +401,16 @@ def run():
                 rows = max(0, len(list(csv.DictReader(io.StringIO(data.decode('utf-8')), delimiter='|'))))
                 kinds = Counter(generic(l, t) for l, t in ms)
                 report[bucket].update(kinds)
+                for l, t in ms:
+                    mm = re.match(r'\d+ row\(s\) could not be imported: (.*)$', t, re.S)
+                    if mm:
+                        for part in mm.group(1).split('; '):
+                            pm = re.match(r'(\d+) (.*)$', part, re.S)
+                            if pm:
+                                reason = ('identifier rule' if 'Error: Only alphanumeric' in pm.group(2)
+                                          else 'missing required field' if pm.group(2).startswith('missing ')
+                                          else pm.group(2)[:80])
+                                report['csv_rejections'][tag][cat + ' / ' + reason] += int(pm.group(1))
                 n_after = SpecItem.objects.filter(project=target).count()
                 cnt = r['csv_' + tag]
                 cnt['csv_files'] += 1
@@ -317,8 +427,14 @@ def run():
     report['totals'] = dict(report['totals'])
     for k in ('msg_kinds_zip', 'msg_kinds_csv_update', 'msg_kinds_csv_new'):
         report[k] = dict(report[k])
+    report['csv_rejections'] = {k: dict(v) for k, v in report['csv_rejections'].items()}
+    report['stack'] = STACK
+    report['exports_from'] = EXPORTS_FROM
+    with open(os.path.join(SCRATCH, 'results_%s.json' % STACK), 'w') as fh:
+        json.dump(report, fh, sort_keys=True, default=str)
     print(json.dumps(report, indent=1, sort_keys=True, default=str))
 
 
 if __name__ == '__main__':
-    {'setup': setup, 'run': run, 'cleanup': cleanup}[sys.argv[1]]()
+    {'setup': setup, 'run': run, 'cleanup': cleanup, 'export': export, 'cmp-exports': cmp_exports,
+     'diff': diff}[sys.argv[1]]()
