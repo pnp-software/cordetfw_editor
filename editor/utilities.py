@@ -18,7 +18,7 @@ from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
-                           convert_exp_to_db, convert_db_to_latex, eval_di_value, \
+                           convert_exp_to_db, resolve_exp_ref, convert_db_to_latex, eval_di_value, \
                            neutralise_foreign_irefs
 
 logger = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ def spec_item_to_export(spec_item):
     return dic
         
             
-def export_to_spec_item(request, project, imp_dict, spec_item):
+def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
     """ 
     Argument imp_dict is a dictionary created by reading a line in a 
     plain import file.
@@ -122,6 +122,8 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     Only attributes which are imported are initialized.
     The function will raise an exception if one of the fields expected
     in the dictionary is not found. 
+    If the list argument warnings is given, a text is appended for every link which is
+    stored empty because its target is unknown or ambiguous.
     """
     cat_attrs = configs['cats'][spec_item.cat]['attrs']
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
@@ -135,7 +137,13 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
             # exported as stored (literal #iref:<id>); only references into other projects are refused
             setattr(spec_item, key, neutralise_foreign_irefs(project, imp_dict[cat_attrs[key]['label']]))
         elif value['kind'] == 'spec_item_ref':
-            setattr(spec_item, key, convert_exp_to_db(project, imp_dict[cat_attrs[key]['label']]))
+            label = cat_attrs[key]['label']
+            target, problem = resolve_exp_ref(project, imp_dict[label])
+            setattr(spec_item, key, target)
+            if problem and warnings is not None:
+                warnings.append('link '+label+' "'+imp_dict[label]+'" '+(
+                    'is ambiguous (several items have this domain:name)' if problem == 'ambiguous'
+                    else 'matches no item')+', imported without link')
         else:
             setattr(spec_item, key, imp_dict[cat_attrs[key]['label']])
 

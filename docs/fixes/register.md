@@ -46,7 +46,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | idor-item-project | — | models-access-releases-query.md, security-audit.md | tests/test_access.py, tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | idor-parent-link-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | image-svg-unsanitised | — | security-audit.md | tests/test_escaping_6_6.py | S | FIXED (Task 6.6c) | Kind `image` (Model/FCP SVG from FW Profile) rendered raw; exempt from Task 6.6 escaping (operator 2026-10-23). Write paths closed/deny-list in Task 6.6b (editor/svg_check.py; edit/copy/split ignore posted FW Profile attributes; Find & Replace refuses them); Task 6.6c: strict allowlist validator (validate only) on every write path + render placeholder for stored values that fail |
-| import-link-ambiguous | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
+| import-link-ambiguous | — | import-export-auth.md | tests/test_import_export.py, tests/test_convert.py | K | FIXED (Task 7.4b) |  |
 | import-no-login-required | import-spec-items-no-login-required | import-export-auth.md, models-access-releases-query.md | tests/test_access.py | K | FIXED (Task 7.2a) |  |
 | import-project-application-version-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-project-attribution-forgery | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |

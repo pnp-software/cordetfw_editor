@@ -296,20 +296,36 @@ def convert_edit_to_db(project, s):
     return neutralise_foreign_irefs(project, s_db)
 
 
+def resolve_exp_ref(project, s):
+    """
+    Like convert_exp_to_db, but returns (item, problem). The problem is None if a reference was
+    resolved or the field is empty / 'None' (an exported empty link); otherwise 'unknown' (not a
+    reference, or no such item) or 'ambiguous' (several items have this domain:name, e.g. in
+    several ValSets); the item is then None.
+    """
+    if s is None or s.strip() in ('', 'None'):
+        return None, None
+    m = pattern_ref_exp.match(s)
+    if m is None:
+        return None, 'unknown'
+    try:
+        return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
+                            get(project_id=project.id, domain=m.group(1), name=m.group(2)), None
+    except SpecItem.DoesNotExist:
+        return None, 'unknown'
+    except SpecItem.MultipleObjectsReturned:
+        return None, 'ambiguous'
+
+
 def convert_exp_to_db(project, s):
     """
     The argument is a plain reference field in export representation 
     (the reference is represented by the string domain:name). 
     The function converts it to database representation.
-    If the field is empty or the reference is invalid, None is returned.
+    If the field is empty or the reference is invalid or ambiguous, None is returned
+    (resolve_exp_ref tells the callers which).
     """
-    try:
-        m = pattern_ref_exp.match(s)
-        ref = m.group().split(':')
-        return SpecItem.objects.exclude(status='OBS').exclude(status='DEL').\
-                            get(project_id=project.id, domain=ref[0], name=ref[1])
-    except Exception as e:
-        return None
+    return resolve_exp_ref(project, s)[0]
     
 
 def convert_db_to_edit(s, project_id=UNSCOPED):

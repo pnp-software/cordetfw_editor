@@ -601,3 +601,16 @@ def test_filter_get_short_desc_boundary(world):
                           title='T' * 48, desc='d' * 48)   # 48+2+48+2 = 100
     out = ref_filters.get_short_desc(item)
     assert out == 'T' * 48 + ': ' + 'd' * 48
+
+
+def test_resolve_exp_ref_reports_unknown_and_ambiguous(world):
+    # FIXED: import-link-ambiguous (was: convert_exp_to_db returned None for all of these, indistinguishable)
+    from editor.convert import resolve_exp_ref
+    p = world['project']
+    make_spec_item(p, 'EnumType', 'D', 'x', status='CNF')       # D:x now exists in two categories
+    assert resolve_exp_ref(p, 'D:x') == (None, 'ambiguous')
+    assert resolve_exp_ref(p, 'D:missing') == (None, 'unknown')
+    assert resolve_exp_ref(p, 'nocolon') == (None, 'unknown')
+    assert resolve_exp_ref(p, '') == (None, None)
+    assert resolve_exp_ref(p, 'None') == (None, None)
+    assert resolve_exp_ref(p, 'D:T1')[1] is None

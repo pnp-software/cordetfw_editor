@@ -1045,7 +1045,7 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
     if not bool(q_cat):     # The domain:name is new in selected category
         new_spec_item = SpecItem()
         new_spec_item.cat = cat
-        export_to_spec_item(request, project, item, new_spec_item)
+        export_to_spec_item(request, project, item, new_spec_item, warnings)
         new_spec_item.status = 'NEW'
         new_spec_item.updated_at = now
         new_spec_item.created_at = datetime.now(tz=get_current_timezone())
@@ -1059,7 +1059,7 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
             spec_item = make_obs_spec_item_copy(request, q_cat[0])
         else:
             spec_item = q_cat[0]
-        export_to_spec_item(request, project, item, spec_item)
+        export_to_spec_item(request, project, item, spec_item, warnings)
         spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()

@@ -1014,17 +1014,36 @@ def test_import_spec_items_new_item(client, world):
 
 def test_import_spec_items_unresolvable_link_becomes_none(client, world):
     client.force_login(world.rw)
-    post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L1', Type='Nope:Nothing')]))
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L1', Type='Nope:Nothing')]))
     assert get_item(world, 'DataItem', 'Dom', 'L1').p_link is None
+    # FIXED: import-link-ambiguous (was: an unknown link was dropped without any message)
+    assert messages_of(response) == [(
+        'alert-warning', '1 imported, 0 rejected. Warnings: line 2: link Type "Nope:Nothing" matches no item, '
+                         'imported without link')]
 
 
-def test_import_spec_items_ambiguous_link_becomes_none(client, world):
-    # KNOWN-ISSUE: import-link-ambiguous
-    # convert_exp_to_db looks the target up by domain:name only (any category, any ValSet);
-    # Dom:Count exists in two ValSets so MultipleObjectsReturned is swallowed and the link is lost.
+def test_import_spec_items_ambiguous_link_becomes_none_with_warning(client, world):
+    # convert_exp_to_db looks the target up by domain:name only (any category, any ValSet), and the export
+    # writes nothing more: Dom:Count exists in two ValSets, so the link cannot be resolved and is stored
+    # empty as before; the row is imported and the line is reported.
     client.force_login(world.rw)
-    post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L2', Type='Dom:Count')]))
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L2', Type='Dom:Count'),
+                                                              di_row(Name='L3', Type='Types:Color')]))
     assert get_item(world, 'DataItem', 'Dom', 'L2').p_link is None
+    assert get_item(world, 'DataItem', 'Dom', 'L3').p_link == world.color
+    # FIXED: import-link-ambiguous (was: the link was lost silently, no message)
+    assert messages_of(response) == [(
+        'alert-warning', '2 imported, 0 rejected. Warnings: line 2: link Type "Dom:Count" is ambiguous '
+                         '(several items have this domain:name), imported without link')]
+
+
+def test_import_spec_items_empty_or_none_link_gives_no_warning(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='L4', Type='None'), di_row(Name='L5', Type='')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    assert messages_of(response) == [('alert-warning', '2 imported, 0 rejected. Warnings: line 3: '
+                                      'empty required field(s) Type')]
+    assert get_item(world, 'DataItem', 'Dom', 'L4').p_link is None
 
 
 def test_import_spec_items_existing_confirmed_item_gets_obs_copy(client, world):
@@ -1316,7 +1335,7 @@ def test_import_spec_items_failing_row_leaves_no_half_saved_obs_copy(client, wor
     # a row that fails after the OBS copy of a CNF item was made is rolled back completely
     import editor.views as views
     client.force_login(world.rw)
-    def boom(*args):
+    def boom(*args, **kwargs):
         raise RuntimeError('boom')
     monkeypatch.setattr(views, 'export_to_spec_item', boom)
     before = list(SpecItem.objects.order_by('id').values_list('id', 'status', 'title', 'previous_id'))
