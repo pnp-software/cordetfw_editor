@@ -13,7 +13,7 @@
    "name": "Roles ValSets",
    "owner": "rv_owner",
    "release": "#2",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20 16:45:30"
   }
  ],
  "editor_projectuser": [
@@ -21,28 +21,28 @@
    "id": "#0",
    "project": "#0",
    "role": "RO",
-   "updated_at": "<now>",
+   "updated_at": "2024-02-20",
    "user": "rv_ro1"
   },
   {
    "id": "#1",
    "project": "#0",
    "role": "RW",
-   "updated_at": "<now>",
+   "updated_at": "2024-02-20",
    "user": "rv_rw1"
   },
   {
    "id": "#2",
    "project": "#0",
    "role": "RW",
-   "updated_at": "<now>",
+   "updated_at": "2024-02-20",
    "user": "rv_rw2"
   },
   {
    "id": "#3",
    "project": "#0",
    "role": "RO",
-   "updated_at": "<now>",
+   "updated_at": "2024-02-20",
    "user": "rv_ro2"
   }
  ],
@@ -219,21 +219,21 @@
    "id": "#0",
    "name": "Default",
    "project": "#0",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20"
   },
   {
    "desc": "First alternative",
    "id": "#1",
    "name": "VS1",
    "project": "#0",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20"
   },
   {
    "desc": "Second \"quoted\" | alternative",
    "id": "#2",
    "name": "VS2",
    "project": "#0",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20"
   }
  ]
 }

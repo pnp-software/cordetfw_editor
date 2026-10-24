@@ -12,7 +12,7 @@
    "name": "App One",
    "project": "#0",
    "release": "#3",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20 16:45:30"
   }
  ],
  "editor_project": [
@@ -23,7 +23,7 @@
    "name": "Demo Proj",
    "owner": "owner",
    "release": "#1",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20 16:45:30"
   }
  ],
  "editor_projectuser": [
@@ -31,14 +31,14 @@
    "id": "#0",
    "project": "#0",
    "role": "RO",
-   "updated_at": "<now>",
+   "updated_at": "2024-01-15",
    "user": "reader"
   },
   {
    "id": "#1",
    "project": "#0",
    "role": "RW",
-   "updated_at": "<now>",
+   "updated_at": "2024-01-15",
    "user": "writer"
   }
  ],
@@ -428,14 +428,14 @@
    "id": "#0",
    "name": "Default",
    "project": "#0",
-   "updated_at": "<now>"
+   "updated_at": "2024-01-15"
   },
   {
    "desc": "Alternative \"values\"",
    "id": "#1",
    "name": "VS1",
    "project": "#0",
-   "updated_at": "<now>"
+   "updated_at": "2024-01-15"
   }
  ]
 }

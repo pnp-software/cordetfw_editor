@@ -12,7 +12,7 @@
    "name": "App A",
    "project": "#0",
    "release": "#2",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20 16:45:30"
   },
   {
    "cats": "Requirement,DataItem",
@@ -21,7 +21,7 @@
    "name": "App B",
    "project": "#0",
    "release": "#5",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20 16:45:30"
   }
  ],
  "editor_project": [
@@ -32,7 +32,7 @@
    "name": "Apps Versions",
    "owner": "ap_owner",
    "release": "#0",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20 16:45:30"
   }
  ],
  "editor_projectuser": [],
@@ -236,7 +236,7 @@
    "id": "#0",
    "name": "Default",
    "project": "#0",
-   "updated_at": "<now>"
+   "updated_at": "2024-02-20"
   }
  ]
 }

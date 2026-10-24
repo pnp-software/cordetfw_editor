@@ -656,12 +656,12 @@ def test_import_project_round_trip_semantics(client, renamed_original, fresh_tem
     assert before['items'][color_var]['s_data'] == {'a': 1, 'k': [1, 2], 'u': 'ä'}
     assert after['items'][color_var]['s_data'] == '{"a": 1, "k": [1, 2], "u": "\\u00e4"}'
     assert before['items'][calc]['s_data'] == {} and after['items'][calc]['s_data'] == ''
-    # KNOWN-ISSUE: import-project-auto-now-timestamps -- updated_at of Project/Application/ValSet/ProjectUser
-    # are auto_now fields and are overwritten with the import time
-    assert old.updated_at == T1 and new.updated_at > T1
-    assert new.applications.get().updated_at > T1
-    assert all(v.updated_at > D_FIXED for v in new.val_sets.all())
-    assert all(pu.updated_at > D_FIXED for pu in new.project_users.all())
+    # FIXED: import-project-auto-now-timestamps (was: updated_at of Project/Application/ValSet/ProjectUser, auto_now
+    # fields, were overwritten with the import time)
+    assert old.updated_at == T1 and new.updated_at == T1
+    assert new.applications.get().updated_at == T1
+    assert [v.updated_at for v in new.val_sets.all()] == [D_FIXED, D_FIXED]
+    assert [pu.updated_at for pu in new.project_users.all()] == [D_FIXED, D_FIXED]
     # KNOWN-ISSUE: import-project-crlf-lost -- CR LF inside a field is read back as LF
     assert before['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\r\nwith CRLF'
     assert after['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\nwith CRLF'
@@ -688,17 +688,12 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
 
     # Everything else (ids aside) is identical; the only differences are the documented losses
     assert sorted(differences) == [
-        ('applications.csv', 'updated_at'),
-        ('project.csv', 'updated_at'),
-        ('project_users.csv', 'updated_at'),
         ('spec_items.csv', 'change_log'),
         ('spec_items.csv', 's_data'),
-        ('val_sets.csv', 'updated_at'),
     ]
     assert differences[('spec_items.csv', 'change_log')] == [('changed\r\nwith CRLF', 'changed\nwith CRLF')]
     assert differences[('spec_items.csv', 's_data')] == [
         ('{"a": 1, "k": [1, 2], "u": "\\u00e4"}', '"{\\"a\\": 1, \\"k\\": [1, 2], \\"u\\": \\"\\\\u00e4\\"}"')]
-    assert differences[('val_sets.csv', 'updated_at')][0][0] == '2024-01-15'
 
 
 def test_import_project_after_deleting_original(client, exported, fresh_temp):
@@ -1783,3 +1778,30 @@ def test_import_project_unknown_role_is_read_only(client, renamed_original, fres
     upload_zip(client, modified_zip(w.zip, **{'project_users.csv': out.getvalue().encode()}), fresh_temp)
     new = Project.objects.get(name='Demo Proj')
     assert sorted((pu.user.username, pu.role) for pu in new.project_users.all()) == [('reader', 'RO'), ('writer', 'RO')]
+
+
+def test_import_project_restores_distinct_updated_at_values(client, renamed_original, fresh_temp):
+    # import-project-auto-now-timestamps: each row gets its own exported updated_at, not the import time
+    w = renamed_original
+
+    def rewrite(member, values):
+        rows = read_csv_member(w.zip, member)
+        for row, value in zip(rows, values):
+            row['updated_at'] = value
+        out = io.StringIO()
+        writer = csv.DictWriter(out, fieldnames=list(rows[0]), lineterminator='\r\n')
+        writer.writeheader(); writer.writerows(rows)
+        return out.getvalue().encode('utf-8')
+
+    data = modified_zip(w.zip, **{
+        'project.csv': rewrite('project.csv', ['2021-05-06 07:08:09']),
+        'applications.csv': rewrite('applications.csv', ['2022-06-07 08:09:10']),
+        'val_sets.csv': rewrite('val_sets.csv', ['2020-01-02', '2020-01-03']),
+        'project_users.csv': rewrite('project_users.csv', ['2019-12-30', '2019-12-31'])})
+    client.force_login(w.admin)
+    assert messages_of(upload_zip(client, data, fresh_temp)) == []
+    new = Project.objects.get(name='Demo Proj')
+    assert new.updated_at == datetime(2021, 5, 6, 7, 8, 9, tzinfo=timezone.utc)
+    assert new.applications.get().updated_at == datetime(2022, 6, 7, 8, 9, 10, tzinfo=timezone.utc)
+    assert sorted(v.updated_at.isoformat() for v in new.val_sets.all()) == ['2020-01-02', '2020-01-03']
+    assert sorted(pu.updated_at.isoformat() for pu in new.project_users.all()) == ['2019-12-30', '2019-12-31']

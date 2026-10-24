@@ -105,6 +105,22 @@ def created_at_kwargs(spec_item):
     return {'created_at': make_aware(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S"))}
 
 
+def restore_updated_at(instance, value, is_date=False):
+    """
+    import-project-auto-now-timestamps: Project, Application (datetime) and ValSet, ProjectUser (date) have
+    auto_now updated_at fields that are set to 'now' by save(). Write the exported value afterwards with
+    queryset.update(), which bypasses auto_now. An empty or unreadable value leaves the import time.
+    """
+    try:
+        if is_date:
+            parsed = datetime.datetime.strptime(value, "%Y-%m-%d").date()
+        else:
+            parsed = make_aware(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S"))
+    except (ValueError, TypeError):
+        return
+    type(instance).objects.filter(pk=instance.pk).update(updated_at=parsed)
+
+
 def item_full_name(row):
     return row['cat']+':'+row['domain']+':'+row['name']+' (status: '+row['status']+')'
 
@@ -241,6 +257,7 @@ def _import_project_tables(imp_dir, notes):
                           owner = project_owner)
     new_project.release_id = old_id_2_new_id[project_dict['release']]
     new_project.save()
+    restore_updated_at(new_project, project_dict['updated_at'])
 
     # Import the ValSet instances
     val_set_old_id_2_new = {}
@@ -250,6 +267,7 @@ def _import_project_tables(imp_dir, notes):
                              name = val_set['name'],
                              desc = val_set['desc'])
         new_val_set.save()
+        restore_updated_at(new_val_set, val_set['updated_at'], is_date=True)
         val_set_old_id_2_new[val_set['id']] = new_val_set
     
     # Import the Project Users
@@ -259,6 +277,7 @@ def _import_project_tables(imp_dir, notes):
                                        user = user_name_2_user[project_user['user']],
                                        role = project_role(project_user))
         new_project_user.save()
+        restore_updated_at(new_project_user, project_user['updated_at'], is_date=True)
         
     # Import the Applications
     application_old_id_2_new = {}
@@ -271,6 +290,7 @@ def _import_project_tables(imp_dir, notes):
                                        name = application['name'])
         new_application.release_id = old_id_2_new_id[application['release']]
         new_application.save()
+        restore_updated_at(new_application, application['updated_at'])
         application_old_id_2_new[application['id']] = new_application
     
     # Import SpecItems
