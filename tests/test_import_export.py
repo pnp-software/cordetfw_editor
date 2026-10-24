@@ -843,9 +843,8 @@ def test_import_project_unknown_project_user(client, renamed_original, fresh_tem
 
 
 def test_import_project_unknown_release_author_leaves_partial_data(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: import-project-not-atomic
-    # Releases are written one at a time; a later failure leaves the earlier ones behind
-    # (IMPORT_EXPORT_USE_TRANSACTIONS does not apply, import_project_tables does not use a Resource).
+    # FIXED: import-project-not-atomic (was: the two releases before the bad one were committed, Release.count()
+    # == 4 + 2). The import is one transaction: a failure creates nothing and gives one error message.
     w = renamed_original
     rows = read_csv_member(w.zip, 'releases.csv')
     rows[2]['release_author'] = 'ghost'
@@ -857,7 +856,40 @@ def test_import_project_unknown_release_author_leaves_partial_data(client, renam
     [(level, text)] = messages_of(response)
     assert text.startswith('The release author ghost does not exist: ')
     assert Project.objects.count() == 1
-    assert Release.objects.count() == 4 + 2        # the two releases before the bad one were committed
+    assert Release.objects.count() == 4
+
+
+def test_import_project_failure_after_writes_rolls_back_everything(client, renamed_original, fresh_temp, monkeypatch):
+    # import-project-not-atomic: an unexpected failure late in the import (here while resolving the links)
+    # leaves no Release, Project, ValSet, ProjectUser, Application or SpecItem behind; one error message.
+    import editor.imports as imports
+    def boom(*args, **kwargs):
+        raise RuntimeError('simulated failure')
+    monkeypatch.setattr(imports, 'convert_edit_to_db', boom)
+    w = renamed_original
+    counts = [m.objects.count() for m in (Release, Project, ValSet, ProjectUser, Application, SpecItem)]
+    client.force_login(w.admin)
+    response = upload_zip(client, w.zip_bytes, fresh_temp)
+    assert response.status_code == 302
+    [(level, text)] = messages_of(response)
+    assert level == 'alert-danger'
+    assert text == "Unable to import project: RuntimeError('simulated failure'); nothing was imported"
+    assert counts == [m.objects.count() for m in (Release, Project, ValSet, ProjectUser, Application, SpecItem)]
+
+
+def test_import_project_failure_message_hides_item_notes(client, renamed_original, fresh_temp, monkeypatch):
+    # import-project-not-atomic: notes about skipped items are shown only when the import succeeds
+    import editor.imports as imports
+    monkeypatch.setattr(imports, 'convert_edit_to_db', lambda *a, **k: 1 / 0)
+    w = renamed_original
+
+    def mutate(rows):
+        rows[0]['status'] = 'BOGUS'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    [(level, text)] = messages_of(response)
+    assert text.startswith('Unable to import project: ZeroDivisionError(')
 
 
 def _spec_items_csv_with(zf, mutate):
@@ -893,20 +925,51 @@ def test_import_project_failing_spec_item_is_reported_and_others_imported(client
 
 
 def test_import_project_failing_referenced_spec_item_crashes(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: import-project-dangling-link-crash
-    # When a spec_item that is the target of p_link/previous/s_link fails to import, the link
-    # resolution step raises KeyError (not caught): the user sees a 500 and a half-imported project.
+    # FIXED: import-project-dangling-link-crash (was: KeyError -> HTTP 500 and a half-imported project)
+    # An item that is rejected (here: invalid status, as by the per-row check of Task 7.2c) and is the target
+    # of previous/p_link/s_link: the links to it become None and are listed in the message.
     w = renamed_original
 
     def mutate(rows):
         for row in rows:
             if row['name'] == 'uint8':
-                row['owner'] = 'ghost'
+                row['status'] = 'BOGUS'
     client.force_login(w.admin)
-    with pytest.raises(KeyError):
-        upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
-                   fresh_temp)
-    assert Project.objects.filter(name='Demo Proj').exists()
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    assert response.status_code == 302
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 9
+    assert not new.project_spec_items.filter(name='uint8').exists()
+    texts = [t for _, t in messages_of(response)]
+    assert texts[0].startswith('Failure to import spec_item DataItemType:Types:uint8: the status BOGUS is not valid')
+    link_msgs = texts[1:]
+    assert link_msgs and all('was set to None' in t for t in link_msgs)
+    assert len(link_msgs) == len(set(link_msgs))
+    for t in link_msgs:
+        assert t.startswith('Spec_item ') and ') is not in the imported data, the ' in t
+    # every dangling link is None in the database
+    assert not new.project_spec_items.filter(previous__isnull=False, previous__project=None).exists()
+
+
+def test_import_project_dangling_previous_is_none(client, renamed_original, fresh_temp):
+    # import-project-dangling-link-crash: previous pointing to a row that is not in the file
+    w = renamed_original
+    seen = {}
+
+    def mutate(rows):
+        for row in rows:
+            if row['previous']:
+                seen['name'] = row['name']
+                row['previous'] = '9999'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 10
+    assert new.project_spec_items.get(name=seen['name'], status='CNF').previous is None
+    [(level, text)] = messages_of(response)
+    assert text.endswith('the previous (item id 9999) is not in the imported data, the previous was set to None')
 
 
 def test_import_project_removes_temp_dir(client, renamed_original, fresh_temp):

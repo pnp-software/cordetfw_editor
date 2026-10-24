@@ -1,9 +1,17 @@
 {
  "_outcome": {
-  "exception": "KeyError",
-  "message": "'1'",
-  "messages": [],
-  "status": null
+  "exception": null,
+  "messages": [
+   [
+    "alert-danger",
+    "Failure to import spec_item DataItemType:Types:uint8 (staus: CNF) Probable causes are: (a) application identifier () is not recognized; (b) spec_item owner ol_outsider is not a project user (c) ValSet identifier (1) is not recognized; (d) Update time (2024-02-20 16:45:30) is not in format Y-m-d H-M-S; Error is: KeyError('ol_outsider')"
+   ],
+   [
+    "alert-danger",
+    "Spec_item DataItem:Dom:Kept (status: CNF): the p_link (item id 1) is not in the imported data, the p_link was set to None"
+   ]
+  ],
+  "status": 302
  },
  "editor_application": [],
  "editor_project": [

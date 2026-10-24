@@ -62,7 +62,7 @@ NAMES = [m['name'] for m in MANIFEST]
 # is the CURRENT buggy behaviour; the fix commit flips the expected file and lists the changed fields.
 # KNOWN-ISSUE: import-project-empty-app-cats  (zip_app_empty_cats: rejected, nothing imported)
 # KNOWN-ISSUE: import-project-owner-not-member  (zip_owner_not_member: orphan item dropped, message)
-# KNOWN-ISSUE: import-project-dangling-link-crash  (zip_owner_not_member_linked: KeyError, partial project)
+# FIXED: import-project-dangling-link-crash (was: zip_owner_not_member_linked: KeyError, partial project)
 # KNOWN-ISSUE: import-project-role-lost  (zip_roles_valsets_releases: every member imported as role RO)
 # KNOWN-ISSUE: import-project-application-version-lost  (zip_apps_versions: application_version not imported)
 

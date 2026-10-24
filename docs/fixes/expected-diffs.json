@@ -14,5 +14,7 @@
               "csv_golden_enumtype": ["_outcome.messages"], "csv_golden_enumvalue": ["_outcome.messages"],
               "csv_golden_req_application": ["_outcome.messages"], "csv_golden_req_no_application": ["_outcome.messages"],
               "csv_ext_dataitem": ["_outcome.messages"], "csv_ext_dataitem_vs1": ["_outcome.messages"]},
-   "description": "Task 7.4b: the spec-item CSV import ends with ONE summary message ('N imported, M rejected' plus the rejected CSV lines) instead of a success count and an aggregated error count. Only the import message text changes; the imported database rows are identical."}
+   "description": "Task 7.4b: the spec-item CSV import ends with ONE summary message ('N imported, M rejected' plus the rejected CSV lines) instead of a success count and an aggregated error count. Only the import message text changes; the imported database rows are identical."},
+  {"id": "import-project-not-atomic", "applies_to": "compat", "compat": {}, "description": "Task 7.4a: the import is one transaction; no corpus input changes because of it alone."},
+  {"id": "import-project-dangling-link-crash", "applies_to": "compat", "compat": {"zip_owner_not_member_linked": ["_outcome.exception", "_outcome.message", "_outcome.messages", "_outcome.status"]}, "description": "Task 7.4a: a link to a missing or rejected item becomes None and is listed in the import message instead of a KeyError (HTTP 500). zip_owner_not_member_linked: no exception any more, two messages (dropped item, cleared p_link)."}
 ]
