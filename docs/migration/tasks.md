@@ -187,6 +187,11 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
     stored empty), echoed link text truncated to 80 chars. Production (aggregates): 0 live items link to a target
     whose domain/name contains characters outside [A-Za-z0-9_], so the wider link pattern changes no import result
     of production exports
+  - 7.4a project ZIP import (`fa60e58`..`7dddd28`): one transaction (nothing created on failure), dangling or
+    rejected link targets cleared and reported, owner-not-member per operator rule (existing account -> RO member,
+    else project owner), role / application_version / created_at / updated_at / CRLF / empty application cats /
+    s_data restored, member names `./x.csv` accepted. Compat corpus: every ZIP input now reproduces the exported
+    values; re-export of an imported project equals the source export. Gate 2108 SQLite / 2118 MySQL
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)
 - [x] **Task 7.6** UI/behaviour bugs (K5): 8 ids (`fba05cb`.. as cherry-picked, ending `ccefe19`): help-double-space,
   owner-empty-names, form-none-literal, p-link-selection-lost, copy-unreachable-valset-message,
