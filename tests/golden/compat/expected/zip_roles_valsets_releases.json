@@ -27,14 +27,14 @@
   {
    "id": "#1",
    "project": "#0",
-   "role": "RO",
+   "role": "RW",
    "updated_at": "<now>",
    "user": "rv_rw1"
   },
   {
    "id": "#2",
    "project": "#0",
-   "role": "RO",
+   "role": "RW",
    "updated_at": "<now>",
    "user": "rv_rw2"
   },

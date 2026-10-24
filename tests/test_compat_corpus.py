@@ -63,7 +63,7 @@ NAMES = [m['name'] for m in MANIFEST]
 # KNOWN-ISSUE: import-project-empty-app-cats  (zip_app_empty_cats: rejected, nothing imported)
 # FIXED: import-project-owner-not-member (was: zip_owner_not_member: orphan item dropped, message)
 # FIXED: import-project-dangling-link-crash (was: zip_owner_not_member_linked: KeyError, partial project)
-# KNOWN-ISSUE: import-project-role-lost  (zip_roles_valsets_releases: every member imported as role RO)
+# FIXED: import-project-role-lost (was: zip_roles_valsets_releases: every member imported as role RO)
 # KNOWN-ISSUE: import-project-application-version-lost  (zip_apps_versions: application_version not imported)
 
 

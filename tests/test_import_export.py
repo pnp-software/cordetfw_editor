@@ -642,9 +642,9 @@ def test_import_project_round_trip_semantics(client, renamed_original, fresh_tem
            new_ids[('EnumType', 'Types', 'Color', 'Default', 'CNF')]
 
     # --- KNOWN-ISSUE losses ----------------------------------------------------------------
-    # KNOWN-ISSUE: import-project-role-lost -- every ProjectUser is imported as 'RO'
+    # FIXED: import-project-role-lost (was: every ProjectUser was imported as 'RO')
     assert before['users'] == [('reader', 'RO'), ('writer', 'RW')]
-    assert after['users'] == [('reader', 'RO'), ('writer', 'RO')]
+    assert after['users'] == [('reader', 'RO'), ('writer', 'RW')]
     # KNOWN-ISSUE: import-project-created-at-lost -- SpecItem.created_at falls back to its default
     assert {b['created_at'] for b in before['items'].values()} == {T0}
     assert {a['created_at'] for a in after['items'].values()} == {datetime(2000, 1, 1, tzinfo=timezone.utc)}
@@ -689,7 +689,6 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
     assert sorted(differences) == [
         ('applications.csv', 'updated_at'),
         ('project.csv', 'updated_at'),
-        ('project_users.csv', 'role'),
         ('project_users.csv', 'updated_at'),
         ('releases.csv', 'application_version'),
         ('spec_items.csv', 'change_log'),
@@ -697,7 +696,6 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
         ('spec_items.csv', 's_data'),
         ('val_sets.csv', 'updated_at'),
     ]
-    assert differences[('project_users.csv', 'role')] == [('RW', 'RO')]
     assert differences[('releases.csv', 'application_version')] == [('1', '0')]
     assert differences[('spec_items.csv', 'created_at')] == [('2023-12-01 08:00:00', '2000-01-01 00:00:00')] * 10
     assert differences[('spec_items.csv', 'change_log')] == [('changed\r\nwith CRLF', 'changed\nwith CRLF')]
@@ -1773,3 +1771,18 @@ def test_export_spec_items_does_not_export_s_data(client):
     text = response.content.decode('utf-8')
     assert 'Order' in text
     assert 'zz' not in text and 'nested' not in text
+
+
+def test_import_project_unknown_role_is_read_only(client, renamed_original, fresh_temp):
+    # import-project-role-lost: roles are imported; a value that is not RO/RW falls back to RO
+    w = renamed_original
+    rows = read_csv_member(w.zip, 'project_users.csv')
+    for r in rows:
+        r['role'] = 'XX' if r['user'] == 'writer' else r['role']
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=list(rows[0]), lineterminator='\r\n')
+    writer.writeheader(); writer.writerows(rows)
+    client.force_login(w.admin)
+    upload_zip(client, modified_zip(w.zip, **{'project_users.csv': out.getvalue().encode()}), fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert sorted((pu.user.username, pu.role) for pu in new.project_users.all()) == [('reader', 'RO'), ('writer', 'RO')]

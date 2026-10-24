@@ -58,7 +58,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-project-no-limits | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |
 | import-project-not-atomic | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.4a) |  |
 | import-project-owner-not-member | — | import-export-auth.md | tests/test_import_export.py, tests/test_compat_corpus.py | K | FIXED (Task 7.4a) | Project ZIP import drops items whose owner is neither project owner nor project user (KeyError, "probable cause (b)"). Production (dump 2026-10-21): 35 items in 1 project would be lost on export -> import. Found in Task 6.8e; identical with the production code (Task 6.8f) |
-| import-project-role-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
+| import-project-role-lost | — | import-export-auth.md | tests/test_import_export.py, tests/test_compat_corpus.py | K | FIXED (Task 7.4a) |  |
 | import-project-s-data-double-encoded | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-spec-items-abort-no-summary | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.4b) | Operator 2026-10-24: keep per-row import, always show a summary |
 | import-spec-items-no-rollback | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.4b) | Operator 2026-10-24: keep per-row import, always show a summary |

@@ -91,6 +91,12 @@ def import_project_tables(request, imp_dir):
         messages.error(request, note)
 
 
+def project_role(project_user):
+    """ import-project-role-lost: the role of the exported project user; unknown values are read-only """
+    role = project_user.get('role', 'RO')
+    return role if role in ('RO', 'RW') else 'RO'
+
+
 def item_full_name(row):
     return row['cat']+':'+row['domain']+':'+row['name']+' (status: '+row['status']+')'
 
@@ -241,7 +247,8 @@ def _import_project_tables(imp_dir, notes):
     for project_user in project_users:
         new_project_user = ProjectUser(updated_at = project_user['updated_at'],
                                        project = new_project,
-                                       user = user_name_2_user[project_user['user']])
+                                       user = user_name_2_user[project_user['user']],
+                                       role = project_role(project_user))
         new_project_user.save()
         
     # Import the Applications
