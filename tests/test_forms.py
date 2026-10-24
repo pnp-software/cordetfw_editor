@@ -70,9 +70,9 @@ def test_project_form_labels_and_widgets():
     owner = make_user()
     form = ProjectForm(None)
     assert form.fields['cats'].label == 'Categories'
-    # KNOWN-ISSUE: help-double-space  (predefined_cats is already ', '-joined, then ',' -> ', ' again)
-    assert form.fields['cats'].help_text.startswith('A subset of: ParReq,  DerReq,  VerItem,  VerStep,')
-    assert form.fields['cats'].help_text == 'A subset of: ' + ',  '.join(configs['cats'].keys())
+    # FIXED: help-double-space (was: two spaces after every comma, 'ParReq,  DerReq,  ...')
+    assert form.fields['cats'].help_text.startswith('A subset of: ParReq, DerReq, VerItem, VerStep,')
+    assert form.fields['cats'].help_text == 'A subset of: ' + ', '.join(configs['cats'].keys())
     assert form.fields['description'].widget.attrs['rows'] == 2
     assert type(form.fields['description'].widget).__name__ == 'Textarea'
     assert form.predefined_cats == ', '.join(configs['cats'].keys())

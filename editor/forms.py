@@ -36,7 +36,7 @@ class ProjectForm(forms.Form):
         self.fields['owner'].choices = get_user_choices(project)
         self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
-        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats.replace(',', ', ')
+        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
 
     def clean_owner(self):
         owner_id = self.cleaned_data['owner']
