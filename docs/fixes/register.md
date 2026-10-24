@@ -37,7 +37,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | ext-fcp-refresh-nameerror | ext-fcp-refresh-undefined-name | import-export-auth.md, views.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) |  |
 | find-replace-no-write-check | — | views.md | tests/test_views.py | S | FIXED (Task 6.4) |  |
 | find-replace-on-release-view | — | views.md | tests/test_scoping_6_4.py | K | FIXED (Task 7.2a) | Find & Replace is offered on release views (sel_rel_id != 0) whose query includes CNF/OBS/DEL historical rows, so it could rewrite OBS versions. Found by the Task 6.4 review |
-| form-choice-empty-silent-default | — | docs/fixes/csv-empty-required-fields.md | tests/test_form_choice_empty.py | K | FIXED (Task 7.6b) | Editing an item whose required choice field (e.g. Requirement Ver, SysReq Compl/Ver, Packet Kind) is empty silently saves the first choice (select has no blank option). Found by the 2026-10-24 analysis; production: 408 live items with an empty required choice field. Operator 2026-10-24: blank option selected when the stored value is empty/invalid (edit, copy, split); add mode and optional fields unchanged |
+| form-choice-empty-silent-default | — | forms-convert-utilities.md | tests/test_form_choice_empty.py | K | FIXED (Task 7.6b) | Editing an item whose required choice field (e.g. Requirement Ver, SysReq Compl/Ver, Packet Kind) is empty silently saves the first choice (select has no blank option). Found by the 2026-10-24 analysis; production: 408 live items with an empty required choice field. Operator 2026-10-24: blank option selected when the stored value is empty/invalid (edit, copy, split); add mode and optional fields unchanged |
 | form-none-literal | — | views.md | tests/test_rendering_snapshots.py, tests/test_http.py | K | FIXED (Task 7.6) |  |
 | help-double-space | — | forms-convert-utilities.md | tests/test_forms.py | K | FIXED (Task 7.6) |  |
 | honeypot-logger-not-connected | — | import-export-auth.md | tests/test_auth.py | K | FIXED (Task 7.2a) |  |
@@ -103,4 +103,4 @@ none
 
 ## Doc ids without a test marker
 
-- add-spec-item-val-set-post
+none
