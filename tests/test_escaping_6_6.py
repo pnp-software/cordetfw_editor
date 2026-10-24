@@ -238,7 +238,7 @@ def test_disp_trac_p_link_branch_escaped(world):
 def test_disp_trac_clean_text_unchanged(world):
     pkt = _trac_world(world, desc='plain desc', title='Plain')
     out = ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None)
-    assert out == ('<a class="link-table-list-spec" href="/editor/Requirement/%d/0/%d/R/0\\list_spec_items#R:r" '
+    assert out == ('<a class="link-table-list-spec" href="/editor/Requirement/%d/0/%d/R/0/list_spec_items#R:r" '
                    'title="plain desc">R:r</a> (Plain)' % (world['project'].id, pkt.val_set.id))
 
 

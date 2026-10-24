@@ -126,11 +126,11 @@ def test_markdown_bullet_item_with_hyphen_splits():
 def test_display_internal_ref_cnf_and_new(world):
     e, x = world['etype'], world['x']
     out = convert_db_to_display('hi #iref:%d and #iref:%d' % (e.id, x.id), None)
-    # KNOWN-ISSUE: ref-link-backslash  (target uses '\list_spec_items' with a backslash instead of '/')
+    # FIXED: ref-link-backslash (was: '0\\list_spec_items', a backslash instead of '/')
     assert out == (
-        'hi <a href="/editor/EnumType/%d/0/%d/D/0\\list_spec_items#D:T1" '
+        'hi <a href="/editor/EnumType/%d/0/%d/D/0/list_spec_items#D:T1" '
         'title="Title: t&#13;Description: d &lt;&amp;&gt;&#13;">D:T1</a> and '
-        '<a href="/editor/DataItem/%d/0/%d/D/0\\list_spec_items#D:x" class="link-danger" '
+        '<a href="/editor/DataItem/%d/0/%d/D/0/list_spec_items#D:x" class="link-danger" '
         'title="Status: NEW&#13;Title: Title of x&#13;Description: &#13;Value: 2*3&#13;">D:x</a>'
         % (world['project'].id, e.val_set_id, world['project'].id, x.val_set_id))
 
@@ -160,7 +160,7 @@ def test_display_missing_ref_and_markdown():
 def test_display_sel_rel_id_in_link(world):
     rel = make_release(world['owner'])
     out = convert_db_to_display('#iref:%d' % world['etype'].id, rel)
-    assert '/D/%d\\list_spec_items' % rel.id in out
+    assert '/D/%d/list_spec_items' % rel.id in out
 
 
 def test_display_application_id_in_link(world):
@@ -478,7 +478,7 @@ def test_disp_trac_s_link(world):
     req = make_spec_item(p, 'Service', 'S', 'sv', status='CNF', title='ST', desc='SD')
     link = make_spec_item(p, 'VerLink', 'V', 'l', status='CNF', s_link=pkt, p_link=req)
     out = ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None)
-    assert out == ('<a class="link-table-list-spec" href="/editor/Service/%d/0/%d/S/0\\list_spec_items#S:sv" '
+    assert out == ('<a class="link-table-list-spec" href="/editor/Service/%d/0/%d/S/0/list_spec_items#S:sv" '
                    'title="SD">S:sv</a> (ST)' % (p.id, pkt.val_set_id))
     assert isinstance(out, SafeString)
 
@@ -489,7 +489,7 @@ def test_disp_trac_p_link_branch(world):
     pkt = make_spec_item(p, 'Packet', 'P', 'pk', status='CNF', p_kind='TC', title='PT', desc='PD')
     link = make_spec_item(p, 'VerLink', 'V', 'l', status='CNF', s_link=pkt, p_link=req)
     out = ref_filters.disp_trac(_tag_ctx(world), req, 'VerLink', 'p_link', None)
-    assert out == ('<a class="link-table-list-spec" href="/editor/Packet/%d/0/%d/P/0\\list_spec_items#P:pk" '
+    assert out == ('<a class="link-table-list-spec" href="/editor/Packet/%d/0/%d/P/0/list_spec_items#P:pk" '
                    'title="PD">P:pk</a> (PT)' % (p.id, req.val_set_id))
 
 
@@ -525,7 +525,7 @@ def test_disp_trac_with_release_filters_by_dates(world):
                    updated_at=datetime(2024, 3, 1, tzinfo=timezone.utc))
     out = ref_filters.disp_trac(_tag_ctx(world, rel), pkt, 'VerLink', 's_link', rel)
     assert 'S:ok' in out and 'S:late' not in out and 'S:new' not in out
-    assert '/S/%d\\list_spec_items' % rel.id in out
+    assert '/S/%d/list_spec_items' % rel.id in out
 
 
 def test_disp_trac_p_link_none_is_skipped(world):

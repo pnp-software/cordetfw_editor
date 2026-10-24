@@ -122,14 +122,14 @@ def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
 
         if trac_link == 's_link' and link.p_link != None:
             target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
+                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'/'+str(sel_rel_id)+'/list_spec_items'
             s = s + trac_link_html(target, link.p_link)
             s = s + '\n'
             continue
         
         if trac_link == 'p_link' and link.s_link != None:
             target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
+                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'/'+str(sel_rel_id)+'/list_spec_items'
             s = s + trac_link_html(target, link.s_link)
             s = s + '\n'    
             continue

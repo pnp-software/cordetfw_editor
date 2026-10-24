@@ -129,7 +129,7 @@ def test_snapshot_password_reset_form(client):
 
 
 def test_snapshot_list_data_items(client, ds):
-    # KNOWN-ISSUE: ref-link-backslash (golden contains '0\\list_spec_items' links)
+    # FIXED: ref-link-backslash (was: golden contained '0\\list_spec_items' links)
     snap('list_data_items', client.get(lurl(ds)))
 
 
