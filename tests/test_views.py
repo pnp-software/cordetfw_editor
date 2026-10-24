@@ -188,17 +188,21 @@ def test_change_password_valid_post(client, owner):
     assert client.get('/editor/').context['user'].is_authenticated
 
 
-def test_change_password_get_raises(client, owner):
-    # KNOWN-ISSUE: change-password-no-response
-    with pytest.raises(ValueError):
-        client.get('/editor/change_password')
+def test_change_password_get_renders_form(client, owner):
+    # FIXED: change-password-no-response (was: ValueError, the view returned None)
+    resp = client.get('/editor/change_password')
+    assert resp.status_code == 200
+    assert 'old_password' in resp.context['form'].fields
+    assert resp.context['title'] == 'Change Password'
 
 
-def test_change_password_invalid_post_raises(client, owner):
-    # KNOWN-ISSUE: change-password-no-response
-    with pytest.raises(ValueError):
-        client.post('/editor/change_password', {
-            'old_password': 'wrong', 'new_password1': 'Zx9-brand-new-pw', 'new_password2': 'Zx9-brand-new-pw'})
+def test_change_password_invalid_post_renders_form_with_errors(client, owner):
+    resp = client.post('/editor/change_password', {
+        'old_password': 'wrong', 'new_password1': 'Zx9-brand-new-pw', 'new_password2': 'Zx9-brand-new-pw'})
+    # FIXED: change-password-no-response (was: ValueError, the view returned None)
+    assert resp.status_code == 200
+    assert 'old_password' in resp.context['form'].errors
+    assert msgs(resp) == [('alert-danger', 'Please correct the error below')]
     owner.refresh_from_db()
     assert owner.check_password('test-password-123')
 

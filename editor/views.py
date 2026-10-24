@@ -163,6 +163,9 @@ def change_password(request):
     else:
         form = PasswordChangeForm(request.user)
 
+    context = {'form': form, 'title': 'Change Password'}
+    return render(request, 'generic_form.html', context)
+
 
 @login_required         
 def add_application(request, project_id):
