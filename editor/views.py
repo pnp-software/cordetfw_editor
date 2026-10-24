@@ -1,4 +1,5 @@
 import os
+import shutil
 import csv
 import traceback
 import json
@@ -33,7 +34,7 @@ from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm, \
                          validate_identifier
-from editor.utilities import get_domains, do_application_release, do_project_release, \
+from editor.utilities import CleanupFileResponse, get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
@@ -1124,24 +1125,27 @@ def import_project(request):
         # Create directory where import file is unzipped
         temp_dir = configs['general']['temp_dir']
         csv_sep = configs['general']['csv_sep']
-        imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
+        imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_', request)
         if imp_dir == '':
             return redirect(base_url)
             
-        # Unzip import file    
-        imp_project = os.path.join(imp_dir,'import_project.zip')
-        with open(imp_project, 'wb') as fd:
-            for chunk in zip_file.chunks():
-                fd.write(chunk)
+        # Unzip import file    (the directory is removed in all cases: temp-dir-not-cleaned)
         try:
-            zip_obj = ZipFile(imp_project, 'r')
-            zip_obj.extractall(imp_dir)
-        except Exception as e:
-            messages.error(request,'Unable to import project zip file: '+repr(e))
-            return redirect(base_url)
-        zip_obj.close()
+            imp_project = os.path.join(imp_dir,'import_project.zip')
+            with open(imp_project, 'wb') as fd:
+                for chunk in zip_file.chunks():
+                    fd.write(chunk)
+            try:
+                zip_obj = ZipFile(imp_project, 'r')
+                zip_obj.extractall(imp_dir)
+            except Exception as e:
+                messages.error(request,'Unable to import project zip file: '+repr(e))
+                return redirect(base_url)
+            zip_obj.close()
 
-        import_project_tables(request, imp_dir)
+            import_project_tables(request, imp_dir)
+        finally:
+            shutil.rmtree(imp_dir, ignore_errors=True)
     else:
         context = {'title': 'Upload Zip File'}
         return render(request, 'upload_file.html', context)
@@ -1157,59 +1161,63 @@ def export_project(request, project_id):
 
     temp_dir = configs['general']['temp_dir']
     csv_sep = configs['general']['csv_sep']
-    exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
+    exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_', request)
     if exp_dir == '':
         return redirect(base_url)
     
-    project_exp = ProjectResource().export(queryset=Project.objects.filter(id=project_id))
-    with open(os.path.join(exp_dir,'project.csv'),'w', encoding='utf-8') as fd:
-        fd.write(project_exp.csv)
+    try:
+        project_exp = ProjectResource().export(queryset=Project.objects.filter(id=project_id))
+        with open(os.path.join(exp_dir,'project.csv'),'w', encoding='utf-8') as fd:
+            fd.write(project_exp.csv)
 
-    spec_items_exp = SpecItemResource().export(queryset=SpecItem.objects.filter(project_id=project_id))
-    with open(os.path.join(exp_dir,'spec_items.csv'),'w', encoding='utf-8') as fd:
-        fd.write(spec_items_exp.csv)
+        spec_items_exp = SpecItemResource().export(queryset=SpecItem.objects.filter(project_id=project_id))
+        with open(os.path.join(exp_dir,'spec_items.csv'),'w', encoding='utf-8') as fd:
+            fd.write(spec_items_exp.csv)
 
-    val_set_exp = ValSetResource().export(queryset=ValSet.objects.filter(project_id=project_id))
-    with open(os.path.join(exp_dir,'val_sets.csv'),'w', encoding='utf-8') as fd:
-        fd.write(val_set_exp.csv)
+        val_set_exp = ValSetResource().export(queryset=ValSet.objects.filter(project_id=project_id))
+        with open(os.path.join(exp_dir,'val_sets.csv'),'w', encoding='utf-8') as fd:
+            fd.write(val_set_exp.csv)
 
-    project_users_exp = ProjectUserResource().export(queryset=ProjectUser.objects.filter(project_id=project_id))
-    with open(os.path.join(exp_dir,'project_users.csv'),'w', encoding='utf-8') as fd:
-        fd.write(project_users_exp.csv)
+        project_users_exp = ProjectUserResource().export(queryset=ProjectUser.objects.filter(project_id=project_id))
+        with open(os.path.join(exp_dir,'project_users.csv'),'w', encoding='utf-8') as fd:
+            fd.write(project_users_exp.csv)
 
-    release_list = []
-    release = project.release
-    while release != None:
-        release_list.append(release.id)
-        release = release.previous
-    applications = Application.objects.filter(project_id=project_id)
-    for application in applications:
-        release = application.release
+        release_list = []
+        release = project.release
         while release != None:
             release_list.append(release.id)
             release = release.previous
-    releases = Release.objects.filter(id__in=release_list)
+        applications = Application.objects.filter(project_id=project_id)
+        for application in applications:
+            release = application.release
+            while release != None:
+                release_list.append(release.id)
+                release = release.previous
+        releases = Release.objects.filter(id__in=release_list)
     
-    releases_exp = ReleaseResource().export(queryset=releases)
-    with open(os.path.join(exp_dir,'releases.csv'),'w', encoding='utf-8') as fd:
-        fd.write(releases_exp.csv)
+        releases_exp = ReleaseResource().export(queryset=releases)
+        with open(os.path.join(exp_dir,'releases.csv'),'w', encoding='utf-8') as fd:
+            fd.write(releases_exp.csv)
 
-    applications_exp = ApplicationResource().export(queryset=applications)
-    with open(os.path.join(exp_dir,'applications.csv'),'w', encoding='utf-8') as fd:
-        fd.write(applications_exp.csv)
+        applications_exp = ApplicationResource().export(queryset=applications)
+        with open(os.path.join(exp_dir,'applications.csv'),'w', encoding='utf-8') as fd:
+            fd.write(applications_exp.csv)
 
-    zip_file_path = os.path.join(exp_dir,'cordetfw_editor_'+project.name+'.zip')
-    zip_obj = ZipFile(zip_file_path, 'w')
-    zip_obj.write(os.path.join(exp_dir,'project.csv'), 'project.csv')
-    zip_obj.write(os.path.join(exp_dir,'applications.csv'), 'applications.csv')
-    zip_obj.write(os.path.join(exp_dir,'val_sets.csv'), 'val_sets.csv')
-    zip_obj.write(os.path.join(exp_dir,'project_users.csv'), 'project_users.csv')
-    zip_obj.write(os.path.join(exp_dir,'releases.csv'), 'releases.csv')
-    zip_obj.write(os.path.join(exp_dir,'spec_items.csv'), 'spec_items.csv')
-    zip_obj.close()            
+        zip_file_path = os.path.join(exp_dir,'cordetfw_editor_'+project.name+'.zip')
+        zip_obj = ZipFile(zip_file_path, 'w')
+        zip_obj.write(os.path.join(exp_dir,'project.csv'), 'project.csv')
+        zip_obj.write(os.path.join(exp_dir,'applications.csv'), 'applications.csv')
+        zip_obj.write(os.path.join(exp_dir,'val_sets.csv'), 'val_sets.csv')
+        zip_obj.write(os.path.join(exp_dir,'project_users.csv'), 'project_users.csv')
+        zip_obj.write(os.path.join(exp_dir,'releases.csv'), 'releases.csv')
+        zip_obj.write(os.path.join(exp_dir,'spec_items.csv'), 'spec_items.csv')
+        zip_obj.close()            
             
-    zip_file = open(zip_file_path, 'rb')
-    return FileResponse(zip_file)        
+        zip_file = open(zip_file_path, 'rb')
+        return CleanupFileResponse(zip_file, cleanup_dir=exp_dir)     # removes exp_dir when the response is closed
+    except BaseException:
+        shutil.rmtree(exp_dir, ignore_errors=True)
+        raise
 
 
 @login_required         

@@ -1,4 +1,7 @@
 import os
+import shutil
+import tempfile
+from django.http import FileResponse
 import re
 import cexprtk
 import logging
@@ -313,17 +316,30 @@ def do_project_release(request, project, description):
        do_application_release(request, application, description, is_proj_release = True)
     
     
-def make_temp_dir(dir_path, name):
-    """ Create a directory 'name_<TimeStamp>' in the directory 'dir_path' and return 
-        the dir name or an empty string if the creation failed
+def make_temp_dir(dir_path, name, request=None):
+    """ Create a new, private (mode 0700) and unique directory in the directory 'dir_path'. 
+        Its name is 'name<TimeStamp>_<random>'. Return the dir name or an empty string if the 
+        creation failed (an error message is then issued if a request is given).
     """
-    new_dir_path = os.path.join(dir_path,name+datetime.now(tz=get_current_timezone()).strftime('%Y_%m_%d_%H_%M_%S'))
-    try:  
-        os.mkdir(new_dir_path)  
-    except OSError as e:  
-        messages.error(request, 'Failure to create export directory at '+exp_dir+': '+str(e))
+    prefix = name+datetime.now(tz=get_current_timezone()).strftime('%Y_%m_%d_%H_%M_%S')+'_'
+    try:
+        return tempfile.mkdtemp(prefix=prefix, dir=dir_path)
+    except OSError as e:
+        if request is not None:
+            messages.error(request, 'Failure to create export directory at '+str(dir_path)+': '+str(e))
         return ''
-    return new_dir_path
+
+
+class CleanupFileResponse(FileResponse):
+    """ FileResponse which removes a directory tree when the response is closed """
+    def __init__(self, *args, cleanup_dir=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cleanup_dir = cleanup_dir
+
+    def close(self):
+        super().close()
+        if self._cleanup_dir:
+            shutil.rmtree(self._cleanup_dir, ignore_errors=True)
 
    
 def get_default_val_set_id(request, project):

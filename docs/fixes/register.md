@@ -72,7 +72,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | login-echoes-password | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | login-url-default | — | import-export-auth.md | tests/test_auth.py | K | OPEN |  |
 | logout-unsafe-next-self-redirect | — | import-export-auth.md | tests/test_auth.py | — | FIXED in 040e103 (upstream Django 4.2, Task 3.4) | Accepted upstream change; test marker is the old free-text form |
-| make-temp-dir-nameerror | make-temp-dir-name-error, temp-dir-collision | forms-convert-utilities.md, import-export-auth.md, models-access-releases-query.md | tests/test_import_export.py, tests/test_query.py, tests/test_utilities.py | K | OPEN |  |
+| make-temp-dir-nameerror | make-temp-dir-name-error, temp-dir-collision | forms-convert-utilities.md, import-export-auth.md, models-access-releases-query.md | tests/test_import_export.py, tests/test_query.py, tests/test_utilities.py | K | FIXED (Task 7.2c) |  |
 | md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN | HTML part fixed in Task 6.6 (convert_db_to_display escapes before markdown_to_html; tests/test_escaping_6_6.py). Still open for track K: LaTeX escaping in markdown_to_latex (export bytes must stay identical until then) and markdown nesting/first-list-item |
 | mutation-via-get | — | views.md, security-audit.md | tests/test_views.py, tests/test_security_audit.py, tests/test_access.py, tests/test_post_only_mutations.py | S | FIXED (Task 6.3) | merge of upstream #86 + POST-only refresh/member add/role validation |
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
@@ -89,8 +89,8 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | OPEN | HSTS + port 80 redirect done by Apache (operator 2026-10-23); session length/CSP defaults remain, low |
-| temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.2c) |  |
+| temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |
 | tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Production uses a different SECURE_KEY (operator 2026-10-23): not exploitable. Cleanup: replace tracked file by an .example |
 | xss-display | — | forms-convert-utilities.md | tests/test_convert.py, tests/test_escaping_6_6.py | S | FIXED (Task 6.6) | Text nodes escape only & < > (escape_text), attributes full escape(); kind `image` exempt |
 | xss-tag | — | forms-convert-utilities.md | tests/test_convert.py, tests/test_escaping_6_6.py | S | FIXED (Task 6.6) | conv_db_disp, filter_expand_tip (attribute), disp_trac; kind `image` exempt |

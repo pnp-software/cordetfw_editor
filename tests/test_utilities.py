@@ -300,24 +300,32 @@ def test_get_redirect_url_int_parent_id_crashes(world):
 
 # ----------------------------------------------------------------- make_temp_dir
 def test_make_temp_dir_success(tmp_path):
+    # CHANGED: temp-dir-collision (was: name = prefix + timestamp only; now a random part follows, mode 0700)
     out = make_temp_dir(str(tmp_path), 'exp_')
     assert os.path.isdir(out)
     assert os.path.dirname(out) == str(tmp_path)
     base = os.path.basename(out)
     assert base.startswith('exp_')
-    stamp = base[len('exp_'):]
-    assert len(stamp) == len('2024_01_15_10_30_00')
+    stamp = base[len('exp_'):][:len('2024_01_15_10_30_00')]
     assert stamp.replace('_', '').isdigit()
+    assert os.stat(out).st_mode & 0o777 == 0o700
 
 
-def test_make_temp_dir_failure_nameerror(tmp_path):
-    # KNOWN-ISSUE: make-temp-dir-nameerror  (error path references undefined 'request' and 'exp_dir')
-    with pytest.raises(NameError):
-        make_temp_dir(str(tmp_path / 'does-not-exist'), 'exp_')
+def test_make_temp_dir_failure_returns_empty_string(tmp_path):
+    # FIXED: make-temp-dir-nameerror (was: NameError for the undefined 'request' and 'exp_dir')
+    from django.contrib.messages import get_messages
+    from tests.test_ext_cats import make_request
+    request = make_request()
+    missing = str(tmp_path / 'does-not-exist')
+    assert make_temp_dir(missing, 'exp_', request) == ''
+    [(level, text)] = [(m.level_tag, m.message) for m in get_messages(request)]
+    assert level == 'alert-danger'
+    assert text.startswith('Failure to create export directory at ' + missing + ': ')
+    assert make_temp_dir(missing, 'exp_') == ''          # without request: no message, no crash
 
 
-def test_make_temp_dir_already_exists_nameerror(tmp_path, monkeypatch):
-    # same failure path through FileExistsError (OSError subclass)
+def test_make_temp_dir_same_second_gives_distinct_dirs(tmp_path, monkeypatch):
+    # FIXED: temp-dir-collision (was: second call within the same second raised NameError)
     import editor.utilities as u
     from datetime import datetime as real_dt
 
@@ -328,9 +336,9 @@ def test_make_temp_dir_already_exists_nameerror(tmp_path, monkeypatch):
 
     monkeypatch.setattr(u, 'datetime', FixedDT)
     first = make_temp_dir(str(tmp_path), 'd_')
-    assert os.path.basename(first) == 'd_2024_01_15_10_30_00'
-    with pytest.raises(NameError):
-        make_temp_dir(str(tmp_path), 'd_')
+    second = make_temp_dir(str(tmp_path), 'd_')
+    assert os.path.basename(first).startswith('d_2024_01_15_10_30_00')
+    assert first != second and os.path.isdir(first) and os.path.isdir(second)
 
 
 # ---------------------------------------------------------- get_default_val_set_id

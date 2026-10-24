@@ -798,19 +798,28 @@ def test_23_session_and_header_defaults(settings):
 # 20 temp-files-world-readable
 # ---------------------------------------------------------------------------------------------
 
-def test_20_temp_files_permissions_and_predictable_name(w, isolated_temp_dir):
-    # KNOWN-ISSUE: temp-files-world-readable
+def test_20_temp_files_permissions_and_predictable_name(w, isolated_temp_dir, monkeypatch):
+    # FIXED: temp-files-world-readable (was: dir 0o755 with a predictable timestamp name, files 0o644)
+    from editor import views
+    created = []
+    real = views.make_temp_dir
+
+    def spy(*args, **kwargs):
+        d = real(*args, **kwargs)
+        created.append((d, os.stat(d).st_mode & 0o777))
+        return d
+    monkeypatch.setattr(views, 'make_temp_dir', spy)
     old = os.umask(0o022)
     try:
         r = w.client(w.ro_a).get('/editor/%d/export_project' % w.a.id)
         b''.join(r.streaming_content)
     finally:
         os.umask(old)
-    (d,) = os.listdir(isolated_temp_dir)
-    assert d.startswith('cordetfw_editor_20')                   # timestamp name, predictable
-    full = os.path.join(isolated_temp_dir, d)
-    assert oct(os.stat(full).st_mode & 0o777) == '0o755'
-    assert oct(os.stat(os.path.join(full, 'spec_items.csv')).st_mode & 0o777) == '0o644'
+    [(d, mode)] = created
+    assert os.path.dirname(d) == str(isolated_temp_dir)
+    assert os.path.basename(d).startswith('cordetfw_editor_20')
+    assert oct(mode) == '0o700'                                # only the server user can read the files
+    assert not os.path.exists(d)                               # and the dir is gone after the response
 
 
 
@@ -840,8 +849,9 @@ def zip_upload(files):
     return SimpleUploadedFile('p.zip', buf.getvalue(), content_type='application/zip')
 
 
-def test_21_import_project_no_limits(w, isolated_temp_dir):
+def test_21_import_project_no_limits(w, isolated_temp_dir, monkeypatch):
     # KNOWN-ISSUE: import-project-no-limits
+    monkeypatch.setattr('editor.views.shutil.rmtree', lambda *a, **k: None)     # temp-dir-not-cleaned fixed: keep the dir to inspect it
     big = b'\0' * (20 * 1024 * 1024)                    # 20 MB member, ~20 KB compressed
     up = zip_upload({'big.bin': big, '../escape.txt': b'x', 'project.csv': 'name\n'})
     assert up.size < 200 * 1024

@@ -229,16 +229,14 @@ def test_export_project_golden_contains_real_data(client, fresh_temp, world):
     assert read_csv_member(zf, 'project.csv')[0]['owner'] == 'owner'
 
 
-def test_export_project_leaves_files_in_temp_dir(client, fresh_temp, world):
-    # KNOWN-ISSUE: temp-dir-not-cleaned (export leaves the export directory behind)
+def test_export_project_removes_temp_dir(client, fresh_temp, world):
+    # FIXED: temp-dir-not-cleaned (was: the export directory with all files stayed behind)
     client.force_login(world.owner)
     tmp = fresh_temp()
     response = client.get('/editor/%d/export_project' % world.project.id)
-    b''.join(response.streaming_content)
-    subdirs = list(tmp.iterdir())
-    assert len(subdirs) == 1
-    assert subdirs[0].name.startswith('cordetfw_editor_')
-    assert sorted(p.name for p in subdirs[0].iterdir()) == sorted(PROJECT_MEMBERS + ['cordetfw_editor_Demo Proj.zip'])
+    data = b''.join(response.streaming_content)
+    assert zipfile.ZipFile(io.BytesIO(data)).namelist() == PROJECT_MEMBERS
+    assert list(tmp.iterdir()) == []
 
 
 def test_export_project_requires_read_access(client, fresh_temp, world):
@@ -259,10 +257,7 @@ def test_export_project_read_only_user_can_export(client, fresh_temp, world):
 
 
 def test_make_temp_dir_collision_within_one_second(client, monkeypatch, world, tmp_path):
-    # KNOWN-ISSUE: temp-dir-collision
-    # Directories are named by timestamp (1 s resolution). A second export/import in the same
-    # second fails in make_temp_dir; its error branch references the undefined names
-    # 'request' and 'exp_dir', so the user sees a 500 (NameError) instead of a message.
+    # FIXED: temp-dir-collision (was: second export within the same second -> NameError / 500)
     import editor.utilities as utilities
 
     class FrozenDatetime(datetime):
@@ -274,8 +269,9 @@ def test_make_temp_dir_collision_within_one_second(client, monkeypatch, world, t
     client.force_login(world.owner)
     first = client.get('/editor/%d/export_project' % world.project.id)
     assert first.status_code == 200
-    with pytest.raises(NameError):
-        client.get('/editor/%d/export_project' % world.project.id)
+    second = client.get('/editor/%d/export_project' % world.project.id)
+    assert second.status_code == 200
+    assert zipfile.ZipFile(io.BytesIO(b''.join(second.streaming_content))).namelist() == PROJECT_MEMBERS
 
 
 # ---------------------------------------------------------------------------
@@ -912,14 +908,17 @@ def test_import_project_failing_referenced_spec_item_crashes(client, renamed_ori
     assert Project.objects.filter(name='Demo Proj').exists()
 
 
-def test_import_project_leaves_files_in_temp_dir(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: temp-dir-not-cleaned (import leaves the unpacked archive behind)
+def test_import_project_removes_temp_dir(client, renamed_original, fresh_temp):
+    # FIXED: temp-dir-not-cleaned (was: the unpacked archive stayed behind)
     w = renamed_original
     client.force_login(w.admin)
     tmp = fresh_temp()
     client.post('/editor/import_project', {'upload_file': SimpleUploadedFile('p.zip', w.zip_bytes)})
-    [subdir] = list(tmp.iterdir())
-    assert sorted(p.name for p in subdir.iterdir()) == sorted(PROJECT_MEMBERS + ['import_project.zip'])
+    assert Project.objects.filter(name='Demo Proj').exists()
+    assert list(tmp.iterdir()) == []
+    # also when the archive is unusable
+    client.post('/editor/import_project', {'upload_file': SimpleUploadedFile('p.zip', b'not a zip')})
+    assert list(tmp.iterdir()) == []
 
 
 # ---------------------------------------------------------------------------
