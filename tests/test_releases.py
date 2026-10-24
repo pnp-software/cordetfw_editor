@@ -488,15 +488,14 @@ def test_add_application_invalid_category_rerenders_form(client, sc):
     assert not Application.objects.filter(name='Bad').exists()
 
 
-def test_add_application_category_check_is_a_substring_match(client, sc):
-    """KNOWN-ISSUE: app-cats-substring. ApplicationForm.clean_cats tests
-    `cat in project.cats` on the raw string, so 'Data' (a substring of 'DataItem') is accepted
-    although it is not a project category."""
+def test_add_application_category_check_is_an_exact_match(client, sc):
+    """FIXED: app-cats-substring (was: 'Data', a substring of 'DataItem', was accepted)."""
     client.force_login(sc.owner)
     response = client.post(f'/editor/{sc.project.id}/add_application',
                            {'name': 'Sub', 'description': 'd', 'cats': 'Data'})
-    assert response.status_code == 302
-    assert Application.objects.get(name='Sub').cats == 'Data'
+    assert response.status_code == 200
+    assert 'cats' in response.context['form'].errors
+    assert not Application.objects.filter(name='Sub').exists()
 
 
 def test_add_application_blank_fields_rerender_form(client, sc):

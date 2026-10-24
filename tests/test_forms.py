@@ -208,20 +208,25 @@ def test_application_form_cat_not_in_project(proj):
                                    'DataItem,EnumType,EnumValue,DataItemType']
 
 
-@pytest.mark.parametrize('cats', ['Item', 'Enum', 'Type,Value', 'DataItem,,EnumType', 'DataItemTyp'])
-def test_application_form_substring_of_project_cats_accepted(proj, cats):
-    # KNOWN-ISSUE: appform-cats-substring  (membership is tested on the project.cats STRING, so any
-    # substring such as 'Item' or even '' (from ',,') is accepted)
+@pytest.mark.parametrize('cats', ['Item', 'Enum', 'Type,Value', 'DataItem,,EnumType', 'DataItemTyp', 'DataItem,', ',,', ',DataItem'])
+def test_application_form_substring_or_empty_entry_rejected(proj, cats):
+    # FIXED: appform-cats-substring (was: accepted, membership was tested on the project.cats
+    # string so substrings such as 'Item' and '' (from ',,' or a trailing comma) passed)
+    form = _app_form(proj, cats=cats)
+    assert not form.is_valid()
+    assert form.errors['cats'] == ['Must contain a comma-separated list of categories from: '
+                                   'DataItem,EnumType,EnumValue,DataItemType']
+
+
+@pytest.mark.parametrize('cats,expected', [
+    ('DataItem', 'DataItem'), ('DataItemType', 'DataItemType'),
+    ('DataItem,EnumType', 'DataItem,EnumType'), ('DataItem, EnumType', 'DataItem,EnumType'),
+    ('DataItem,EnumType,EnumValue,DataItemType', 'DataItem,EnumType,EnumValue,DataItemType'),
+])
+def test_application_form_exact_members_accepted(proj, cats, expected):
     form = _app_form(proj, cats=cats)
     assert form.is_valid(), form.errors
-    assert form.cleaned_data['cats'] == cats
-
-
-def test_application_form_trailing_comma_accepted(proj):
-    # KNOWN-ISSUE: appform-cats-substring  ('' is a substring of project.cats)
-    form = _app_form(proj, cats='DataItem,')
-    assert form.is_valid()
-    assert form.cleaned_data['cats'] == 'DataItem,'
+    assert form.cleaned_data['cats'] == expected
 
 
 # ============================================================== ValSetForm/ReleaseForm

@@ -83,10 +83,10 @@ class ApplicationForm(forms.Form):
         cats = self.cleaned_data['cats'].replace(' ','')
         cat_list = cats.split(',')
         err_msg = 'Must contain a comma-separated list of categories from: ' + self.project.cats
-        if len(cat_list) == 0:
-            raise forms.ValidationError(err_msg)
+        project_cats = [c.strip() for c in self.project.cats.split(',')]
         for cat_item in cat_list:
-            if not cat_item.strip() in self.project.cats:
+            # exact membership: no substrings, no empty entries
+            if cat_item == '' or cat_item not in project_cats:
                 raise forms.ValidationError(err_msg)
         return cats
 
