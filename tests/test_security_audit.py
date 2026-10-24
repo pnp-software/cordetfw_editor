@@ -440,20 +440,90 @@ def test_09_eval_ref_large_vector_is_allocated():
 # ---------------------------------------------------------------------------------------------
 
 def test_10_iref_cross_project_disclosure(w):
-    # KNOWN-ISSUE: iref-cross-project-disclosure
+    # FIXED: iref-cross-project-disclosure (was: the literal '#iref:<foreign id>' was stored and then
+    # displayed, evaluated and shown in the tooltip with B's domain:name, title, desc and value)
     c = w.client(w.rw_a)
     resp = c.post(aurl('DataItem', w.a.id),
                   di_post(domain='AD', name='leak', value='#iref:%d' % w.b_di.id,
                           desc='see #iref:%d' % w.b_di.id, p_link=w.a_type.id))
     assert resp.status_code == 302
     leak = SpecItem.objects.get(project=w.a, name='leak')
-    assert leak.desc == 'see #iref:%d' % w.b_di.id          # literal iref passes convert_edit_to_db
+    assert leak.desc == 'see #iref:0'                       # not stored: neutralised on write
+    assert leak.value == '#iref:0'
     r = w.client(w.ro_a).get(lurl('DataItem', w.a.id, 0, w.dvs_a.id))
-    assert b'BD:BItem' in r.content
-    assert b'B secret title' in r.content and b'B secret desc' in r.content    # tooltip of B's item
-    assert b'= 42.0' in r.content                                            # B's value via eval
+    assert b'BD:BItem' not in r.content
+    assert b'B secret title' not in r.content and b'B secret desc' not in r.content
+    assert b'= 42.0' not in r.content
     ed = c.get(iurl('edit_spec_item', 'DataItem', w.a.id, leak.id))
-    assert ed.context['form'].initial['desc'] == 'see #DataItem:BD:BItem'
+    assert ed.context['form'].initial['desc'] == 'see ERROR:0'
+
+
+def test_10_stored_foreign_iref_behaves_like_dangling_everywhere(w):
+    # Data stored before the fix (or by other means): literal irefs to B's item in A's items.
+    from editor.convert import convert_db_to_display, convert_db_to_edit, convert_db_to_latex, eval_di_value
+    old = make_spec_item(w.a, cat='DataItem', domain='AD', name='old', p_link=w.a_type,
+                         value='#iref:%d' % w.b_di.id, desc='see #iref:%d' % w.b_di.id)
+    missing = SpecItem.objects.order_by('-id').first().id + 1000
+    foreign, dangling = '#iref:%d' % w.b_di.id, '#iref:%d' % missing
+    # display, edit conversion, LaTeX and eval: same output as a non-existent id (up to the id itself)
+    assert convert_db_to_display(foreign, None, w.a.id) == convert_db_to_display(dangling, None, w.a.id).replace(
+        str(missing), str(w.b_di.id))
+    assert convert_db_to_display(foreign, None, w.a.id) == 'ERROR:%d' % w.b_di.id
+    assert convert_db_to_edit(foreign, w.a.id) == 'ERROR:%d' % w.b_di.id
+    assert convert_db_to_latex(foreign, w.a.id) == 'ERROR:%d' % w.b_di.id
+    assert eval_di_value(foreign, w.a.id) == foreign
+    assert eval_di_value(foreign + '+1', w.a.id) == foreign + '+1'
+    # the same id still resolves for its own project
+    assert convert_db_to_edit(foreign, w.b.id) == '#DataItem:BD:BItem'
+    assert eval_di_value(foreign, w.b.id) == '42.0'
+    # pages and exports
+    r = w.client(w.ro_a).get(lurl('DataItem', w.a.id, 0, w.dvs_a.id))
+    assert b'BD:BItem' not in r.content and b'B secret' not in r.content and b'= 42.0' not in r.content
+    assert b'ERROR:%d' % w.b_di.id in r.content
+    e = w.client(w.ro_a).get(eurl('DataItem', w.a.id, 0, w.dvs_a.id) + '?export=latex_format')
+    assert b'BD:BItem' not in e.content and b'ERROR:%d' % w.b_di.id in e.content
+    x = w.client(w.ro_a).get(eurl('DataItem', w.a.id, 0, w.dvs_a.id))
+    assert b'BD:BItem' not in x.content
+    ed = w.client(w.rw_a).get(iurl('edit_spec_item', 'DataItem', w.a.id, old.id))
+    assert 'BD:BItem' not in str(ed.context['form'].initial)
+
+
+def test_10_convert_edit_to_db_keeps_own_and_dangling_irefs_drops_foreign(w):
+    from editor.convert import convert_edit_to_db
+    own = make_spec_item(w.a, cat='DataItem', domain='AD', name='own', p_link=w.a_type, value='1')
+    missing = SpecItem.objects.order_by('-id').first().id + 1000
+    s = '#iref:%d x #iref:%d y #iref:%d z #DataItem:AD:own' % (own.id, missing, w.b_di.id)
+    assert convert_edit_to_db(w.a, s) == '#iref:%d x #iref:%d y #iref:0 z #iref:%d' % (own.id, missing, own.id)
+
+
+def test_10_csv_import_path_does_not_store_foreign_iref(w):
+    from editor.convert import configs
+    from editor.utilities import export_to_spec_item
+    item = SpecItem(cat='DataItem')
+    labels = {v['label']: '' for v in configs['cats']['DataItem']['attrs'].values()}
+    labels['Value'] = '#iref:%d' % w.b_di.id
+    labels['Description'] = 'x #iref:%d' % w.b_di.id
+    labels[configs['cats']['DataItem']['attrs']['val_set']['label']] = 'Default'
+    export_to_spec_item(None, w.a, labels, item)
+    assert item.value == '#iref:0' and item.desc == 'x #iref:0'
+
+
+def test_10_project_zip_import_path_does_not_keep_foreign_iref(w):
+    from editor.convert import convert_edit_to_db
+    # imports.py runs every ref_text field through convert_edit_to_db(new_project, ...): same function
+    assert convert_edit_to_db(w.a, 't #iref:%d' % w.b_di.id) == 't #iref:0'
+
+
+def test_10_enum_check_is_project_scoped(w):
+    from editor.configs import do_cat_specific_checks
+    etype = make_spec_item(w.b, cat='EnumType', domain='BE', name='BEnum', status='CNF')
+    ev = make_spec_item(w.b, cat='EnumValue', domain='BE', name='v1', s_link=etype, status='CNF')
+
+    class F:
+        cat = 'DataItem'
+        project = w.a
+        cleaned_data = {'p_link': etype, 'value': '#iref:%d' % ev.id}
+    assert 'The reference is invalid' in do_cat_specific_checks(F)
 
 
 # ---------------------------------------------------------------------------------------------

@@ -121,7 +121,7 @@ def do_cat_specific_checks(form):
             return 'Data item value must be a reference to an enumerated value of the item type'
         ref = cd['value'].strip().split(':')
         try:
-            enum_val = SpecItem.objects.get(id=ref[1], cat='EnumValue')
+            enum_val = SpecItem.objects.get(id=ref[1], cat='EnumValue', project_id=form.project.id)
         except ObjectDoesNotExist:
             return 'Data item value must be a reference to an enumerated value of the item type: '+\
                    'The reference is invalid'

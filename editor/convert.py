@@ -22,6 +22,27 @@ pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
 
 logger = logging.getLogger(__name__)
 
+# Marker for "do not restrict the lookup to a project" (only for callers which have no project at hand,
+# e.g. unit tests). Every application code path passes the project of the item being shown/exported.
+UNSCOPED = object()
+
+
+def get_ref_item(item_id, project_id=UNSCOPED):
+    """
+    Return the SpecItem which the internal reference #iref:<item_id> points to, or raise
+    ObjectDoesNotExist. If project_id is given, only items of that project resolve: an item of
+    another project behaves exactly like a non-existent one (iref-cross-project-disclosure).
+    """
+    try:
+        item_id = int(item_id)
+    except (TypeError, ValueError):
+        raise SpecItem.DoesNotExist()
+    if item_id > 2**63 - 1:
+        raise SpecItem.DoesNotExist()
+    if project_id is UNSCOPED:
+        return SpecItem.objects.get(id=item_id)
+    return SpecItem.objects.get(id=item_id, project_id=project_id)
+
 
 def get_pattern_edit(project_id):
     """
@@ -62,7 +83,7 @@ def frmt_string(s):
     return s
 
 
-def convert_db_to_display(s, sel_rel):
+def convert_db_to_display(s, sel_rel, project_id=UNSCOPED):
     """
     The string s is a text field read from the database. It
     contains markdown text and internal references in the form #iref:n. 
@@ -72,7 +93,8 @@ def convert_db_to_display(s, sel_rel):
     Hyperlinks point to the list_spec_item page. This page lists the spec_items
     correspondig to a given release. The release identifier is in argument
     sel_rel.
-    Invalid references are replaced with: ERROR:n.
+    Invalid references (and references to items of another project than project_id)
+    are replaced with: ERROR:n.
     Markdown text is converted to html.
     The output of this function is safe for display in an HTML page: the text read
     from the database is escaped (only &, < and >) BEFORE the references and the markdown
@@ -82,17 +104,17 @@ def convert_db_to_display(s, sel_rel):
     def iref_to_html(match):
         """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
         try:
-            item = SpecItem.objects.get(id=match.group(2))
-            project_id = str(item.project.id) if item.project != None else '0'
+            item = get_ref_item(match.group(2), project_id)
+            item_project_id = str(item.project.id) if item.project != None else '0'
             sel_rel_id = sel_rel.id if sel_rel != None else 0
             application_id = str(item.application.id) if item.application != None else '0'
-            target = '/editor/'+item.cat+'/'+project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
+            target = '/editor/'+item.cat+'/'+item_project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
             title_attrs = configs['cats'][item.cat]['short_desc']['href_tip']
             title = ''
             for title_attr in title_attrs:
                 title = title + configs['cats'][item.cat]['attrs'][title_attr]['label'] +': '+\
-                        escape(convert_db_to_edit(getattr(item, title_attr))) + '&#13;'
+                        escape(convert_db_to_edit(getattr(item, title_attr), project_id)) + '&#13;'
             if item.status in ['DEL', 'MOD', 'NEW']:
                 title = 'Status: ' + escape(item.status) + '&#13;' + title
                 iref_html = '<a href=\"' + escape(target) + '#' + escape(item.domain) + ':' + \
@@ -157,7 +179,7 @@ def conv_db_disp_ref_text(context, item, name, sel_rel):
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
     s = getattr(item, name)
-    return convert_db_to_display(s, sel_rel)
+    return convert_db_to_display(s, sel_rel, item.project_id)
     
     
 def conv_db_disp_table(context, item, name, sel_rel):
@@ -167,7 +189,7 @@ def conv_db_disp_table(context, item, name, sel_rel):
     TBD: the table is simply rendered as a json string with internal references and mark-up resolved.
     """
     s = getattr(item, name)     # 's' is a json object
-    return convert_db_to_display(str(s), sel_rel)
+    return convert_db_to_display(str(s), sel_rel, item.project_id)
     
     
 def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
@@ -194,7 +216,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
     s_title = ''
     for title_attr in title_attrs:
         s_title = s_title + configs['cats'][spec_item_link.cat]['attrs'][title_attr]['label'] +': '+\
-                  escape(convert_db_to_edit(getattr(spec_item_link, title_attr))) + '&#13;'
+                  escape(convert_db_to_edit(getattr(spec_item_link, title_attr), spec_item_link.project_id)) + '&#13;'
     
     if spec_item_link.status in ['MOD', 'DEL', 'NEW']:
         s_title = 'Status: ' + spec_item_link.status + '&#13;' + s_title
@@ -211,16 +233,42 @@ def conv_db_disp_eval_ref(context, item, name, sel_rel):
     on the assumption that the attribute value is of 'eval_ref' kind)
     """
     s = getattr(item, name)
-    conv_s = convert_db_to_display(s, sel_rel)
+    conv_s = convert_db_to_display(s, sel_rel, item.project_id)
     # The expression is evaluated on the raw string; only the displayed text is escaped. The
     # comparison is made with the escaped input (convert_db_to_display escapes first).
     if conv_s != escape_text(s):
-        nval = eval_di_value(s)
+        nval = eval_di_value(s, item.project_id)
         return conv_s + ' = ' + escape_text(nval)
     else:
         return escape_text(s)
    
    
+def neutralise_foreign_irefs(project, s):
+    """
+    A literal '#iref:<id>' typed or imported by the user must not point into another project
+    (iref-cross-project-disclosure): the reference is replaced by '#iref:0', which never exists and so
+    behaves like a dangling reference (ERROR:0). Ids which exist nowhere are left as they are
+    (dangling, inert); references to items of 'project' are kept.
+    """
+    ids = set()
+    for m in pattern_db.finditer(s):
+        if int(m.group(2)) <= 2**63 - 1:
+            ids.add(int(m.group(2)))
+    if not ids:
+        return s
+    foreign = set(str(i) for i in SpecItem.objects.filter(id__in=ids).exclude(project_id=project.id).
+                  values_list('id', flat=True))
+    if not foreign:
+        return s
+
+    def neutralise_foreign(match):
+        if match.group(2).lstrip('0') in foreign:
+            logger.warning('Internal reference to item outside the project removed: '+str(match.group()))
+            return '#iref:0'
+        return match.group()
+    return pattern_db.sub(neutralise_foreign, s)
+
+
 def convert_edit_to_db(project, s):
     """
     The argument is a text field in edit representation (with internal
@@ -242,9 +290,10 @@ def convert_edit_to_db(project, s):
             return '#' + match.group(1) + ':' + match.group(2) + ':' + match.group(3)
     
     s_db = get_pattern_edit(project.id).sub(edit_to_iref, s)
-    return s_db
-    
-    
+
+    return neutralise_foreign_irefs(project, s_db)
+
+
 def convert_exp_to_db(project, s):
     """
     The argument is a plain reference field in export representation 
@@ -261,7 +310,7 @@ def convert_exp_to_db(project, s):
         return None
     
 
-def convert_db_to_edit(s):
+def convert_db_to_edit(s, project_id=UNSCOPED):
     """
     The argument string is a text field read from the database. It
     contains internal references in the format #iref:n.
@@ -271,7 +320,7 @@ def convert_db_to_edit(s):
     def iref_to_edit(match):
         """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
         try:
-            item = SpecItem.objects.get(id=match.group(2))
+            item = get_ref_item(match.group(2), project_id)
             return '#'+item.cat+':'+item.domain+':'+item.name
         except ObjectDoesNotExist:
             return 'ERROR:'+match.group(2)
@@ -279,7 +328,7 @@ def convert_db_to_edit(s):
     return pattern_db.sub(iref_to_edit, s)
 
 
-def convert_db_to_latex(s):
+def convert_db_to_latex(s, project_id=UNSCOPED):
     """ 
     The argument string is a text field read from the database which 
     contains markdown text and internal references.
@@ -291,7 +340,7 @@ def convert_db_to_latex(s):
     def iref_to_latex(match):
         """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
         try:
-            item = SpecItem.objects.get(id=match.group(2))
+            item = get_ref_item(match.group(2), project_id)
             return item.domain+':'+item.name
         except ObjectDoesNotExist:
             return 'ERROR:'+match.group(2)
@@ -301,7 +350,7 @@ def convert_db_to_latex(s):
     return frmt_string(s_md)
  
 
-def render_for_eval(s, n):
+def render_for_eval(s, n, project_id=UNSCOPED):
     """ 
     String s is a text field read from the database. 
     It contains internal references in the form #iref:n. This function
@@ -309,9 +358,9 @@ def render_for_eval(s, n):
     replaces these references with the numerical values of the data items.
     This function is called recursively to handle all references in string s.
     The argument n is the depth of recursion. This is limited to EVAL_MAX_REC.
-    If the function finds an invalid reference or a reference to a 
-    specification item which is not a data item, it returns the string
-    unchanged.
+    If the function finds an invalid reference (or a reference to an item of another project
+    than project_id) or a reference to a specification item which is not a data item, it returns
+    the string unchanged.
     """
     if n > configs['general']['max_depth']:
         logger.warning('Exceeded recursion depth when evaluating '+s)
@@ -323,17 +372,17 @@ def render_for_eval(s, n):
     ref = match.group().split(':')
     try:
         if ref[0] == '#iref': 
-            item = SpecItem.objects.get(id=ref[1])
+            item = get_ref_item(ref[1], project_id)
         else:
             return s
     except ObjectDoesNotExist:
         return s
 
-    s_mod = s[:match.start()] + render_for_eval(item.value, n+1)
-    return s_mod + render_for_eval(s[match.end():], n)
+    s_mod = s[:match.start()] + render_for_eval(item.value, n+1, project_id)
+    return s_mod + render_for_eval(s[match.end():], n, project_id)
 
 
-def eval_di_value(s):
+def eval_di_value(s, project_id=UNSCOPED):
     """
     The argument string is assumed to hold a mathematical expression expressed 
     in terms of references to data items.
@@ -341,10 +390,8 @@ def eval_di_value(s):
     values (this is done with function render_for_eval)
     and then it attempts to evaluate the resulting expression using package cexprtk.
     """
-    se = render_for_eval(s, 1)
+    se = render_for_eval(s, 1, project_id)
     try:
         return str(cexprtk.evaluate_expression(se,{}))
     except:
         return s
-        
-        

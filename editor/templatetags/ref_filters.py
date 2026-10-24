@@ -149,7 +149,7 @@ def filter_expand_tip(spec_item):
     s = ''
     for attr in attrs:
         s = s + configs['cats'][spec_item.cat]['attrs'][attr]['label'] +': '+\
-                escape(convert_db_to_edit(getattr(spec_item, attr))) + '&#13;'
+                escape(convert_db_to_edit(getattr(spec_item, attr), spec_item.project_id)) + '&#13;'
     return mark_safe(s)
 
 

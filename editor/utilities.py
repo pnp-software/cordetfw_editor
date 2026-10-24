@@ -15,7 +15,8 @@ from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
-                           convert_exp_to_db, convert_db_to_latex, eval_di_value
+                           convert_exp_to_db, convert_db_to_latex, eval_di_value, \
+                           neutralise_foreign_irefs
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def spec_item_to_edit(spec_item):
     dic = model_to_dict(spec_item)
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if value['kind'] == 'ref_text' or value['kind'] == 'eval_ref':
-            dic[key] = convert_db_to_edit(dic[key])
+            dic[key] = convert_db_to_edit(dic[key], spec_item.project_id)
     return dic
     
     
@@ -64,16 +65,16 @@ def spec_item_to_latex(spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
-            dic[label] = convert_db_to_latex(getattr(spec_item, key))
+            dic[label] = convert_db_to_latex(getattr(spec_item, key), spec_item.project_id)
         elif value['kind'] == 'table':
-            dic[label] = convert_db_to_latex(str(getattr(spec_item, key)))
+            dic[label] = convert_db_to_latex(str(getattr(spec_item, key)), spec_item.project_id)
         elif value['kind'] == 'spec_item_ref':
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
             dic[label] = frmt_string(str(getattr(spec_item, key)))
         elif value['kind'] == 'eval_ref':
-            dic[label] = convert_db_to_latex(getattr(spec_item, key))
-            dic['NVal'] = eval_di_value(spec_item.value)
+            dic[label] = convert_db_to_latex(getattr(spec_item, key), spec_item.project_id)
+            dic['NVal'] = eval_di_value(spec_item.value, spec_item.project_id)
         elif value['kind'] == 'image':
             dic[label] = 'TBD image data'
         else:
@@ -99,7 +100,7 @@ def spec_item_to_export(spec_item):
     dic = {}
     for key, value in cat_attrs.items():
         if value['kind'] == 'ref_text':
-            dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
+            dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key), spec_item.project_id)
         elif value['kind'] == 'spec_item_ref':
             dic[cat_attrs[key]['label']] = str(getattr(spec_item, key)).split(' ')[0]
         else:
@@ -127,6 +128,9 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
             continue
         elif value['kind'] == 'ref_text':
             setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
+        elif value['kind'] == 'eval_ref':
+            # exported as stored (literal #iref:<id>); only references into other projects are refused
+            setattr(spec_item, key, neutralise_foreign_irefs(project, imp_dict[cat_attrs[key]['label']]))
         elif value['kind'] == 'spec_item_ref':
             setattr(spec_item, key, convert_exp_to_db(project, imp_dict[cat_attrs[key]['label']]))
         else:
