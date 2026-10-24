@@ -419,19 +419,18 @@ def test_spec_item_field_defaults():
 
 
 def test_spec_item_created_at_default_naive_datetime_stored_as_utc():
-    """KNOWN-ISSUE: naive-created-at-default. created_at default is the NAIVE datetime(2000,1,1); with USE_TZ=True (TIME_ZONE=UTC)
-    Django warns and interprets it in the default timezone (UTC)."""
+    # FIXED: naive-created-at-default (was: default was the naive datetime(2000,1,1); save warned and
+    # the unsaved instance held a naive value). The default is now aware UTC; stored value is unchanged.
     project = make_project(make_user())
-    with pytest.warns(RuntimeWarning, match='received a naive datetime'):
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', RuntimeWarning)
         item = SpecItem.objects.create(
             cat='DataItem', name='N', domain='D', project=project, title='t',
             owner=project.owner, val_set=default_val_set(project), updated_at=FIXED_TIME)
-    # the in-memory instance still holds the naive default
-    assert item.created_at == datetime(2000, 1, 1)
-    assert item.created_at.tzinfo is None
-    item.refresh_from_db()
     assert item.created_at == datetime(2000, 1, 1, tzinfo=timezone.utc)
     assert item.created_at.tzinfo is not None
+    item.refresh_from_db()
+    assert item.created_at == datetime(2000, 1, 1, tzinfo=timezone.utc)
 
 
 def test_release_version_defaults():
