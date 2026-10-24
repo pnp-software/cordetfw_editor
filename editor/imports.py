@@ -28,6 +28,17 @@ IMPORT_MEMBERS = ('project.csv', 'applications.csv', 'val_sets.csv', 'project_us
                   'releases.csv', 'spec_items.csv')
 
 
+def normalise_member_name(name):
+    """ Strip leading './' and '/' segments from an archive member name """
+    while True:
+        if name.startswith('/'):
+            name = name[1:]
+        elif name.startswith('./'):
+            name = name[2:]
+        else:
+            return name
+
+
 def extract_project_zip(zip_path, imp_dir):
     """
     Extract the expected csv tables of a project export from the zip file at zip_path into
@@ -45,7 +56,9 @@ def extract_project_zip(zip_path, imp_dir):
         total = 0
         names = {}
         for info in infos:
-            names.setdefault(info.filename, info)       # first entry of a name wins, as for extractall
+            # The last entry of a name wins, as for extractall. './x.csv' and '/x.csv' are x.csv (as extractall
+            # normalised them); a name with a '..' component never matches an expected table.
+            names[normalise_member_name(info.filename)] = info
         for name in IMPORT_MEMBERS:
             if name not in names:
                 continue

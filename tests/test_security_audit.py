@@ -964,3 +964,41 @@ def test_22_import_project_unvalidated_cat_status(w, isolated_temp_dir):
     assert 'Failure to import spec_item BogusCat:AT:BadCat: the category BogusCat is not defined in configs.json' in errors
     assert ('Failure to import spec_item DataItemType:AT:BadStatus: the status HACKED is not valid '
             '(valid values are: DEL, OBS, CNF, MOD, NEW)') in errors
+
+
+def _extract(tmp_path, names_and_content):
+    """Write a zip with the entries in the given order (duplicates allowed) and extract it."""
+    import zipfile
+    from editor import imports
+    zpath = tmp_path / 'p.zip'
+    with zipfile.ZipFile(zpath, 'w') as zf:
+        for name, content in names_and_content:
+            zf.writestr(name, content)
+    out = tmp_path / 'out'
+    out.mkdir()
+    imports.extract_project_zip(str(zpath), str(out))
+    return out
+
+
+def test_21d_import_project_duplicate_member_last_wins(w, tmp_path):
+    # extractall (the former implementation) extracts entries in order, so the LAST entry of a name wins
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')      # zipfile warns about duplicate names
+        out = _extract(tmp_path, [('project.csv', 'first'), ('project.csv', 'second')])
+    assert (out / 'project.csv').read_text() == 'second'
+
+
+def test_21e_import_project_member_names_with_dot_slash_or_slash_prefix(w, tmp_path):
+    # extractall normalised './x.csv' and '/x.csv' to 'x.csv'; '../x.csv' is never accepted
+    out = _extract(tmp_path, [('./project.csv', 'dot'), ('/val_sets.csv', 'abs'), ('../releases.csv', 'up'),
+                              ('sub/../spec_items.csv', 'sub'), ('.//applications.csv', 'dotdouble')])
+    assert sorted(os.listdir(out)) == ['applications.csv', 'project.csv', 'val_sets.csv']
+    assert (out / 'project.csv').read_text() == 'dot'
+    assert (out / 'val_sets.csv').read_text() == 'abs'
+    assert not (tmp_path / 'releases.csv').exists()
+
+
+def test_21f_import_project_plain_name_and_prefixed_name_last_wins(w, tmp_path):
+    out = _extract(tmp_path, [('project.csv', 'plain'), ('./project.csv', 'prefixed')])
+    assert (out / 'project.csv').read_text() == 'prefixed'
