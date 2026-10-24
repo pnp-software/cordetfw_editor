@@ -1176,6 +1176,22 @@ def test_del_new_item_referenced_keeps_item_and_reports_error(client, owner, pro
     assert text.startswith('Failure to delete Types:Int32 (Title of Int32), possibly because other spec_items reference it: ')
 
 
+def test_del_split_item_alias_form_validates(client, owner, project, dvs, dtype):
+    # upstream #99: the p_link of a split alias is the original DataItem, which is outside the normal
+    # p_link choices (DataItemType/EnumType); the delete form used to reject it and nothing was deleted
+    vs1 = make_val_set(project, 'VS1')
+    item = make_spec_item(project, domain='Dom', name='It', p_link=dtype, p_kind='CNS', value='1', status='CNF')
+    alias = make_spec_item(project, domain='Dom', name='It', val_set=vs1, p_link=item, p_kind='CNS',
+                           value='2', status='CNF')
+    url = item_url('del_spec_item', 'DataItem', project, alias, sel_val='Dom')
+    resp = client.post(url, {'change_log': 'drop alias'})
+    assert resp.status_code == 302, resp.context['form'].errors if resp.context else None
+    alias.refresh_from_db()
+    assert alias.status == 'DEL' and alias.change_log == 'drop alias'
+    item.refresh_from_db()
+    assert item.status == 'CNF'
+
+
 @pytest.mark.parametrize('status', ['CNF', 'MOD'])
 def test_del_cnf_mod_via_post(client, owner, project, dvs, dtype, status):
     vs1 = make_val_set(project, 'VS1')
