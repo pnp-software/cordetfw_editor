@@ -438,7 +438,9 @@ def test_honeypot_post_records_attempt_and_never_authenticates(client, caplog):
     records = [r for r in caplog.records if r.name == 'admin.honeypot']
     assert len(records) == 1
     assert records[0].levelname == 'WARNING'
-    assert records[0].getMessage() == 'logging attempt by: {0}; 10.1.2.3'.format(attempt)
+    assert PASSWORD not in records[0].getMessage()
+    # username repr()'d so a crafted name cannot forge log lines (Task 7.2a review)
+    assert records[0].getMessage() == "logging attempt by: 'root'; 10.1.2.3"
 
 
 def test_honeypot_signal_has_receivers(client):

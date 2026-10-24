@@ -318,8 +318,17 @@ def test_query_invalid_order_by_falls_back_to_default_order():
     make_spec_item(project, domain='B', name='x')
     make_spec_item(project, domain='A', name='y')
     vs = default_val_set(project)
-    for bad in ('nonexistent', 'owner__password', ''):
+    for bad in ('nonexistent', 'owner__password', '-owner__password', '--name', ''):
         assert [(i.domain, i.name) for i in q(project, vs, order_by=bad)] == [('A', 'y'), ('B', 'x')]
+
+
+def test_query_descending_allowed_order_by_still_accepted():
+    # Descending sort of an offered field ('-name') worked before the order_by allowlist (old bookmarks)
+    project = make_project(make_user())
+    make_spec_item(project, domain='A', name='x')
+    make_spec_item(project, domain='B', name='y')
+    vs = default_val_set(project)
+    assert [(i.domain, i.name) for i in q(project, vs, order_by='-name')] == [('B', 'y'), ('A', 'x')]
 
 
 # ------------------------------------------------------------------ get_domains

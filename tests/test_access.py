@@ -142,6 +142,18 @@ def test_write_access_rw_first_then_ro_still_allowed(world):
     assert access.has_write_access_to_project(make_request(dup), world.project) is True
 
 
+@pytest.mark.parametrize('roles', [('RO', 'RW'), ('RW', 'RO')])
+def test_silent_write_access_any_rw_row_wins(world, roles):
+    # FIXED: access-first-row (was: the silent variant used by Find & Replace still took the first row)
+    dup = make_user('dup4')
+    for role in roles:
+        make_project_user(world.project, dup, role)
+    assert access.user_has_write_access_to_project(dup.id, world.project) is True
+    ro_only = make_user('dup5')
+    make_project_user(world.project, ro_only, 'RO')
+    assert access.user_has_write_access_to_project(ro_only.id, world.project) is False
+
+
 def test_access_is_per_project(world):
     other = make_project(world.unrelated, name='Other')
     request = make_request(world.rw)

@@ -503,8 +503,11 @@ def _ui_order_by_fields():
 
 
 def sanitize_order_by(order_by):
-    """Return order_by if it is a permitted sort field, else None (= default domain:name order)."""
-    return order_by if order_by in _ui_order_by_fields() else None
+    """Return order_by if it is a permitted sort field, optionally descending ('-field', accepted
+    before the fix and kept for old bookmarks), else None (= default domain:name order)."""
+    if isinstance(order_by, str) and order_by.removeprefix('-') in _ui_order_by_fields():
+        return order_by
+    return None
 
 
 def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by):

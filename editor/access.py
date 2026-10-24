@@ -28,11 +28,7 @@ def user_has_write_access_to_project(user_id, project):
     """ Silent variant of has_write_access_to_project (same logic, no message queued) """
     if user_id == project.owner.id:
         return True
-    try:
-        user = ProjectUser.objects.filter(user_id=user_id, project_id=project.id)
-        return user[0].role == 'RW'
-    except Exception:
-        return False
+    return ProjectUser.objects.filter(user_id=user_id, project_id=project.id, role='RW').exists()
 
 
 def has_write_access_to_project(request, project):

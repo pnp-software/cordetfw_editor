@@ -36,7 +36,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | ext-cats-sql-injection | — | import-export-auth.md, security-audit.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) | Model paths fixed by upstream #91 (Task 7.1); FCP paths: FIXED (Task 7.2c) |
 | ext-fcp-refresh-nameerror | ext-fcp-refresh-undefined-name | import-export-auth.md, views.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) |  |
 | find-replace-no-write-check | — | views.md | tests/test_views.py | S | FIXED (Task 6.4) |  |
-| find-replace-on-release-view | — | views.md | — | K | FIXED (Task 7.2a) | Find & Replace is offered on release views (sel_rel_id != 0) whose query includes CNF/OBS/DEL historical rows, so it could rewrite OBS versions. Found by the Task 6.4 review |
+| find-replace-on-release-view | — | views.md | tests/test_scoping_6_4.py | K | FIXED (Task 7.2a) | Find & Replace is offered on release views (sel_rel_id != 0) whose query includes CNF/OBS/DEL historical rows, so it could rewrite OBS versions. Found by the Task 6.4 review |
 | form-none-literal | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | help-double-space | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | honeypot-logger-not-connected | — | import-export-auth.md | tests/test_auth.py | K | FIXED (Task 7.2a) |  |
