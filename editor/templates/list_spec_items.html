@@ -67,7 +67,7 @@
            href="{% url 'add_spec_item' cat project.id application_id sel_val sel_rel_id %}">
             Add {{ config.name }}
         </a>
-        <!-- Modal for find/replace -->
+        <!-- Modal for find/replace -->{% if sel_rel_id == 0 %}
         <div type="button" class="nav-link bi-binoculars" data-bs-toggle="modal" data-bs-target="#findReplaceModal">
             Find & Replace
         </div>
@@ -180,7 +180,7 @@
                     submitButton.disabled = false;
                 }
             });
-        </script>
+        </script>{% endif %}
         <!-- Dropdown export -->
         <div class="nav-item dropdown">
             <div class="nav-link bi-cloud-download"

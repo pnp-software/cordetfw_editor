@@ -558,7 +558,11 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     # Find & Replace (POST form)
     if request.method == 'POST':
         find_replace_form = FindReplaceForm(request.POST)
-        if find_replace_form.is_valid():
+        if sel_rel_id != 0:
+            # Release views list CNF/OBS/DEL historical rows: never rewrite them
+            release_msg = 'Find & Replace is not available on a release view'
+            find_replace_form.add_error(None, release_msg)
+        elif find_replace_form.is_valid():
             field_to_search = find_replace_form.cleaned_data['field']
             find_string = find_replace_form.cleaned_data['find']
             replace_string = find_replace_form.cleaned_data['replace']
@@ -585,6 +589,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             else:
                 find_replace_form.add_error('field', 'Select a valid field')
 
+        if sel_rel_id != 0 and request.headers.get('x-requested-with') != 'XMLHttpRequest':
+            messages.error(request, release_msg)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             if find_replace_form.errors:
                 return JsonResponse(
