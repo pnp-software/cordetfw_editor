@@ -42,7 +42,7 @@ from editor.utilities import CleanupFileResponse, get_domains, do_application_re
                              mark_spec_item_aliases_as_del, create_and_init_spec_item, \
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
                              get_spec_item_query
-from editor.imports import import_project_tables
+from editor.imports import import_project_tables, extract_project_zip, IMPORT_MAX_UPLOAD_BYTES
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
@@ -1122,6 +1122,11 @@ def import_project(request):
             messages.error(request,'Unable to upload file: '+repr(e))
             return redirect(base_url)
 
+        if zip_file.size > IMPORT_MAX_UPLOAD_BYTES:         # import-project-no-limits
+            messages.error(request,'Unable to import project zip file: the file is larger than '+
+                           str(IMPORT_MAX_UPLOAD_BYTES//(1024*1024))+' MB')
+            return redirect(base_url)
+
         # Create directory where import file is unzipped
         temp_dir = configs['general']['temp_dir']
         csv_sep = configs['general']['csv_sep']
@@ -1136,12 +1141,13 @@ def import_project(request):
                 for chunk in zip_file.chunks():
                     fd.write(chunk)
             try:
-                zip_obj = ZipFile(imp_project, 'r')
-                zip_obj.extractall(imp_dir)
+                extract_project_zip(imp_project, imp_dir)
+            except ValueError as e:         # import-project-no-limits
+                messages.error(request,'Unable to import project zip file: '+str(e))
+                return redirect(base_url)
             except Exception as e:
                 messages.error(request,'Unable to import project zip file: '+repr(e))
                 return redirect(base_url)
-            zip_obj.close()
 
             import_project_tables(request, imp_dir)
         finally:

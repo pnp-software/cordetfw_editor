@@ -11,6 +11,54 @@ from editor.convert import convert_edit_to_db
 from editor.configs import configs
 from editor.svg_check import check_svg_value
 
+# Limits for the project ZIP import (import-project-no-limits). A real export holds six csv files; a
+# project of ~20,000 items is a few MB to a few tens of MB uncompressed. The limits are >= 20x that.
+IMPORT_MAX_UPLOAD_BYTES = 100 * 1024 * 1024         # size of the uploaded (compressed) file
+IMPORT_MAX_MEMBERS = 100                            # number of entries in the archive
+IMPORT_MAX_MEMBER_BYTES = 200 * 1024 * 1024         # uncompressed size of one entry
+IMPORT_MAX_TOTAL_BYTES = 200 * 1024 * 1024          # uncompressed size of all entries
+IMPORT_MEMBERS = ('project.csv', 'applications.csv', 'val_sets.csv', 'project_users.csv',
+                  'releases.csv', 'spec_items.csv')
+
+
+def extract_project_zip(zip_path, imp_dir):
+    """
+    Extract the expected csv tables of a project export from the zip file at zip_path into
+    imp_dir. Other entries are ignored (never extracted, so their names cannot place files
+    anywhere). The limits above are enforced on the sizes actually read, not on the sizes
+    declared in the archive. Raises ValueError if a limit is exceeded.
+    """
+    from zipfile import ZipFile
+    with ZipFile(zip_path, 'r') as zip_obj:
+        infos = zip_obj.infolist()
+        if len(infos) > IMPORT_MAX_MEMBERS:
+            raise ValueError('the archive has more than '+str(IMPORT_MAX_MEMBERS)+' entries')
+        if sum(i.file_size for i in infos) > IMPORT_MAX_TOTAL_BYTES:
+            raise ValueError('the archive is larger than '+str(IMPORT_MAX_TOTAL_BYTES//(1024*1024))+' MB uncompressed')
+        total = 0
+        names = {}
+        for info in infos:
+            names.setdefault(info.filename, info)       # first entry of a name wins, as for extractall
+        for name in IMPORT_MEMBERS:
+            if name not in names:
+                continue
+            read = 0
+            with zip_obj.open(names[name]) as src, open(os.path.join(imp_dir, name), 'wb') as dst:
+                while True:
+                    chunk = src.read(1024*1024)
+                    if not chunk:
+                        break
+                    read += len(chunk)
+                    total += len(chunk)
+                    if read > IMPORT_MAX_MEMBER_BYTES:
+                        raise ValueError('the entry '+name+' is larger than '+
+                                         str(IMPORT_MAX_MEMBER_BYTES//(1024*1024))+' MB uncompressed')
+                    if total > IMPORT_MAX_TOTAL_BYTES:
+                        raise ValueError('the archive is larger than '+
+                                         str(IMPORT_MAX_TOTAL_BYTES//(1024*1024))+' MB uncompressed')
+                    dst.write(chunk)
+
+
 #--------------------------------------------------------------------------------
 def import_project_tables(request, imp_dir):
     """ Import the csv tables in directory imp_dir """

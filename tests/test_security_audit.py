@@ -849,18 +849,53 @@ def zip_upload(files):
     return SimpleUploadedFile('p.zip', buf.getvalue(), content_type='application/zip')
 
 
+def _import_messages(r):
+    from django.contrib.messages import get_messages
+    return [m.message for m in get_messages(r.wsgi_request)][-1:]       # newest only (the client keeps older ones)
+
+
 def test_21_import_project_no_limits(w, isolated_temp_dir, monkeypatch):
-    # KNOWN-ISSUE: import-project-no-limits
-    monkeypatch.setattr('editor.views.shutil.rmtree', lambda *a, **k: None)     # temp-dir-not-cleaned fixed: keep the dir to inspect it
-    big = b'\0' * (20 * 1024 * 1024)                    # 20 MB member, ~20 KB compressed
-    up = zip_upload({'big.bin': big, '../escape.txt': b'x', 'project.csv': 'name\n'})
+    # FIXED: import-project-no-limits (was: any size/number of members was extracted, incl. a 20 MB member
+    # and '../escape.txt' handled by extractall)
+    from editor import imports
+    monkeypatch.setattr(imports, 'IMPORT_MAX_MEMBER_BYTES', 1024 * 1024)
+    big = b'\0' * (2 * 1024 * 1024)                    # 2 MB member, a few KB compressed
+    up = zip_upload({'spec_items.csv': big, 'project.csv': 'name\n'})
     assert up.size < 200 * 1024
     r = w.client(w.staff).post('/editor/import_project', {'upload_file': up})
     assert r.status_code == 302
-    (d,) = [x for x in os.listdir(isolated_temp_dir) if x.startswith('cordetfw_editor_')]
-    assert os.path.getsize(os.path.join(isolated_temp_dir, d, 'big.bin')) == 20 * 1024 * 1024
-    assert os.path.exists(os.path.join(isolated_temp_dir, d, 'escape.txt'))     # zip-slip neutralised
-    assert not os.path.exists(os.path.join(isolated_temp_dir, 'escape.txt'))
+    assert _import_messages(r) == ['Unable to import project zip file: the entry spec_items.csv is larger than 1 MB uncompressed']
+    assert os.listdir(isolated_temp_dir) == []          # nothing left behind
+
+
+def test_21b_import_project_total_count_and_upload_limits(w, isolated_temp_dir, monkeypatch):
+    from editor import imports, views
+    c = w.client(w.staff)
+    monkeypatch.setattr(imports, 'IMPORT_MAX_TOTAL_BYTES', 1024)
+    r = c.post('/editor/import_project', {'upload_file': zip_upload({'project.csv': 'x' * 2000})})
+    assert _import_messages(r) == ['Unable to import project zip file: the archive is larger than 0 MB uncompressed']
+    monkeypatch.setattr(imports, 'IMPORT_MAX_TOTAL_BYTES', 200 * 1024 * 1024)
+    monkeypatch.setattr(imports, 'IMPORT_MAX_MEMBERS', 3)
+    r = c.post('/editor/import_project', {'upload_file': zip_upload({'a%d' % i: 'x' for i in range(4)})})
+    assert _import_messages(r) == ['Unable to import project zip file: the archive has more than 3 entries']
+    monkeypatch.setattr(views, 'IMPORT_MAX_UPLOAD_BYTES', 10)
+    r = c.post('/editor/import_project', {'upload_file': zip_upload({'project.csv': 'x'})})
+    assert _import_messages(r) == ['Unable to import project zip file: the file is larger than 0 MB']
+    assert os.listdir(isolated_temp_dir) == []
+
+
+def test_21c_import_project_default_limits_leave_room_and_ignore_other_members(w, isolated_temp_dir, tmp_path):
+    from editor import imports
+    assert imports.IMPORT_MAX_TOTAL_BYTES >= 200 * 1024 * 1024
+    assert imports.IMPORT_MAX_MEMBER_BYTES >= 200 * 1024 * 1024
+    up = zip_upload({'../escape.txt': b'x', 'big.bin': b'y', 'project.csv': 'name\n'})
+    zpath = tmp_path / 'p.zip'
+    zpath.write_bytes(up.read())
+    out = tmp_path / 'out'
+    out.mkdir()
+    imports.extract_project_zip(str(zpath), str(out))
+    assert os.listdir(out) == ['project.csv']           # only expected tables are extracted
+    assert not (tmp_path / 'escape.txt').exists()
 
 
 def test_22_import_project_unvalidated_cat_status(w, isolated_temp_dir):
