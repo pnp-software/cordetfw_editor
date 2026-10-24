@@ -899,20 +899,31 @@ def test_21c_import_project_default_limits_leave_room_and_ignore_other_members(w
 
 
 def test_22_import_project_unvalidated_cat_status(w, isolated_temp_dir):
-    # KNOWN-ISSUE: import-project-attribution-forgery
-    import shutil
-    from editor.utilities import spec_item_to_edit
+    # FIXED: import-project-attribution-forgery (was: cat 'BogusCat' and status 'HACKED' were imported
+    # unchanged, and spec_item_to_edit then raised KeyError). Owner/author are staff-supplied data and stay.
+    import csv
+    import io
+    from django.contrib.messages import get_messages
     t = exported_tables(w)
-    for d in os.listdir(isolated_temp_dir):          # avoid the known same-second temp dir collision
-        shutil.rmtree(os.path.join(isolated_temp_dir, d))
+    rows = list(csv.DictReader(io.StringIO(t['spec_items.csv'], newline='')))
+    [base] = [r for r in rows if r['name'] == 'AInt']
+    bad_cat = dict(base, id='9001', name='BadCat', cat='BogusCat')
+    bad_status = dict(base, id='9002', name='BadStatus', status='HACKED')
+    good = dict(base, id='9003', name='GoodOne', status='MOD')
+    out = io.StringIO(newline='')
+    writer = csv.DictWriter(out, fieldnames=list(base.keys()))
+    writer.writeheader()
+    writer.writerows([base, bad_cat, bad_status, good])
+    t['spec_items.csv'] = out.getvalue()
     t['project.csv'] = t['project.csv'].replace('ProjA', 'ProjImported')
-    t['spec_items.csv'] = t['spec_items.csv'].replace('DataItemType', 'BogusCat').replace(',NEW,', ',HACKED,')
-    t['releases.csv'] = t['releases.csv'].replace('owner_a', 'owner_b')        # release author forged
+    t['releases.csv'] = t['releases.csv'].replace('owner_a', 'owner_b')        # release author: staff data, kept
     r = w.client(w.staff).post('/editor/import_project', {'upload_file': zip_upload(t)})
     assert r.status_code == 302
     p = Project.objects.get(name='ProjImported')
-    item = SpecItem.objects.get(project=p, name='AInt')
-    assert (item.cat, item.status) == ('BogusCat', 'HACKED')
+    assert sorted(SpecItem.objects.filter(project=p).values_list('name', 'cat', 'status')) == \
+        [('AInt', 'DataItemType', 'NEW'), ('GoodOne', 'DataItemType', 'MOD')]
     assert p.release.release_author == w.owner_b
-    with pytest.raises(KeyError):
-        spec_item_to_edit(item)
+    errors = [m.message for m in get_messages(r.wsgi_request)]
+    assert 'Failure to import spec_item BogusCat:AT:BadCat: the category BogusCat is not defined in configs.json' in errors
+    assert ('Failure to import spec_item DataItemType:AT:BadStatus: the status HACKED is not valid '
+            '(valid values are: DEL, OBS, CNF, MOD, NEW)') in errors

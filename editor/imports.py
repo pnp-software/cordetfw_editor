@@ -9,6 +9,7 @@ from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Appli
 from editor.utilities import frmt_string
 from editor.convert import convert_edit_to_db
 from editor.configs import configs
+from editor.choices import HISTORY_STATUS
 from editor.svg_check import check_svg_value
 
 # Limits for the project ZIP import (import-project-no-limits). A real export holds six csv files; a
@@ -236,7 +237,18 @@ def import_project_tables(request, imp_dir):
     # Import SpecItems
     spec_item_old_id_2_new = {}
     spec_item_new_id_2_old = {}
+    valid_status = [choice[0] for choice in HISTORY_STATUS]
     for spec_item in spec_items:
+        # import-project-attribution-forgery: category and status must be known values
+        if spec_item['cat'] not in configs['cats']:
+            messages.error(request, 'Failure to import spec_item ' + spec_item['cat']+':'+spec_item['domain']+':'+
+                           spec_item['name'] + ': the category ' + spec_item['cat'] + ' is not defined in configs.json')
+            continue
+        if spec_item['status'] not in valid_status:
+            messages.error(request, 'Failure to import spec_item ' + spec_item['cat']+':'+spec_item['domain']+':'+
+                           spec_item['name'] + ': the status ' + spec_item['status'] + ' is not valid (valid values are: '+
+                           ', '.join(valid_status) + ')')
+            continue
         try:
             if configs['cats'].get(spec_item['cat'], {}).get('attrs', {}).get('value', {}).get('kind') == 'image':
                 check_svg_value(spec_item['value'])       # Task 6.6b: image-svg-unsanitised

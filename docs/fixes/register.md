@@ -48,7 +48,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-link-ambiguous | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-no-login-required | import-spec-items-no-login-required | import-export-auth.md, models-access-releases-query.md | tests/test_access.py | K | OPEN |  |
 | import-project-application-version-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| import-project-attribution-forgery | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| import-project-attribution-forgery | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |
 | import-project-auto-now-timestamps | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-project-created-at-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-project-crlf-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
