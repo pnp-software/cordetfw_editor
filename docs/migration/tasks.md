@@ -200,3 +200,7 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   `index-lists-all-projects` -> non-staff users see only projects they own or are members of; staff see all.
   Export byte changes: undecided; one ticket per change in docs/fixes/tickets/ (for GitHub and for checking the
   scripts that read the exports). None of them is implemented before approval.
+- 2026-10-24, aggregate scan of the production dump of 2026-10-21 for Task 7.2: all 34 applications have categories that
+  are exact members of their project's categories (`appform-cats-substring` can be tightened without data impact);
+  no user has two ProjectUser rows for one project (`access-first-row` changes nothing for real data); 19 active users
+  (2 staff), 1 active non-staff user is in no project and will see an empty index after `index-lists-all-projects`.
