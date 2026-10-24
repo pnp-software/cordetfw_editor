@@ -299,10 +299,12 @@ def test_conv_do_nothing_and_plain_ref(world):
     assert conv_db_disp_plain_ref({}, x, 'owner', None) == 'alice'
 
 
-def test_conv_db_disp_date_name_error():
-    # KNOWN-ISSUE: conv-date-nameerror  (body returns undefined name 's')
-    with pytest.raises(NameError):
-        conv_db_disp_date({}, None, 'x', None)
+def test_conv_db_disp_date_returns_escaped_value(world):
+    # FIXED: conv-date-nameerror (was: NameError, the body returned the undefined name 's')
+    x = world['x']
+    assert conv_db_disp_date({}, x, 'name', None) == 'x'
+    x.title = 'a<b&c'
+    assert conv_db_disp_date({}, x, 'title', None) == 'a&lt;b&amp;c'
 
 
 def test_conv_db_disp_ref_text(world):

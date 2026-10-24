@@ -13,7 +13,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | appform-cats-substring | app-cats-substring | forms-convert-utilities.md, models-access-releases-query.md | tests/test_forms.py, tests/test_releases.py | K | FIXED (Task 7.2a) |  |
 | axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | No proxy, so REMOTE_ADDR is the client IP: shared-lockout DoS not applicable; distributed brute force remains. optional AXES_LOCKOUT_PARAMETERS key added in Task 6.7; default unchanged (operator choice) |
 | change-password-no-response | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
-| conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
+| conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | FIXED (Task 7.3) |  |
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | OPEN |  |
 | csv-export-not-reimportable | — | import-export-auth.md | — | K | OPEN | Spec-item CSV exports of production data contain rows that the importer's row checks reject (identifier rule / empty required field): 448 of 11,046 rows, 436 in one project; 447 empty required field (Requirement 399), 1 identifier rule. Found in Task 6.8e; identical with the production code (Task 6.8f) |
 | csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/csv-formula-injection.md |

@@ -169,8 +169,8 @@ def conv_db_disp_plain_ref(context, item, name, sel_rel):
 
 
 def conv_db_disp_date(context, item, name, sel_rel):
-    """ TBD """
-    return s
+    """ Convert a 'date' attribute to display representation (escaped str() of the value) """
+    return escape_text(str(getattr(item, name)))
 
 
 def conv_db_disp_ref_text(context, item, name, sel_rel):
