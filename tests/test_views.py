@@ -1236,6 +1236,14 @@ def test_del_cnf_post_with_parent_redirect(client, owner, project, dvs):
 SVG_NEW = '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>'
 
 
+VISIBLE_MODEL_SQL = (
+    'SELECT diagrams.* FROM diagrams WHERE ('
+    'EXISTS (SELECT 1 FROM users WHERE users.id = diagrams.userID AND users.email = %s) OR '
+    'EXISTS (SELECT 1 FROM shares WHERE shares.diagramID = diagrams.id '
+    "AND shares.email = %s AND shares.perm IN ('ro', 'rw')))"
+)
+
+
 def fake_connect(rows):
     cursor = mock.Mock()
     cursor.fetchall.return_value = rows
@@ -1270,7 +1278,9 @@ def test_refresh_changed(client, owner, project, dvs, model_item):
         resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert resp.url == '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items#NewDom:NewName' % (project.id, app.id, dvs.id)
-    cursor.execute.assert_called_once_with('SELECT * FROM diagrams WHERE ID = 77')
+    # CHANGED: upstream #91 (was: execute('SELECT * FROM diagrams WHERE ID = 77'))
+    cursor.execute.assert_called_once_with(VISIBLE_MODEL_SQL + ' AND diagrams.id = %s',
+                                           [owner.email, owner.email, 77])
     conn.close.assert_called_once_with()
     item.refresh_from_db()
     assert (item.domain, item.name, item.value, item.p_kind) == ('NewDom', 'NewName', SVG_NEW, 'PR')
@@ -1279,6 +1289,21 @@ def test_refresh_changed(client, owner, project, dvs, model_item):
     # KNOWN-ISSUE: refresh-timestamp-overwritten
     assert item.updated_at > FIXED_TIME            # view overwrites the external timestamp
     assert msgs(resp) == []
+
+
+def test_add_model_not_accessible_gives_form_error_and_creates_nothing(client, owner, project, dvs):
+    # upstream #91: the model was listed in the form, but is no longer visible when the form is posted
+    app = make_application(project, 'App', cats='Model')
+    url = add_url('Model', project, app=app.id)
+    patcher, cursor, conn = fake_connect([])
+    cursor.fetchall.side_effect = [[diagram_row()], []]       # choices (1st query) / get_choice (2nd query)
+    with patcher:
+        resp = client.post(url, {'ext_item': '77', 'title': 'T', 'p_kind': 'SM', 'change_log': 'l',
+                                 'n1': '0', 'n2': '0', 'n3': '0', 's_kind': 'INV', 's_data': '{}'})
+    assert resp.status_code == 200
+    assert resp.context['form'].errors['ext_item'] == ['Model not found or no longer accessible']
+    assert not SpecItem.objects.filter(cat='Model').exists()
+    assert conn.close.call_count == 2
 
 
 def test_refresh_changed_cnf_creates_obs_copy(client, owner, project, dvs, model_item):
@@ -1301,7 +1326,8 @@ def test_refresh_not_found(client, owner, project, dvs, model_item):
     assert resp.status_code == 302
     assert resp.url == '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items#OldDom:OldName' % (project.id, app.id, dvs.id)
     assert msgs(resp) == [
-        ('alert-warning', 'Model not found in FW Profile Database (its ID is: 77)'),
+        # CHANGED: upstream #91 (was: 'Model not found in FW Profile Database (its ID is: 77)')
+        ('alert-warning', 'Model not found or not shared with you in FW Profile Database (its ID is: 77)'),
         ('alert-warning', 'External spec_item no longer exists -- no refresh can be done')]
     item.refresh_from_db()
     assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'

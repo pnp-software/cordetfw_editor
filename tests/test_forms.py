@@ -382,11 +382,13 @@ def fake_fw_db(monkeypatch):
     class Cur:
         rows = []
 
-        def execute(self, sql):
-            if 'FROM users' in sql:
-                self.rows = [(7,)]
-            elif 'WHERE userID' in sql or 'WHERE ID' in sql:
+        def execute(self, sql, params=None):
+            # CHANGED: upstream #91 (was: model queries were 'FROM users' + 'WHERE userID'/'WHERE ID';
+            # they are now one parameterized 'FROM diagrams' query, FCP queries unchanged)
+            if 'FROM diagrams' in sql:
                 self.rows = [diagram]
+            elif 'FROM users' in sql:
+                self.rows = [(7,)]
             else:
                 self.rows = []
 
@@ -1092,6 +1094,14 @@ def test_model_add_mode_uses_ext_item(world, fake_fw_db):
     assert cd['domain'] == 'DomFcp' and cd['name'] == 'mname'
     assert cd['value'] == '<svg xmlns="http://www.w3.org/2000/svg"><desc>1</desc></svg>'
     assert (cd['n1'], cd['n2'], cd['n3']) == (10, 20, 11)
+
+
+def test_model_add_ext_item_no_longer_accessible(world, fake_fw_db, monkeypatch):
+    # upstream #91: ext_model_get_choice returns None when the model is not (or no longer) visible
+    monkeypatch.setattr(ext_cats, 'ext_model_get_choice', lambda request, ext_item: None)
+    form = build(world, 'add', 'Model', data={'ext_item': '11', 'title': 'T', 'p_kind': 'SM'})
+    assert not form.is_valid()
+    assert form.errors['ext_item'] == ['Model not found or no longer accessible']
 
 
 def test_model_add_ext_item_invalid_choice(world, fake_fw_db):

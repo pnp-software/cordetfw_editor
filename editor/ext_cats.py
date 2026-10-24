@@ -40,6 +40,33 @@ def get_model_domain(json_rep):
     return jsonObj['globals']['fwprop']['smTags']
 
 
+def get_visible_models(request, model_id=None):
+    email = request.user.email
+    if not email:
+        return []
+
+    fw_db, fw_db_cur = connect(request)
+    if fw_db is None:
+        return []
+
+    try:
+        query = (
+            'SELECT diagrams.* FROM diagrams WHERE ('
+            'EXISTS (SELECT 1 FROM users WHERE users.id = diagrams.userID '
+            'AND users.email = %s) OR '
+            'EXISTS (SELECT 1 FROM shares WHERE shares.diagramID = diagrams.id '
+            "AND shares.email = %s AND shares.perm IN ('ro', 'rw')))"
+        )
+        parameters = [email, email]
+        if model_id is not None:
+            query += ' AND diagrams.id = %s'
+            parameters.append(model_id)
+        fw_db_cur.execute(query, parameters)
+        return fw_db_cur.fetchall()
+    finally:
+        fw_db.close()
+
+
 #--------------------------------------------------------------------------------
 def ext_model_refresh(request, spec_item):
     """ 
@@ -53,18 +80,15 @@ def ext_model_refresh(request, spec_item):
     and returns 'REFRESH'. If, instead, the svg image has not changed, the 
     function return 'NO_CHANGE'.
     """
-    fw_db, fw_db_cur = connect(request)
-
     model_id = spec_item.n3
     try:
-        fw_db_cur.execute('SELECT * FROM diagrams WHERE ID = '+str(model_id)) 
-        diagrams = fw_db_cur.fetchall()
+        diagrams = get_visible_models(request, model_id)
     except Exception as e:
         messages.error(request, 'Error while accessing model with ID \"'+str(model_id)+': '+str(e))
         return 'NOT_FOUND'
     
     if len(diagrams) == 0:
-        messages.warning(request, 'Model not found in FW Profile Database (its ID is: '+str(model_id)+')')
+        messages.warning(request, 'Model not found or not shared with you in FW Profile Database (its ID is: '+str(model_id)+')')
         return 'NOT_FOUND'
         
     if diagrams[0][7] == spec_item.value:
@@ -87,7 +111,6 @@ def ext_model_refresh(request, spec_item):
     spec_item.n2 = diagrams[0][9]        # figure height
     spec_item.n3 = diagrams[0][0]        # ID in FW Profile Database
 
-    fw_db.close()
     return 'REFRESH'
 
 
@@ -101,13 +124,14 @@ def ext_model_get_choice(request, model_id):
     (NB: The external attributes are those listed at the 'ext_att' key in the
          'configs' dictionary).
     """
-    fw_db, fw_db_cur = connect(request)
-    
     try:
-        fw_db_cur.execute('SELECT * FROM diagrams WHERE ID = '+str(model_id)) 
-        diagrams = fw_db_cur.fetchall()
+        diagrams = get_visible_models(request, model_id)
     except Exception as e:
         messages.error(request, 'Error while accessing model with ID \"'+str(model_id)+': '+str(e))
+        return None
+
+    if not diagrams:
+        messages.warning(request, 'Model not found or not shared with you in FW Profile Database')
         return None
 
     ext_item_dict = {}
@@ -124,7 +148,6 @@ def ext_model_get_choice(request, model_id):
     ext_item_dict['n2'] = diagrams[0][9]        # figure height
     ext_item_dict['n3'] = diagrams[0][0]        # ID in FW Profile Database
  
-    fw_db.close()
     return ext_item_dict
 
  
@@ -132,26 +155,15 @@ def ext_model_get_choice(request, model_id):
 def ext_model_get_choices(request):
     """ 
     Return the list of models available for import in the editor.
-    These are the models in the FW Profile DB owned by the user calling this function.
+    These are the models visible to the user in the FW Profile DB, including
+    models shared by other users.
     """
-    fw_db, fw_db_cur = connect(request)
-    
     empty_choice_list = [(0, 'No Model Found')]
     
-    user_email = request.user.email
     try:
-        fw_db_cur.execute('SELECT * FROM users WHERE email = \''+str(user_email)+'\'')    
-        user = fw_db_cur.fetchall()
+        diagrams = get_visible_models(request)
     except Exception as e:
-        messages.error(request, 'User \"'+str(request.user)+'\" with e-mail \"'+user_email+\
-                            '\" not found in FW Profile DB: '+str(e))
-        return empty_choice_list
-    
-    try:
-        fw_db_cur.execute('SELECT * FROM diagrams WHERE userID = '+str(user[0][0])) 
-        diagrams = fw_db_cur.fetchall()
-    except Exception as e:
-        messages.error(request, 'Error trying to retrieve the models for user \"'+user_email+':'+str(e))
+        messages.error(request, 'Error trying to retrieve the models from FW Profile DB: '+str(e))
         return empty_choice_list
     
     model_list = []
@@ -161,11 +173,10 @@ def ext_model_get_choices(request):
 
     if model_list == []:
         messages.error(request, 'No models found in FW Profile Database for user \"'+\
-                                str(request.user)+'\" with e-mail \"'+user_email)
+                                str(request.user))
         return empty_choice_list
         
 
-    fw_db.close()
     return sorted(model_list, key=lambda tup: (tup[1].split(':')[0], tup[1].split(':')[1]))
 
 #--------------------------------------------------------------------------------

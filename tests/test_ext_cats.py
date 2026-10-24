@@ -27,8 +27,9 @@ class FakeCursor:
         self.conn = conn
         self.rows = []
 
-    def execute(self, sql):
+    def execute(self, sql, params=None):
         self.conn.sql.append(sql)
+        self.conn.calls.append((sql, params))
         result = self.conn.responder(sql)
         if isinstance(result, Exception):
             raise result
@@ -42,6 +43,7 @@ class FakeConnection:
     def __init__(self, responder):
         self.responder = responder
         self.sql = []
+        self.calls = []          # (sql, params) of every execute
         self.closed = False
         self.cursor_obj = FakeCursor(self)
 
@@ -155,91 +157,181 @@ def test_get_model_domain():
 
 
 # ---------------------------------------------------------------------------
+# Visible models (upstream #91, Task 7.1): own models + models shared with the user's e-mail
+# ---------------------------------------------------------------------------
+
+VISIBLE_SQL = (
+    'SELECT diagrams.* FROM diagrams WHERE ('
+    'EXISTS (SELECT 1 FROM users WHERE users.id = diagrams.userID AND users.email = %s) OR '
+    'EXISTS (SELECT 1 FROM shares WHERE shares.diagramID = diagrams.id '
+    "AND shares.email = %s AND shares.perm IN ('ro', 'rw')))"
+)
+
+
+@pytest.fixture
+def fake_visible_db(monkeypatch, fake_db):
+    """fake_db that evaluates the visibility query against a small in-memory dataset
+    (the fake understands exactly the query built by get_visible_models)."""
+    data = {'users': {7: 'alice@example.com', 8: 'bob@example.com'},    # user id -> e-mail
+            'shares': [],                                               # (diagram id, e-mail, perm)
+            'diagrams': []}                                             # rows; row[1] is the owner's user id
+
+    def execute(self, sql, params=None):
+        assert sql.startswith('SELECT diagrams.* FROM diagrams WHERE (')
+        self.conn.sql.append(sql)
+        self.conn.calls.append((sql, params))
+        email, wanted = params[0], (params[2] if len(params) > 2 else None)
+        self.rows = [d for d in data['diagrams']
+                     if (data['users'].get(d[1]) == email
+                         or any(sh[0] == d[0] and sh[1] == email and sh[2] in ('ro', 'rw') for sh in data['shares']))
+                     and (wanted is None or d[0] == wanted)]
+
+    monkeypatch.setattr(FakeCursor, 'execute', execute)
+    return data
+
+
+def test_get_visible_models_sql_is_parameterized(fake_db):
+    fake_db.responder = lambda sql: []
+    request = make_request(User(username='mallory', email="x' OR '1'='1"))
+    assert ext_cats.get_visible_models(request) == []
+    assert fake_db.conn.calls == [(VISIBLE_SQL, ["x' OR '1'='1", "x' OR '1'='1"])]
+    assert fake_db.conn.closed is True
+
+
+def test_get_visible_models_with_id_adds_parameter(fake_db):
+    fake_db.responder = lambda sql: []
+    ext_cats.get_visible_models(make_request(), "7 OR 1=1")
+    assert fake_db.conn.calls == [(VISIBLE_SQL + ' AND diagrams.id = %s',
+                                   ['alice@example.com', 'alice@example.com', '7 OR 1=1'])]
+
+
+@pytest.mark.parametrize('email', ['', None])
+def test_get_visible_models_empty_email_no_query(fake_db, email):
+    request = make_request(User(username='noemail', email=email or ''))
+    request.user.email = email
+    assert ext_cats.get_visible_models(request) == []
+    assert fake_db.connect_args is None          # not even a connection
+    assert fake_db.conn is None
+
+
+def test_get_visible_models_connect_failure(fake_db):
+    fake_db.connect_error = RuntimeError('boom')
+    request = make_request()
+    assert ext_cats.get_visible_models(request) == []
+    assert msgs(request) == [('alert-danger', "Unable to connect to the FW Profile database: RuntimeError('boom')")]
+
+
+def test_get_visible_models_closes_connection_on_query_error(fake_db):
+    fake_db.responder = lambda sql: RuntimeError('db down')
+    with pytest.raises(RuntimeError):
+        ext_cats.get_visible_models(make_request())
+    assert fake_db.conn.closed is True
+
+
+def _visible_data(fake_visible_db):
+    d = fake_visible_db
+    d['diagrams'] = [diagram(1, 'mine', 'DomA'), diagram(2, 'sharedro', 'DomB'), diagram(3, 'sharedrw', 'DomC'),
+                     diagram(4, 'sharedother', 'DomD'), diagram(5, 'foreign', 'DomE')]
+    # diagram() puts user id 7 in row[1]; make 2..5 belong to bob (8)
+    d['diagrams'] = [r if r[0] == 1 else (r[0], 8) + r[2:] for r in d['diagrams']]
+    d['shares'] = [(2, 'alice@example.com', 'ro'), (3, 'alice@example.com', 'rw'),
+                   (4, 'alice@example.com', 'none'), (5, 'carol@example.com', 'rw')]
+    return d
+
+
+def test_visible_owner_sees_own_models(fake_visible_db):
+    _visible_data(fake_visible_db)
+    bob = User(username='bob', email='bob@example.com')
+    ids = [r[0] for r in ext_cats.get_visible_models(make_request(bob))]
+    assert ids == [2, 3, 4, 5]
+
+
+def test_visible_shared_ro_and_rw_visible_other_perm_not(fake_visible_db):
+    _visible_data(fake_visible_db)
+    rows = ext_cats.get_visible_models(make_request())
+    assert [r[0] for r in rows] == [1, 2, 3]           # own, shared ro, shared rw; not perm 'none', not foreign
+    assert ext_cats.get_visible_models(make_request(), 4) == []
+    assert ext_cats.get_visible_models(make_request(), 5) == []
+
+
+def test_model_get_choices_includes_shared_models(fake_visible_db):
+    _visible_data(fake_visible_db)
+    request = make_request()
+    assert ext_cats.ext_model_get_choices(request) == [(1, 'DomA : mine'), (2, 'DomB : sharedro'),
+                                                       (3, 'DomC : sharedrw')]
+    assert msgs(request) == []
+
+
+# ---------------------------------------------------------------------------
 # ext_model_get_choices
 # ---------------------------------------------------------------------------
 
 def test_model_get_choices_sorted_and_sql(fake_db):
-    def responder(sql):
-        if sql.startswith('SELECT * FROM users'):
-            return [(42, 'alice@example.com')]
-        return [diagram(3, 'zeta', 'DomB'), diagram(1, 'beta', 'DomA'), diagram(2, 'alpha', 'DomA'),
-                diagram(4, 'proc', 'DomC', kind='Procedure')]
-    fake_db.responder = responder
+    fake_db.responder = lambda sql: [diagram(3, 'zeta', 'DomB'), diagram(1, 'beta', 'DomA'),
+                                     diagram(2, 'alpha', 'DomA'), diagram(4, 'proc', 'DomC', kind='Procedure')]
     request = make_request()
     choices = ext_cats.ext_model_get_choices(request)
     assert choices == [(2, 'DomA : alpha'), (1, 'DomA : beta'), (3, 'DomB : zeta'), (4, 'DomC : proc')]
-    assert fake_db.conn.sql == ["SELECT * FROM users WHERE email = 'alice@example.com'",
-                                'SELECT * FROM diagrams WHERE userID = 42']
+    # CHANGED: upstream #91 (was: "SELECT * FROM users WHERE email = ..." then "SELECT * FROM diagrams WHERE userID = 42")
+    assert fake_db.conn.calls == [(VISIBLE_SQL, ['alice@example.com', 'alice@example.com'])]
     assert fake_db.conn.closed is True
     assert msgs(request) == []
 
 
-def test_model_get_choices_sql_is_string_concatenated(fake_db):
-    # KNOWN-ISSUE: ext-cats-sql-injection
-    # The user e-mail is spliced into the SQL text without escaping or parameters.
+def test_model_get_choices_sql_is_parameterized(fake_db):
+    # CHANGED: upstream #91 (was: KNOWN-ISSUE ext-cats-sql-injection, e-mail spliced into the SQL text;
+    # still open for the FCP functions, see test_fcp_get_choices_sql_is_string_concatenated)
     fake_db.responder = lambda sql: []
     request = make_request(User(username='mallory', email="x' OR '1'='1"))
     ext_cats.ext_model_get_choices(request)
-    assert fake_db.conn.sql[0] == "SELECT * FROM users WHERE email = 'x' OR '1'='1'"
+    sql, params = fake_db.conn.calls[0]
+    assert "x'" not in sql
+    assert params == ["x' OR '1'='1", "x' OR '1'='1"]
 
 
-def test_model_get_choices_unknown_user(fake_db):
-    # users query returns no rows -> user[0][0] raises IndexError inside the second try block
-    fake_db.responder = lambda sql: []
-    request = make_request()
+def test_model_get_choices_empty_email_no_models_no_query(fake_db):
+    # new with upstream #91: a user without e-mail sees no models and the DB is not queried
+    request = make_request(User(username='noemail', email=''))
     assert ext_cats.ext_model_get_choices(request) == [(0, 'No Model Found')]
-    assert msgs(request) == [('alert-danger',
-                              'Error trying to retrieve the models for user "alice@example.com:list index out of range')]
-    assert fake_db.conn.closed is False     # KNOWN-ISSUE: ext-cats-connection-leak (early returns never close)
+    assert fake_db.conn is None
+    assert msgs(request) == [('alert-danger', 'No models found in FW Profile Database for user "noemail')]
 
 
-def test_model_get_choices_users_query_error(fake_db):
+def test_model_get_choices_query_error(fake_db):
+    # CHANGED: upstream #91 (was: separate users-query and diagrams-query error messages, connection left open)
     fake_db.responder = lambda sql: RuntimeError('db down')
     request = make_request()
     assert ext_cats.ext_model_get_choices(request) == [(0, 'No Model Found')]
-    assert msgs(request) == [('alert-danger',
-                              'User "alice" with e-mail "alice@example.com" not found in FW Profile DB: db down')]
-
-
-def test_model_get_choices_diagrams_query_error(fake_db):
-    def responder(sql):
-        if sql.startswith('SELECT * FROM users'):
-            return [(42,)]
-        return RuntimeError('db down')
-    fake_db.responder = responder
-    request = make_request()
-    assert ext_cats.ext_model_get_choices(request) == [(0, 'No Model Found')]
-    assert msgs(request) == [('alert-danger',
-                              'Error trying to retrieve the models for user "alice@example.com:db down')]
+    assert msgs(request) == [('alert-danger', 'Error trying to retrieve the models from FW Profile DB: db down')]
+    assert fake_db.conn.closed is True      # CHANGED: upstream #91 (was: KNOWN-ISSUE ext-cats-connection-leak, False)
 
 
 def test_model_get_choices_no_models(fake_db):
-    fake_db.responder = lambda sql: [(42,)] if sql.startswith('SELECT * FROM users') else []
+    fake_db.responder = lambda sql: []
     request = make_request()
     assert ext_cats.ext_model_get_choices(request) == [(0, 'No Model Found')]
-    # note the missing closing quote after the e-mail: pinned as is
-    assert msgs(request) == [('alert-danger',
-                              'No models found in FW Profile Database for user "alice" with e-mail "alice@example.com')]
+    # CHANGED: upstream #91 (was: '... for user "alice" with e-mail "alice@example.com')
+    assert msgs(request) == [('alert-danger', 'No models found in FW Profile Database for user "alice')]
+    assert fake_db.conn.closed is True      # CHANGED: upstream #91 (was: connection left open)
 
 
-def test_model_get_choices_connect_failure_cascades(fake_db):
-    # connect() returns (None, None); the AttributeError is swallowed by the first try block
+def test_model_get_choices_connect_failure(fake_db):
+    # CHANGED: upstream #91 (was: connect error followed by "'NoneType' object has no attribute 'execute'")
     fake_db.connect_error = RuntimeError('boom')
     request = make_request()
     assert ext_cats.ext_model_get_choices(request) == [(0, 'No Model Found')]
     assert msgs(request) == [
         ('alert-danger', "Unable to connect to the FW Profile database: RuntimeError('boom')"),
-        ('alert-danger', 'User "alice" with e-mail "alice@example.com" not found in FW Profile DB: '
-                         "'NoneType' object has no attribute 'execute'"),
+        ('alert-danger', 'No models found in FW Profile Database for user "alice'),
     ]
 
 
 def test_model_get_choices_null_domain_crashes(fake_db):
     # KNOWN-ISSUE: ext-cats-null-domain
-    fake_db.responder = lambda sql: [(42,)] if sql.startswith('SELECT * FROM users') \
-        else [diagram(1, 'n', None)]
+    fake_db.responder = lambda sql: [diagram(1, 'n', None)]
     with pytest.raises(TypeError):
         ext_cats.ext_model_get_choices(make_request())
+    assert fake_db.conn.closed is True      # the connection is closed before the crash
 
 
 # ---------------------------------------------------------------------------
@@ -253,7 +345,9 @@ def test_model_get_choice_state_machine(fake_db):
     assert result == {'domain': 'DomA', 'name': 'nm', 'p_kind': 'SM',
                       'updated_at': datetime(2024, 3, 4, 5, 6, 7), 'value': '<svg xmlns="http://www.w3.org/2000/svg"><desc>1</desc></svg>',
                       'n1': 11, 'n2': 22, 'n3': 7}
-    assert fake_db.conn.sql == ['SELECT * FROM diagrams WHERE ID = 7']
+    # CHANGED: upstream #91 (was: ['SELECT * FROM diagrams WHERE ID = 7'])
+    assert fake_db.conn.calls == [(VISIBLE_SQL + ' AND diagrams.id = %s',
+                                   ['alice@example.com', 'alice@example.com', 7])]
     assert fake_db.conn.closed is True
 
 
@@ -267,11 +361,12 @@ def test_model_get_choice_unknown_kind_defaults_to_sm(fake_db):
     assert ext_cats.ext_model_get_choice(make_request(), 7)['p_kind'] == 'SM'
 
 
-def test_model_get_choice_sql_is_string_concatenated(fake_db):
-    # KNOWN-ISSUE: ext-cats-sql-injection
+def test_model_get_choice_sql_is_parameterized(fake_db):
+    # CHANGED: upstream #91 (was: KNOWN-ISSUE ext-cats-sql-injection, 'SELECT * FROM diagrams WHERE ID = 7 OR 1=1')
     fake_db.responder = lambda sql: [diagram(7, 'nm', 'DomA')]
     ext_cats.ext_model_get_choice(make_request(), '7 OR 1=1')
-    assert fake_db.conn.sql == ['SELECT * FROM diagrams WHERE ID = 7 OR 1=1']
+    sql, params = fake_db.conn.calls[0]
+    assert '7 OR 1=1' not in sql and params[2] == '7 OR 1=1'
 
 
 def test_model_get_choice_query_error(fake_db):
@@ -279,14 +374,24 @@ def test_model_get_choice_query_error(fake_db):
     request = make_request()
     assert ext_cats.ext_model_get_choice(request, 7) is None
     assert msgs(request) == [('alert-danger', 'Error while accessing model with ID "7: db down')]
+    assert fake_db.conn.closed is True      # CHANGED: upstream #91 (was: connection left open)
 
 
-def test_model_get_choice_not_found_raises(fake_db):
-    # KNOWN-ISSUE: ext-cats-get-choice-not-found
-    # Contrary to its docstring ("or None if the model cannot be found") an empty result raises.
+def test_model_get_choice_not_found_returns_none(fake_db):
+    # CHANGED: upstream #91 (was: KNOWN-ISSUE ext-cats-get-choice-not-found, IndexError; still open for FCP)
     fake_db.responder = lambda sql: []
-    with pytest.raises(IndexError):
-        ext_cats.ext_model_get_choice(make_request(), 7)
+    request = make_request()
+    assert ext_cats.ext_model_get_choice(request, 7) is None
+    assert msgs(request) == [('alert-warning', 'Model not found or not shared with you in FW Profile Database')]
+    assert fake_db.conn.closed is True
+
+
+def test_model_get_choice_not_visible_and_empty_email(fake_visible_db):
+    _visible_data(fake_visible_db)
+    assert ext_cats.ext_model_get_choice(make_request(), 5) is None       # foreign model
+    assert ext_cats.ext_model_get_choice(make_request(), 2)['name'] == 'sharedro'
+    noemail = make_request(User(username='n', email=''))
+    assert ext_cats.ext_model_get_choice(noemail, 1) is None
 
 
 # ---------------------------------------------------------------------------
@@ -306,7 +411,9 @@ def test_model_refresh_refresh(fake_db):
     assert (item.domain, item.name, item.p_kind, item.value, item.n1, item.n2, item.n3) == \
            ('NewDom', 'newname', 'PR', '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>', 33, 44, 7)
     assert item.updated_at == datetime(2024, 3, 4, 5, 6, 7)
-    assert fake_db.conn.sql == ['SELECT * FROM diagrams WHERE ID = 7']
+    # CHANGED: upstream #91 (was: ['SELECT * FROM diagrams WHERE ID = 7'])
+    assert fake_db.conn.calls == [(VISIBLE_SQL + ' AND diagrams.id = %s',
+                                   ['alice@example.com', 'alice@example.com', 7])]
     assert fake_db.conn.closed is True
     assert msgs(request) == []
 
@@ -316,14 +423,29 @@ def test_model_refresh_no_change(fake_db):
     item = make_item()
     assert ext_cats.ext_model_refresh(make_request(), item) == 'NO_CHANGE'
     assert (item.domain, item.name) == ('OldDom', 'old')
-    assert fake_db.conn.closed is False     # KNOWN-ISSUE: ext-cats-connection-leak
+    assert fake_db.conn.closed is True      # CHANGED: upstream #91 (was: KNOWN-ISSUE ext-cats-connection-leak, False)
 
 
 def test_model_refresh_not_found(fake_db):
     fake_db.responder = lambda sql: []
     request = make_request()
     assert ext_cats.ext_model_refresh(request, make_item(n3=9)) == 'NOT_FOUND'
-    assert msgs(request) == [('alert-warning', 'Model not found in FW Profile Database (its ID is: 9)')]
+    # CHANGED: upstream #91 (was: 'Model not found in FW Profile Database (its ID is: 9)')
+    assert msgs(request) == [('alert-warning',
+                              'Model not found or not shared with you in FW Profile Database (its ID is: 9)')]
+    assert fake_db.conn.closed is True
+
+
+def test_model_refresh_not_visible_model_is_not_found(fake_visible_db):
+    _visible_data(fake_visible_db)
+    request = make_request()
+    item = make_item(n3=5)                    # belongs to bob, shared only with carol
+    assert ext_cats.ext_model_refresh(request, item) == 'NOT_FOUND'
+    assert msgs(request) == [('alert-warning',
+                              'Model not found or not shared with you in FW Profile Database (its ID is: 5)')]
+    assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
+    shared = make_item(n3=2)
+    assert ext_cats.ext_model_refresh(make_request(), shared) == 'REFRESH'    # shared ro: refreshable
 
 
 def test_model_refresh_query_error(fake_db):
@@ -331,16 +453,25 @@ def test_model_refresh_query_error(fake_db):
     request = make_request()
     assert ext_cats.ext_model_refresh(request, make_item(n3=9)) == 'NOT_FOUND'
     assert msgs(request) == [('alert-danger', 'Error while accessing model with ID "9: db down')]
+    assert fake_db.conn.closed is True
 
 
 def test_model_refresh_connect_failure(fake_db):
     fake_db.connect_error = RuntimeError('boom')
     request = make_request()
     assert ext_cats.ext_model_refresh(request, make_item(n3=9)) == 'NOT_FOUND'
+    # CHANGED: upstream #91 (was: connect error + "'NoneType' object has no attribute 'execute'")
     assert msgs(request) == [
         ('alert-danger', "Unable to connect to the FW Profile database: RuntimeError('boom')"),
-        ('alert-danger', "Error while accessing model with ID \"9: 'NoneType' object has no attribute 'execute'"),
+        ('alert-warning', 'Model not found or not shared with you in FW Profile Database (its ID is: 9)'),
     ]
+
+
+def test_model_refresh_invalid_svg_closes_connection(fake_db):
+    fake_db.responder = lambda sql: [diagram(7, 'n', 'D', svg='<svg onload="x"/>')]
+    request = make_request()
+    assert ext_cats.ext_model_refresh(request, make_item()) == 'INVALID'
+    assert fake_db.conn.closed is True
 
 
 # ---------------------------------------------------------------------------
@@ -369,6 +500,27 @@ def test_fcp_get_choices_filters_on_fcp_suffix_and_sorts(fake_db):
     assert fake_db.conn.sql == ["SELECT * FROM users WHERE email = 'alice@example.com'",
                                 'SELECT * FROM diagrams WHERE userID = 42']
     assert fake_db.conn.closed is True
+
+
+def test_fcp_get_choices_sql_is_string_concatenated(fake_db):
+    # KNOWN-ISSUE: ext-cats-sql-injection
+    # Model functions are parameterized since upstream #91; the FCP functions still splice the e-mail.
+    fake_db.responder = lambda sql: []
+    request = make_request(User(username='mallory', email="x' OR '1'='1"))
+    ext_cats.ext_fcp_get_choices(request)
+    assert fake_db.conn.sql[0] == "SELECT * FROM users WHERE email = 'x' OR '1'='1'"
+
+
+def test_fcp_connection_leaks_on_early_return_and_no_change(fake_db):
+    # KNOWN-ISSUE: ext-cats-connection-leak
+    # Model functions close the connection on every path since upstream #91; the FCP functions do not.
+    fake_db.responder = lambda sql: []
+    assert ext_cats.ext_fcp_get_choices(make_request()) == [(0, 'No FCP Found')]
+    assert fake_db.conn.closed is False
+    fake_db.responder = lambda sql: [diagram(7, 'n', 'XFcp', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>',
+                                             json_rep=fcp_json('XFcp', 'Title: T\nd'))]
+    assert ext_cats.ext_fcp_refresh(make_request(), make_item()) == 'NO_CHANGE'
+    assert fake_db.conn.closed is False
 
 
 def test_fcp_get_choices_none_found(fake_db):
@@ -525,11 +677,19 @@ def real_fwprofile(monkeypatch, tmp_path):
     cur.execute('CREATE TABLE diagrams ('
                 'ID INT PRIMARY KEY, userID INT NOT NULL, name VARCHAR(255), title VARCHAR(255), '
                 'type VARCHAR(64), updated DATETIME, model JSON, svg LONGTEXT, width INT, height INT)')
+    cur.execute('CREATE TABLE shares (diagramID INT NOT NULL, email VARCHAR(255) NOT NULL, perm VARCHAR(8) NOT NULL)')
     cur.execute("INSERT INTO users VALUES (42, 'alice@example.com')")
+    cur.execute("INSERT INTO users VALUES (43, 'bob@example.com')")
     cur.execute("INSERT INTO diagrams VALUES (7, 42, 'Sm1', 'x', 'State Machine', %s, %s, %s, 100, 200)",
                 (REAL_UPDATED, REAL_JSON, REAL_SVG))
     cur.execute("INSERT INTO diagrams VALUES (8, 42, 'Pr1', 'x', 'Procedure', %s, %s, %s, 11, 22)",
                 (REAL_UPDATED, model_json('Dom2'), '<svg xmlns="http://www.w3.org/2000/svg" width="11"></svg>'))
+    # bob's models: 9 shared with alice read-only, 10 shared with perm 'none', 11 not shared
+    for dia_id, name in ((9, 'Shared'), (10, 'Hidden'), (11, 'Private')):
+        cur.execute("INSERT INTO diagrams VALUES (%s, 43, %s, 'x', 'State Machine', %s, %s, %s, 5, 6)",
+                    (dia_id, name, REAL_UPDATED, model_json('DomB'), REAL_SVG))
+    cur.execute("INSERT INTO shares VALUES (9, 'alice@example.com', 'ro'), (10, 'alice@example.com', 'none'), "
+                "(11, 'carol@example.com', 'rw')")
     admin.commit()
 
     config = {'FWPROFILE_DB': {'HOST': SCRATCH_HOST, 'USER': SCRATCH_USER, 'PWD': SCRATCH_PWD,
@@ -587,18 +747,25 @@ class TestRealDriver:
     def test_model_get_choices_types(self, real_fwprofile):
         request = make_request()
         choices = ext_cats.ext_model_get_choices(request)
-        assert choices == [(7, 'Dom : Sm1'), (8, 'Dom2 : Pr1')]
+        # own models 7, 8 and bob's model 9 shared read-only (not 10: perm 'none', not 11: not shared)
+        assert choices == [(7, 'Dom : Sm1'), (8, 'Dom2 : Pr1'), (9, 'DomB : Shared')]
         assert all(type(i) is int and type(label) is str for i, label in choices)
         assert msgs(request) == []
 
     def test_model_get_choices_unknown_user(self, real_fwprofile):
-        # an unknown e-mail: user[0][0] raises IndexError inside the try block, which is reported
-        # as a generic error and the empty choice list is returned
+        # CHANGED: upstream #91 (was: IndexError reported as 'Error trying to retrieve the models for user ...')
         request = make_request(User(username='nobody', email='nobody@example.com'))
         assert ext_cats.ext_model_get_choices(request) == [(0, 'No Model Found')]
-        [(level, text)] = msgs(request)
-        assert level == 'alert-danger'
-        assert text.startswith('Error trying to retrieve the models for user "nobody@example.com:')
+        assert msgs(request) == [('alert-danger', 'No models found in FW Profile Database for user "nobody')]
+
+    def test_shared_visibility_with_real_driver(self, real_fwprofile):
+        request = make_request()
+        assert sorted(r[0] for r in ext_cats.get_visible_models(request)) == [7, 8, 9]
+        assert ext_cats.get_visible_models(request, 10) == ()        # share with another perm
+        assert ext_cats.get_visible_models(request, 11) == ()        # shared with somebody else
+        assert ext_cats.ext_model_get_choice(request, 9)['name'] == 'Shared'
+        bob = make_request(User(username='bob', email='bob@example.com'))
+        assert sorted(r[0] for r in ext_cats.get_visible_models(bob)) == [9, 10, 11]
 
     def test_model_refresh_no_change_then_refresh(self, real_fwprofile):
         request = make_request()
@@ -620,7 +787,9 @@ class TestRealDriver:
         request = make_request()
         item = SpecItem(cat='Model', value='x', n3=999)
         assert ext_cats.ext_model_refresh(request, item) == 'NOT_FOUND'
-        assert msgs(request) == [('alert-warning', 'Model not found in FW Profile Database (its ID is: 999)')]
+        # CHANGED: upstream #91 (was: 'Model not found in FW Profile Database (its ID is: 999)')
+        assert msgs(request) == [('alert-warning',
+                                  'Model not found or not shared with you in FW Profile Database (its ID is: 999)')]
 
     def test_connect_failure_is_reported(self, real_fwprofile, monkeypatch, tmp_path):
         config = {'FWPROFILE_DB': {'HOST': SCRATCH_HOST, 'USER': SCRATCH_USER, 'PWD': 'wrong-password',

@@ -260,6 +260,8 @@ class SpecItemForm(forms.Form):
         if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
             get_choice_func_name = 'ext_' + self.cat.lower() + '_get_choice'
             ext_choice = getattr(ext_cats, get_choice_func_name)(self.request, cd['ext_item'])
+            if ext_choice is None:
+                raise ValidationError({'ext_item': 'Model not found or no longer accessible'})
             for ext_attr in self.config['ext_attrs']:
                 if ext_attr in ext_choice:
                     cd[ext_attr] = ext_choice[ext_attr]
