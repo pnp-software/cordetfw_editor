@@ -782,7 +782,7 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
     if refresh_outcome == 'REFRESH':
         if spec_item.status == 'CNF':
             spec_item = make_obs_spec_item_copy(request, spec_item)
-        # updated_at keeps the timestamp of the external model (set by ext_model_refresh)
+        spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()
     elif refresh_outcome in ('NOT_FOUND', 'INVALID'):

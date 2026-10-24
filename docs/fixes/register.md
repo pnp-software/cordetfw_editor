@@ -84,8 +84,9 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | p-link-selection-lost | — | views.md | tests/test_rendering_snapshots.py | K | FIXED (Task 7.6) |  |
 | redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | FIXED (Task 7.3) |  |
 | ref-link-backslash | — | forms-convert-utilities.md, views.md | tests/test_convert.py, tests/test_rendering_snapshots.py, tests/test_escaping_6_6.py | K | FIXED (Task 7.6) |  |
+| refresh-cnf-obs-copy-new-content | — | views.md | — | K | OPEN | Refresh of a CNF Model/FCP item changes the item in memory before make_obs_spec_item_copy, so the OBS copy (meant to keep the previous version) holds the NEW diagram/name/domain; release views of earlier releases then show the new content. Same in the production code. Found by the Task 7.6 review |
 | refresh-not-shared-double-message | — | views.md | tests/test_views.py | K | FIXED (Task 7.6) | Refresh of a model that exists but is not shared with the user shows "Model not found or not shared with you..." followed by "External spec_item no longer exists -- no refresh can be done". Found by the Task 7.1 review |
-| refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | FIXED (Task 7.6) |  |
+| refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | WONTFIX | Fix reverted after the Task 7.6 review: `updated_at` is the editor's change time and the release views filter CNF items by it; keeping the older FW Profile timestamp made old release views list an item twice. Behaviour stays as before |
 | release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | FIXED (Task 7.7) |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN | Changes stored data/export of new items; awaiting operator approval: docs/fixes/tickets/s-data-string.md |

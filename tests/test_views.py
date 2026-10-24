@@ -1351,8 +1351,8 @@ def test_refresh_changed(client, owner, project, dvs, model_item):
     assert (item.domain, item.name, item.value, item.p_kind) == ('NewDom', 'NewName', SVG_NEW, 'PR')
     assert (item.n1, item.n2, item.n3) == (11, 22, 77)
     assert item.status == 'NEW' and item.owner == owner
-    # FIXED: refresh-timestamp-overwritten (was: assert item.updated_at > FIXED_TIME, view overwrote the external timestamp)
-    assert item.updated_at == datetime(2024, 5, 5, tzinfo=timezone.utc)
+    # KNOWN-ISSUE: refresh-timestamp-overwritten
+    assert item.updated_at > FIXED_TIME            # view overwrites the external timestamp
     assert msgs(resp) == []
 
 
@@ -1381,8 +1381,6 @@ def test_refresh_changed_cnf_creates_obs_copy(client, owner, project, dvs, model
     assert item.status == 'MOD'
     assert item.value == SVG_NEW and item.p_kind == 'SM'
     assert item.previous.status == 'OBS'
-    # FIXED: refresh-timestamp-overwritten (was: the new version got the refresh time instead of the external one)
-    assert item.updated_at == datetime(2024, 5, 5, tzinfo=timezone.utc)
 
 
 def test_refresh_not_found(client, owner, project, dvs, model_item):
