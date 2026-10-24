@@ -51,7 +51,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-project-application-version-lost | — | import-export-auth.md | tests/test_import_export.py, tests/test_compat_corpus.py | K | FIXED (Task 7.4a) |  |
 | import-project-attribution-forgery | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |
 | import-project-auto-now-timestamps | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| import-project-created-at-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
+| import-project-created-at-lost | — | import-export-auth.md | tests/test_import_export.py, tests/test_compat_corpus.py | K | FIXED (Task 7.4a) |  |
 | import-project-crlf-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-project-dangling-link-crash | — | import-export-auth.md | tests/test_import_export.py, tests/test_compat_corpus.py | K | FIXED (Task 7.4a) |  |
 | import-project-empty-app-cats | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |

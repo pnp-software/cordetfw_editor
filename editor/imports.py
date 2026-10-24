@@ -97,6 +97,14 @@ def project_role(project_user):
     return role if role in ('RO', 'RW') else 'RO'
 
 
+def created_at_kwargs(spec_item):
+    """ import-project-created-at-lost: the exported creation time; without one the model default applies """
+    value = spec_item.get('created_at')
+    if not value:
+        return {}
+    return {'created_at': make_aware(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S"))}
+
+
 def item_full_name(row):
     return row['cat']+':'+row['domain']+':'+row['name']+' (status: '+row['status']+')'
 
@@ -314,6 +322,7 @@ def _import_project_tables(imp_dir, notes):
                                      val_set = val_set_old_id_2_new[spec_item['val_set']],
                                      status = spec_item['status'],
                                      updated_at = make_aware(datetime.datetime.strptime(spec_item['updated_at'], "%Y-%m-%d %H:%M:%S")),
+                                     **created_at_kwargs(spec_item),
                                      rationale = spec_item['rationale'],
                                      implementation = spec_item['implementation'],
                                      remarks = spec_item['remarks'],

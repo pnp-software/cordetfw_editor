@@ -645,9 +645,9 @@ def test_import_project_round_trip_semantics(client, renamed_original, fresh_tem
     # FIXED: import-project-role-lost (was: every ProjectUser was imported as 'RO')
     assert before['users'] == [('reader', 'RO'), ('writer', 'RW')]
     assert after['users'] == [('reader', 'RO'), ('writer', 'RW')]
-    # KNOWN-ISSUE: import-project-created-at-lost -- SpecItem.created_at falls back to its default
+    # FIXED: import-project-created-at-lost (was: SpecItem.created_at fell back to its default 2000-01-01)
     assert {b['created_at'] for b in before['items'].values()} == {T0}
-    assert {a['created_at'] for a in after['items'].values()} == {datetime(2000, 1, 1, tzinfo=timezone.utc)}
+    assert {a['created_at'] for a in after['items'].values()} == {T0}
     # FIXED: import-project-application-version-lost (was: Release.application_version was not imported, always 0)
     assert before['applications'][0][3][0][4] == 1
     assert after['applications'][0][3][0][4] == 1
@@ -692,11 +692,9 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
         ('project.csv', 'updated_at'),
         ('project_users.csv', 'updated_at'),
         ('spec_items.csv', 'change_log'),
-        ('spec_items.csv', 'created_at'),
         ('spec_items.csv', 's_data'),
         ('val_sets.csv', 'updated_at'),
     ]
-    assert differences[('spec_items.csv', 'created_at')] == [('2023-12-01 08:00:00', '2000-01-01 00:00:00')] * 10
     assert differences[('spec_items.csv', 'change_log')] == [('changed\r\nwith CRLF', 'changed\nwith CRLF')]
     assert differences[('spec_items.csv', 's_data')] == [
         ('{"a": 1, "k": [1, 2], "u": "\\u00e4"}', '"{\\"a\\": 1, \\"k\\": [1, 2], \\"u\\": \\"\\\\u00e4\\"}"')]
