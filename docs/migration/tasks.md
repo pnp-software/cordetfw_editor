@@ -134,6 +134,23 @@ decision recorded here.
     row checks (447 empty required field, 1 identifier) -> track K
   - Remaining: Task 4.4 staging walkthrough (operator, ROLLOUT.md §1)
 
+## Phase 7: Known-issue fixes (track K, branch `fix/known-issues`, plan: docs/fixes/register.md)
+Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-10-24, before the track S deploy
+(operator: "we have not yet deployed, but continue with the new branch and the fixes"). Baseline for "unchanged" =
+`track-s-rc1`. If staging (Task 4.4) needs a fix on `upgrade/django-lts`, it is merged into this branch.
+- [ ] **Task 7.0** Compat corpus `tests/golden/compat/` (old exports + synthetic edge cases, DB fingerprints
+  recorded on `track-s-rc1`)
+- [ ] **Task 7.1** Merge upstream branches: `origin/99` (split deletion), `origin/91` (FW Profile models shared by other
+  authors); `origin/100` has 0 commits (nothing to merge)
+- [ ] **Task 7.2** Less urgent security (K1)
+- [ ] **Task 7.3** Crashes -> proper responses (K2)
+- [ ] **Task 7.4** Import fidelity and atomicity (K3)
+- [ ] **Task 7.5** Export correctness, each byte change approved (K4)
+- [ ] **Task 7.6** UI/behaviour bugs (K5)
+- [ ] **Task 7.7** Model defaults (K6)
+- [ ] **Task 7.8** Decide-only items (K7)
+- [ ] **Task 7.9** Release gate for track K
+
 ## Decisions
 - 2026-10-23 (operator): commit one checkpoint per gate on `upgrade/django-lts`, never pushed.
   Stop and ask on EXPECTED-CHANGE decisions or on gates that cannot pass without a behaviour change.
