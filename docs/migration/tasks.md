@@ -140,8 +140,14 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
 `track-s-rc1`. If staging (Task 4.4) needs a fix on `upgrade/django-lts`, it is merged into this branch.
 - [ ] **Task 7.0** Compat corpus `tests/golden/compat/` (old exports + synthetic edge cases, DB fingerprints
   recorded on `track-s-rc1`)
-- [ ] **Task 7.1** Merge upstream branches: `origin/99` (split deletion), `origin/91` (FW Profile models shared by other
-  authors); `origin/100` has 0 commits (nothing to merge)
+- [x] **Task 7.1** Merge upstream branches: `origin/99` (split deletion), `origin/91` (FW Profile models shared by other
+  authors); `origin/100` has 0 commits (nothing to merge).
+  `origin/99`: merge a176737 + test eb01138 (gate: SQLite 1885 passed / 9 skipped, MySQL 1894 passed). Users can now
+  delete a split item alias (its link points to the original item, outside the normal choices) instead of a form error.
+  `origin/91`: merge 8ac1c5c (gate: SQLite 1900 passed / 10 skipped, MySQL 1910 passed). FW Profile models shared
+  with the user (shares ro/rw) can be listed, added and refreshed; unavailable models give a clear message; model queries
+  are parameterized and close the connection. Register: `ext-cats-sql-injection`, `-connection-leak`,
+  `-get-choice-not-found` stay OPEN (FCP paths unfixed).
 - [ ] **Task 7.2** Less urgent security (K1)
 - [ ] **Task 7.3** Crashes -> proper responses (K2)
 - [ ] **Task 7.4** Import fidelity and atomicity (K3)
