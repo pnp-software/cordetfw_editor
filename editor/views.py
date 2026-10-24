@@ -1110,7 +1110,10 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     str(sum(import_error_counts.values()))+' row(s) could not be imported: '+error_summary
                 )
         except Exception as e:
-            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+2)+'; traceback: '+traceback.format_exc())
+            logger.exception('import_spec_items: unable to process uploaded file (project %s, category %s)',
+                             project_id, cat)
+            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+2)+
+                           '; the details were written to the server log')
     else:
         context = {'project': project, 'title': 'Upload CSV File'}
         return render(request, 'upload_file.html', context)

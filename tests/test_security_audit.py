@@ -717,19 +717,24 @@ def test_14_link_suggest_js_string(w):
 # 15 import-traceback-in-message
 # ---------------------------------------------------------------------------------------------
 
-def test_15_import_traceback_in_message(w):
-    # KNOWN-ISSUE: import-traceback-in-message
+def test_15_import_traceback_in_message(w, caplog):
+    # FIXED: import-traceback-in-message (was: the user message held the full traceback with server
+    # file paths)
+    import logging
     from django.core.files.uploadedfile import SimpleUploadedFile
     header = 'Domain|Name|Title|Description|Default Value|Rationale|Remarks|Native Type|ValSet|Change Log|Owner|Size'
     row = 'D|n|t|d|v|r|r|i|Default|c|x|notanint'
     f = SimpleUploadedFile('x.csv', (header + '\n' + row + '\n').encode())
     c = w.client(w.rw_a)
-    r = c.post('/editor/DataItemType/%d/0/%d/Sel_All/import_spec_items' % (w.a.id, w.dvs_a.id),
-               {'upload_file': f})
+    with caplog.at_level(logging.ERROR, logger='editor.views'):
+        r = c.post('/editor/DataItemType/%d/0/%d/Sel_All/import_spec_items' % (w.a.id, w.dvs_a.id),
+                   {'upload_file': f})
     assert r.status_code == 302
     m = msgs(r)
-    assert len(m) == 1 and 'Traceback (most recent call last)' in m[0]
-    assert os.sep + 'editor' + os.sep + 'views.py' in m[0]        # server file paths disclosed
+    assert m == ['Unable to read or process uploaded file at line 2; the details were written to the server log']
+    assert 'Traceback' not in m[0] and 'views.py' not in m[0]
+    logged = [rec for rec in caplog.records if rec.name == 'editor.views' and rec.exc_info]
+    assert len(logged) == 1 and logged[0].exc_info[0] is ValueError
 
 
 # ---------------------------------------------------------------------------------------------

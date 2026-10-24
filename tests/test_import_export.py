@@ -1293,8 +1293,8 @@ def test_import_spec_items_exception_midway_aborts_without_rollback(client, worl
     assert response['Location'] == '/editor/EnumType/1/0/1/Sel_All/0/list_spec_items'
     [(level, text)] = messages_of(response)
     assert level == 'alert-danger'
-    assert text.startswith('Unable to read or process uploaded file at line 3; traceback: Traceback (most recent call last):')
-    assert 'ValueError' in text
+    # FIXED: import-traceback-in-message (was: 'line 3; traceback: Traceback (most recent call last): ... ValueError')
+    assert text == 'Unable to read or process uploaded file at line 3; the details were written to the server log'
     # (the failing save marked pytest-django's wrapping transaction for rollback; clear that test artifact)
     from django.db import transaction
     transaction.set_rollback(False)
@@ -1307,7 +1307,8 @@ def test_import_spec_items_short_row_aborts_with_line_number(client, world):
     content = csv_bytes(DI_LABELS, [di_row(Name='S1')]) + b'Dom|Short|only|three\r\n'
     response = post_csv(client, DI_URL, content)
     [(level, text)] = messages_of(response)
-    assert text.startswith('Unable to read or process uploaded file at line 3; traceback: ')
+    # FIXED: import-traceback-in-message (was: text continued with '; traceback: ' and the traceback)
+    assert text == 'Unable to read or process uploaded file at line 3; the details were written to the server log'
     assert get_item(world, 'DataItem', 'Dom', 'S1')
 
 
