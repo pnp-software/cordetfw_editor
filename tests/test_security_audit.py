@@ -356,14 +356,16 @@ def test_07_release_id_unscoped(w):
 # ---------------------------------------------------------------------------------------------
 
 def test_08_index_lists_all_projects(w):
-    # KNOWN-ISSUE: index-lists-all-projects
+    # FIXED: index-lists-all-projects (was: an outsider saw ProjB, its description, owner and applications)
     c = w.client(w.outsider)
     r = c.get('/editor/')
     assert r.status_code == 200
-    assert b'ProjB' in r.content and b'Secret B description' in r.content and b'owner_b' in r.content
-    assert b'AppB' in r.content
-    # ids of foreign projects are not linked for outsiders (only for user_has_access/owner)
+    assert b'ProjB' not in r.content and b'Secret B description' not in r.content
+    assert b'owner_b' not in r.content and b'AppB' not in r.content
     assert ('/editor/%d/export_project' % w.b.id).encode() not in r.content
+    # members of A see A only
+    r = w.client(w.ro_a).get('/editor/')
+    assert b'ProjB' not in r.content and b'ProjA' in r.content
 
 
 # ---------------------------------------------------------------------------------------------

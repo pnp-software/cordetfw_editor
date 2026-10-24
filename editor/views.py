@@ -28,7 +28,7 @@ from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.utils.timezone import get_current_timezone
 from django.db import transaction
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Q, Subquery
 
 from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
@@ -101,7 +101,14 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
     return updates
 
 def index(request):
-    projects = Project.objects.order_by('name').all()
+    projects = Project.objects.order_by('name')
+    if not request.user.is_staff:
+        # non-staff users see only the projects they own or are a member of
+        if request.user.is_authenticated:
+            projects = projects.filter(Q(owner_id=request.user.id) |
+                                       Q(project_users__user_id=request.user.id)).distinct()
+        else:
+            projects = projects.none()
     listOfProjects = []
     for project in projects:
         userHasAccess = request.user.is_authenticated and ProjectUser.objects.filter(

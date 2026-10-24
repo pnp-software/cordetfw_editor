@@ -86,8 +86,8 @@ def test_index_anonymous(client):
     assert resp.status_code == 200
     assert 'index.html' in template_names(resp)
     ctx = resp.context['list_of_projects']
-    assert len(ctx) == 1
-    assert ctx[0]['user_has_access'] is False
+    # FIXED: index-lists-all-projects (was: len(ctx) == 1, anonymous users got every project)
+    assert ctx == []
     assert b'Sign-In' in resp.content
     assert b'Proj' not in resp.content
 
@@ -121,14 +121,41 @@ def test_index_user_has_access_is_exact_username_match(client, owner, project):
     bobby = make_user('bobby')
     bob = make_user('bob')
     make_project_user(project, bobby, 'RO')
-    client.force_login(bob)
-    resp = client.get('/editor/')
-    # FIXED: index-username-substring (was: True, 'bob' is a substring of 'bobby')
-    assert resp.context['list_of_projects'][0]['user_has_access'] is False
     client.force_login(bobby)
+    resp = client.get('/editor/')
+    assert resp.context['list_of_projects'][0]['user_has_access'] is True
+    # FIXED: index-username-substring (was: user_has_access True for 'bob', a substring of 'bobby').
+    # Since index-lists-all-projects the non-member does not even see the project.
+    client.force_login(bob)
+    assert client.get('/editor/').context['list_of_projects'] == []
+    make_project_user(project, bob, 'RO')
     assert client.get('/editor/').context['list_of_projects'][0]['user_has_access'] is True
-    client.force_login(make_user('carol'))
-    assert client.get('/editor/').context['list_of_projects'][0]['user_has_access'] is False
+
+
+def test_index_visibility_matrix(client, owner, project):
+    other = make_project(owner, 'Hidden')
+    ro, rw, out = make_user('ro1'), make_user('rw1'), make_user('out1')
+    staff = make_user('staff1', is_staff=True)
+    make_project_user(project, ro, 'RO')
+    make_project_user(project, rw, 'RW')
+    make_project_user(other, rw, 'RO')
+    own = make_user('own1')
+    mine = make_project(own, 'Mine')
+
+    def names(user):
+        if user is None:
+            client.logout()
+        else:
+            client.force_login(user)
+        return [p['project'].name for p in client.get('/editor/').context['list_of_projects']]
+
+    assert names(None) == []
+    assert names(out) == []
+    assert names(ro) == [project.name]
+    assert names(rw) == sorted([project.name, 'Hidden'])
+    assert names(own) == ['Mine']
+    assert names(owner) == sorted([project.name, 'Hidden', 'Mine'])   # fixture owner is staff
+    assert names(staff) == sorted([project.name, 'Hidden', 'Mine'])
 
 
 def test_help(client):
