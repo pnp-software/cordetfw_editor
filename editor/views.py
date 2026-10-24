@@ -16,7 +16,7 @@ from django.shortcuts import render, redirect
 from django.forms import formset_factory                                 
 from django.views import generic
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import update_session_auth_hash, get_user
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
@@ -465,6 +465,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     project = Project.objects.get(id=project_id)
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
+    if cat not in configs['cats']:      # list-500s: unknown category
+        raise Http404('Unknown category')
 
     if request.method == 'POST' and not user_has_write_access_to_project(request.user.id, project):
         # Find & Replace changes spec_items: read access is not enough
@@ -480,12 +482,18 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     get_parameter_sting = '?'
     expand_id = request.GET.get('expand_id')
+    expand_link = request.GET.get('expand_link')
+    if (expand_id != None) and (expand_link != 'None') and \
+            ((expand_link not in ('s_link', 'p_link')) or (not expand_id.isdigit())):
+        expand_id = expand_link = None      # list-500s: incomplete or invalid expansion parameters are ignored
     if expand_id is not None:
         get_parameter_sting += 'expand_id=' + str(expand_id) + '&'
-    expand_link = request.GET.get('expand_link')
     if expand_link is not None:
         get_parameter_sting += 'expand_link=' + str(expand_link) + '&'
-    disp = 'disp_def' if (request.GET.get('disp') == None) else request.GET.get('disp')
+    # list-500s: an unknown display mode falls back to the default one
+    disp = request.GET.get('disp')
+    if disp not in ('disp_def', 'disp_short', 'disp_trac') or disp not in configs['cats'][cat]:
+        disp = 'disp_def'
     if disp is not None:
         get_parameter_sting += 'disp=' + str(disp) + '&'
     order_by = sanitize_order_by(request.GET.get('order_by'))
@@ -609,10 +617,9 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
 
     # Pagination
     paginator_items = Paginator(items, configs['cats'][cat]['page_size'])
-    page_number = 1
-    if 'page' in request.GET:
-        page_number = int(request.GET.get('page'))
-    page_items = paginator_items.page(page_number)
+    # list-500s: a non-integer page is page 1, a page beyond the last one is the last page
+    page_items = paginator_items.get_page(request.GET.get('page', 1))
+    page_number = page_items.number
     previous_page = None
     if page_items.has_previous():
         previous_page = page_items.previous_page_number()

@@ -525,16 +525,22 @@ def test_list_disp_variants(client, owner, project, dvs, items, disp):
     assert resp.context['get_parameter_sting'] == '?disp=%s&' % disp
 
 
-def test_list_unknown_disp_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(KeyError):
-        client.get(lurl('DataItem', project, dvs), {'disp': 'bogus'})
+@pytest.mark.parametrize('disp', ['bogus', '', 'attrs', 'page_size', 'disp_def2'])
+def test_list_unknown_disp_falls_back_to_default(client, owner, project, dvs, items, disp):
+    # FIXED: list-500s (was: KeyError, HTTP 500). Choice: an unknown disp shows the default display (disp_def)
+    resp = client.get(lurl('DataItem', project, dvs), {'disp': disp})
+    assert resp.status_code == 200
+    assert resp.context['disp'] == 'disp_def'
+    assert resp.context['get_parameter_sting'] == '?disp=disp_def&'
+    assert listed(resp) == [('A', 'a'), ('A', 'b'), ('B', 'c')]
 
 
-def test_list_unknown_cat_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(KeyError):
-        client.get(lurl('Bogus', project, dvs))
+def test_list_unknown_cat_is_404(client, owner, project, dvs, items):
+    # FIXED: list-500s (was: KeyError, HTTP 500). Choice: an unknown category has no page: 404
+    before = SpecItem.objects.count()
+    resp = client.get(lurl('Bogus', project, dvs))
+    assert resp.status_code == 404
+    assert SpecItem.objects.count() == before
 
 
 @pytest.mark.parametrize('order_by,expected', [
@@ -587,8 +593,7 @@ def test_list_order_by_ties_are_compared_as_set(client, owner, project, dvs, ite
 
 
 def test_list_order_by_unknown_field_falls_back_to_default_order(client, owner, project, dvs, items):
-    # FIXED: order-by-unrestricted (was: FieldError -> HTTP 500; the unknown disp/cat 500s of
-    # list-500s are still pinned above)
+    # FIXED: order-by-unrestricted (was: FieldError -> HTTP 500)
     resp = client.get(lurl('DataItem', project, dvs), {'order_by': 'bogus'})
     assert resp.status_code == 200
     assert resp.context['order_by'] is None
@@ -626,17 +631,27 @@ def test_list_pagination(client, owner, project, dvs, items, monkeypatch):
     assert (pg['page_number'], pg['has_previous'], pg['previous_page'], pg['has_next']) == (2, True, 1, False)
 
 
-def test_list_pagination_non_integer_page_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(ValueError):
-        client.get(lurl('DataItem', project, dvs), {'page': 'abc'})
+@pytest.mark.parametrize('page', ['abc', '', '1.5', '0', '-3'])
+def test_list_pagination_invalid_page(client, owner, project, dvs, items, monkeypatch, page):
+    # FIXED: list-500s (was: ValueError, HTTP 500 for a non-integer page). Choice: a non-integer page is
+    # page 1 (the UI default); page 0 or a negative page is out of range, see the next test
+    from editor.configs import configs
+    monkeypatch.setitem(configs['cats']['DataItem'], 'page_size', 2)
+    resp = client.get(lurl('DataItem', project, dvs), {'page': page})
+    assert resp.status_code == 200
+    expected = 2 if page in ('0', '-3') else 1
+    assert resp.context['pagination']['page_number'] == expected
 
 
-def test_list_pagination_out_of_range_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    from django.core.paginator import EmptyPage
-    with pytest.raises(EmptyPage):
-        client.get(lurl('DataItem', project, dvs), {'page': '9'})
+def test_list_pagination_out_of_range_is_last_page(client, owner, project, dvs, items, monkeypatch):
+    # FIXED: list-500s (was: EmptyPage, HTTP 500). Choice: a page beyond the last one shows the last page
+    from editor.configs import configs
+    monkeypatch.setitem(configs['cats']['DataItem'], 'page_size', 2)
+    resp = client.get(lurl('DataItem', project, dvs), {'page': '9'})
+    assert resp.status_code == 200
+    assert listed(resp) == [('B', 'c')]
+    pg = resp.context['pagination']
+    assert (pg['page_number'], pg['has_next'], pg['has_previous']) == (2, False, True)
 
 
 def test_list_expand_s_link(client, owner, project, dvs):
@@ -665,10 +680,21 @@ def test_list_expand_link_none_string(client, owner, project, dvs, items):
     assert resp.context['expand_id'] == '7'              # not cast
 
 
-def test_list_expand_without_link_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(KeyError):
-        client.get(lurl('DataItem', project, dvs), {'expand_id': items[0].id})
+@pytest.mark.parametrize('params', [
+    {'expand_id': 'ID'},                                    # no expand_link
+    {'expand_id': 'ID', 'expand_link': 'bogus'},
+    {'expand_id': 'abc', 'expand_link': 's_link'},
+    {'expand_id': '', 'expand_link': 'p_link'},
+])
+def test_list_invalid_expand_is_ignored(client, owner, project, dvs, items, params):
+    # FIXED: list-500s (was: KeyError for expand_id without expand_link, HTTP 500). Choice: incomplete or
+    # invalid expansion parameters are ignored, the plain list is shown
+    params = {k: (str(items[0].id) if v == 'ID' else v) for k, v in params.items()}
+    resp = client.get(lurl('DataItem', project, dvs), params)
+    assert resp.status_code == 200
+    assert resp.context['expand_items'] is None
+    assert resp.context['expand_id'] is None
+    assert resp.context['get_parameter_sting'] == '?disp=disp_def&'
 
 
 def test_list_expand_link_unused_for_cat(client, owner, project, dvs, items):

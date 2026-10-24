@@ -68,7 +68,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | iref-cross-project-disclosure | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2b) |  |
 | latex-export-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/latex-export-injection.md |
 | link-suggest-js-string | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.6b) | Stored XSS (`\x3c` in a title decoded to `<` before the jQuery html: sink); template filter js_str_after_html_escape |
-| list-500s | — | views.md | tests/test_views.py | K | OPEN |  |
+| list-500s | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) | Choices: unknown cat -> 404; unknown disp -> disp_def; non-integer page -> 1; page beyond the last -> last page; expand_id without a valid expand_link (s_link/p_link) or non-numeric expand_id -> expansion ignored; order_by unknown -> default order (Task 7.2) |
 | login-echoes-password | — | views.md | tests/test_rendering_snapshots.py | K | FIXED (Task 7.2a) |  |
 | login-url-default | — | import-export-auth.md | tests/test_auth.py | K | FIXED (Task 7.2a) |  |
 | logout-unsafe-next-self-redirect | — | import-export-auth.md | tests/test_auth.py | — | FIXED in 040e103 (upstream Django 4.2, Task 3.4) | Accepted upstream change; test marker is the old free-text form |
