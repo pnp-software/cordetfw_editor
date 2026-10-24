@@ -77,7 +77,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | mutation-via-get | — | views.md, security-audit.md | tests/test_views.py, tests/test_security_audit.py, tests/test_access.py, tests/test_post_only_mutations.py | S | FIXED (Task 6.3) | merge of upstream #86 + POST-only refresh/member add/role validation |
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | — | WONTFIX | Not applicable: TLS ends at Apache (mod_ssl + mod_wsgi in the same vhost, no proxy); operator 2026-10-23 |
-| order-by-unrestricted | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| order-by-unrestricted | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2a) | Unknown order_by falls back to the default domain:name order (no 500, no 400) |
 | outcomponent-disp-short-keyerror | — | views.md | — | K | OPEN | configs.json OutComponent `disp_short` lists `value`, not in its attrs: conv_db_disp KeyError (500). Found by the Task 6.6 scan |
 | owner-empty-names | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
 | p-link-selection-lost | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |

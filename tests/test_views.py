@@ -582,11 +582,14 @@ def test_list_order_by_ties_are_compared_as_set(client, owner, project, dvs, ite
     assert set(listed(resp)) == {('A', 'a'), ('A', 'b'), ('B', 'c')}
 
 
-def test_list_order_by_unknown_field_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    from django.core.exceptions import FieldError
-    with pytest.raises(FieldError):
-        client.get(lurl('DataItem', project, dvs), {'order_by': 'bogus'})
+def test_list_order_by_unknown_field_falls_back_to_default_order(client, owner, project, dvs, items):
+    # FIXED: order-by-unrestricted (was: FieldError -> HTTP 500; the unknown disp/cat 500s of
+    # list-500s are still pinned above)
+    resp = client.get(lurl('DataItem', project, dvs), {'order_by': 'bogus'})
+    assert resp.status_code == 200
+    assert resp.context['order_by'] is None
+    assert resp.context['get_parameter_sting'] == '?disp=disp_def&'
+    assert listed(resp) == [('A', 'a'), ('A', 'b'), ('B', 'c')]
 
 
 def test_list_sel_val_filters_domain(client, owner, project, dvs, items):

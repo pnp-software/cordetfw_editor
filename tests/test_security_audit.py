@@ -628,7 +628,8 @@ def test_11_latex_export_injection(w):
 # ---------------------------------------------------------------------------------------------
 
 def test_12_order_by_sensitive_owner_fields(w):
-    # KNOWN-ISSUE: order-by-unrestricted
+    # FIXED: order-by-unrestricted (was: owner__password / owner__is_superuser / owner__email
+    # sorted the list, a sort-order oracle on user data; now the default domain:name order)
     u1 = make_user('aaa_user')
     u2 = make_user('zzz_user')
     User.objects.filter(id=u1.id).update(password='md5$zzz', is_superuser=False)
@@ -636,11 +637,20 @@ def test_12_order_by_sensitive_owner_fields(w):
     make_spec_item(w.a, cat='DataItemType', domain='O', name='n1', owner=u1)
     make_spec_item(w.a, cat='DataItemType', domain='O', name='n2', owner=u2)
     c = w.client(w.ro_a)
-    for field, expected in (('owner__password', ['n2', 'n1']), ('-owner__password', ['n1', 'n2']),
-                            ('owner__is_superuser', ['n1', 'n2']), ('owner__email', ['n1', 'n2'])):
+    for field in ('owner__password', '-owner__password', 'owner__is_superuser', 'owner__email',
+                  'owner__username', 'project__owner__password', 'bogus_field', ''):
         r = c.get(lurl('DataItemType', w.a.id, 0, w.dvs_a.id, sel_val='O') + '?order_by=' + field)
         assert r.status_code == 200
-        assert [n for _, n in listed(r)] == expected, field
+        assert [n for _, n in listed(r)] == ['n1', 'n2'], field
+        assert r.context['order_by'] is None
+    # export honours the same restriction
+    r = c.get(eurl('DataItemType', w.a.id, 0, w.dvs_a.id, sel_val='O') + '?order_by=owner__password')
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert body.index('|n1|') < body.index('|n2|')
+    # the sort fields the UI offers still work
+    r = c.get(lurl('DataItemType', w.a.id, 0, w.dvs_a.id, sel_val='O') + '?order_by=owner')
+    assert r.context['order_by'] == 'owner'
 
 
 # ---------------------------------------------------------------------------------------------

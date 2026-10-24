@@ -486,6 +486,27 @@ def update_dom_name_in_val_set(spec_item):
                 child.save()
     
 
+# Plain SpecItem columns that stay sortable by URL although the list templates do not offer them
+_EXTRA_ORDER_BY_FIELDS = ('domain', 'name', 'title')
+
+
+def _ui_order_by_fields():
+    """The sort fields the list templates offer: every 'order_by' key of the column definitions."""
+    fields = set(_EXTRA_ORDER_BY_FIELDS)
+    for cat_config in configs['cats'].values():
+        for value in cat_config.values():
+            if isinstance(value, list):
+                for column in value:
+                    if isinstance(column, dict) and column.get('order_by'):
+                        fields.add(column['order_by'])
+    return fields
+
+
+def sanitize_order_by(order_by):
+    """Return order_by if it is a permitted sort field, else None (= default domain:name order)."""
+    return order_by if order_by in _ui_order_by_fields() else None
+
+
 def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by):
     """ 
     Query the database for all spec_items belonging to the argument project, application,
@@ -527,6 +548,7 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
     if (sel_val != "Sel_All"):
         items = items.filter(domain=sel_val)
         
+    order_by = sanitize_order_by(order_by)
     if order_by == None:    
         items = items.order_by('domain','name')
     elif order_by in ('p_link', 's_link'):

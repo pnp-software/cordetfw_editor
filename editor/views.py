@@ -34,7 +34,7 @@ from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm, \
                          validate_identifier
-from editor.utilities import CleanupFileResponse, get_domains, do_application_release, do_project_release, \
+from editor.utilities import CleanupFileResponse, sanitize_order_by, get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
@@ -482,7 +482,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     disp = 'disp_def' if (request.GET.get('disp') == None) else request.GET.get('disp')
     if disp is not None:
         get_parameter_sting += 'disp=' + str(disp) + '&'
-    order_by = request.GET.get('order_by')
+    order_by = sanitize_order_by(request.GET.get('order_by'))
     if order_by is not None:
         get_parameter_sting += 'order_by=' + str(order_by) + '&'
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)

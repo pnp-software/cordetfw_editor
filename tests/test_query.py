@@ -312,12 +312,14 @@ def test_query_order_by_p_link_ties_compared_as_set():
     assert len(names(q(project, vs, order_by='p_link'))) == 3
 
 
-def test_query_invalid_order_by_raises_field_error():
-    from django.core.exceptions import FieldError
+def test_query_invalid_order_by_falls_back_to_default_order():
+    # FIXED: order-by-unrestricted (was: FieldError for an unknown order_by field)
     project = make_project(make_user())
-    make_spec_item(project)
-    with pytest.raises(FieldError):
-        list(q(project, default_val_set(project), order_by='nonexistent'))
+    make_spec_item(project, domain='B', name='x')
+    make_spec_item(project, domain='A', name='y')
+    vs = default_val_set(project)
+    for bad in ('nonexistent', 'owner__password', ''):
+        assert [(i.domain, i.name) for i in q(project, vs, order_by=bad)] == [('A', 'y'), ('B', 'x')]
 
 
 # ------------------------------------------------------------------ get_domains
