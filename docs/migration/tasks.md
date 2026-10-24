@@ -180,7 +180,11 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   follow-ups 7.3b (Unicode-digit expand_id, `i` defined before the import loop, register test columns)
 - [ ] **Task 7.4** Import fidelity and atomicity (K3)
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)
-- [ ] **Task 7.6** UI/behaviour bugs (K5)
+- [x] **Task 7.6** UI/behaviour bugs (K5): 8 ids (`fba05cb`.. as cherry-picked, ending `ccefe19`): help-double-space,
+  owner-empty-names, form-none-literal, p-link-selection-lost, copy-unreachable-valset-message,
+  refresh-not-shared-double-message, refresh-timestamp-overwritten, ref-link-backslash (browsers already treated `\`
+  as `/`). Goldens promoted one by one (help text, `value="None"` -> empty, p_link/owner `selected`, `\list_spec_items`
+  -> `/list_spec_items`). `s-data-string` not fixed: changes stored data/export -> ticket docs/fixes/tickets/s-data-string.md
 - [x] **Task 7.7** Model defaults (K6): naive-created-at-default (migration 0012, aware UTC default) and
   release-version-default-str (migration 0013, int defaults). sqlmigrate: MySQL no-op for both; SQLite rebuilds the
   table with rows copied unchanged. No data migration; rollback with the old code works (no MySQL DDL)
@@ -228,3 +232,8 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   are exact members of their project's categories (`appform-cats-substring` can be tightened without data impact);
   no user has two ProjectUser rows for one project (`access-first-row` changes nothing for real data); 19 active users
   (2 staff), 1 active non-staff user is in no project and will see an empty index after `index-lists-all-projects`.
+- 2026-10-24 (operator): project ZIP import, item owner neither owner nor member: if the account exists on the target
+  server keep the owner and add them as RO member of the imported project, otherwise reassign the item to the project
+  owner; both listed in the import message. Spec-item CSV import: accept empty required fields and list those rows as
+  warnings (cause: docs/fixes/csv-empty-required-fields.md). `form-choice-empty-silent-default`: blank option shown
+  when the stored value is empty; saving then requires a conscious choice.

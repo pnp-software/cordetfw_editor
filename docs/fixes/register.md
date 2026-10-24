@@ -88,7 +88,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | FIXED (Task 7.6) |  |
 | release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | FIXED (Task 7.7) |  |
-| s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
+| s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN | Changes stored data/export of new items; awaiting operator approval: docs/fixes/tickets/s-data-string.md |
 | session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | OPEN | HSTS + port 80 redirect done by Apache (operator 2026-10-23); session length/CSP defaults remain, low |
 | temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.2c) |  |
 | temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |

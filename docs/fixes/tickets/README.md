@@ -13,6 +13,7 @@ tested against a "before" and an "after" file.
 | [export-filename-not-escaped](export-filename-not-escaped.md) | spec-item CSV / LaTeX download | HTTP `Content-Disposition` header only |
 | [csv-formula-injection](csv-formula-injection.md) | spec-item CSV, project ZIP | cells starting with `= + - @` |
 | [latex-export-injection](latex-export-injection.md) | LaTeX export | `\ { } $` escaped |
+| [s-data-string](s-data-string.md) | project ZIP | `s_data` of new items `"{}"` -> `{}` |
 
 Common rule for all of them: exports made by the current release must still import with the same result
 (checked by `tests/test_compat_corpus.py`); an approved change gets an entry in
