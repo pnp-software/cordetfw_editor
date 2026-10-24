@@ -97,7 +97,10 @@ Behaviour changes users can notice (register: `docs/fixes/register.md`, track S)
   rehearsal, all 11 projects were exported without errors (328 CSV/LaTeX exports, 165 pages): 404 files were
   byte-identical and 164 pages differed only in the logout control. With the old code on the migrated database
   (rollback), all 568 files were identical. These figures were measured at rc1 and are re-measured in Task 6.8.
-  Phase 6 rehearsal: see `docs/migration/rehearsal/REPORT.md`.
+  Phase 6 rehearsal (Task 6.8, same dump, final code): 404/404 exports byte-identical old vs new; all 164 pages differ
+  only in the documented changes (logout, POST buttons/confirmations, and escaped text on 17 list pages); rollback
+  568/568 identical. Production exports re-import with the same result as with the old code (details:
+  `docs/migration/rehearsal/REPORT.md`).
 - Releases, history chains and import rules (apart from the changes listed above and below).
 - The MySQL connection charset stays `utf8` (Django 5.2 would default to utf8mb4). So, as before, 4-byte
   characters (emoji) cannot be stored. Switching is a separate decision: see "Follow-ups".

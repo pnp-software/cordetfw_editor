@@ -123,7 +123,16 @@ decision recorded here.
   no known vulnerabilities (2026-10-23). Gate 1437 SQLite / 1446 MySQL; ROLLOUT §0: pip-audit before cutover.
   Operator answers 2026-10-23: TLS ends at Apache, no proxy (#17 not applicable); HSTS + port 80 redirect by Apache (#23);
   production SECURE_KEY differs from the tracked one (#19 -> K cleanup)
-- [ ] **Task 6.8** Release gate: SQLite/MySQL 8.0/8.4, rehearsal on production dump with expected-diffs allowlist, Opus review
+- [x] **Task 6.8** Release gate for track S (HEAD a304e60; full gate 1884 SQLite / 1893 MySQL 8.0):
+  - 6.8a `2094c31` rehearsal on the production dump with `docs/fixes/expected-diffs.json`: 404/404 exports byte-identical
+    old vs new; 164/164 pages differ only by allowed ids (logout-post 164, post-only-mutations 164, escape-stored-text 17);
+    0 unexplained; rollback 568/568 identical; sessions/passwords both directions OK
+  - 6.8b MySQL 8.4.13: 1893 passed
+  - 6.8c final Opus review of migration-rc1..db56be0: ready with doc fixes (done in 6.8d `aa26a70`)
+  - 6.8e/f `a041859`, `a304e60` re-import of production exports (ZIP + 107 CSVs) with OLD and NEW code: identical results,
+    0 regressions; pre-existing: 35 items of one project not importable (owner not a member), 448 CSV rows rejected by
+    row checks (447 empty required field, 1 identifier) -> track K
+  - Remaining: Task 4.4 staging walkthrough (operator, ROLLOUT.md §1)
 
 ## Decisions
 - 2026-10-23 (operator): commit one checkpoint per gate on `upgrade/django-lts`, never pushed.

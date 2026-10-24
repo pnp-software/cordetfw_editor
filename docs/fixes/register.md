@@ -15,7 +15,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | change-password-no-response | — | views.md | tests/test_views.py | K | OPEN |  |
 | conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | OPEN |  |
-| csv-export-not-reimportable | — | import-export-auth.md | — | K | OPEN | Spec-item CSV exports of production data contain rows that the importer's row checks reject (identifier rule / empty required field): 448 of 11,046 rows, 436 in one project. Found in Task 6.8e |
+| csv-export-not-reimportable | — | import-export-auth.md | — | K | OPEN | Spec-item CSV exports of production data contain rows that the importer's row checks reject (identifier rule / empty required field): 448 of 11,046 rows, 436 in one project; 447 empty required field (Requirement 399), 1 identifier rule. Found in Task 6.8e; identical with the production code (Task 6.8f) |
 | csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
@@ -56,7 +56,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-project-empty-app-cats | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-project-no-limits | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | import-project-not-atomic | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| import-project-owner-not-member | — | import-export-auth.md | — | K | OPEN | Project ZIP import drops items whose owner is neither project owner nor project user (KeyError, "probable cause (b)"). Production (dump 2026-10-21): 35 items in 1 project would be lost on export -> import. Found in Task 6.8e |
+| import-project-owner-not-member | — | import-export-auth.md | — | K | OPEN | Project ZIP import drops items whose owner is neither project owner nor project user (KeyError, "probable cause (b)"). Production (dump 2026-10-21): 35 items in 1 project would be lost on export -> import. Found in Task 6.8e; identical with the production code (Task 6.8f) |
 | import-project-role-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-project-s-data-double-encoded | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-spec-items-abort-no-summary | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
