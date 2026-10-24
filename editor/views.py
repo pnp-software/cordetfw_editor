@@ -1010,6 +1010,10 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             return redirect(redirect_url)
         try:
             file_data = csv_file.read().decode('utf-8')
+        except UnicodeDecodeError:
+            messages.error(request, 'Uploaded file '+csv_file.name+' is not UTF-8 encoded; nothing was imported')
+            return redirect(redirect_url)
+        try:
             f = StringIO(file_data)
             items = csv.DictReader(f, delimiter=configs['general']['csv_sep'])
             expected_fields = {

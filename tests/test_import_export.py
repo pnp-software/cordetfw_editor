@@ -1312,13 +1312,17 @@ def test_import_spec_items_short_row_aborts_with_line_number(client, world):
     assert get_item(world, 'DataItem', 'Dom', 'S1')
 
 
-def test_import_spec_items_non_utf8_file_crashes(client, world):
-    # KNOWN-ISSUE: import-spec-items-undefined-i
-    # A decoding error happens before the loop variable 'i' exists; the error handler itself then
-    # raises UnboundLocalError, so the user gets a 500 instead of a message.
+def test_import_spec_items_non_utf8_file_is_refused(client, world):
+    # FIXED: import-spec-items-undefined-i (was: UnboundLocalError, HTTP 500; the decode error happened
+    # before the loop variable 'i' existed)
     client.force_login(world.rw)
-    with pytest.raises(UnboundLocalError):
-        post_csv(client, DI_URL, b'\xff\xfe\x00bad bytes')
+    before = SpecItem.objects.count()
+    response = post_csv(client, DI_URL, b'\xff\xfe\x00bad bytes')
+    assert response.status_code == 302
+    assert response['Location'] == DI_LIST_URL
+    assert messages_of(response) == [
+        ('alert-danger', 'Uploaded file items.csv is not UTF-8 encoded; nothing was imported')]
+    assert SpecItem.objects.count() == before
 
 
 def test_import_spec_items_no_file(client, world):

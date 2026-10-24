@@ -61,7 +61,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-project-s-data-double-encoded | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-spec-items-abort-no-summary | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Operator 2026-10-24: keep per-row import, always show a summary |
 | import-spec-items-no-rollback | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Operator 2026-10-24: keep per-row import, always show a summary |
-| import-spec-items-undefined-i | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
+| import-spec-items-undefined-i | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.3) |  |
 | import-traceback-in-message | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2a) |  |
 | index-lists-all-projects | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2a) | Operator 2026-10-24: non-staff see only own/member projects; staff see all |
 | index-username-substring | — | views.md | tests/test_views.py | K | FIXED (Task 7.2a) |  |
