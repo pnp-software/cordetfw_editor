@@ -778,12 +778,25 @@ def test_18_axes_lockout_by_ip_only(settings):
 
 
 def test_19_tracked_dev_secret_key():
-    # KNOWN-ISSUE: tracked-dev-secret-key
+    # FIXED: tracked-dev-secret-key (was: the tracked dj_cordetfw_config.json held a real 50-character key)
+    from django.core.exceptions import ImproperlyConfigured
+    from cordetfw_editor.config_helpers import check_secret_key
     tracked = subprocess.run(['git', 'ls-files', 'dj_cordetfw_config.json'], cwd=REPO_ROOT,
                              capture_output=True, text=True).stdout.strip()
-    assert tracked == 'dj_cordetfw_config.json'
+    assert tracked == 'dj_cordetfw_config.json'         # still used by tryout/Dockerfile
     cfg = json.loads((REPO_ROOT / 'dj_cordetfw_config.json').read_text())
-    assert cfg['DEBUG'] is True and len(cfg['SECURE_KEY']) == 50
+    assert cfg['SECURE_KEY'].startswith('insecure-dev-only-')
+    # the placeholder works for development (DEBUG on) but settings refuse it otherwise
+    assert check_secret_key(cfg['SECURE_KEY'], True) == cfg['SECURE_KEY']
+    with pytest.raises(ImproperlyConfigured):
+        check_secret_key(cfg['SECURE_KEY'], False)
+    # the key that used to be tracked is refused with DEBUG off as well (it is in the git history)
+    retired = subprocess.run(['git', 'show', '8117f73:dj_cordetfw_config.json'], cwd=REPO_ROOT,
+                             capture_output=True, text=True).stdout
+    if retired:                                         # skipped in a clone without that history
+        with pytest.raises(ImproperlyConfigured):
+            check_secret_key(json.loads(retired)['SECURE_KEY'], False)
+    assert check_secret_key('some-private-random-key', False) == 'some-private-random-key'
 
 
 def test_23_session_and_header_defaults(settings):

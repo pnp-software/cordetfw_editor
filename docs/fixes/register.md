@@ -91,7 +91,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | OPEN | HSTS + port 80 redirect done by Apache (operator 2026-10-23); session length/CSP defaults remain, low |
 | temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.2c) |  |
 | temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |
-| tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Production uses a different SECURE_KEY (operator 2026-10-23): not exploitable. Cleanup: replace tracked file by an .example |
+| tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) | Production uses a different SECURE_KEY (operator 2026-10-23): not exploitable. Cleanup: replace tracked file by an .example |
 | xss-display | — | forms-convert-utilities.md | tests/test_convert.py, tests/test_escaping_6_6.py | S | FIXED (Task 6.6) | Text nodes escape only & < > (escape_text), attributes full escape(); kind `image` exempt |
 | xss-tag | — | forms-convert-utilities.md | tests/test_convert.py, tests/test_escaping_6_6.py | S | FIXED (Task 6.6) | conv_db_disp, filter_expand_tip (attribute), disp_trac; kind `image` exempt |
 

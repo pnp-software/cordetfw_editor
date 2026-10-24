@@ -15,7 +15,7 @@ import datetime
 from django.contrib.messages import constants as messages
 import json
 
-from .config_helpers import parse_axes_lockout_parameters
+from .config_helpers import check_secret_key, parse_axes_lockout_parameters
 
 with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
     config = json.load(config_file)
@@ -32,6 +32,7 @@ SECRET_KEY = config['SECURE_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config['DEBUG']
+check_secret_key(SECRET_KEY, DEBUG)       # tracked-dev-secret-key
 
 ALLOWED_HOSTS = config['ALLOWED_HOSTS']
 
