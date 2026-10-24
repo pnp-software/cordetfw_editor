@@ -99,7 +99,7 @@ def import_project_tables(request, imp_dir):
         return
     except Exception as e:
         logger.exception('import_project failed')
-        messages.error(request, 'Unable to import project: '+repr(e)+'; nothing was imported')
+        messages.error(request, 'Unable to import project; nothing was imported (details in the server log)')
         return
     for note in notes:
         if isinstance(note, InfoNote):
@@ -139,9 +139,10 @@ def created_at_kwargs(spec_item, item_notes):
     value = spec_item.get('created_at')
     if not value:
         return {}
-    try:
-        return {'created_at': make_aware(datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S"))}
-    except ValueError:
+    parsed = parse_aware(value)
+    if not isinstance(parsed, str):
+        return {'created_at': parsed}
+    else:
         item_notes.append(InfoNote('Spec_item '+item_full_name(spec_item)+': the creation time ('+value+
                                    ') is not in format Y-m-d H:M:S, it was set to the import time'))
         return {}

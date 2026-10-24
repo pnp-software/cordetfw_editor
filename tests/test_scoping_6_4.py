@@ -321,13 +321,23 @@ def test_find_replace_cannot_store_foreign_iref(w):
     url = '/editor/DataItemType/%d/0/%d/Sel_All/0/list_spec_items' % (w.a.id, w.dvs_a.id)
     resp = c.post(url, {'field': 'desc', 'find': '#iref:%d' % w.a_type.id, 'replace': '#iref:%d' % w.b_enum.id},
                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
-    assert resp.json() == {'updated_count': 1}
+    # Task 7.9c: the number of removed references is reported in a separate key
+    assert resp.json() == {'updated_count': 1, 'removed_foreign_refs': 1}
     item.refresh_from_db()
     assert item.desc == 'see #iref:0'
     resp = c.post(url, {'field': 'desc', 'find': '#iref:0', 'replace': '#iref:%d' % w.a_enum.id},
                   HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.json() == {'updated_count': 1}       # nothing removed: no extra key
     item.refresh_from_db()
     assert item.desc == 'see #iref:%d' % w.a_enum.id
+
+
+def test_find_replace_foreign_iref_flash_message_without_xhr(w):
+    make_spec_item(w.a, cat='DataItemType', domain='AT', name='Rx', desc='see #iref:%d' % w.a_type.id)
+    c = w.client(w.rw)
+    url = '/editor/DataItemType/%d/0/%d/Sel_All/0/list_spec_items' % (w.a.id, w.dvs_a.id)
+    resp = c.post(url, {'field': 'desc', 'find': '#iref:%d' % w.a_type.id, 'replace': '#iref:%d' % w.b_enum.id})
+    assert '1 reference(s) to items of another project removed' in [str(m) for m in resp.context['messages']]
 
 
 def test_find_replace_by_outsider_is_refused(w):

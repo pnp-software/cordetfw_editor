@@ -245,12 +245,13 @@ def conv_db_disp_eval_ref(context, item, name, sel_rel):
         return escape_text(s)
    
    
-def neutralise_foreign_irefs(project, s):
+def neutralise_foreign_irefs(project, s, removed=None):
     """
     A literal '#iref:<id>' typed or imported by the user must not point into another project
     (iref-cross-project-disclosure): the reference is replaced by '#iref:0', which never exists and so
     behaves like a dangling reference (ERROR:0). Ids which exist nowhere are left as they are
-    (dangling, inert); references to items of 'project' are kept.
+    (dangling, inert); references to items of 'project' are kept. If the list 'removed' is given, one entry is
+    appended for every reference replaced (so len(removed) is the count).
     """
     ids = set()
     for m in pattern_db.finditer(s):
@@ -266,12 +267,14 @@ def neutralise_foreign_irefs(project, s):
     def neutralise_foreign(match):
         if match.group(2).lstrip('0') in foreign:
             logger.warning('Internal reference to item outside the project removed: '+str(match.group()))
+            if removed is not None:
+                removed.append(match.group())
             return '#iref:0'
         return match.group()
     return pattern_db.sub(neutralise_foreign, s)
 
 
-def convert_edit_to_db(project, s):
+def convert_edit_to_db(project, s, removed=None):
     """
     The argument is a text field in edit representation (with internal
     references in the format '#cat:domain:name'). The function converts
@@ -293,7 +296,7 @@ def convert_edit_to_db(project, s):
     
     s_db = get_pattern_edit(project.id).sub(edit_to_iref, s)
 
-    return neutralise_foreign_irefs(project, s_db)
+    return neutralise_foreign_irefs(project, s_db, removed)
 
 
 def resolve_exp_ref(project, s):

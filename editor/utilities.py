@@ -18,7 +18,7 @@ from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
-                           convert_exp_to_db, resolve_exp_ref, convert_db_to_latex, eval_di_value, \
+                           resolve_exp_ref, convert_db_to_latex, eval_di_value, \
                            neutralise_foreign_irefs
 
 logger = logging.getLogger(__name__)
@@ -123,8 +123,10 @@ def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
     The function will raise an exception if one of the fields expected
     in the dictionary is not found. 
     If the list argument warnings is given, a text is appended for every link which is
-    stored empty because its target is unknown or ambiguous.
+    stored empty because its target is unknown or ambiguous, and a text if references to items of
+    another project were removed (neutralise_foreign_irefs).
     """
+    removed = []
     cat_attrs = configs['cats'][spec_item.cat]['attrs']
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
@@ -132,10 +134,10 @@ def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
         elif key == 'owner' or key == 'status':    # These are overridden by import function: no need to copy them into spec_item
             continue
         elif value['kind'] == 'ref_text':
-            setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
+            setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']], removed))
         elif value['kind'] == 'eval_ref':
             # exported as stored (literal #iref:<id>); only references into other projects are refused
-            setattr(spec_item, key, neutralise_foreign_irefs(project, imp_dict[cat_attrs[key]['label']]))
+            setattr(spec_item, key, neutralise_foreign_irefs(project, imp_dict[cat_attrs[key]['label']], removed))
         elif value['kind'] == 'spec_item_ref':
             label = cat_attrs[key]['label']
             target, problem = resolve_exp_ref(project, imp_dict[label])
@@ -147,6 +149,8 @@ def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
                     else 'matches no item')+', imported without link')
         else:
             setattr(spec_item, key, imp_dict[cat_attrs[key]['label']])
+    if removed and warnings is not None:
+        warnings.append(str(len(removed))+' reference(s) to items of another project removed')
 
 
 def get_user_choices(project):

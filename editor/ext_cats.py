@@ -69,6 +69,7 @@ def get_visible_models(request, model_id=None):
 
 #--------------------------------------------------------------------------------
 def ext_model_refresh(request, spec_item):
+    # NOTE: the attributes refreshed here must stay in sync with views.REFRESHED_ATTRS
     """ 
     Argument spec_item holds an external model which needs to be refreshed.
     The function retrieves the model from the FW Profile Database. If the 

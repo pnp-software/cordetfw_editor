@@ -588,8 +588,24 @@ def test_10_csv_import_path_does_not_store_foreign_iref(w):
     labels['Value'] = '#iref:%d' % w.b_di.id
     labels['Description'] = 'x #iref:%d' % w.b_di.id
     labels[configs['cats']['DataItem']['attrs']['val_set']['label']] = 'Default'
-    export_to_spec_item(None, w.a, labels, item)
+    warnings = []
+    export_to_spec_item(None, w.a, labels, item, warnings)
     assert item.value == '#iref:0' and item.desc == 'x #iref:0'
+    assert warnings == ['2 reference(s) to items of another project removed']     # Task 7.9c
+    warnings = []
+    labels['Value'] = labels['Description'] = ''
+    export_to_spec_item(None, w.a, labels, item, warnings)
+    assert warnings == []
+
+
+def test_10_neutralise_foreign_irefs_reports_count(w):
+    from editor.convert import neutralise_foreign_irefs
+    removed = []
+    assert neutralise_foreign_irefs(w.a, '#iref:%d #iref:%d' % (w.b_di.id, w.b_di.id), removed) == '#iref:0 #iref:0'
+    assert len(removed) == 2
+    removed = []
+    assert neutralise_foreign_irefs(w.a, '#iref:%d' % w.a_type.id, removed) == '#iref:%d' % w.a_type.id
+    assert removed == []
 
 
 def test_10_project_zip_import_path_does_not_keep_foreign_iref(w):

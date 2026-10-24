@@ -2,7 +2,6 @@ import os
 import re
 import shutil
 import csv
-import traceback
 import json
 
 from io import StringIO
@@ -65,7 +64,7 @@ base_url = config['BASE_URL']
 logger = logging.getLogger(__name__)
 
 
-def get_find_replace_updates(items, project_id, val_set_id, field, find_string, replace_string):
+def get_find_replace_updates(items, project_id, val_set_id, field, find_string, replace_string, removed=None):
     updates = []
     model_field = SpecItem._meta.get_field(field)
     if find_string == replace_string:
@@ -80,7 +79,7 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
             continue
         new_value = old_value.replace(find_string, replace_string)
         if configs['cats'][item.cat]['attrs'].get(field, {}).get('kind') in ('ref_text', 'eval_ref'):
-            new_value = neutralise_foreign_irefs(item.project, new_value)   # iref-cross-project-disclosure
+            new_value = neutralise_foreign_irefs(item.project, new_value, removed)   # iref-cross-project-disclosure
         model_field.clean(new_value, item)
         updates.append((item, new_value))
 
@@ -569,6 +568,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
 
     find_replace_form = FindReplaceForm()
     find_replace_update_count = 0
+    find_replace_removed_refs = 0
 
     # Find & Replace (POST form)
     if request.method == 'POST':
@@ -586,12 +586,13 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             if field_to_search in cat_cfg['attrs'] and field_to_search not in cat_cfg['ext_attrs'] \
                     and cat_cfg['attrs'][field_to_search]['kind'] != 'image':
                 try:
+                    removed_refs = []
                     with transaction.atomic():
                         item_ids = items.values_list('id', flat=True)
                         locked_items = SpecItem.objects.select_for_update().filter(id__in=item_ids)
                         updates = get_find_replace_updates(
                             locked_items, project_id, val_set_id, field_to_search,
-                            find_string, replace_string
+                            find_string, replace_string, removed_refs
                         )
                         for update_spec_item, new_value in updates:
                             setattr(update_spec_item, field_to_search, new_value)
@@ -599,6 +600,11 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
                             update_spec_item.owner = get_user(request)
                             update_spec_item.save()
                         find_replace_update_count = len(updates)
+                    if removed_refs:
+                        find_replace_removed_refs = len(removed_refs)
+                        if request.headers.get('x-requested-with') != 'XMLHttpRequest':
+                            messages.warning(request, str(len(removed_refs))+
+                                             ' reference(s) to items of another project removed')
                 except ValidationError as error:
                     find_replace_form.add_error(None, error)
             else:
@@ -612,7 +618,10 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
                     {'errors': find_replace_form.errors.get_json_data()},
                     status=400
                 )
-            return JsonResponse({'updated_count': find_replace_update_count})
+            response = {'updated_count': find_replace_update_count}
+            if find_replace_removed_refs:
+                response['removed_foreign_refs'] = find_replace_removed_refs
+            return JsonResponse(response)
 
     domains = get_domains(cat, application_id, project_id)
 
@@ -1036,7 +1045,7 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
             cell = item[field_config['label']].strip()
             if cell == '':
                 return 'missing '+field_config['label']+' (number)', warnings
-            if cell != '' and not re.fullmatch(r'[+-]?[0-9]+', cell):
+            if not re.fullmatch(r'[+-]?[0-9]+', cell):
                 return field_config['label']+' is not a whole number', warnings
     try:
         validate_identifier(item[csv_domain])
@@ -1067,7 +1076,7 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
         export_to_spec_item(request, project, item, new_spec_item, warnings)
         new_spec_item.status = 'NEW'
         new_spec_item.updated_at = now
-        new_spec_item.created_at = datetime.now(tz=get_current_timezone())
+        new_spec_item.created_at = now
         new_spec_item.previous = None
         new_spec_item.owner = get_user(request)
         new_spec_item.project = project

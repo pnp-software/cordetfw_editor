@@ -858,7 +858,7 @@ def test_import_project_failure_after_writes_rolls_back_everything(client, renam
     assert response.status_code == 302
     [(level, text)] = messages_of(response)
     assert level == 'alert-danger'
-    assert text == "Unable to import project: RuntimeError('simulated failure'); nothing was imported"
+    assert text == 'Unable to import project; nothing was imported (details in the server log)'
     assert counts == [m.objects.count() for m in (Release, Project, ValSet, ProjectUser, Application, SpecItem)]
 
 
@@ -874,7 +874,7 @@ def test_import_project_failure_message_hides_item_notes(client, renamed_origina
     response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
                           fresh_temp)
     [(level, text)] = messages_of(response)
-    assert text.startswith('Unable to import project: ZeroDivisionError(')
+    assert text == 'Unable to import project; nothing was imported (details in the server log)'
 
 
 def _spec_items_csv_with(zf, mutate):
