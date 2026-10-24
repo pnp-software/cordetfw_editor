@@ -154,7 +154,23 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   limited to models the user owns or that are shared with them (ro/rw) by e-mail; before, any writer could refresh any
   Model item, so co-authors now need an FW Profile share (also applies to FCP items, which go through the same refresh
   check, while FCP listing/import is still owner-only). New row `refresh-not-shared-double-message`.
-- [ ] **Task 7.2** Less urgent security (K1)
+- [x] **Task 7.2** Less urgent security (K1), three parallel parts + one Opus review each:
+  - 7.2a (11 ids, commits `1f6a350`..`795331d` as cherry-picked): import-no-login-required, login-url-default
+    (`/editor/login/`), honeypot-logger-not-connected, access-first-row (any RW row), appform-cats-substring,
+    index-username-substring, index-lists-all-projects (non-staff: own/member projects; anonymous: none),
+    login-echoes-password, order-by-unrestricted (UI fields, `-field` kept), import-traceback-in-message,
+    find-replace-on-release-view. Goldens promoted: login_failed_post.html (password value removed),
+    list_data_items_release.html (Find & Replace modal removed on release views). Review follow-ups `a24fd91`.
+  - 7.2b: iref-cross-project-disclosure (`#iref` resolved only inside the item's project; foreign ids written by
+    form/CSV/ZIP/Find & Replace become `#iref:0`), eval-ref-dos (loop/assignment keywords refused, expansion capped:
+    depth 10, 2000 substitutions, 100,000 chars; iterative expansion). Review blocker fixed in 7.2d: keyword ban was
+    bypassable with a digit prefix (`2while`). Production check (dump 2026-10-21, aggregates): all 3,875 DataItem/
+    EnumValue values evaluate identically with old and new code; max expanded length 121.
+  - 7.2c: ext-cats FCP SQL parameterized + connections closed, FCP/model error paths, temp dirs (mkdtemp 0700,
+    removed after the response), ZIP import limits + selective extraction, per-row cat/status validation,
+    placeholder dev key refused when DEBUG is off. Production: all 16,306 items have a configured cat and a known
+    status. Open from the review (-> Task 7.4): a rejected row that another row links to still ends in the
+    `import-project-dangling-link-crash` KeyError.
 - [ ] **Task 7.3** Crashes -> proper responses (K2)
 - [ ] **Task 7.4** Import fidelity and atomicity (K3)
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)

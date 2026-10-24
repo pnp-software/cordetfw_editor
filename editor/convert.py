@@ -359,8 +359,10 @@ EVAL_MAX_LENGTH = 100000       # length of the expanded expression
 # these are reserved words (they cannot be identifiers), so they are matched as whole words only
 # ('format', 'my_for(', 'invar' do not match; a text which merely contains the word 'for' is not
 # a valid expression anyway and is shown unevaluated, with or without this check). ':=' is the
-# assignment operator.
-_eval_forbidden = re.compile(r'\b(?:while|for|repeat|until|switch|var)\b|:=', re.IGNORECASE)
+# assignment operator. The left boundary is "no letter or underscore" rather than \b, because exprtk
+# splits '2while' into the number 2 and the keyword (Task 7.2b review).
+_eval_forbidden = re.compile(r'(?<![A-Za-z_])(?:while|for|repeat|until|switch|var)(?![A-Za-z0-9_])|:=',
+                             re.IGNORECASE)
 
 
 class EvalLimitExceeded(Exception):

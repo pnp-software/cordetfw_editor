@@ -46,6 +46,7 @@ from editor.imports import import_project_tables, extract_project_zip, IMPORT_MA
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
+from editor.convert import neutralise_foreign_irefs
 from editor.svg_check import svg_rule_violation
 from editor.access import is_project_owner, has_read_access_to_project, \
                     can_create_project, can_add_val_set, has_write_access_to_project, \
@@ -77,6 +78,8 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
         if not isinstance(old_value, str) or find_string not in old_value:
             continue
         new_value = old_value.replace(find_string, replace_string)
+        if configs['cats'][item.cat]['attrs'].get(field, {}).get('kind') in ('ref_text', 'eval_ref'):
+            new_value = neutralise_foreign_irefs(item.project, new_value)   # iref-cross-project-disclosure
         model_field.clean(new_value, item)
         updates.append((item, new_value))
 

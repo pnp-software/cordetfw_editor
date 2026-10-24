@@ -461,6 +461,9 @@ def test_09_eval_ref_keywords_rejected_only_as_cexprtk_keywords():
         LOOP_SUM, 'var x:=1; while (x>0) { x+=1; }; x', 'for (var i:=0; i<1e10; i+=1) { 0 }',
         'WHILE(1){1}', 'For (var i:=0;i<2;i+=1) {1}', 'repeat 1 until (1); 5', 'switch { case 1 > 0: 7; }',
         'var v[20000000]; v[0]:=7; v[0]', 'VAR x := 3; x', 'x := 3', 'while(1){}',
+        # digit before the keyword: exprtk reads '2var' as 2 followed by var (Task 7.2b review)
+        '1; 2var x; 2while (x<1e12) { x+=1 }; x', '0var x; 0for (x; x<1e12; x+=1) { 0 }; x',
+        '0var x; 0repeat x+=1 0until (x>1e12); x', '1; 2var x; x+=5; x',
     ]
     t0 = time.monotonic()
     for expr in rejected:
@@ -496,7 +499,8 @@ def test_09_eval_ref_unbounded_loop_never_returns():
     # FIXED: eval-ref-dos (was: this payload reached cexprtk and did not finish). The engine itself
     # still loops, which is why the application refuses these expressions before calling it.
     from editor.convert import eval_di_value
-    payloads = ['var x:=1; while (x>0) { x+=1; }; x', 'for (var i:=0; i<1e10; i+=1) { 0 }']
+    payloads = ['var x:=1; while (x>0) { x+=1; }; x', 'for (var i:=0; i<1e10; i+=1) { 0 }',
+                '1; 2var x; 2while (x<1e12) { x+=1 }; x']
     t0 = time.monotonic()
     for p in payloads:
         assert eval_di_value(p) == p

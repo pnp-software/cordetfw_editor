@@ -313,6 +313,23 @@ def test_find_replace_by_rw_member_still_works(w):
     assert resp.json() == {'updated_count': 1}
 
 
+def test_find_replace_cannot_store_foreign_iref(w):
+    # iref-cross-project-disclosure (Task 7.2b review): Find & Replace on a ref_text field neutralises
+    # a reference into another project like the forms do; references into the own project are kept
+    item = make_spec_item(w.a, cat='DataItemType', domain='AT', name='Rx', desc='see #iref:%d' % w.a_type.id)
+    c = w.client(w.rw)
+    url = '/editor/DataItemType/%d/0/%d/Sel_All/0/list_spec_items' % (w.a.id, w.dvs_a.id)
+    resp = c.post(url, {'field': 'desc', 'find': '#iref:%d' % w.a_type.id, 'replace': '#iref:%d' % w.b_enum.id},
+                  HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.json() == {'updated_count': 1}
+    item.refresh_from_db()
+    assert item.desc == 'see #iref:0'
+    resp = c.post(url, {'field': 'desc', 'find': '#iref:0', 'replace': '#iref:%d' % w.a_enum.id},
+                  HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    item.refresh_from_db()
+    assert item.desc == 'see #iref:%d' % w.a_enum.id
+
+
 def test_find_replace_by_outsider_is_refused(w):
     c = w.client(make_user('outsider'))
     before = snapshot()
