@@ -157,3 +157,28 @@ register as track K.)
 
 Commands: `REIMPORT_DUMP=<dump> REIMPORT_SCRATCH=<dir> python3 docs/migration/rehearsal/reimport.py <setup|export|run|cmp-exports|diff|cleanup> --stack old|new`
 (see the driver docstring; the old stack must be started with cwd = `<scratch>/old-code`). Runtime about 25 minutes per stack for `run`.
+
+## Track K rehearsal (Task 7.9a)
+
+Driver: `rehearse.py --baseline track-s-rc1 --old-venv .venv --allow docs/fixes/expected-diffs.json` (aggregates only).
+Production dump of 2026-10-21 on the disposable MySQL 8.0. OLD = track-S release `track-s-rc1` (c602bbb, Django 5.2, same `.venv`
+as NEW), NEW = `fix/known-issues` HEAD ae6b0aa. The NEW `migrate` applied `editor.0012_specitem_created_at_aware_default` and
+`editor.0013_release_version_int_default` (field alterations only; MySQL: no DDL, editor tables' row dumps and CHECKSUM TABLE identical
+before and after). Verdict: PASS. The default invocation (baseline cd87ccb, `.venv-baseline`) is unchanged; with `--baseline` the
+allowlist ids are attributed only to pages whose OLD/NEW difference they actually reduce.
+
+| Check | Result |
+| --- | --- |
+| Exports old vs new (328 CSV + 11 ZIP members + headers, 404 files) | 404 of 404 byte-identical |
+| HTML pages old vs new (164 snapshot pages) | 99 identical, 65 allowed, 0 UNEXPLAINED |
+| Pages explained per allowlist id | `ref-link-backslash`: 65 (list pages with an `#iref` link; only the `\list_spec_items` -> `/list_spec_items` href segment differs). No other id changed any snapshot page |
+| Rollback (OLD code c602bbb on the migrated DB; `migrate --plan`: no operations) | exports 404 of 404 identical, HTML 164 of 164 identical, 0 failing requests, editor rows/checksums identical to the NEW state |
+| Data written by NEW (release, user, 2 items), exported by OLD | 404 of 404 export files identical to the NEW export (the write changed 7 files) |
+| Sessions | cookie saved before the NEW run still authenticates on NEW (before and after password logins) and on OLD after rollback; cookie minted by NEW accepted by OLD |
+| Passwords | all rehearsal users (hash 1,000,000 iterations) log in on NEW and on OLD after rollback; user created by NEW logs in on OLD |
+| Admin / axes / honeypot | admin pages render on NEW and OLD; honeypot rows 319 unchanged |
+
+Snapshot coverage caveat: the snapshot holds the index (staff user) and spec-item list pages, exports; it contains no edit/copy/split/add forms,
+login page, release views or non-staff index. Track-K fixes that act only there (index-lists-all-projects for non-staff, form-none-literal,
+help-double-space, p-link-selection-lost, owner-empty-names, find-replace-on-release-view, form-choice-empty-silent-default, add_p_parent label,
+list-500s fallbacks) produced no difference on the snapshot, so no allowlist entry/normaliser was added for them.

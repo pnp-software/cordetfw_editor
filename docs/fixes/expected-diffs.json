@@ -7,6 +7,8 @@
    "description": "Task 6.6: stored text is HTML-escaped (& < > in text nodes; also \" ' in attributes). Applied last and per diff hunk: a hunk is accepted only if html.unescape of the old and new hunk are identical and the new hunk contains an entity whose raw character the old hunk contained. Any other remaining difference makes the page UNEXPLAINED."},
   {"id": "link-suggest-js", "applies_to": "html", "normaliser": "norm_link_suggest_js",
    "description": "Tasks 6.6b/6.6d: backslash, CR, LF, U+2028 and U+2029 are escaped in the link_suggest `linkElements` JS string literals (forms only; not part of the rehearsal snapshot pages)."},
+  {"id": "ref-link-backslash", "applies_to": "html", "normaliser": "norm_ref_link_backslash",
+   "description": "Task 7.6: the link generated from an #iref reference no longer has a backslash before the list_spec_items URL segment (href=\"/editor/.../N\\list_spec_items#...\" -> \"/editor/.../N/list_spec_items#...\"). Only that segment is rewritten."},
   {"id": "compat-allowlist-format", "applies_to": "compat", "compat": {},
    "description": "Task 7.0: import compatibility corpus (tests/test_compat_corpus.py). Any entry (applies_to \"html\" or \"compat\") may carry an optional key \"compat\": {\"<corpus input name | *>\": [\"<table>.<field>\" | \"<table>.*\" | \"<table>.#rows\" | \"_outcome.exception\" | \"_outcome.message\" | \"_outcome.messages\" | \"_outcome.status\", ...]} listing the import-fingerprint fields that fix may change (e.g. \"editor_projectuser.role\"). Entries with applies_to \"compat\" are ignored by rehearse.py. This entry is documentation only (empty compat); a fix adds its own entry with its own id."},
   {"id": "import-spec-items-no-rollback", "applies_to": "compat",

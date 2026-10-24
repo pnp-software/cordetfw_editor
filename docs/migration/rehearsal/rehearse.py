@@ -3,6 +3,7 @@
 MySQL migration rehearsal driver (Django 3.2 -> 5.2 upgrade).  Run end to end with any python3:
 
     python3 docs/migration/rehearsal/rehearse.py [--keep] [--allow docs/fixes/expected-diffs.json]
+                                  [--baseline <commit>] [--old-venv <path>]
 
 What it does (details and last results: REPORT.md in this directory):
   1. creates database `cordetfw_rehearsal` on the disposable MySQL (docker container
@@ -13,6 +14,9 @@ What it does (details and last results: REPORT.md in this directory):
   4. rollback: OLD stack against the migrated database, snapshot + checks, then data written by the NEW
      stack read back by the OLD stack
   5. drops the database and removes the worktree (unless --keep)
+
+--baseline <commit> (default cd87ccb) and --old-venv <path> (default .venv-baseline) select the OLD stack, e.g. the
+track-K rehearsal: --baseline track-s-rc1 --old-venv .venv (OLD = track-S release, same venv as NEW).
 
 --allow <json>: allowlist of expected OLD-vs-NEW HTML differences (docs/fixes/expected-diffs.json). Every HTML page
 is classified identical / differs only by allowed ids / UNEXPLAINED; the exit status is non-zero if any page is
@@ -41,9 +45,9 @@ REPO = os.path.abspath(os.path.join(HERE, '..', '..', '..'))
 SCRATCH = os.environ.get('REHEARSAL_SCRATCH', '/tmp/claude-1000/-home-pstump-Projects-cordetfweditor-migration/'
                          '2d4443f2-25ba-4bd2-b5c9-d9a3aa33ed64/scratchpad/rehearsal')
 OLD_CODE = os.path.join(SCRATCH, 'old-code')
-PY_OLD = os.path.join(REPO, '.venv-baseline', 'bin', 'python')
+PY_OLD = os.path.join(REPO, '.venv-baseline', 'bin', 'python')   # --old-venv <path> overrides
 PY_NEW = os.path.join(REPO, '.venv', 'bin', 'python')
-BASELINE_COMMIT = 'cd87ccb'
+BASELINE_COMMIT = 'cd87ccb'   # --baseline <commit> overrides
 DB = 'cordetfw_rehearsal'
 ROOT_PW = 'rootpw-test'
 CONTAINER = 'cordetfw-mysql-test'
@@ -222,6 +226,12 @@ def norm_link_suggest_js(t):
     return re.sub(r'(var linkElements = \[)(.*?)(\n\];)', block, t, flags=re.S)
 
 
+def norm_ref_link_backslash(t):
+    """Task 7.6 (ref-link-backslash): the link built from an `#iref` reference had a backslash before the
+    `list_spec_items` URL segment; it is now a slash. Rewrites only that segment inside an href="/editor/..."."""
+    return re.sub(r'(href="/editor/[^"]*?\d)\\(list_spec_items)', r'\1/\2', t)
+
+
 ENTITY_RE = re.compile(r'&(?:amp|lt|gt|quot|#x27);')
 ENTITY_RAW = {'&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'"}
 
@@ -250,10 +260,13 @@ def escape_stored_text_hunks(old, new):
 
 # id -> function. A normaliser listed in the allowlist must exist here; "hunk" kinds compare, not map.
 NORMALISERS = {'logout-post': norm_logout_post, 'post-only-mutations': norm_post_only_mutations,
-               'link-suggest-js': norm_link_suggest_js}
+               'link-suggest-js': norm_link_suggest_js,
+               'ref-link-backslash': norm_ref_link_backslash}
+NORMALISER_ORDER = ['logout-post', 'post-only-mutations', 'link-suggest-js', 'ref-link-backslash']
 HUNK_NORMALISERS = {'escape-stored-text': escape_stored_text_hunks}
 NORMALISER_FUNCS = {'norm_logout_post': 'logout-post', 'norm_post_only_mutations': 'post-only-mutations',
-                    'norm_link_suggest_js': 'link-suggest-js', 'escape_stored_text_hunks': 'escape-stored-text'}
+                    'norm_link_suggest_js': 'link-suggest-js', 'escape_stored_text_hunks': 'escape-stored-text',
+                    'norm_ref_link_backslash': 'ref-link-backslash'}
 
 
 def load_allowlist(path):
@@ -274,17 +287,30 @@ def load_allowlist(path):
     return ids
 
 
+SHRINK = [False]   # set by --baseline: attribute an id only to pages whose old/new difference it reduces
+
+
+def _line_diff(a, b):
+    ca, cb = collections.Counter(a.split('\n')), collections.Counter(b.split('\n'))
+    return sum(((ca - cb) + (cb - ca)).values())
+
+
 def classify_html(ta, tb, allowed):
     """-> ('identical' | 'allowed' | 'unexplained', [ids], stats, diff-or-None)"""
     if ta == tb:
         return 'identical', [], {}, None
     used = []
     na, nb = ta, tb
-    for i in ('logout-post', 'post-only-mutations', 'link-suggest-js'):
+    for i in NORMALISER_ORDER:
         if i not in allowed:
             continue
         xa, xb = NORMALISERS[i](na), NORMALISERS[i](nb)
-        if (xa, xb) != (na, nb):
+        if SHRINK[0]:
+            # with --baseline: counted only if they shrink the old/new line difference (they are applied to both
+            # sides, so a change on a side that is equal on both is not an explanation)
+            if _line_diff(xa, xb) < _line_diff(na, nb):
+                used.append(i)
+        elif (xa, xb) != (na, nb):
             used.append(i)
         na, nb = xa, xb
     stats = {}
@@ -402,7 +428,15 @@ def compare_fingerprints(a, b):
 
 
 def main():
+    global BASELINE_COMMIT, PY_OLD
     keep = '--keep' in sys.argv
+    if '--baseline' in sys.argv:
+        BASELINE_COMMIT = sys.argv[sys.argv.index('--baseline') + 1]
+    if '--old-venv' in sys.argv:
+        v = sys.argv[sys.argv.index('--old-venv') + 1]
+        PY_OLD = os.path.join(v if os.path.isabs(v) else os.path.join(REPO, v), 'bin', 'python')
+    SHRINK[0] = '--baseline' in sys.argv
+    print('[old] baseline %s, python %s' % (BASELINE_COMMIT, PY_OLD))
     allow_path = sys.argv[sys.argv.index('--allow') + 1] if '--allow' in sys.argv else None
     allowed = load_allowlist(allow_path)
     print('[allow] %s' % (allowed,))
