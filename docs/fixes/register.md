@@ -39,7 +39,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | find-replace-on-release-view | — | views.md | — | K | OPEN | Find & Replace is offered on release views (sel_rel_id != 0) whose query includes CNF/OBS/DEL historical rows, so it could rewrite OBS versions. Found by the Task 6.4 review |
 | form-none-literal | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | help-double-space | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
-| honeypot-logger-not-connected | — | import-export-auth.md | tests/test_auth.py | K | OPEN |  |
+| honeypot-logger-not-connected | — | import-export-auth.md | tests/test_auth.py | K | FIXED (Task 7.2a) |  |
 | idor-app-valset-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | idor-app-write-cross-project | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | idor-item-project | — | models-access-releases-query.md, security-audit.md | tests/test_access.py, tests/test_security_audit.py | S | FIXED (Task 6.4) |  |

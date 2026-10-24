@@ -434,16 +434,17 @@ def test_honeypot_post_records_attempt_and_never_authenticates(client, caplog):
     assert attempt.path == '/admin/login/'
     assert attempt.session_key is None
 
-    # KNOWN-ISSUE: honeypot-logger-not-connected
-    # editor/signals/handlers.py defines a receiver that logs honeypot attempts,
-    # but nothing imports it (EditorConfig has no ready()), so no log record is emitted.
-    assert [r for r in caplog.records if r.name == 'admin.honeypot'] == []
+    # FIXED: honeypot-logger-not-connected (was: no 'admin.honeypot' record, receiver never imported)
+    records = [r for r in caplog.records if r.name == 'admin.honeypot']
+    assert len(records) == 1
+    assert records[0].levelname == 'WARNING'
+    assert records[0].getMessage() == 'logging attempt by: {0}; 10.1.2.3'.format(attempt)
 
 
-def test_honeypot_signal_has_no_receivers(client):
-    # KNOWN-ISSUE: honeypot-logger-not-connected
+def test_honeypot_signal_has_receivers(client):
+    # FIXED: honeypot-logger-not-connected (was: assert not honeypot.has_listeners(LoginAttempt))
     from admin_honeypot.signals import honeypot
-    assert not honeypot.has_listeners(LoginAttempt)
+    assert honeypot.has_listeners(LoginAttempt)
 
 
 def test_honeypot_records_each_attempt_with_path_and_next(client):
