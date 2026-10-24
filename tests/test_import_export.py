@@ -1158,26 +1158,41 @@ def test_import_spec_items_header_only_file_imports_nothing(client, world):
     assert messages_of(response) == [('alert-success', '0 imported, 0 rejected')]
 
 
-def test_import_spec_items_required_field_missing(client, world):
+def test_import_spec_items_empty_required_fields_are_imported_with_warning(client, world):
+    # FIXED: csv-export-not-reimportable (was: rows with an empty required (req_in_form) field were rejected
+    # as 'missing <field>', so exports of production data (empty Ver/Value/Destination ...) could not be
+    # imported again; operator 2026-10-24: accept them and list them as warnings)
     client.force_login(world.rw)
     rows = [di_row(Name='Q1', Value=''), di_row(Name='Q2', Value='   '), di_row(Name='Q3', Kind='', Type=''),
             di_row(Name='Okay')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [
-        ('alert-danger', '1 imported, 3 rejected. Rejected: line 2: missing Value; line 3: missing Value; '
-                         'line 4: missing Kind, Type')]
-    assert SpecItem.objects.filter(project=world.project, name__in=['Q1', 'Q2', 'Q3']).count() == 0
+        ('alert-warning', '4 imported, 0 rejected. Warnings: line 2: empty required field(s) Value; '
+                          'line 3: empty required field(s) Value; line 4: empty required field(s) Kind, Type')]
+    assert SpecItem.objects.filter(project=world.project, name__in=['Q1', 'Q2', 'Q3']).count() == 3
     assert get_item(world, 'DataItem', 'Dom', 'Okay')
+    assert get_item(world, 'DataItem', 'Dom', 'Q1').value == ''
+    assert get_item(world, 'DataItem', 'Dom', 'Q3').p_kind == ''
 
 
-def test_import_spec_items_empty_domain_or_name_is_a_missing_field(client, world):
-    # commit 'import with empty domain field': an empty Domain is rejected as a missing required field
+def test_import_spec_items_warnings_and_rejections_in_one_summary(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='W1', Value=''), di_row(Name='Bad Name'), di_row(Name='W2')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    assert messages_of(response) == [(
+        'alert-danger', '2 imported, 1 rejected. Rejected: line 3: ' + IDENT_ERR +
+        '. Warnings: line 2: empty required field(s) Value')]
+
+
+def test_import_spec_items_empty_domain_or_name_is_rejected(client, world):
+    # an empty Domain or Name fails the identifier rule (it used to be reported as a missing required field)
     client.force_login(world.rw)
     rows = [di_row(Domain='', Name='A1'), di_row(Name=''), di_row(Domain='', Name='')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    # (identifier rule: an empty Domain or Name is still rejected, with the identifier message)
     assert messages_of(response) == [(
-        'alert-danger', '0 imported, 3 rejected. Rejected: line 2: missing Domain; line 3: missing Name; '
-                        'line 4: missing Domain, Name')]
+        'alert-danger', '0 imported, 3 rejected. Rejected: line 2: %s; line 3: %s; line 4: %s'
+                        % (IDENT_ERR, IDENT_ERR, IDENT_ERR))]
     assert not SpecItem.objects.filter(name='A1').exists()
 
 
@@ -1259,8 +1274,9 @@ def test_import_spec_items_aggregated_messages_are_sorted_and_counted(client, wo
     # Task 7.4b (import-spec-items-no-rollback): one summary message, one entry per rejected row (CSV line)
     assert messages_of(response) == [(
         'alert-danger',
-        '2 imported, 6 rejected. Rejected: line 4: ' + IDENT_ERR + '; line 5: missing Value; '
-        'line 6: incorrect ValSet; line 7: missing Value; line 8: incorrect Domain; line 9: incorrect Domain')]
+        '4 imported, 4 rejected. Rejected: line 4: ' + IDENT_ERR + '; line 6: incorrect ValSet; '
+        'line 8: incorrect Domain; line 9: incorrect Domain. '
+        'Warnings: line 5: empty required field(s) Value; line 7: empty required field(s) Value')]
 
 
 def test_import_spec_items_mixed_file_keeps_valid_rows_and_ends_with_one_summary(client, world):
@@ -1272,9 +1288,9 @@ def test_import_spec_items_mixed_file_keeps_valid_rows_and_ends_with_one_summary
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [(
         'alert-danger',
-        '2 imported, 2 rejected. Rejected: line 3: ' + IDENT_ERR + '; line 5: missing Value')]
+        '3 imported, 1 rejected. Rejected: line 3: ' + IDENT_ERR + '. Warnings: line 5: empty required field(s) Value')]
     assert SpecItem.objects.filter(project=world.project, name__in=['Keep1', 'Keep2']).count() == 2
-    assert SpecItem.objects.filter(project=world.project).count() == 12
+    assert SpecItem.objects.filter(project=world.project).count() == 13
 
 
 def test_import_spec_items_summary_lists_at_most_20_rejected_lines(client, world):
