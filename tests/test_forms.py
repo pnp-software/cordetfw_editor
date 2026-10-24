@@ -1051,13 +1051,13 @@ def test_dataitem_enum_value_of_other_type(enum_world):
     assert form.non_field_errors() == [ENUM_MSG]
 
 
-def test_dataitem_enum_value_with_no_s_link_crashes(enum_world):
-    # KNOWN-ISSUE: enum-value-no-type  (EnumValue without s_link: enum_val.s_link.id -> AttributeError)
+def test_dataitem_enum_value_with_no_s_link_is_rejected(enum_world):
+    # FIXED: enum-value-no-type (was: AttributeError, EnumValue without s_link: enum_val.s_link.id)
     w = enum_world
     orphan = make_spec_item(w['project'], 'EnumValue', 'D', 'orphan', status='CNF', value='9')
     form = build(w, 'add', data=dataitem_post(w, value='#EnumValue:D:orphan'))
-    with pytest.raises(AttributeError):
-        form.is_valid()
+    assert not form.is_valid()
+    assert form.non_field_errors() == [ENUM_MSG]
     assert orphan.s_link is None
 
 

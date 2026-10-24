@@ -125,7 +125,7 @@ def do_cat_specific_checks(form):
         except ObjectDoesNotExist:
             return 'Data item value must be a reference to an enumerated value of the item type: '+\
                    'The reference is invalid'
-        if enum_val.s_link.id != cd['p_link'].id:
+        if (enum_val.s_link is None) or (enum_val.s_link.id != cd['p_link'].id):
             return 'Data item value must be a reference to an enumerated value of the item type'
     
     return ''

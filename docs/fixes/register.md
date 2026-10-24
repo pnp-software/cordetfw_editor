@@ -21,7 +21,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | FIXED (Task 7.3) |  |
 | edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | FIXED in 1b2bb5a | the merged upstream #86 branch scopes the delete to the URL's project (Task 6.3) |
 | edit-project-valset-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
-| enum-value-no-type | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
+| enum-value-no-type | — | forms-convert-utilities.md | tests/test_forms.py | K | FIXED (Task 7.3) |  |
 | eval-ref-dos | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2b) |  |
 | exp-ref-no-dots | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
 | export-dangling-ref-literal | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-dangling-ref-literal.md |
