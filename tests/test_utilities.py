@@ -292,10 +292,14 @@ def test_get_redirect_url_s_parent_wins_over_p_parent(world):
     assert url.endswith('expand_link=s_link#D:T1')
 
 
-def test_get_redirect_url_int_parent_id_crashes(world):
-    # KNOWN-ISSUE: redirect-int-parent  (parent id must be str: concatenation with int raises)
-    with pytest.raises(TypeError):
-        get_redirect_url('DataItem', world['etype'].project_id, 0, 1, 'Sel_All', 0, world['etype'].id, None, None)
+def test_get_redirect_url_int_parent_id(world):
+    # FIXED: redirect-int-parent (was: TypeError, the parent id had to be a str)
+    e = world['etype']
+    as_int = get_redirect_url('DataItem', e.project_id, 0, 1, 'Sel_All', 0, e.id, None, None)
+    assert as_int == get_redirect_url('DataItem', e.project_id, 0, 1, 'Sel_All', 0, str(e.id), None, None)
+    assert 'expand_id=%d&expand_link=s_link' % e.id in as_int
+    as_int = get_redirect_url('DataItem', e.project_id, 0, 1, 'Sel_All', 0, None, e.id, None)
+    assert 'expand_id=%d&expand_link=p_link' % e.id in as_int
 
 
 # ----------------------------------------------------------------- make_temp_dir

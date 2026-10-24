@@ -228,12 +228,12 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
         s_parent = SpecItem.objects.get(id=s_parent_id, project_id=project_id)
         target = '#'+s_parent.domain+':'+s_parent.name
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+str(s_parent_id)+'&expand_link=s_link'+target        
     if (p_parent_id != None):
         p_parent = SpecItem.objects.get(id=p_parent_id, project_id=project_id)
         target = '#'+p_parent.domain+':'+p_parent.name 
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+str(p_parent_id)+'&expand_link=p_link'+target         
     
     target = '#'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
     return '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\

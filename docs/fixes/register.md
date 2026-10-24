@@ -81,7 +81,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | outcomponent-disp-short-keyerror | — | views.md | — | K | OPEN | configs.json OutComponent `disp_short` lists `value`, not in its attrs: conv_db_disp KeyError (500). Found by the Task 6.6 scan |
 | owner-empty-names | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
 | p-link-selection-lost | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
-| redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
+| redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | FIXED (Task 7.3) |  |
 | ref-link-backslash | — | forms-convert-utilities.md, views.md | tests/test_convert.py, tests/test_rendering_snapshots.py | K | OPEN |  |
 | refresh-not-shared-double-message | — | views.md | — | K | OPEN | Refresh of a model that exists but is not shared with the user shows "Model not found or not shared with you..." followed by "External spec_item no longer exists -- no refresh can be done". Found by the Task 7.1 review |
 | refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | OPEN |  |
