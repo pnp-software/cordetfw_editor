@@ -130,8 +130,7 @@ def _import_project_tables(imp_dir, notes):
     # Read the project table  
     project_csv = os.path.join(imp_dir,'project.csv')
     try:
-        dict =  csv.DictReader(open(project_csv, 'r'))
-        with open(project_csv, 'r') as fd:
+        with open(project_csv, 'r', newline='', encoding='utf-8') as fd:      # newline='': keep CR LF inside fields
             reader = csv.DictReader(fd)
             for row in reader:          # Project file should have only one line
                 project_dict = row
@@ -157,9 +156,8 @@ def _import_project_tables(imp_dir, notes):
     # Read the release table
     releases_csv = os.path.join(imp_dir,'releases.csv')
     try:
-        dict =  csv.DictReader(open(releases_csv, 'r'))
         releases = []
-        with open(releases_csv, 'r') as fd:
+        with open(releases_csv, 'r', newline='', encoding='utf-8') as fd:      # newline='': keep CR LF inside fields
             reader = csv.DictReader(fd)
             for row in reader:          
                 releases.append(row)
@@ -169,9 +167,8 @@ def _import_project_tables(imp_dir, notes):
     # Read the ValSet table
     val_set_csv = os.path.join(imp_dir,'val_sets.csv')
     try:
-        dict =  csv.DictReader(open(val_set_csv, 'r'))
         val_sets = []
-        with open(val_set_csv, 'r') as fd:
+        with open(val_set_csv, 'r', newline='', encoding='utf-8') as fd:      # newline='': keep CR LF inside fields
             reader = csv.DictReader(fd)
             for row in reader:          
                 val_sets.append(row)
@@ -181,9 +178,8 @@ def _import_project_tables(imp_dir, notes):
     # Read the ProjectUser table
     project_user_csv = os.path.join(imp_dir,'project_users.csv')
     try:
-        dict =  csv.DictReader(open(project_user_csv, 'r'))
         project_users = []
-        with open(project_user_csv, 'r') as fd:
+        with open(project_user_csv, 'r', newline='', encoding='utf-8') as fd:      # newline='': keep CR LF inside fields
             reader = csv.DictReader(fd)
             for row in reader:          
                 project_users.append(row)
@@ -202,9 +198,8 @@ def _import_project_tables(imp_dir, notes):
     # Read the Application table
     application_csv = os.path.join(imp_dir,'applications.csv')
     try:
-        dict =  csv.DictReader(open(application_csv, 'r'))
         applications = []
-        with open(application_csv, 'r') as fd:
+        with open(application_csv, 'r', newline='', encoding='utf-8') as fd:      # newline='': keep CR LF inside fields
             reader = csv.DictReader(fd)
             for row in reader:          
                 applications.append(row)
@@ -220,9 +215,8 @@ def _import_project_tables(imp_dir, notes):
     # Read the SpecItem table
     spec_item_csv = os.path.join(imp_dir,'spec_items.csv')
     try:
-        dict =  csv.DictReader(open(application_csv, 'r'))
         spec_items = []
-        with open(spec_item_csv, 'r') as fd:
+        with open(spec_item_csv, 'r', newline='', encoding='utf-8') as fd:      # newline='': keep CR LF inside fields
             reader = csv.DictReader(fd)
             for row in reader:          
                 spec_items.append(row)

@@ -662,9 +662,9 @@ def test_import_project_round_trip_semantics(client, renamed_original, fresh_tem
     assert new.applications.get().updated_at == T1
     assert [v.updated_at for v in new.val_sets.all()] == [D_FIXED, D_FIXED]
     assert [pu.updated_at for pu in new.project_users.all()] == [D_FIXED, D_FIXED]
-    # KNOWN-ISSUE: import-project-crlf-lost -- CR LF inside a field is read back as LF
+    # FIXED: import-project-crlf-lost (was: CR LF inside a field was read back as LF)
     assert before['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\r\nwith CRLF'
-    assert after['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\nwith CRLF'
+    assert after['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\r\nwith CRLF'
 
 
 def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_original, fresh_temp):
@@ -688,10 +688,8 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
 
     # Everything else (ids aside) is identical; the only differences are the documented losses
     assert sorted(differences) == [
-        ('spec_items.csv', 'change_log'),
         ('spec_items.csv', 's_data'),
     ]
-    assert differences[('spec_items.csv', 'change_log')] == [('changed\r\nwith CRLF', 'changed\nwith CRLF')]
     assert differences[('spec_items.csv', 's_data')] == [
         ('{"a": 1, "k": [1, 2], "u": "\\u00e4"}', '"{\\"a\\": 1, \\"k\\": [1, 2], \\"u\\": \\"\\\\u00e4\\"}"')]
 

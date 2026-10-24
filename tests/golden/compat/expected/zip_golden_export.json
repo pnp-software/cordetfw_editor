@@ -118,7 +118,7 @@
   {
    "application": null,
    "cat": "EnumType",
-   "change_log": "changed\nwith CRLF",
+   "change_log": "changed\r\nwith CRLF",
    "created_at": "2023-12-01 08:00:00",
    "desc": "Colors ä µ ☺ and **markdown**\n\n- bullet one\n- bullet two",
    "domain": "Types",
