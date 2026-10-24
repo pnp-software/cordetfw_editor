@@ -64,7 +64,7 @@ NAMES = [m['name'] for m in MANIFEST]
 # FIXED: import-project-owner-not-member (was: zip_owner_not_member: orphan item dropped, message)
 # FIXED: import-project-dangling-link-crash (was: zip_owner_not_member_linked: KeyError, partial project)
 # FIXED: import-project-role-lost (was: zip_roles_valsets_releases: every member imported as role RO)
-# KNOWN-ISSUE: import-project-application-version-lost  (zip_apps_versions: application_version not imported)
+# FIXED: import-project-application-version-lost (was: zip_apps_versions: application_version not imported)
 
 
 # ---------------------------------------------------------------------------

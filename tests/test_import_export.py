@@ -648,9 +648,10 @@ def test_import_project_round_trip_semantics(client, renamed_original, fresh_tem
     # KNOWN-ISSUE: import-project-created-at-lost -- SpecItem.created_at falls back to its default
     assert {b['created_at'] for b in before['items'].values()} == {T0}
     assert {a['created_at'] for a in after['items'].values()} == {datetime(2000, 1, 1, tzinfo=timezone.utc)}
-    # KNOWN-ISSUE: import-project-application-version-lost -- Release.application_version is not imported
+    # FIXED: import-project-application-version-lost (was: Release.application_version was not imported, always 0)
     assert before['applications'][0][3][0][4] == 1
-    assert after['applications'][0][3][0][4] == 0
+    assert after['applications'][0][3][0][4] == 1
+    assert [r[3:] for r in after['applications'][0][3]] == [(1, 1), (0, 0)]
     # KNOWN-ISSUE: import-project-s-data-double-encoded -- s_data JSON is stored as a JSON *string*
     assert before['items'][color_var]['s_data'] == {'a': 1, 'k': [1, 2], 'u': 'ä'}
     assert after['items'][color_var]['s_data'] == '{"a": 1, "k": [1, 2], "u": "\\u00e4"}'
@@ -690,13 +691,11 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
         ('applications.csv', 'updated_at'),
         ('project.csv', 'updated_at'),
         ('project_users.csv', 'updated_at'),
-        ('releases.csv', 'application_version'),
         ('spec_items.csv', 'change_log'),
         ('spec_items.csv', 'created_at'),
         ('spec_items.csv', 's_data'),
         ('val_sets.csv', 'updated_at'),
     ]
-    assert differences[('releases.csv', 'application_version')] == [('1', '0')]
     assert differences[('spec_items.csv', 'created_at')] == [('2023-12-01 08:00:00', '2000-01-01 00:00:00')] * 10
     assert differences[('spec_items.csv', 'change_log')] == [('changed\r\nwith CRLF', 'changed\nwith CRLF')]
     assert differences[('spec_items.csv', 's_data')] == [

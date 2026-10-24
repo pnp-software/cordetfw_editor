@@ -215,7 +215,8 @@ def _import_project_tables(imp_dir, notes):
         new_release = Release(release_author = release_author,
                               desc = release['desc'],
                               updated_at = release['updated_at'],
-                              project_version = release['project_version'])
+                              project_version = release['project_version'],
+                              application_version = release.get('application_version') or 0)
         new_release.save()
         old_id_2_new_id[release['id']] = new_release.id
     for release in releases:
