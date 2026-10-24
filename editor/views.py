@@ -770,6 +770,10 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
     return render(request, 'spec_item_form.html', context) 
 
 
+# Attributes ext_model_refresh (editor/ext_cats.py) may change on the item
+REFRESHED_ATTRS = ('domain', 'name', 'p_kind', 'value', 'n1', 'n2', 'n3')
+
+
 @login_required         
 @require_POST
 def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
@@ -782,7 +786,13 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
     refresh_outcome = ext_model_refresh(request, spec_item)
     if refresh_outcome == 'REFRESH':
         if spec_item.status == 'CNF':
-            spec_item = make_obs_spec_item_copy(request, spec_item)
+            # ext_model_refresh changed spec_item in memory only; the OBS copy must hold the
+            # previous version (refresh-cnf-obs-copy-new-content), so copy the stored item
+            # and then apply the refreshed values to the MOD item.
+            refreshed = {attr: getattr(spec_item, attr) for attr in REFRESHED_ATTRS}
+            spec_item = make_obs_spec_item_copy(request, SpecItem.objects.get(id=spec_item.id))
+            for attr, value in refreshed.items():
+                setattr(spec_item, attr, value)
         spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()
