@@ -652,10 +652,10 @@ def test_import_project_round_trip_semantics(client, renamed_original, fresh_tem
     assert before['applications'][0][3][0][4] == 1
     assert after['applications'][0][3][0][4] == 1
     assert [r[3:] for r in after['applications'][0][3]] == [(1, 1), (0, 0)]
-    # KNOWN-ISSUE: import-project-s-data-double-encoded -- s_data JSON is stored as a JSON *string*
+    # FIXED: import-project-s-data-double-encoded (was: s_data was stored as a JSON *string*, {} became '')
     assert before['items'][color_var]['s_data'] == {'a': 1, 'k': [1, 2], 'u': 'ä'}
-    assert after['items'][color_var]['s_data'] == '{"a": 1, "k": [1, 2], "u": "\\u00e4"}'
-    assert before['items'][calc]['s_data'] == {} and after['items'][calc]['s_data'] == ''
+    assert after['items'][color_var]['s_data'] == {'a': 1, 'k': [1, 2], 'u': 'ä'}
+    assert before['items'][calc]['s_data'] == {} and after['items'][calc]['s_data'] == {}
     # FIXED: import-project-auto-now-timestamps (was: updated_at of Project/Application/ValSet/ProjectUser, auto_now
     # fields, were overwritten with the import time)
     assert old.updated_at == T1 and new.updated_at == T1
@@ -686,12 +686,8 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
                 if a[col] != b[col]:
                     differences.setdefault((member, col), []).append((a[col], b[col]))
 
-    # Everything else (ids aside) is identical; the only differences are the documented losses
-    assert sorted(differences) == [
-        ('spec_items.csv', 's_data'),
-    ]
-    assert differences[('spec_items.csv', 's_data')] == [
-        ('{"a": 1, "k": [1, 2], "u": "\\u00e4"}', '"{\\"a\\": 1, \\"k\\": [1, 2], \\"u\\": \\"\\\\u00e4\\"}"')]
+    # Everything else (ids aside) is identical (import-project-* losses fixed: the re-export equals the export)
+    assert differences == {}
 
 
 def test_import_project_after_deleting_original(client, exported, fresh_temp):
@@ -1803,3 +1799,43 @@ def test_import_project_restores_distinct_updated_at_values(client, renamed_orig
     assert new.applications.get().updated_at == datetime(2022, 6, 7, 8, 9, 10, tzinfo=timezone.utc)
     assert sorted(v.updated_at.isoformat() for v in new.val_sets.all()) == ['2020-01-02', '2020-01-03']
     assert sorted(pu.updated_at.isoformat() for pu in new.project_users.all()) == ['2019-12-30', '2019-12-31']
+
+
+@pytest.mark.parametrize('cell,expected', [
+    ('', {}),                                           # {} (and any falsy value) is exported as an empty cell
+    ('{"a": 1}', {'a': 1}),                             # an object
+    ('[1, 2]', [1, 2]),
+    ('"{}"', '{}'),                                     # the string "{}" of s-data-string stays a string
+    ('"{\\"a\\": 1, \\"k\\": [1, 2]}"', {'a': 1, 'k': [1, 2]}),     # double-encoded text of the old importer
+    ('"plain text"', 'plain text'),
+    ('"[]"', '[]'),
+    ('not json', 'not json'),
+])
+def test_import_project_s_data_forms(client, renamed_original, fresh_temp, cell, expected):
+    # FIXED: import-project-s-data-double-encoded (was: the cell text was stored as a JSON string)
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['name'] == 'Calc':
+                row['s_data'] = cell
+    client.force_login(w.admin)
+    upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}), fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.get(name='Calc').s_data == expected
+    assert type(new.project_spec_items.get(name='Calc').s_data) is type(expected)
+
+
+def test_import_project_s_data_string_round_trips_exactly(client, renamed_original, fresh_temp):
+    # s-data-string: an item whose s_data is the JSON string "{}" exports as "{}" (quoted) and imports as
+    # the string again; {} exports as an empty cell and imports as {}
+    w = renamed_original
+    SpecItem.objects.filter(id=w.calc.id).update(s_data='{}')
+    client.force_login(w.owner)
+    response, data, zf = export_zip(client, w.project.id, fresh_temp)
+    Project.objects.filter(id=w.project.id).update(name='Original (renamed again)')
+    client.force_login(w.admin)
+    upload_zip(client, data, fresh_temp)
+    new = Project.objects.get(name='Original (renamed)')
+    assert new.project_spec_items.get(name='Calc').s_data == '{}'
+    assert new.project_spec_items.get(name='Count', val_set__name='Default').s_data == {}

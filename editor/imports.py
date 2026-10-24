@@ -2,6 +2,8 @@ import re
 import os
 import logging
 import csv
+import json
+import json
 import datetime
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -119,6 +121,54 @@ def restore_updated_at(instance, value, is_date=False):
     except (ValueError, TypeError):
         return
     type(instance).objects.filter(pk=instance.pk).update(updated_at=parsed)
+
+
+def parse_s_data(cell):
+    """
+    import-project-s-data-double-encoded: the JSON value of the s_data cell as the source database had it.
+    The export writes an empty cell for a falsy value ({}), the JSON text of an object ({"a": 1}) and the JSON
+    text of a string ("{}" with the quotes). A string stays a string (s-data-string: "{}" is not normalised to
+    {}), except for the double-encoded text written by the old importer (a JSON string whose content is a
+    non-empty JSON object or list), which becomes the object. Text that is not JSON is kept as it is.
+    """
+    if cell.strip() == '':
+        return {}
+    try:
+        value = json.loads(cell)
+    except ValueError:
+        return cell
+    if isinstance(value, str):
+        try:
+            inner = json.loads(value)
+        except ValueError:
+            return value
+        if isinstance(inner, (dict, list)) and inner:
+            return inner
+    return value
+
+
+def parse_s_data(cell):
+    """
+    import-project-s-data-double-encoded: the JSON value of the s_data cell as the source database had it.
+    The export writes an empty cell for a falsy value ({}), the JSON text of an object ({"a": 1}) and the JSON
+    text of a string ("{}" with the quotes). A string stays a string (s-data-string: "{}" is not normalised to
+    {}), except for the double-encoded text written by the old importer (a JSON string whose content is a
+    non-empty JSON object or list), which becomes the object. Text that is not JSON is kept as it is.
+    """
+    if cell.strip() == '':
+        return {}
+    try:
+        value = json.loads(cell)
+    except ValueError:
+        return cell
+    if isinstance(value, str):
+        try:
+            inner = json.loads(value)
+        except ValueError:
+            return value
+        if isinstance(inner, (dict, list)) and inner:
+            return inner
+    return value
 
 
 def item_full_name(row):
@@ -342,7 +392,7 @@ def _import_project_tables(imp_dir, notes):
                                      rationale = spec_item['rationale'],
                                      implementation = spec_item['implementation'],
                                      remarks = spec_item['remarks'],
-                                     s_data = spec_item['s_data'],
+                                     s_data = parse_s_data(spec_item['s_data']),
                                      p_kind = spec_item['p_kind'],
                                      s_kind = spec_item['s_kind'],
                                      value = spec_item['value'],
