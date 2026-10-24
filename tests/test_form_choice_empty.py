@@ -25,6 +25,7 @@ def _item(world, cat, **kw):
 
 @pytest.mark.parametrize('mode', ['edit', 'copy', 'split'])
 def test_empty_required_choice_gets_blank_option(world, mode):
+    # FIXED: form-choice-empty-silent-default (was: no blank option, the first choice was shown and saved)
     item = _item(world, 'Requirement', p_kind='', s_kind='')
     form = build(world, mode, 'Requirement', item=item)
     fields = _required_selects('Requirement')
