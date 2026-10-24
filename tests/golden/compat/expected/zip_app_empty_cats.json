@@ -1,18 +1,95 @@
 {
  "_outcome": {
   "exception": null,
-  "messages": [
-   [
-    "alert-danger",
-    "The category  in application Bare App is not defined in configs.json"
-   ]
-  ],
+  "messages": [],
   "status": 302
  },
- "editor_application": [],
- "editor_project": [],
+ "editor_application": [
+  {
+   "cats": "",
+   "desc": "no cats",
+   "id": "#0",
+   "name": "Bare App",
+   "project": "#0",
+   "release": "#1",
+   "updated_at": "2024-02-20 16:45:30"
+  }
+ ],
+ "editor_project": [
+  {
+   "cats": "DataItem,EnumType,EnumValue,DataItemType,Requirement",
+   "desc": "Synthetic project Empty Cats",
+   "id": "#0",
+   "name": "Empty Cats",
+   "owner": "ec_owner",
+   "release": "#0",
+   "updated_at": "2024-02-20 16:45:30"
+  }
+ ],
  "editor_projectuser": [],
- "editor_release": [],
- "editor_specitem": [],
- "editor_valset": []
+ "editor_release": [
+  {
+   "application_version": 0,
+   "desc": "Initial release for project Empty Cats",
+   "id": "#0",
+   "previous": null,
+   "project_version": 0,
+   "release_author": "ec_owner",
+   "updated_at": "2023-12-01 08:00:00"
+  },
+  {
+   "application_version": 0,
+   "desc": "Initial release for application",
+   "id": "#1",
+   "previous": null,
+   "project_version": 0,
+   "release_author": "ec_owner",
+   "updated_at": "2023-12-01 08:00:00"
+  }
+ ],
+ "editor_specitem": [
+  {
+   "application": null,
+   "cat": "DataItem",
+   "change_log": "",
+   "created_at": "2023-12-01 08:00:00",
+   "desc": "",
+   "domain": "Dom",
+   "id": "#0",
+   "implementation": "",
+   "n1": 0,
+   "n2": 0,
+   "n3": 0,
+   "name": "X",
+   "owner": "ec_owner",
+   "p_kind": "",
+   "p_link": null,
+   "previous": null,
+   "project": "#0",
+   "rationale": "",
+   "remarks": "",
+   "s_data": "",
+   "s_kind": "",
+   "s_link": null,
+   "status": "CNF",
+   "t1": "",
+   "t2": "",
+   "t3": "",
+   "t4": "",
+   "t5": "",
+   "title": "Title of X",
+   "updated_at": "2024-02-20 16:45:30",
+   "val_set": "#0",
+   "value": ""
+  }
+ ],
+ "editor_valset": [
+  {
+   "desc": "Default ValSet",
+   "id": "#0",
+   "name": "Default",
+   "project": "#0",
+   "updated_at": "2024-02-20"
+  }
+ ]
 }

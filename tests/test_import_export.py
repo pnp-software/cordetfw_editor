@@ -770,17 +770,17 @@ def test_import_project_rejects_undefined_application_category(client, renamed_o
     assert Project.objects.count() == 1
 
 
-def test_import_project_rejects_application_with_empty_categories(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: import-project-empty-app-cats
-    # An application without categories (cats='') cannot be imported: ''.split(',') == [''] and
-    # '' is not a configured category. The message therefore contains two spaces.
+def test_import_project_accepts_application_with_empty_categories(client, renamed_original, fresh_temp):
+    # FIXED: import-project-empty-app-cats (was: rejected with "The category  in application App One is not defined
+    # in configs.json" and nothing imported). An application without categories imports.
     w = renamed_original
     data = modified_zip(w.zip, **{'applications.csv': _applications_csv_with(w.zip, '')})
     client.force_login(w.admin)
     response = upload_zip(client, data, fresh_temp)
-    assert messages_of(response) == [
-        ('alert-danger', 'The category  in application App One is not defined in configs.json')]
-    assert Project.objects.count() == 1
+    assert messages_of(response) == []
+    new = Project.objects.get(name='Demo Proj')
+    assert new.applications.get().cats == ''
+    assert new.project_spec_items.count() == 10
 
 
 @pytest.mark.parametrize('member,label', [

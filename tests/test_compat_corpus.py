@@ -60,7 +60,7 @@ NAMES = [m['name'] for m in MANIFEST]
 
 # KNOWN-ISSUE markers (checked by scripts/known_issue_check.py): the recorded outcome of these inputs
 # is the CURRENT buggy behaviour; the fix commit flips the expected file and lists the changed fields.
-# KNOWN-ISSUE: import-project-empty-app-cats  (zip_app_empty_cats: rejected, nothing imported)
+# FIXED: import-project-empty-app-cats (was: zip_app_empty_cats: rejected, nothing imported)
 # FIXED: import-project-owner-not-member (was: zip_owner_not_member: orphan item dropped, message)
 # FIXED: import-project-dangling-link-crash (was: zip_owner_not_member_linked: KeyError, partial project)
 # FIXED: import-project-role-lost (was: zip_roles_valsets_releases: every member imported as role RO)

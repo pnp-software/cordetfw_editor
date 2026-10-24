@@ -208,6 +208,8 @@ def _import_project_tables(imp_dir, notes):
         
     # Check that the application categories are defined in configs.json
     for application in applications:
+        if application['cats'].strip() == '':       # import-project-empty-app-cats: no categories is valid
+            continue
         for cat in application['cats'].split(','):
             if not cat.strip() in configs['cats']:
                 raise ImportAborted('The category '+cat+' in application '+application['name']+' is not defined in configs.json')
