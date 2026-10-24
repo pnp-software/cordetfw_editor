@@ -6,7 +6,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 
 | id | aliases | doc | tests | track | status | decision |
 | --- | --- | --- | --- | --- | --- | --- |
-| access-first-row | — | models-access-releases-query.md | tests/test_access.py | K | OPEN | Operator 2026-10-24: any RW row wins |
+| access-first-row | — | models-access-releases-query.md | tests/test_access.py | K | FIXED (Task 7.2a) | Operator 2026-10-24: any RW row wins |
 | add-app-releases-null-app-items | — | models-access-releases-query.md | tests/test_releases.py | S | FIXED (Task 6.5) | Data impact in production: docs/fixes/add-app-release-data-impact.md (report only) |
 | add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | OPEN |  |
 | add-spec-item-val-set-post | — | views.md | — | K | OPEN |  |

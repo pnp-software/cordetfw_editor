@@ -113,17 +113,33 @@ def test_staff_who_is_project_user_follows_role(world):
     assert msgs(request) == []
 
 
-def test_write_access_uses_first_project_user_row(world):
-    """KNOWN-ISSUE: access-first-row. has_write_access uses ProjectUser[0].role of an
-    unordered queryset; a user with duplicate rows is judged by whichever row comes first
-    (normally the lowest id)."""
+def test_write_access_any_rw_project_user_row_wins(world):
+    """access-first-row (operator decision 2026-10-24): a user with duplicate ProjectUser rows
+    has write access if ANY row is RW, whatever the row order."""
     dup = make_user('dup')
     make_project_user(world.project, dup, 'RO')   # lower id
     make_project_user(world.project, dup, 'RW')
     request = make_request(dup)
+    # FIXED: access-first-row (was: False with MSG_WRITE, the first row (RO) decided)
+    assert access.has_write_access_to_project(request, world.project) is True
+    assert msgs(request) == []
+    assert access.has_read_access_to_project(make_request(dup), world.project) is True
+
+
+def test_write_access_duplicate_ro_rows_denied(world):
+    dup = make_user('dup2')
+    make_project_user(world.project, dup, 'RO')
+    make_project_user(world.project, dup, 'RO')
+    request = make_request(dup)
     assert access.has_write_access_to_project(request, world.project) is False
     assert msgs(request) == [MSG_WRITE]
-    assert access.has_read_access_to_project(make_request(dup), world.project) is True
+
+
+def test_write_access_rw_first_then_ro_still_allowed(world):
+    dup = make_user('dup3')
+    make_project_user(world.project, dup, 'RW')
+    make_project_user(world.project, dup, 'RO')
+    assert access.has_write_access_to_project(make_request(dup), world.project) is True
 
 
 def test_access_is_per_project(world):
