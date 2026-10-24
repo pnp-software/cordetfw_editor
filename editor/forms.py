@@ -228,6 +228,12 @@ class SpecItemForm(forms.Form):
                     self.fields[field].disabled = True
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
+            for link_field in ('p_link', 's_link'):
+                link_id = self.initial.get(link_field)
+                if link_id is not None:
+                    self.fields[link_field].queryset = (
+                        self.fields[link_field].queryset | SpecItem.objects.filter(id=link_id)
+                    )
 
     def clean_s_data(self):
         cs_s_data = self.cleaned_data['s_data']
