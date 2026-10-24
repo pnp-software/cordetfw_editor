@@ -181,7 +181,9 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
 - [ ] **Task 7.4** Import fidelity and atomicity (K3)
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)
 - [ ] **Task 7.6** UI/behaviour bugs (K5)
-- [ ] **Task 7.7** Model defaults (K6)
+- [x] **Task 7.7** Model defaults (K6): naive-created-at-default (migration 0012, aware UTC default) and
+  release-version-default-str (migration 0013, int defaults). sqlmigrate: MySQL no-op for both; SQLite rebuilds the
+  table with rows copied unchanged. No data migration; rollback with the old code works (no MySQL DDL)
 - [ ] **Task 7.8** Decide-only items (K7)
 - [ ] **Task 7.9** Release gate for track K
 
