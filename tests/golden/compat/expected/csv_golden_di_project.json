@@ -261,7 +261,7 @@
    "cat": "DataItem",
    "change_log": "",
    "created_at": "2023-12-01 08:00:00",
-   "desc": "See #iref:104 and #iref:101 and **bold**\nnewline \"q\" | pipe; dangling ERROR:9999",
+   "desc": "See #iref:<#3> and #iref:<#0> and **bold**\nnewline \"q\" | pipe; dangling ERROR:9999",
    "domain": "Dom",
    "id": "#5",
    "implementation": "",
@@ -295,7 +295,7 @@
    "title": "Title of ColorVar",
    "updated_at": "<now>",
    "val_set": "#0",
-   "value": "#iref:104"
+   "value": "#iref:<#3>"
   },
   {
    "application": null,
@@ -363,7 +363,7 @@
    "title": "Title of Calc",
    "updated_at": "<now>",
    "val_set": "#0",
-   "value": "#iref:107 * 2"
+   "value": "#iref:<#6> * 2"
   },
   {
    "application": null,
@@ -431,7 +431,7 @@
    "title": "Req 1",
    "updated_at": "2024-02-20 16:45:30",
    "val_set": "#0",
-   "value": "The app shall use #iref:107 and ä"
+   "value": "The app shall use #iref:<#6> and ä"
   },
   {
    "application": null,
@@ -465,7 +465,7 @@
    "title": "Title of Calc",
    "updated_at": "<now>",
    "val_set": "#0",
-   "value": "#iref:107 * 2"
+   "value": "#iref:<#6> * 2"
   },
   {
    "application": null,

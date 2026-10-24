@@ -256,7 +256,7 @@
    "cat": "DataItem",
    "change_log": "",
    "created_at": "2000-01-01 00:00:00",
-   "desc": "See #iref:4 and #iref:1 and **bold**\nnewline \"q\" | pipe; dangling ERROR:9999",
+   "desc": "See #iref:<#3> and #iref:<#0> and **bold**\nnewline \"q\" | pipe; dangling ERROR:9999",
    "domain": "Dom",
    "id": "#5",
    "implementation": "",
@@ -283,7 +283,7 @@
    "title": "Title of ColorVar",
    "updated_at": "2024-03-03 03:03:03",
    "val_set": "#0",
-   "value": "#iref:4"
+   "value": "#iref:<#3>"
   },
   {
    "application": null,
@@ -351,7 +351,7 @@
    "title": "Title of Calc",
    "updated_at": "2024-02-20 16:45:30",
    "val_set": "#0",
-   "value": "#iref:7 * 2"
+   "value": "#iref:<#6> * 2"
   },
   {
    "application": null,
@@ -419,7 +419,7 @@
    "title": "Req 1",
    "updated_at": "2024-02-20 16:45:30",
    "val_set": "#0",
-   "value": "The app shall use #iref:7 and ä"
+   "value": "The app shall use #iref:<#6> and ä"
   }
  ],
  "editor_valset": [

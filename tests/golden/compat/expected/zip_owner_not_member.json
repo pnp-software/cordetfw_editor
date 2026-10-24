@@ -73,7 +73,7 @@
    "cat": "DataItem",
    "change_log": "",
    "created_at": "2000-01-01 00:00:00",
-   "desc": "#iref:1",
+   "desc": "#iref:<#0>",
    "domain": "Dom",
    "id": "#1",
    "implementation": "",

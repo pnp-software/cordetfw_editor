@@ -138,8 +138,10 @@ decision recorded here.
 Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-10-24, before the track S deploy
 (operator: "we have not yet deployed, but continue with the new branch and the fixes"). Baseline for "unchanged" =
 `track-s-rc1`. If staging (Task 4.4) needs a fix on `upgrade/django-lts`, it is merged into this branch.
-- [ ] **Task 7.0** Compat corpus `tests/golden/compat/` (old exports + synthetic edge cases, DB fingerprints
-  recorded on `track-s-rc1`)
+- [x] **Task 7.0** `5e5ad1d` + 7.1b: compat corpus `tests/golden/compat/` (17 inputs: 9 project ZIPs, 8 spec-item CSVs;
+  DB fingerprints recorded on `track-s-rc1` code; tests/test_compat_corpus.py). Fixes declare allowed fingerprint fields
+  in docs/fixes/expected-diffs.json `"compat"`; a changed fingerprint always leaves `.actual`, so it must be reviewed and
+  promoted. 7.1b: `#iref:<id>` in text normalised to the item rank (ids differ on MySQL), bare `*` patterns rejected
 - [x] **Task 7.1** Merge upstream branches: `origin/99` (split deletion), `origin/91` (FW Profile models shared by other
   authors); `origin/100` has 0 commits (nothing to merge).
   `origin/99`: merge a176737 + test eb01138 (gate: SQLite 1885 passed / 9 skipped, MySQL 1894 passed). Users can now
@@ -148,6 +150,10 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   with the user (shares ro/rw) can be listed, added and refreshed; unavailable models give a clear message; model queries
   are parameterized and close the connection. Register: `ext-cats-sql-injection`, `-connection-leak`,
   `-get-choice-not-found` stay OPEN (FCP paths unfixed).
+  7.1b Opus review of 2968724..5e5ad1d: nothing blocking. Visible change to confirm with the operator: refresh is now
+  limited to models the user owns or that are shared with them (ro/rw) by e-mail; before, any writer could refresh any
+  Model item, so co-authors now need an FW Profile share (also applies to FCP items, which go through the same refresh
+  check, while FCP listing/import is still owner-only). New row `refresh-not-shared-double-message`.
 - [ ] **Task 7.2** Less urgent security (K1)
 - [ ] **Task 7.3** Crashes -> proper responses (K2)
 - [ ] **Task 7.4** Import fidelity and atomicity (K3)
@@ -188,3 +194,9 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   sanitiser stays in track K (`image-svg-unsanitised`).
 - 2026-10-23 (operator), Task 6.6c: replace the SVG deny-list by an allowlist validator in track S (validate, never rewrite;
   must accept all 240 production diagrams; operator approves the allowlist).
+- 2026-10-24 (operator), track K: `access-first-row` -> write access if ANY of the user's ProjectUser rows for the
+  project is RW. Spec-item CSV import (`import-spec-items-no-rollback`, `-abort-no-summary`) -> keep per-row import
+  (valid rows saved, invalid skipped) and always end with a summary (N imported, M rejected with line + reason).
+  `index-lists-all-projects` -> non-staff users see only projects they own or are members of; staff see all.
+  Export byte changes: undecided; one ticket per change in docs/fixes/tickets/ (for GitHub and for checking the
+  scripts that read the exports). None of them is implemented before approval.

@@ -17,7 +17,9 @@ Fingerprint normalisation (only what the importer itself sets to "now"):
     by "<now>" when within one hour of the test run; any other value is kept verbatim (so a fix that
     starts preserving the exported timestamp shows up as a diff of that field).
   * auto-increment ids are replaced by "#<rank>" (position when ordered by id) in the table's own
-    "id" column and in every foreign key; user FKs become the username.
+    "id" column and in every foreign key; user FKs become the username. Internal references
+    "#iref:<id>" inside text fields become "#iref:<rank of the SpecItem>" (or "#iref:<missing>"),
+    because auto-increment ids differ between SQLite and MySQL runs.
 Known-issue inputs (import-project-*) are recorded as they behave today, including exceptions and
 partial DB state; they are marked "# KNOWN-ISSUE: <id>" next to KNOWN_ISSUE_INPUTS below.
 """
@@ -75,6 +77,7 @@ def load_compat_allowlist(path=ALLOWLIST):
     Format: any entry of docs/fixes/expected-diffs.json may carry an optional key
         "compat": {"<input name>": ["<table>.<field>", ...], ...}
     '<input name>' is a manifest name or '*'; '<table>.<field>' is e.g. 'editor_projectuser.role',
+    (a bare '*' pattern is rejected: a fix must name the tables it changes),
     'editor_specitem.*', '_outcome.messages', '_outcome.exception', or 'editor_specitem.#rows' (row
     count differs).  Entries used only for compat have "applies_to": "compat" (ignored by
     docs/migration/rehearsal/rehearse.py).
@@ -82,13 +85,14 @@ def load_compat_allowlist(path=ALLOWLIST):
     allowed = {}
     for entry in json.loads(Path(path).read_text()):
         for name, fields in (entry.get('compat') or {}).items():
+            assert '*' not in fields, 'compat allowlist: bare "*" pattern in %s' % entry.get('id')
             allowed.setdefault(name, set()).update(fields)
     return allowed
 
 
 def is_allowed(path, patterns):
     table = path.split('.', 1)[0]
-    return any(p in ('*', path, table + '.*') for p in patterns)
+    return any(p in (path, table + '.*') for p in patterns)
 
 
 # ---------------------------------------------------------------------------
@@ -111,6 +115,9 @@ def _norm_value(value, now):
     return value
 
 
+IREF_RE = re.compile(r'#iref:(\d+)')
+
+
 def fingerprint():
     """{table: [row dict, ...]} for all editor tables, ordered by id, ids replaced by ranks."""
     now = datetime.now(timezone.utc)
@@ -118,6 +125,7 @@ def fingerprint():
     for model in _models():
         ranks[model] = {pk: '#%d' % i for i, pk in
                         enumerate(model.objects.order_by('id').values_list('id', flat=True))}
+    item_ranks = ranks[apps.get_model('editor', 'SpecItem')]
     result = {}
     for model in _models():
         rows = []
@@ -136,7 +144,11 @@ def fingerprint():
                     else:
                         row[field.name] = ranks[rel][raw]
                 else:
-                    row[field.name] = _norm_value(getattr(obj, field.name), now)
+                    value = _norm_value(getattr(obj, field.name), now)
+                    if isinstance(value, str):
+                        value = IREF_RE.sub(lambda m: '#iref:<%s>' % item_ranks.get(int(m.group(1)), 'missing'),
+                                            value)
+                    row[field.name] = value
             rows.append(row)
         result[model._meta.db_table] = rows
     return result
@@ -235,10 +247,12 @@ def test_compat_import_fingerprint(client, name):
     diffs = diff_paths(expected, actual_norm)
     patterns = load_compat_allowlist().get(name, set()) | load_compat_allowlist().get('*', set())
     unexplained = sorted(p for p in diffs if not is_allowed(p, patterns))
-    if not unexplained:
-        return      # every differing field is declared by a fix in docs/fixes/expected-diffs.json
+    # Always leave the .actual file: the gate's "no golden diffs" step then fails until the reviewed
+    # file is promoted, so an allowlisted field is never left unchecked for later changes.
     actual_path = path.with_name(path.name + '.actual')
     actual_path.write_bytes(_dump(actual))
+    if not unexplained:
+        return      # every differing field is declared by a fix in docs/fixes/expected-diffs.json
     raise AssertionError('Import fingerprint of %s differs from %s in undeclared fields %s; actual written to %s'
                          % (name, path, unexplained, actual_path))
 
@@ -272,7 +286,7 @@ def test_compat_diff_machinery():
     e = {'t': [{'id': '#0', 'a': 1, 'b': 2}], '_outcome': {'exception': None}}
     a = {'t': [{'id': '#0', 'a': 1, 'b': 3}, {'id': '#1', 'a': 1, 'b': 2}], '_outcome': {'exception': 'KeyError'}}
     assert diff_paths(e, a) == {'t.#rows', 't.b', '_outcome.exception'}
-    assert is_allowed('t.b', {'t.*'}) and is_allowed('t.b', {'*'}) and not is_allowed('t.b', {'t.a'})
+    assert is_allowed('t.b', {'t.*'}) and not is_allowed('t.b', {'*'}) and not is_allowed('t.b', {'t.a'})
 
 
 def _zip_fixed(members):

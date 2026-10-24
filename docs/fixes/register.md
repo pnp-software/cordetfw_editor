@@ -6,7 +6,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 
 | id | aliases | doc | tests | track | status | decision |
 | --- | --- | --- | --- | --- | --- | --- |
-| access-first-row | — | models-access-releases-query.md | tests/test_access.py | K | OPEN |  |
+| access-first-row | — | models-access-releases-query.md | tests/test_access.py | K | OPEN | Operator 2026-10-24: any RW row wins |
 | add-app-releases-null-app-items | — | models-access-releases-query.md | tests/test_releases.py | S | FIXED (Task 6.5) | Data impact in production: docs/fixes/add-app-release-data-impact.md (report only) |
 | add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | OPEN |  |
 | add-spec-item-val-set-post | — | views.md | — | K | OPEN |  |
@@ -16,7 +16,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | conv-date-nameerror | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | OPEN |  |
 | csv-export-not-reimportable | — | import-export-auth.md | — | K | OPEN | Spec-item CSV exports of production data contain rows that the importer's row checks reject (identifier rule / empty required field): 448 of 11,046 rows, 436 in one project; 447 empty required field (Requirement 399), 1 identifier rule. Found in Task 6.8e; identical with the production code (Task 6.8f) |
-| csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/csv-formula-injection.md |
 | dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
 | edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | FIXED in 1b2bb5a | the merged upstream #86 branch scopes the delete to the URL's project (Task 6.3) |
@@ -24,16 +24,16 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | enum-value-no-type | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | eval-ref-dos | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | exp-ref-no-dots | — | forms-convert-utilities.md | tests/test_convert.py | K | OPEN |  |
-| export-dangling-ref-literal | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| export-eval-ref-raw | export-eval-ref-not-converted | forms-convert-utilities.md, import-export-auth.md | tests/test_import_export.py, tests/test_utilities.py | K | OPEN |  |
-| export-filename-not-escaped | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| export-none-string | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
+| export-dangling-ref-literal | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-dangling-ref-literal.md |
+| export-eval-ref-raw | export-eval-ref-not-converted | forms-convert-utilities.md, import-export-auth.md | tests/test_import_export.py, tests/test_utilities.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-eval-ref-raw.md |
+| export-filename-not-escaped | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-filename-not-escaped.md |
+| export-none-string | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-none-string.md |
 | export-s-data-key-order | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | ext-cats-connection-leak | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN | Model paths fixed by upstream #91 (Task 7.1); FCP paths open |
 | ext-cats-fcp-no-title | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN |  |
 | ext-cats-get-choice-not-found | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN | Model paths fixed by upstream #91 (Task 7.1); FCP paths open |
 | ext-cats-null-domain | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN |  |
-| ext-cats-sql-injection | — | import-export-auth.md, security-audit.md | tests/test_ext_cats.py, tests/test_security_audit.py | K | OPEN | Model paths fixed by upstream #91 (Task 7.1); FCP paths open |
+| ext-cats-sql-injection | — | import-export-auth.md, security-audit.md | tests/test_ext_cats.py | K | OPEN | Model paths fixed by upstream #91 (Task 7.1); FCP paths open |
 | ext-fcp-refresh-nameerror | ext-fcp-refresh-undefined-name | import-export-auth.md, views.md | tests/test_ext_cats.py | K | OPEN |  |
 | find-replace-no-write-check | — | views.md | tests/test_views.py | S | FIXED (Task 6.4) |  |
 | find-replace-on-release-view | — | views.md | — | K | OPEN | Find & Replace is offered on release views (sel_rel_id != 0) whose query includes CNF/OBS/DEL historical rows, so it could rewrite OBS versions. Found by the Task 6.4 review |
@@ -59,14 +59,14 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-project-owner-not-member | — | import-export-auth.md | — | K | OPEN | Project ZIP import drops items whose owner is neither project owner nor project user (KeyError, "probable cause (b)"). Production (dump 2026-10-21): 35 items in 1 project would be lost on export -> import. Found in Task 6.8e; identical with the production code (Task 6.8f) |
 | import-project-role-lost | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-project-s-data-double-encoded | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| import-spec-items-abort-no-summary | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| import-spec-items-no-rollback | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
+| import-spec-items-abort-no-summary | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Operator 2026-10-24: keep per-row import, always show a summary |
+| import-spec-items-no-rollback | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Operator 2026-10-24: keep per-row import, always show a summary |
 | import-spec-items-undefined-i | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-traceback-in-message | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
-| index-lists-all-projects | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| index-lists-all-projects | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Operator 2026-10-24: non-staff see only own/member projects; staff see all |
 | index-username-substring | — | views.md | tests/test_views.py | K | OPEN |  |
 | iref-cross-project-disclosure | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
-| latex-export-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
+| latex-export-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/latex-export-injection.md |
 | link-suggest-js-string | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.6b) | Stored XSS (`\x3c` in a title decoded to `<` before the jQuery html: sink); template filter js_str_after_html_escape |
 | list-500s | — | views.md | tests/test_views.py | K | OPEN |  |
 | login-echoes-password | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
@@ -83,6 +83,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | p-link-selection-lost | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
 | ref-link-backslash | — | forms-convert-utilities.md, views.md | tests/test_convert.py, tests/test_rendering_snapshots.py | K | OPEN |  |
+| refresh-not-shared-double-message | — | views.md | — | K | OPEN | Refresh of a model that exists but is not shared with the user shows "Model not found or not shared with you..." followed by "External spec_item no longer exists -- no refresh can be done". Found by the Task 7.1 review |
 | refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | OPEN |  |
 | release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |

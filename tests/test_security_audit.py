@@ -577,8 +577,8 @@ def test_15_import_traceback_in_message(w):
 # ---------------------------------------------------------------------------------------------
 
 def test_16_ext_cats_email_is_only_injection_vector(w):
-    # Model paths fixed by upstream #91 (Task 7.1); the FCP paths are still open, see the
-    # KNOWN-ISSUE: ext-cats-sql-injection test in tests/test_ext_cats.py
+    # Model paths fixed by upstream #91 (Task 7.1); the FCP paths are still open and pinned in
+    # tests/test_ext_cats.py
     validate_email("x'or+1#@a.com")          # Django's EmailValidator accepts the payload
     w.rw_a.email = "x'or+1#@a.com"
     w.rw_a.save()
