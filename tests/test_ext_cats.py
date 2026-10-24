@@ -497,30 +497,52 @@ def test_fcp_get_choices_filters_on_fcp_suffix_and_sorts(fake_db):
     fake_db.responder = responder
     request = make_request()
     assert ext_cats.ext_fcp_get_choices(request) == [(2, 'AFcp : a'), (4, 'AFcp : b'), (1, 'BFcp : z')]
-    assert fake_db.conn.sql == ["SELECT * FROM users WHERE email = 'alice@example.com'",
-                                'SELECT * FROM diagrams WHERE userID = 42']
+    # CHANGED: ext-cats-sql-injection (was: queries with the e-mail / user id spliced into the SQL text)
+    assert fake_db.conn.calls == [('SELECT * FROM users WHERE email = %s', ['alice@example.com']),
+                                  ('SELECT * FROM diagrams WHERE userID = %s', [42])]
     assert fake_db.conn.closed is True
 
 
-def test_fcp_get_choices_sql_is_string_concatenated(fake_db):
-    # KNOWN-ISSUE: ext-cats-sql-injection
-    # Model functions are parameterized since upstream #91; the FCP functions still splice the e-mail.
+def test_fcp_get_choices_sql_is_parameterized(fake_db):
+    # FIXED: ext-cats-sql-injection (was: the e-mail was spliced into the SQL text of the FCP queries)
     fake_db.responder = lambda sql: []
     request = make_request(User(username='mallory', email="x' OR '1'='1"))
     ext_cats.ext_fcp_get_choices(request)
-    assert fake_db.conn.sql[0] == "SELECT * FROM users WHERE email = 'x' OR '1'='1'"
+    assert fake_db.conn.calls[0] == ('SELECT * FROM users WHERE email = %s', ["x' OR '1'='1"])
+    assert "x' OR" not in fake_db.conn.calls[0][0]
 
 
-def test_fcp_connection_leaks_on_early_return_and_no_change(fake_db):
-    # KNOWN-ISSUE: ext-cats-connection-leak
-    # Model functions close the connection on every path since upstream #91; the FCP functions do not.
+def test_fcp_get_choice_and_refresh_sql_is_parameterized_and_owner_only(fake_db):
+    # FIXED: ext-cats-sql-injection (was: 'SELECT * FROM diagrams WHERE ID = <id>', any user's diagram)
+    owned_sql = ('SELECT diagrams.* FROM diagrams WHERE diagrams.id = %s AND '
+                 'EXISTS (SELECT 1 FROM users WHERE users.id = diagrams.userID AND users.email = %s)')
+    fake_db.responder = lambda sql: [diagram(5, 'n', 'XFcp', json_rep=fcp_json('XFcp', 'Title: T\nd'))]
+    ext_cats.ext_fcp_get_choice(make_request(), "5 OR 1=1")
+    assert fake_db.conn.calls == [(owned_sql, ["5 OR 1=1", 'alice@example.com'])]
+    assert fake_db.conn.closed is True
+    fake_db.responder = lambda sql: []
+    ext_cats.ext_fcp_refresh(make_request(), make_item(n3="9 OR 1=1"))
+    assert fake_db.conn.calls == [(owned_sql, ["9 OR 1=1", 'alice@example.com'])]
+    assert fake_db.conn.closed is True
+
+
+def test_fcp_connections_closed_on_every_path(fake_db):
+    # FIXED: ext-cats-connection-leak (was: FCP functions left the connection open on early return / NO_CHANGE)
     fake_db.responder = lambda sql: []
     assert ext_cats.ext_fcp_get_choices(make_request()) == [(0, 'No FCP Found')]
-    assert fake_db.conn.closed is False
+    assert fake_db.conn.closed is True
+    fake_db.responder = lambda sql: RuntimeError('db down')
+    ext_cats.ext_fcp_get_choices(make_request())
+    assert fake_db.conn.closed is True
     fake_db.responder = lambda sql: [diagram(7, 'n', 'XFcp', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>',
                                              json_rep=fcp_json('XFcp', 'Title: T\nd'))]
     assert ext_cats.ext_fcp_refresh(make_request(), make_item()) == 'NO_CHANGE'
-    assert fake_db.conn.closed is False
+    assert fake_db.conn.closed is True
+    fake_db.responder = lambda sql: RuntimeError('db down')
+    assert ext_cats.ext_fcp_refresh(make_request(), make_item()) == 'NOT_FOUND'
+    assert fake_db.conn.closed is True
+    assert ext_cats.ext_fcp_get_choice(make_request(), 5) is None
+    assert fake_db.conn.closed is True
 
 
 def test_fcp_get_choices_none_found(fake_db):
@@ -570,7 +592,7 @@ def test_fcp_get_choice(fake_db):
     assert result == {'domain': 'XFcp', 'name': 'fcpname', 'updated_at': datetime(2024, 3, 4, 5, 6, 7),
                       'title': 'My Title', 'desc': 'Some description', 'value': '<svg xmlns="http://www.w3.org/2000/svg"><desc>f</desc></svg>',
                       'n1': 5, 'n2': 6, 'n3': 5}
-    assert fake_db.conn.sql == ['SELECT * FROM diagrams WHERE ID = 5']
+    assert fake_db.conn.calls[0][1] == [5, 'alice@example.com']       # CHANGED: ext-cats-sql-injection
     assert fake_db.conn.closed is True
 
 
@@ -629,7 +651,7 @@ def test_fcp_refresh_changed_raises_name_error(fake_db):
     assert 'ext_item_dict' in str(excinfo.value)
     assert (item.domain, item.name) == ('NewFcp', 'newname')
     assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
-    assert fake_db.conn.closed is False
+    assert fake_db.conn.closed is True      # CHANGED: ext-cats-connection-leak (was: False; connection left open)
 
 
 # ---------------------------------------------------------------------------

@@ -29,11 +29,11 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | export-filename-not-escaped | — | import-export-auth.md | tests/test_import_export.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-filename-not-escaped.md |
 | export-none-string | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/export-none-string.md |
 | export-s-data-key-order | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
-| ext-cats-connection-leak | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN | Model paths fixed by upstream #91 (Task 7.1); FCP paths open |
+| ext-cats-connection-leak | — | import-export-auth.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) | Model paths fixed by upstream #91 (Task 7.1); FCP paths: FIXED (Task 7.2c) |
 | ext-cats-fcp-no-title | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN |  |
 | ext-cats-get-choice-not-found | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN | Model paths fixed by upstream #91 (Task 7.1); FCP paths open |
 | ext-cats-null-domain | — | import-export-auth.md | tests/test_ext_cats.py | K | OPEN |  |
-| ext-cats-sql-injection | — | import-export-auth.md, security-audit.md | tests/test_ext_cats.py | K | OPEN | Model paths fixed by upstream #91 (Task 7.1); FCP paths open |
+| ext-cats-sql-injection | — | import-export-auth.md, security-audit.md | tests/test_ext_cats.py | K | FIXED (Task 7.2c) | Model paths fixed by upstream #91 (Task 7.1); FCP paths: FIXED (Task 7.2c) |
 | ext-fcp-refresh-nameerror | ext-fcp-refresh-undefined-name | import-export-auth.md, views.md | tests/test_ext_cats.py | K | OPEN |  |
 | find-replace-no-write-check | — | views.md | tests/test_views.py | S | FIXED (Task 6.4) |  |
 | find-replace-on-release-view | — | views.md | — | K | OPEN | Find & Replace is offered on release views (sel_rel_id != 0) whose query includes CNF/OBS/DEL historical rows, so it could rewrite OBS versions. Found by the Task 6.4 review |
