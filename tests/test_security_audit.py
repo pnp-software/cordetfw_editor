@@ -727,10 +727,12 @@ def test_15_import_traceback_in_message(w, caplog):
     import logging
     from django.core.files.uploadedfile import SimpleUploadedFile
     header = 'Domain|Name|Title|Description|Default Value|Rationale|Remarks|Native Type|ValSet|Change Log|Owner|Size'
-    row = 'D|n|t|d|v|r|r|i|Default|c|x|notanint'
+    row = 'D|n|t|d|v|r|r|i|Default|c|x|1'
     f = SimpleUploadedFile('x.csv', (header + '\n' + row + '\n').encode())
     c = w.client(w.rw_a)
-    with caplog.at_level(logging.ERROR, logger='editor.views'):
+    # an unexpected error while saving the row (a bad number is now rejected with its own reason, Task 7.4c)
+    with caplog.at_level(logging.ERROR, logger='editor.views'), \
+            mock.patch.object(SpecItem, 'save', side_effect=ValueError('simulated failure')):
         r = c.post('/editor/DataItemType/%d/0/%d/Sel_All/import_spec_items' % (w.a.id, w.dvs_a.id),
                    {'upload_file': f})
     assert r.status_code == 302
