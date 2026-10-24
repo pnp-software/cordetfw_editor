@@ -1071,18 +1071,17 @@ def test_do_cat_specific_checks_other_cats_return_empty(world):
     assert do_cat_specific_checks(stub) == ''
 
 
-def test_do_cat_specific_checks_dataitem_without_p_link_crashes():
-    # KNOWN-ISSUE: dataitem-no-plink  (cd['p_link'] is None -> AttributeError; unreachable through the
-    # form today because p_link is required for DataItem, but the function itself is unguarded)
+def test_do_cat_specific_checks_dataitem_without_p_link_is_ignored():
+    # FIXED: dataitem-no-plink (was: AttributeError for p_link None; the form's required-field check
+    # reports a missing p_link, so there is nothing to check here)
     stub = SimpleNamespace(cat='DataItem', cleaned_data={'p_link': None, 'value': ''})
-    with pytest.raises(AttributeError):
-        do_cat_specific_checks(stub)
+    assert do_cat_specific_checks(stub) == ''
 
 
 def test_do_cat_specific_checks_dataitem_missing_p_link_key():
+    # FIXED: dataitem-no-plink (was: KeyError)
     stub = SimpleNamespace(cat='DataItem', cleaned_data={'value': ''})
-    with pytest.raises(KeyError):
-        do_cat_specific_checks(stub)
+    assert do_cat_specific_checks(stub) == ''
 
 
 def test_dataitem_without_p_link_is_rejected_by_required(world):

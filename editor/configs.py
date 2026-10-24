@@ -115,7 +115,7 @@ def do_cat_specific_checks(form):
     
     # Verify that the value of a data item of enumerated type is an internal reference to an enumerated 
     # value of the data item's type
-    if (form.cat == 'DataItem') and (cd['p_link'].cat == 'EnumType'):
+    if (form.cat == 'DataItem') and (cd.get('p_link') is not None) and (cd['p_link'].cat == 'EnumType'):
         m = re.match(pattern_db, cd['value'].strip())
         if (m == None) or (m.span()[1] != len(cd['value'].strip())):
             return 'Data item value must be a reference to an enumerated value of the item type'

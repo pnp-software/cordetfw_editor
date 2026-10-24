@@ -17,7 +17,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | copy-unreachable-valset-message | — | views.md | tests/test_views.py | K | OPEN |  |
 | csv-export-not-reimportable | — | import-export-auth.md | — | K | OPEN | Spec-item CSV exports of production data contain rows that the importer's row checks reject (identifier rule / empty required field): 448 of 11,046 rows, 436 in one project; 447 empty required field (Requirement 399), 1 identifier rule. Found in Task 6.8e; identical with the production code (Task 6.8f) |
 | csv-formula-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/csv-formula-injection.md |
-| dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
+| dataitem-no-plink | — | forms-convert-utilities.md | tests/test_forms.py | K | FIXED (Task 7.3) |  |
 | disp-trac-plink-none | — | forms-convert-utilities.md | tests/test_convert.py | K | FIXED (Task 7.3) |  |
 | edit-project-del-user-unscoped | — | views.md | tests/test_views.py | S | FIXED in 1b2bb5a | the merged upstream #86 branch scopes the delete to the URL's project (Task 6.3) |
 | edit-project-valset-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
