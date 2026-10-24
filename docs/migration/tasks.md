@@ -178,7 +178,7 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
   crashed), add-spec-item-val-set-post, import-spec-items-undefined-i, list-500s (unknown cat 404, bad disp -> disp_def,
   page via get_page, invalid expand params ignored). Gate 1980 SQLite / 1990 MySQL. Opus review: nothing blocking;
   follow-ups 7.3b (Unicode-digit expand_id, `i` defined before the import loop, register test columns)
-- [ ] **Task 7.4** Import fidelity and atomicity (K3)
+- [x] **Task 7.4** Import fidelity and atomicity (K3)
   - 7.4b spec-item CSV import (`8f521d4`..`1af4aa9`): exp-ref-no-dots (link references with dots/dashes resolve),
     import-spec-items-no-rollback + -abort-no-summary (per-row atomic import, one summary "N imported, M rejected"
     with line numbers and reasons, warnings), csv-export-not-reimportable (empty required text/choice fields
@@ -191,7 +191,11 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
     rejected link targets cleared and reported, owner-not-member per operator rule (existing account -> RO member,
     else project owner), role / application_version / created_at / updated_at / CRLF / empty application cats /
     s_data restored, member names `./x.csv` accepted. Compat corpus: every ZIP input now reproduces the exported
-    values; re-export of an imported project equals the source export. Gate 2108 SQLite / 2118 MySQL
+    values; re-export of an imported project equals the source export. Gate 2108 SQLite / 2118 MySQL.
+    Opus review: nothing blocking; 7.4d `5e235a7`: owner resolved only for rows actually saved, notes as warnings,
+    unreadable created_at keeps the default with a note, Release.updated_at timezone-aware, release views of a
+    source project and its imported copy compared by a test; s_data limitation documented (a stored string that
+    looks like a JSON object/list imports as the object)
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)
 - [x] **Task 7.6** UI/behaviour bugs (K5): 8 ids (`fba05cb`.. as cherry-picked, ending `ccefe19`): help-double-space,
   owner-empty-names, form-none-literal, p-link-selection-lost, copy-unreachable-valset-message,
@@ -206,7 +210,8 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
 - [x] **Task 7.7** Model defaults (K6): naive-created-at-default (migration 0012, aware UTC default) and
   release-version-default-str (migration 0013, int defaults). sqlmigrate: MySQL no-op for both; SQLite rebuilds the
   table with rows copied unchanged. No data migration; rollback with the old code works (no MySQL DDL)
-- [ ] **Task 7.8** Decide-only items (K7)
+- [ ] **Task 7.8** Decide-only items (K7); also `ef2fd0c` refresh-cnf-obs-copy-new-content (the OBS copy made by
+  a refresh of a CNF Model item keeps the previous version). Gate on 5e235a7: 2118 SQLite / 2128 MySQL
 - [ ] **Task 7.9** Release gate for track K
 
 ## Decisions
