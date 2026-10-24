@@ -247,12 +247,15 @@ def test_convert_exp_to_db(world):
     assert convert_exp_to_db(p, 'D:missing') is None
 
 
-def test_convert_exp_to_db_dotted_or_dashed_names_not_supported(world):
-    # KNOWN-ISSUE: exp-ref-no-dots  (pattern_ref_exp has no '.'/'-': such references resolve to None)
-    make_spec_item(world['project'], 'DataItem', 'a.b', 'c', status='CNF', p_link=world['etype'])
-    make_spec_item(world['project'], 'DataItem', 'a-b', 'c', status='CNF', p_link=world['etype'])
-    assert convert_exp_to_db(world['project'], 'a.b:c') is None
-    assert convert_exp_to_db(world['project'], 'a-b:c') is None
+def test_convert_exp_to_db_dotted_or_dashed_names(world):
+    a = make_spec_item(world['project'], 'DataItem', 'a.b', 'c', status='CNF', p_link=world['etype'])
+    b = make_spec_item(world['project'], 'DataItem', 'a-b', 'c', status='CNF', p_link=world['etype'])
+    d = make_spec_item(world['project'], 'DataItem', 'a.b-c_d', 'x.y-z', status='CNF', p_link=world['etype'])
+    # FIXED: exp-ref-no-dots (was: pattern_ref_exp had no '.'/'-', so these references resolved to None)
+    assert convert_exp_to_db(world['project'], 'a.b:c') == a
+    assert convert_exp_to_db(world['project'], 'a-b:c') == b
+    assert convert_exp_to_db(world['project'], 'a.b-c_d:x.y-z (a title)') == d
+    assert convert_exp_to_db(world['project'], 'a.b.:c') is None      # dots must be internal
 
 
 def test_convert_exp_to_db_ambiguous_returns_none(world):

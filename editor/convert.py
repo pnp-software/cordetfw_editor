@@ -18,7 +18,9 @@ pattern_db = re.compile('#(iref):([0-9]+)')
 
 # Regex pattern for plain references to specification items as they
 # rendered in export representation (e.g. 'dom:name')
-pattern_ref_exp = re.compile('([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)')
+# identifier characters as allowed by forms.validate_identifier (dots only internal)
+_ident = r'[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*'
+pattern_ref_exp = re.compile('(' + _ident + '):(' + _ident + ')')
 
 logger = logging.getLogger(__name__)
 
