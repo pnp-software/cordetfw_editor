@@ -203,6 +203,8 @@ class SpecItemForm(forms.Form):
         # In add mode, the ValSet is not visible
         if (self.mode == 'add'):
             self.fields['val_set'].widget = forms.HiddenInput()
+            # No valid choice: a posted value is a form error, not a crash (items go to the Default ValSet)
+            self.fields['val_set'].queryset = ValSet.objects.none()
 
         # In copy and edit mode, the ValSet cannot be edited but is visible
         if (self.mode == 'copy') or (self.mode == 'edit'):

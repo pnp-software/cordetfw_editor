@@ -1472,3 +1472,16 @@ def test_list_out_component_disp_variants(client, owner, project, dvs, disp):
     resp = client.get(lurl('OutComponent', project, dvs), {'disp': disp})
     assert resp.status_code == 200
     assert resp.context['disp'] == disp
+
+
+@pytest.mark.parametrize('posted', ['other', '99999'])
+def test_add_spec_item_post_with_val_set_is_rejected(client, owner, project, dvs, dtype, posted):
+    # FIXED: add-spec-item-val-set-post (was: AttributeError 'NoneType' has no attribute 'model', HTTP 500)
+    other = ValSet.objects.create(project=project, name='Other', desc='')
+    val_set = str(other.id) if posted == 'other' else posted
+    before = SpecItem.objects.count()
+    resp = client.post(add_url('DataItem', project, sel_val='Dom'),
+                       post_data(p_link=dtype.id, p_kind='VAR', val_set=val_set))
+    assert resp.status_code == 200
+    assert 'val_set' in resp.context['form'].errors
+    assert SpecItem.objects.count() == before
