@@ -1392,8 +1392,8 @@ def test_refresh_not_found(client, owner, project, dvs, model_item):
     assert resp.url == '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items#OldDom:OldName' % (project.id, app.id, dvs.id)
     assert msgs(resp) == [
         # CHANGED: upstream #91 (was: 'Model not found in FW Profile Database (its ID is: 77)')
-        ('alert-warning', 'Model not found or not shared with you in FW Profile Database (its ID is: 77)'),
-        ('alert-warning', 'External spec_item no longer exists -- no refresh can be done')]
+        ('alert-warning', 'Model not found or not shared with you in FW Profile Database (its ID is: 77)')]
+    # FIXED: refresh-not-shared-double-message (was: a second warning 'External spec_item no longer exists -- no refresh can be done')
     item.refresh_from_db()
     assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
 
@@ -1417,8 +1417,8 @@ def test_refresh_db_error_reports_not_found(client, owner, project, dvs, model_i
         resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert msgs(resp) == [
-        ('alert-danger', 'Error while accessing model with ID "77: db down'),
-        ('alert-warning', 'External spec_item no longer exists -- no refresh can be done')]
+        ('alert-danger', 'Error while accessing model with ID "77: db down')]
+    # FIXED: refresh-not-shared-double-message (was: a second warning 'External spec_item no longer exists -- no refresh can be done')
 
 
 # ----------------------------------------------------------------------------

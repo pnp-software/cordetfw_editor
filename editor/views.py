@@ -785,10 +785,8 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
         spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()
-    elif refresh_outcome == 'NOT_FOUND':
-        messages.warning(request,'External spec_item no longer exists -- no refresh can be done')
-    elif refresh_outcome == 'INVALID':
-        pass        # ext_model_refresh has issued the error message; the item is unchanged
+    elif refresh_outcome in ('NOT_FOUND', 'INVALID'):
+        pass        # ext_model_refresh has issued the (informative) message; the item is unchanged
     elif refresh_outcome == 'NO_CHANGE':
         messages.warning(request,'External spec_item has not changed -- no refresh needed')
  
