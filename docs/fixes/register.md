@@ -8,7 +8,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | --- | --- | --- | --- | --- | --- | --- |
 | access-first-row | — | models-access-releases-query.md | tests/test_access.py | K | FIXED (Task 7.2a) | Operator 2026-10-24: any RW row wins |
 | add-app-releases-null-app-items | — | models-access-releases-query.md | tests/test_releases.py | S | FIXED (Task 6.5) | Data impact in production: docs/fixes/add-app-release-data-impact.md (report only) |
-| add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | OPEN |  |
+| add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
 | add-spec-item-val-set-post | — | views.md | — | K | OPEN |  |
 | appform-cats-substring | app-cats-substring | forms-convert-utilities.md, models-access-releases-query.md | tests/test_forms.py, tests/test_releases.py | K | FIXED (Task 7.2a) |  |
 | axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | No proxy, so REMOTE_ADDR is the client IP: shared-lockout DoS not applicable; distributed brute force remains. optional AXES_LOCKOUT_PARAMETERS key added in Task 6.7; default unchanged (operator choice) |

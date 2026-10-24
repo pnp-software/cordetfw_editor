@@ -914,11 +914,12 @@ def test_add_spec_item_with_s_parent(client, owner, project, dvs):
     assert SpecItem.objects.get(name='v1').s_link == et
 
 
-def test_add_spec_item_with_p_parent_on_cat_without_s_link_raises(client, owner, project, dvs, dtype):
+def test_add_spec_item_with_p_parent_on_cat_without_s_link(client, owner, project, dvs, dtype):
     et = make_spec_item(project, cat='EnumType', domain='E', name='T')
-    # KNOWN-ISSUE: add-p-parent-label-keyerror
-    with pytest.raises(KeyError):
-        client.get(add_url('DataItem', project) + '?p_parent_id=%d' % et.id)
+    # FIXED: add-p-parent-label-keyerror (was: KeyError, the p_parent sub title used the s_link label)
+    resp = client.get(add_url('DataItem', project) + '?p_parent_id=%d' % et.id)
+    assert resp.status_code == 200
+    assert resp.context['sub_title'] == 'Type ' + str(et)
 
 
 def test_add_spec_item_with_p_parent(client, owner, project, dvs):
@@ -927,7 +928,8 @@ def test_add_spec_item_with_p_parent(client, owner, project, dvs):
     url = add_url('PacketPar', project) + '?p_parent_id=%d' % pk.id
     resp = client.get(url)
     assert resp.status_code == 200
-    assert resp.context['sub_title'] == 'Data Item ' + str(pk)   # label of the s_link attr is used (sic)
+    # FIXED: add-p-parent-label-keyerror (was: 'Data Item ' + str(pk), the s_link label)
+    assert resp.context['sub_title'] == 'Packet ' + str(pk)
     data = post_data(domain='P', name='par', p_link=pk.id, s_link=di.id, p_kind='HK')
     resp = client.post(url, data)
     assert resp.status_code == 302, resp.context['form'].errors

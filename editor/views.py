@@ -679,7 +679,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_val, sel_rel_id)
     if (s_parent_id != None):
         sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(s_parent)     
     if (p_parent_id != None):
-        sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(p_parent)     
+        sub_title = sub_title + configs['cats'][cat]['attrs']['p_link']['label'] + ' ' + str(p_parent)     
         
     if request.method == 'POST':   
         form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, request.POST)
