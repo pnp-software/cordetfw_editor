@@ -8,8 +8,8 @@ class Release(models.Model):
     release_author = models.ForeignKey(User, on_delete=models.PROTECT)
     desc = models.TextField()
     updated_at = models.DateTimeField()
-    project_version = models.PositiveSmallIntegerField(default="0")
-    application_version = models.PositiveSmallIntegerField(default="0")
+    project_version = models.PositiveSmallIntegerField(default=0)
+    application_version = models.PositiveSmallIntegerField(default=0)
     previous =  models.OneToOneField('self', on_delete=models.SET_DEFAULT, null=True, default=None)
     def __str__(self):
         return str(self.project_version)+'.'+str(self.application_version)   

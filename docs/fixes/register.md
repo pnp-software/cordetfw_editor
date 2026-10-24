@@ -87,7 +87,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | refresh-not-shared-double-message | — | views.md | — | K | OPEN | Refresh of a model that exists but is not shared with the user shows "Model not found or not shared with you..." followed by "External spec_item no longer exists -- no refresh can be done". Found by the Task 7.1 review |
 | refresh-timestamp-overwritten | — | views.md | tests/test_views.py | K | OPEN |  |
 | release-id-unscoped | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.4) |  |
-| release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
+| release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | FIXED (Task 7.7) |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN |  |
 | session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | OPEN | HSTS + port 80 redirect done by Apache (operator 2026-10-23); session length/CSP defaults remain, low |
 | temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.2c) |  |

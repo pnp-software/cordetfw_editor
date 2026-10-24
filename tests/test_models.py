@@ -434,12 +434,11 @@ def test_spec_item_created_at_default_naive_datetime_stored_as_utc():
 
 
 def test_release_version_defaults():
-    # KNOWN-ISSUE: release-version-default-str (default="0" is a string on unsaved instances)
+    # FIXED: release-version-default-str (was: default="0" was a string on unsaved instances)
     user = make_user()
     unsaved = Release(release_author=user, desc='d', updated_at=FIXED_TIME)
-    # the default is the string "0" until the instance is reloaded from the DB
-    assert unsaved.project_version == '0'
-    assert unsaved.application_version == '0'
+    assert unsaved.project_version == 0 and isinstance(unsaved.project_version, int)
+    assert unsaved.application_version == 0 and isinstance(unsaved.application_version, int)
     unsaved.save()
     unsaved.refresh_from_db()
     assert unsaved.project_version == 0
