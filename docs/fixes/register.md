@@ -9,7 +9,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | access-first-row | — | models-access-releases-query.md | tests/test_access.py | K | FIXED (Task 7.2a) | Operator 2026-10-24: any RW row wins |
 | add-app-releases-null-app-items | — | models-access-releases-query.md | tests/test_releases.py | S | FIXED (Task 6.5) | Data impact in production: docs/fixes/add-app-release-data-impact.md (report only) |
 | add-p-parent-label-keyerror | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
-| add-spec-item-val-set-post | — | views.md | — | K | FIXED (Task 7.3) |  |
+| add-spec-item-val-set-post | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
 | appform-cats-substring | app-cats-substring | forms-convert-utilities.md, models-access-releases-query.md | tests/test_forms.py, tests/test_releases.py | K | FIXED (Task 7.2a) |  |
 | axes-ip-only-lockout | — | security-audit.md | tests/test_security_audit.py | S | OPEN | No proxy, so REMOTE_ADDR is the client IP: shared-lockout DoS not applicable; distributed brute force remains. optional AXES_LOCKOUT_PARAMETERS key added in Task 6.7; default unchanged (operator choice) |
 | change-password-no-response | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) |  |
@@ -78,7 +78,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | naive-created-at-default | — | models-access-releases-query.md | tests/test_models.py | K | OPEN |  |
 | no-secure-proxy-ssl-header | — | security-audit.md | tests/test_security_audit.py | — | WONTFIX | Not applicable: TLS ends at Apache (mod_ssl + mod_wsgi in the same vhost, no proxy); operator 2026-10-23 |
 | order-by-unrestricted | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2a) | Unknown order_by falls back to the default domain:name order (no 500, no 400) |
-| outcomponent-disp-short-keyerror | — | views.md | — | K | FIXED (Task 7.3) | configs.json OutComponent `disp_short` lists `value`, not in its attrs: conv_db_disp KeyError (500). Found by the Task 6.6 scan |
+| outcomponent-disp-short-keyerror | — | views.md | tests/test_views.py | K | FIXED (Task 7.3) | configs.json OutComponent `disp_short` lists `value`, not in its attrs: conv_db_disp KeyError (500). Found by the Task 6.6 scan |
 | owner-empty-names | — | forms-convert-utilities.md | tests/test_utilities.py | K | OPEN |  |
 | p-link-selection-lost | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
 | redirect-int-parent | — | forms-convert-utilities.md | tests/test_utilities.py | K | FIXED (Task 7.3) |  |

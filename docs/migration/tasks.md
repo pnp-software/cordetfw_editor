@@ -171,7 +171,13 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
     placeholder dev key refused when DEBUG is off. Production: all 16,306 items have a configured cat and a known
     status. Open from the review (-> Task 7.4): a rejected row that another row links to still ends in the
     `import-project-dangling-link-crash` KeyError.
-- [ ] **Task 7.3** Crashes -> proper responses (K2)
+- [x] **Task 7.3** Crashes -> proper responses (K2): 11 ids, one commit each (`0817cb6`..`d8ce28e`):
+  change-password-no-response, conv-date-nameerror, disp-trac-plink-none, enum-value-no-type, dataitem-no-plink,
+  redirect-int-parent, add-p-parent-label-keyerror (subtitle now uses the p_link label, e.g. "Packet ..."),
+  outcomponent-disp-short-keyerror (configs.json: `value` removed from OutComponent disp_short; that view always
+  crashed), add-spec-item-val-set-post, import-spec-items-undefined-i, list-500s (unknown cat 404, bad disp -> disp_def,
+  page via get_page, invalid expand params ignored). Gate 1980 SQLite / 1990 MySQL. Opus review: nothing blocking;
+  follow-ups 7.3b (Unicode-digit expand_id, `i` defined before the import loop, register test columns)
 - [ ] **Task 7.4** Import fidelity and atomicity (K3)
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)
 - [ ] **Task 7.6** UI/behaviour bugs (K5)

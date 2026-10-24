@@ -685,6 +685,7 @@ def test_list_expand_link_none_string(client, owner, project, dvs, items):
     {'expand_id': 'ID', 'expand_link': 'bogus'},
     {'expand_id': 'abc', 'expand_link': 's_link'},
     {'expand_id': '', 'expand_link': 'p_link'},
+    {'expand_id': '\u00b2', 'expand_link': 's_link'},     # Unicode digit: isdigit() but not int() (7.3 review)
 ])
 def test_list_invalid_expand_is_ignored(client, owner, project, dvs, items, params):
     # FIXED: list-500s (was: KeyError for expand_id without expand_link, HTTP 500). Choice: incomplete or

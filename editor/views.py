@@ -484,7 +484,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     expand_id = request.GET.get('expand_id')
     expand_link = request.GET.get('expand_link')
     if (expand_id != None) and (expand_link != 'None') and \
-            ((expand_link not in ('s_link', 'p_link')) or (not expand_id.isdigit())):
+            ((expand_link not in ('s_link', 'p_link')) or (not (expand_id.isascii() and expand_id.isdigit()))):
         expand_id = expand_link = None      # list-500s: incomplete or invalid expansion parameters are ignored
     if expand_id is not None:
         get_parameter_sting += 'expand_id=' + str(expand_id) + '&'
@@ -1007,6 +1007,7 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     if request.method == 'POST':   
         import_error_counts = {}
         imported_count = 0
+        i = -1      # line number in the error message is i+2; defined before any row is read
         try:
             csv_file = request.FILES['upload_file']
         except Exception as e:
