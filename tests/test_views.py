@@ -1150,14 +1150,14 @@ def test_copy_spec_item_duplicate_name(client, owner, project, dvs, dtype):
     assert resp.context['form'].errors['name'] == ["Error: Name 'It' already exists in domain 'Dom'"]
 
 
-def test_copy_spec_item_non_default_val_set_redirects_silently(client, owner, project, dvs, dtype):
+def test_copy_spec_item_non_default_val_set_redirects_with_message(client, owner, project, dvs, dtype):
     vs1 = make_val_set(project, 'VS1')
     item = make_spec_item(project, val_set=vs1, p_link=dtype)
     resp = client.get(item_url('copy_spec_item', 'DataItem', project, item))
     assert resp.status_code == 302
     assert resp.url == '/editor'
-    # KNOWN-ISSUE: copy-unreachable-valset-message
-    assert msgs(resp) == []
+    # FIXED: copy-unreachable-valset-message (was: assert msgs(resp) == [], silent redirect)
+    assert msgs(resp) == [('alert-danger', 'Only SpecItems in default ValSet can be copied ')]
 
 
 def test_split_spec_item(client, owner, project, dvs, dtype):

@@ -813,8 +813,6 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
         title = 'Copy '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
         title = 'Copy '+configs['cats'][cat]['name']+' in Project '+project.name
-    if spec_item.val_set.name != 'Default':
-        return redirect(base_url)
     if spec_item.val_set != default_val_set:
         messages.error(request, 'Only SpecItems in default ValSet can be copied ')
         return redirect(base_url)
