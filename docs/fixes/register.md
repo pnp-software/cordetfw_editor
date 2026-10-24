@@ -70,7 +70,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | link-suggest-js-string | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.6b) | Stored XSS (`\x3c` in a title decoded to `<` before the jQuery html: sink); template filter js_str_after_html_escape |
 | list-500s | — | views.md | tests/test_views.py | K | OPEN |  |
 | login-echoes-password | — | views.md | tests/test_rendering_snapshots.py | K | OPEN |  |
-| login-url-default | — | import-export-auth.md | tests/test_auth.py | K | OPEN |  |
+| login-url-default | — | import-export-auth.md | tests/test_auth.py | K | FIXED (Task 7.2a) |  |
 | logout-unsafe-next-self-redirect | — | import-export-auth.md | tests/test_auth.py | — | FIXED in 040e103 (upstream Django 4.2, Task 3.4) | Accepted upstream change; test marker is the old free-text form |
 | make-temp-dir-nameerror | make-temp-dir-name-error, temp-dir-collision | forms-convert-utilities.md, import-export-auth.md, models-access-releases-query.md | tests/test_import_export.py, tests/test_query.py, tests/test_utilities.py | K | FIXED (Task 7.2c) |  |
 | md-no-escape | — | forms-convert-utilities.md | tests/test_convert.py | S | OPEN | HTML part fixed in Task 6.6 (convert_db_to_display escapes before markdown_to_html; tests/test_escaping_6_6.py). Still open for track K: LaTeX escaping in markdown_to_latex (export bytes must stay identical until then) and markdown nesting/first-list-item |

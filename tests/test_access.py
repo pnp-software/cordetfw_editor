@@ -231,7 +231,7 @@ def test_access_matrix_get(client, endpoint, role):
     if role == 'anonymous':
         # @login_required: redirected to the login page
         assert response.status_code == 302
-        assert response['Location'] == '/accounts/login/?next=' + url
+        assert response['Location'] == '/editor/login/?next=' + url
         assert db_snapshot() == before
         return
 
@@ -274,7 +274,7 @@ def test_access_matrix_post_refresh_spec_item(client, role):
         response = client.post(url)
     if role == 'anonymous':
         assert response.status_code == 302
-        assert response['Location'] == '/accounts/login/?next=' + url
+        assert response['Location'] == '/editor/login/?next=' + url
     elif role in WRITERS:
         # FW Profile DB unreachable -> NOT_FOUND outcome -> redirect to the item in the list
         assert response.status_code == 302
@@ -303,7 +303,7 @@ def test_import_spec_items_requires_login(client):
     response = client.get(s.url('import_spec_items'))
     assert response.status_code == 302
     # FIXED: import-no-login-required (was: 302 to /editor with the write-access message)
-    assert response['Location'] == '/accounts/login/?next=' + s.url('import_spec_items')
+    assert response['Location'] == '/editor/login/?next=' + s.url('import_spec_items')
     assert db_snapshot() == before
 
 
@@ -315,7 +315,7 @@ def test_import_spec_items_anonymous_post_does_not_import(client, tmp_path):
     response = client.post(s.url('import_spec_items'), {'upload_file': f})
     assert response.status_code == 302
     # FIXED: import-no-login-required (was: 302 to /editor)
-    assert response['Location'] == '/accounts/login/?next=' + s.url('import_spec_items')
+    assert response['Location'] == '/editor/login/?next=' + s.url('import_spec_items')
     assert db_snapshot() == before
 
 

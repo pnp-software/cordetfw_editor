@@ -33,7 +33,7 @@ def csrf_client(user=None):
 
 def login_redirect(response, url):
     assert response.status_code == 302
-    assert response['Location'] == '/accounts/login/?next=' + url
+    assert response['Location'] == '/editor/login/?next=' + url
 
 
 # ------------------------------------------------------------------ del_project

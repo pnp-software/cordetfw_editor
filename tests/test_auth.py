@@ -77,14 +77,22 @@ def test_login_missing_password_rerenders_form(client):
     assert response.context['form'].errors
 
 
-def test_login_required_redirects_to_default_login_url_which_does_not_exist(client):
-    # KNOWN-ISSUE: login-url-default
-    # settings.LOGIN_URL is not set, so @login_required redirects to Django's default
-    # /accounts/login/, which is not routed (the login view lives at /editor/login/).
+def test_login_required_redirects_to_the_real_login_page(client):
     response = client.get('/editor/add_project')
     assert response.status_code == 302
-    assert response['Location'] == '/accounts/login/?next=/editor/add_project'
+    # FIXED: login-url-default (was: '/accounts/login/?next=/editor/add_project', which 404s)
+    assert response['Location'] == '/editor/login/?next=/editor/add_project'
+    assert client.get(response['Location']).status_code == 200
+    # the old default URL was never routed, so no old link can be broken by the change
     assert client.get('/accounts/login/').status_code == 404
+
+
+def test_login_with_next_returns_to_requested_page(client):
+    make_user('alice')
+    response = client.post(LOGIN_URL + '?next=/editor/add_project',
+                           {'username': 'alice', 'password': PASSWORD, 'next': '/editor/add_project'})
+    assert response.status_code == 302
+    assert response['Location'] == '/editor/add_project'
 
 
 # ---------------------------------------------------------------------------

@@ -194,6 +194,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
 # Redirect to home URL after login (default redirects to: /accounts/profile/)
+LOGIN_URL = '/editor/login/'
 LOGIN_REDIRECT_URL = '/editor'
 LOGOUT_REDIRECT_URL = '/editor'
 
