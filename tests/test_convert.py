@@ -528,13 +528,16 @@ def test_disp_trac_with_release_filters_by_dates(world):
     assert '/S/%d\\list_spec_items' % rel.id in out
 
 
-def test_disp_trac_p_link_none_crash(world):
-    # KNOWN-ISSUE: disp-trac-plink-none  (link.p_link.application_id is evaluated before the None check)
+def test_disp_trac_p_link_none_is_skipped(world):
+    # FIXED: disp-trac-plink-none (was: AttributeError, link.p_link.application_id evaluated before the None check)
     p = world['project']
     pkt = make_spec_item(p, 'Packet', 'P', 'pk', status='CNF', p_kind='TC')
+    ok = make_spec_item(p, 'Service', 'S', 'ok', status='CNF')
     make_spec_item(p, 'VerLink', 'V', 'l', status='CNF', s_link=pkt, p_link=None)
-    with pytest.raises(AttributeError):
-        ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None)
+    assert ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None) == ''
+    make_spec_item(p, 'VerLink', 'V', 'l2', status='CNF', s_link=pkt, p_link=ok)
+    out = ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None)
+    assert 'S:ok' in out
 
 
 def test_disp_trac_application_id(world):

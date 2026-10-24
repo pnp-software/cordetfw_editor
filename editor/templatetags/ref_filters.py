@@ -116,7 +116,7 @@ def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
     s = ''
     
     for link in trac_links:
-        application_id = str(link.p_link.application_id)
+        application_id = str(link.p_link.application_id) if link.p_link != None else 'None'
         if application_id == 'None':
             application_id = '0'
 
