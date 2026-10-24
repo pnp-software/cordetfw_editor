@@ -215,10 +215,19 @@ def test_snapshot_login_failed_post(client):
     snap('login_failed_post', response)
 
 
-def test_snapshot_login_get_has_none_values(client):
-    # KNOWN-ISSUE: form-none-literal (unbound form: value="None" rendered in the login inputs)
+def test_snapshot_login_get_has_no_none_values(client):
     response = client.get('/editor/login/')
-    assert response.content.count(b'value="None"') == 2
+    # FIXED: form-none-literal (was: assert response.content.count(b'value="None"') == 2)
+    assert b'value="None"' not in response.content
+    assert b'name="username" value=""' in response.content
+
+
+def test_unbound_forms_render_no_none_literal(client, ds):
+    # FIXED: form-none-literal (was: add_spec_item name/domain value="None", make-release textarea 'None')
+    response = client.get('/editor/DataItem/%d/0/Sel_All/0/add_spec_item' % ds['project'].id)
+    assert b'value="None"' not in response.content
+    response = client.get('/editor/%d/make_project_release' % ds['project'].id)
+    assert b'>None</textarea>' not in response.content
 
 
 def test_snapshot_edit_spec_item_invalid_post(client, ds):

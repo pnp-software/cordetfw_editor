@@ -57,7 +57,7 @@ def test_headers_login_page_get(client):
     assert 'Expires' in response   # Date is added by the WSGI server, not present here
     assert headers(response) == sorted([
         ('Cache-Control', NO_CACHE),
-        ('Content-Length', '5679'),   # upstream #86: delete-confirm modal + script in base_generic (+1633)
+        ('Content-Length', '5671'),   # upstream #86: delete-confirm modal + script in base_generic (+1633); form-none-literal fix (-8)
         ('Content-Type', 'text/html; charset=utf-8'),
     ] + COMMON)
 
