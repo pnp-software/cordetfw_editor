@@ -4,7 +4,7 @@
   "messages": [
    [
     "alert-danger",
-    "Failure to import spec_item DataItem:Dom:Orphan (staus: CNF) Probable causes are: (a) application identifier () is not recognized; (b) spec_item owner om_outsider is not a project user (c) ValSet identifier (1) is not recognized; (d) Update time (2024-02-20 16:45:30) is not in format Y-m-d H-M-S; Error is: KeyError('om_outsider')"
+    "The user om_outsider owns imported items but is not a user of the project: added as read-only user of the project"
    ]
   ],
   "status": 302
@@ -21,7 +21,15 @@
    "updated_at": "<now>"
   }
  ],
- "editor_projectuser": [],
+ "editor_projectuser": [
+  {
+   "id": "#0",
+   "project": "#0",
+   "role": "RO",
+   "updated_at": "<now>",
+   "user": "om_outsider"
+  }
+ ],
  "editor_release": [
   {
    "application_version": 0,
@@ -98,6 +106,40 @@
    "t4": "",
    "t5": "",
    "title": "Title of Kept",
+   "updated_at": "2024-02-20 16:45:30",
+   "val_set": "#0",
+   "value": ""
+  },
+  {
+   "application": null,
+   "cat": "DataItem",
+   "change_log": "",
+   "created_at": "2000-01-01 00:00:00",
+   "desc": "",
+   "domain": "Dom",
+   "id": "#2",
+   "implementation": "",
+   "n1": 0,
+   "n2": 0,
+   "n3": 0,
+   "name": "Orphan",
+   "owner": "om_outsider",
+   "p_kind": "",
+   "p_link": null,
+   "previous": null,
+   "project": "#0",
+   "rationale": "",
+   "remarks": "",
+   "s_data": "",
+   "s_kind": "",
+   "s_link": null,
+   "status": "CNF",
+   "t1": "",
+   "t2": "",
+   "t3": "",
+   "t4": "",
+   "t5": "",
+   "title": "Title of Orphan",
    "updated_at": "2024-02-20 16:45:30",
    "val_set": "#0",
    "value": ""

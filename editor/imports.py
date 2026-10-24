@@ -258,6 +258,26 @@ def _import_project_tables(imp_dir, notes):
         application_old_id_2_new[application['id']] = new_application
     
     # Import SpecItems
+    added_members = set()
+
+    def resolve_item_owner(spec_item):
+        # import-project-owner-not-member (operator decision 2026-10-24): an owner who is neither the project
+        # owner nor a project user keeps the item if the user exists on this server (and becomes a read-only
+        # project user), otherwise the item is assigned to the project owner. Users are never created.
+        name = spec_item['owner']
+        if name in user_name_2_user:
+            return user_name_2_user[name]
+        user = User.objects.filter(username=name).first()
+        if user is None:
+            notes.append('Spec_item '+item_full_name(spec_item)+': the owner '+name+' does not exist on this server, '+
+                         'the item was assigned to the project owner '+project_owner.username)
+            return project_owner
+        ProjectUser(project = new_project, user = user, role = 'RO').save()
+        user_name_2_user[name] = user
+        notes.append('The user '+name+' owns imported items but is not a user of the project: '+
+                     'added as read-only user of the project')
+        return user
+
     spec_item_old_id_2_new = {}
     spec_item_new_id_2_old = {}
     valid_status = [choice[0] for choice in HISTORY_STATUS]
@@ -282,7 +302,7 @@ def _import_project_tables(imp_dir, notes):
                                      application = application_old_id_2_new[spec_item['application']],
                                      title = spec_item['title'],
                                      desc = spec_item['desc'],
-                                     owner = user_name_2_user[spec_item['owner']],
+                                     owner = resolve_item_owner(spec_item),
                                      val_set = val_set_old_id_2_new[spec_item['val_set']],
                                      status = spec_item['status'],
                                      updated_at = make_aware(datetime.datetime.strptime(spec_item['updated_at'], "%Y-%m-%d %H:%M:%S")),

@@ -4,11 +4,7 @@
   "messages": [
    [
     "alert-danger",
-    "Failure to import spec_item DataItemType:Types:uint8 (staus: CNF) Probable causes are: (a) application identifier () is not recognized; (b) spec_item owner ol_outsider is not a project user (c) ValSet identifier (1) is not recognized; (d) Update time (2024-02-20 16:45:30) is not in format Y-m-d H-M-S; Error is: KeyError('ol_outsider')"
-   ],
-   [
-    "alert-danger",
-    "Spec_item DataItem:Dom:Kept (status: CNF): the p_link (item id 1) is not in the imported data, the p_link was set to None"
+    "The user ol_outsider owns imported items but is not a user of the project: added as read-only user of the project"
    ]
   ],
   "status": 302
@@ -25,7 +21,15 @@
    "updated_at": "<now>"
   }
  ],
- "editor_projectuser": [],
+ "editor_projectuser": [
+  {
+   "id": "#0",
+   "project": "#0",
+   "role": "RO",
+   "updated_at": "<now>",
+   "user": "ol_outsider"
+  }
+ ],
  "editor_release": [
   {
    "application_version": 0,
@@ -40,12 +44,46 @@
  "editor_specitem": [
   {
    "application": null,
+   "cat": "DataItemType",
+   "change_log": "",
+   "created_at": "2000-01-01 00:00:00",
+   "desc": "",
+   "domain": "Types",
+   "id": "#0",
+   "implementation": "",
+   "n1": 0,
+   "n2": 0,
+   "n3": 0,
+   "name": "uint8",
+   "owner": "ol_outsider",
+   "p_kind": "",
+   "p_link": null,
+   "previous": null,
+   "project": "#0",
+   "rationale": "",
+   "remarks": "",
+   "s_data": "",
+   "s_kind": "",
+   "s_link": null,
+   "status": "CNF",
+   "t1": "",
+   "t2": "",
+   "t3": "",
+   "t4": "",
+   "t5": "",
+   "title": "Title of uint8",
+   "updated_at": "2024-02-20 16:45:30",
+   "val_set": "#0",
+   "value": ""
+  },
+  {
+   "application": null,
    "cat": "DataItem",
    "change_log": "",
    "created_at": "2000-01-01 00:00:00",
-   "desc": "#DataItemType:Types:uint8",
+   "desc": "#iref:<#0>",
    "domain": "Dom",
-   "id": "#0",
+   "id": "#1",
    "implementation": "",
    "n1": 0,
    "n2": 0,
@@ -53,7 +91,7 @@
    "name": "Kept",
    "owner": "ol_owner",
    "p_kind": "",
-   "p_link": null,
+   "p_link": "#0",
    "previous": null,
    "project": "#0",
    "rationale": "",

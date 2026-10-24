@@ -902,6 +902,61 @@ def _spec_items_csv_with(zf, mutate):
 
 
 def test_import_project_failing_spec_item_is_reported_and_others_imported(client, renamed_original, fresh_temp):
+    # (import-project-owner-not-member: the failing row used to be one with an unknown owner; an unknown
+    # owner no longer fails, so the row now fails on an unknown ValSet identifier)
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['name'] == 'Calc':
+                row['val_set'] = '99'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    [(level, text)] = messages_of(response)
+    assert level == 'alert-danger'
+    assert text == ('Failure to import spec_item DataItem:Dom:Calc (staus: CNF) Probable causes are: '
+                    '(a) application identifier () is not recognized; '
+                    '(b) spec_item owner owner is not a project user '
+                    '(c) ValSet identifier (99) is not recognized; '
+                    '(d) Update time (2024-02-20 16:45:30) is not in format Y-m-d H-M-S; '
+                    "Error is: KeyError('99')")
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 9
+    assert not new.project_spec_items.filter(name='Calc').exists()
+
+
+def _drop_project_user(zf, username):
+    rows = [r for r in read_csv_member(zf, 'project_users.csv') if r['user'] != username]
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=list(read_csv_member(zf, 'project_users.csv')[0]), lineterminator='\r\n')
+    writer.writeheader(); writer.writerows(rows)
+    return out.getvalue().encode('utf-8')
+
+
+def test_import_project_item_owner_not_member_existing_user_becomes_ro_member(client, renamed_original, fresh_temp):
+    # FIXED: import-project-owner-not-member (was: KeyError, the item was dropped with "probable cause (b)")
+    # Operator decision 2026-10-24: the owner is kept and added once as a read-only project user.
+    w = renamed_original
+    members = [r['user'] for r in read_csv_member(w.zip, 'project_users.csv')]
+    assert 'writer' in members
+    client.force_login(w.admin)
+    data = modified_zip(w.zip, **{'project_users.csv': _drop_project_user(w.zip, 'writer')})
+    response = upload_zip(client, data, fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    n_reader_items = sum(1 for r in read_csv_member(w.zip, 'spec_items.csv') if r['owner'] == 'writer')
+    assert n_reader_items >= 1
+    assert new.project_spec_items.count() == 10
+    assert new.project_spec_items.filter(owner__username='writer').count() == n_reader_items
+    members = [(pu.user.username, pu.role) for pu in new.project_users.order_by('id')]
+    assert members.count(('writer', 'RO')) == 1 and len(members) == 2
+    assert messages_of(response) == [
+        ('alert-danger', 'The user writer owns imported items but is not a user of the project: '
+                         'added as read-only user of the project')]
+
+
+def test_import_project_item_owner_unknown_user_reassigned_to_project_owner(client, renamed_original, fresh_temp):
+    # FIXED: import-project-owner-not-member (was: the item was dropped); the user is not created
     w = renamed_original
 
     def mutate(rows):
@@ -911,17 +966,14 @@ def test_import_project_failing_spec_item_is_reported_and_others_imported(client
     client.force_login(w.admin)
     response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
                           fresh_temp)
-    [(level, text)] = messages_of(response)
-    assert level == 'alert-danger'
-    assert text == ('Failure to import spec_item DataItem:Dom:Calc (staus: CNF) Probable causes are: '
-                    '(a) application identifier () is not recognized; '
-                    '(b) spec_item owner ghost is not a project user '
-                    '(c) ValSet identifier (1) is not recognized; '
-                    '(d) Update time (2024-02-20 16:45:30) is not in format Y-m-d H-M-S; '
-                    "Error is: KeyError('ghost')")
     new = Project.objects.get(name='Demo Proj')
-    assert new.project_spec_items.count() == 9
-    assert not new.project_spec_items.filter(name='Calc').exists()
+    assert new.project_spec_items.count() == 10
+    assert new.project_spec_items.get(name='Calc').owner.username == 'owner'
+    assert not User.objects.filter(username='ghost').exists()
+    assert not new.project_users.filter(user__username='ghost').exists()
+    assert messages_of(response) == [
+        ('alert-danger', 'Spec_item DataItem:Dom:Calc (status: CNF): the owner ghost does not exist on this server, '
+                         'the item was assigned to the project owner owner')]
 
 
 def test_import_project_failing_referenced_spec_item_crashes(client, renamed_original, fresh_temp):
