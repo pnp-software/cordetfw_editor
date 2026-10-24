@@ -220,15 +220,20 @@ def run():
         t = re.sub(r'\d+', 'N', text)
         for key in ('Failure to import spec_item', 'disallowed content', 'already exists', 'does not exist',
                     'Unable to', 'row(s) imported successfully', 'row(s) could not be imported',
-                    'does not match', 'not defined in configs', 'Failure to open', 'too big'):
+                    'does not match', 'not defined in configs', 'Failure to open', 'too big', ' imported, '):
             if key in t:
                 if key == 'Failure to import spec_item':
                     m = re.search(r'Error is: (\w+)', t)
                     return level + ':' + key + ' [' + (m.group(1) if m else '?') + ']'
                 if key == 'row(s) could not be imported':
                     return level + ':' + key + ': ' + re.sub(r'^.*?: ', '', t)[:150]
+                if key == ' imported, ':    # Task 7.4b summary format
+                    return level + ':import summary'
                 return level + ':' + key
-        return level + ':OTHER ' + t[:30]
+        for key in ('owns imported', 'were assigned to', 'is not known', 'creation time', 'set to None', 'cleared'):
+            if key in t:        # Task 7.4a notes (they name users/items: only the kind is kept)
+                return level + ':note ' + key
+        return level + ':OTHER'       # never echo message text (it can contain user or item names)
 
     staff = User.objects.filter(is_staff=True, is_active=True).order_by('id').first()
     FIELDS = ['title', 'desc', 'rationale', 'implementation', 'remarks', 'value', 't1', 't2', 't3', 't4', 't5',
@@ -288,7 +293,8 @@ def run():
         manifest = json.load(fh)
     report = {'projects': {}, 'totals': Counter(), 'msg_kinds_zip': Counter(), 'msg_kinds_csv_update': Counter(),
               'msg_kinds_csv_new': Counter(),
-              'csv_rejections': {'update': Counter(), 'new': Counter()}}
+              'csv_rejections': {'update': Counter(), 'new': Counter()},
+              'csv_warnings': {'update': Counter(), 'new': Counter()}}     # kinds of listed lines (max 20 per file)
     for idx, pid in enumerate(ids, 1):
         src = Project.objects.get(id=pid)
         r = {}
@@ -398,6 +404,22 @@ def run():
                 except Exception as e:
                     ms = [('error', 'Unable to EXC ' + type(e).__name__)]
                 imported = sum(int(m.group(1)) for l, t in ms for m in [re.match(r'(\d+) row\(s\) imported', t)] if m)
+                summary_rejected = 0
+                for l, t in ms:     # Task 7.4b summary: 'N imported, M rejected. Rejected: line X: reason; ... Warnings: ...'
+                    sm = re.match(r'(\d+) imported, (\d+) rejected', t)
+                    if not sm:
+                        continue
+                    imported += int(sm.group(1))
+                    summary_rejected += int(sm.group(2))
+                    for section in ('Rejected', 'Warnings'):
+                        sec = re.search(r'\. ' + section + r': (.*?)(?:\. (?:Rejected|Warnings): |$)', t, re.S)
+                        if not sec:
+                            continue
+                        for part in re.split(r'; (?=line \d+: |\.\.\. and )', sec.group(1)):
+                            pm = re.match(r'line \d+: (.*)$', part, re.S)
+                            if pm:      # aggregate kind only: cut at the first quote/digit (no cell content)
+                                kind = re.split(r'["\d]', pm.group(1))[0].strip()[:60]
+                                report['csv_rejections' if section == 'Rejected' else 'csv_warnings'][tag][cat + ' / ' + kind] += 1
                 rows = max(0, len(list(csv.DictReader(io.StringIO(data.decode('utf-8')), delimiter='|'))))
                 kinds = Counter(generic(l, t) for l, t in ms)
                 report[bucket].update(kinds)
@@ -416,7 +438,8 @@ def run():
                 cnt['csv_files'] += 1
                 cnt['rows'] += rows
                 cnt['imported'] += imported
-                cnt['rows_rejected'] += sum(int(m.group(1)) for l, t in ms for m in [re.match(r'(\d+) row\(s\) could not', t)] if m)
+                cnt['rows_rejected'] += summary_rejected + sum(
+                    int(m.group(1)) for l, t in ms for m in [re.match(r'(\d+) row\(s\) could not', t)] if m)
                 cnt['db_items_added'] += n_after - n_before
                 cnt['files_with_error_msgs'] += 1 if any(k.startswith('error') for k in kinds) else 0
                 report['totals']['csv_%s_rows' % tag] += rows
@@ -428,6 +451,7 @@ def run():
     for k in ('msg_kinds_zip', 'msg_kinds_csv_update', 'msg_kinds_csv_new'):
         report[k] = dict(report[k])
     report['csv_rejections'] = {k: dict(v) for k, v in report['csv_rejections'].items()}
+    report['csv_warnings'] = {k: dict(v) for k, v in report['csv_warnings'].items()}
     report['stack'] = STACK
     report['exports_from'] = EXPORTS_FROM
     with open(os.path.join(SCRATCH, 'results_%s.json' % STACK), 'w') as fh:

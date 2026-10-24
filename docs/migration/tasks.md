@@ -196,6 +196,12 @@ Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-
     unreadable created_at keeps the default with a note, Release.updated_at timezone-aware, release views of a
     source project and its imported copy compared by a test; s_data limitation documented (a stored string that
     looks like a JSON object/list imports as the object)
+  - 7.4e re-import of production exports (dump 2026-10-21, docs/migration/rehearsal/reimport.py, aggregates only),
+    OLD = cd87ccb vs NEW = 95ac755: exports 9/9 ZIPs + 108/108 files identical. Project ZIP import: 16,306 of
+    16,306 items imported (old: 16,271; the 35 items of the owner-not-member case now kept, owner added as RO
+    member), 240/240 diagrams identical, `s_data` differences source vs import 0 (old: 11,089), fewer text
+    differences (CRLF restored). Spec-item CSVs: 11,045 of 11,046 rows imported (old: 10,598; 1 row still rejected
+    by the identifier rule), 0 import regressions. reimport.py: parses the new summary, never echoes message text
 - [ ] **Task 7.5** Export correctness, each byte change approved (K4)
 - [x] **Task 7.6** UI/behaviour bugs (K5): 8 ids (`fba05cb`.. as cherry-picked, ending `ccefe19`): help-double-space,
   owner-empty-names, form-none-literal, p-link-selection-lost, copy-unreachable-valset-message,
