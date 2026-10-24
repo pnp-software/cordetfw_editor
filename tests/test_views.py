@@ -117,14 +117,16 @@ def test_index_orders_projects_by_name(client, owner):
     assert [p['project'].name for p in resp.context['list_of_projects']] == ['Abc', 'Zed']
 
 
-def test_index_user_has_access_substring_bug(client, owner, project):
+def test_index_user_has_access_is_exact_username_match(client, owner, project):
     bobby = make_user('bobby')
     bob = make_user('bob')
     make_project_user(project, bobby, 'RO')
     client.force_login(bob)
     resp = client.get('/editor/')
-    # KNOWN-ISSUE: index-username-substring
-    assert resp.context['list_of_projects'][0]['user_has_access'] is True
+    # FIXED: index-username-substring (was: True, 'bob' is a substring of 'bobby')
+    assert resp.context['list_of_projects'][0]['user_has_access'] is False
+    client.force_login(bobby)
+    assert client.get('/editor/').context['list_of_projects'][0]['user_has_access'] is True
     client.force_login(make_user('carol'))
     assert client.get('/editor/').context['list_of_projects'][0]['user_has_access'] is False
 

@@ -103,10 +103,9 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
 def index(request):
     projects = Project.objects.order_by('name').all()
     listOfProjects = []
-    userRequestName = str(request.user)     
     for project in projects:
-        userHasAccess = ProjectUser.objects.filter(project_id=project).\
-                                        filter(user__username__contains=userRequestName).exists()
+        userHasAccess = request.user.is_authenticated and ProjectUser.objects.filter(
+            project_id=project, user_id=request.user.id).exists()
          
         applications = project.applications.all().order_by('name') 
         default_val_set_id = get_default_val_set_id(request, project)

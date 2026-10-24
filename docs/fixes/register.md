@@ -64,7 +64,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-spec-items-undefined-i | — | import-export-auth.md | tests/test_import_export.py | K | OPEN |  |
 | import-traceback-in-message | — | security-audit.md | tests/test_security_audit.py | K | OPEN |  |
 | index-lists-all-projects | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Operator 2026-10-24: non-staff see only own/member projects; staff see all |
-| index-username-substring | — | views.md | tests/test_views.py | K | OPEN |  |
+| index-username-substring | — | views.md | tests/test_views.py | K | FIXED (Task 7.2a) |  |
 | iref-cross-project-disclosure | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2b) |  |
 | latex-export-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/latex-export-injection.md |
 | link-suggest-js-string | — | security-audit.md | tests/test_security_audit.py | S | FIXED (Task 6.6b) | Stored XSS (`\x3c` in a title decoded to `<` before the jQuery html: sink); template filter js_str_after_html_escape |
