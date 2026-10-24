@@ -192,6 +192,17 @@ class SpecItemForm(forms.Form):
             if not config['attrs'][field]['req_in_form']:
                 self.fields[field].required = False
 
+        # form-choice-empty-silent-default (Task 7.6b): in edit, copy and split mode a REQUIRED choice field whose
+        # stored value is empty (or not one of the choices) gets a blank option, which is then the selected one.
+        # Without it the browser would show and submit the first choice, silently storing it. Items with a valid
+        # stored value get no blank option. Add mode and optional fields are unchanged.
+        if self.mode in ('edit', 'copy', 'split'):
+            for field in ('p_kind', 's_kind'):
+                f = self.fields[field]
+                if f.required and not isinstance(f.widget, forms.HiddenInput) \
+                        and self.initial.get(field) not in [c[0] for c in f.choices]:
+                    f.choices = [('', '---------')] + list(f.choices)
+
         # For external spec_item in add mode: load choices of external item
         if (len(config['ext_attrs']) > 0) and (self.mode == 'add'):
             get_choices_func_name = 'ext_' + cat.lower() + '_get_choices'
