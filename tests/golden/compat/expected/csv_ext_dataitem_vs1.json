@@ -3,12 +3,8 @@
   "exception": null,
   "messages": [
    [
-    "alert-success",
-    "1 row(s) imported successfully"
-   ],
-   [
     "alert-danger",
-    "1 row(s) could not be imported: 1 missing from Default ValSet"
+    "1 imported, 1 rejected. Rejected: line 3: missing from Default ValSet"
    ]
   ],
   "status": 302

@@ -735,7 +735,8 @@ def test_15_import_traceback_in_message(w, caplog):
                    {'upload_file': f})
     assert r.status_code == 302
     m = msgs(r)
-    assert m == ['Unable to read or process uploaded file at line 2; the details were written to the server log']
+    # Task 7.4b (import-spec-items-abort-no-summary): the row is rejected in the import summary
+    assert m == ['0 imported, 1 rejected. Rejected: line 2: unexpected error (details in the server log)']
     assert 'Traceback' not in m[0] and 'views.py' not in m[0]
     logged = [rec for rec in caplog.records if rec.name == 'editor.views' and rec.exc_info]
     assert len(logged) == 1 and logged[0].exc_info[0] is ValueError

@@ -387,7 +387,7 @@ def test_image_csv_import_rejects_active_svg(client):
     s, app, item = model_setup()[:3]
     client.force_login(s.w.user('rw'))
     msgs = _csv_upload(client, s, app, SVG)
-    assert msgs == ['1 row(s) could not be imported: 1 disallowed content in image (root element)']   # Task 6.6c rule name
+    assert msgs == ['0 imported, 1 rejected. Rejected: line 2: disallowed content in image (root element)']   # Task 6.6c rule name
     assert not SpecItem.objects.filter(project_id=s.pid, cat='Model', name='ImpName').exists()
 
 
@@ -397,7 +397,7 @@ def test_image_csv_import_rejects_active_svg_for_existing_item_without_obs_copy(
     client.force_login(s.w.user('rw'))
     n = SpecItem.objects.filter(project_id=s.pid).count()
     msgs = _csv_upload(client, s, app, '<svg onload="x()"/>', name='OldName')
-    assert msgs[0].startswith('1 row(s) could not be imported: 1 disallowed content in image')
+    assert msgs[0].startswith('0 imported, 1 rejected. Rejected: line 2: disallowed content in image')
     assert SpecItem.objects.filter(project_id=s.pid).count() == n
     assert SpecItem.objects.get(id=item.id).value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
 
@@ -406,7 +406,7 @@ def test_image_csv_import_accepts_real_svg_unchanged(client):
     # FIXED: image-svg-unsanitised (was: rendered raw without validation; a valid SVG is still rendered raw)
     s, app, item = model_setup()[:3]
     client.force_login(s.w.user('rw'))
-    assert _csv_upload(client, s, app, GOOD_SVG) == ['1 row(s) imported successfully']
+    assert _csv_upload(client, s, app, GOOD_SVG) == ['1 imported, 0 rejected']
     imported = SpecItem.objects.get(project_id=s.pid, cat='Model', name='ImpName')
     assert imported.value == GOOD_SVG
     assert GOOD_SVG in _model_page(client, s, app, imported)      # valid SVG: rendered unchanged

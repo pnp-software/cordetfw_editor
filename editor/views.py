@@ -988,6 +988,84 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     return response            
 
 
+IMPORT_SUMMARY_MAX_LINES = 20
+
+
+def import_summary_details(title, entries):
+    """ Format [(line, text)] as '. <Title>: line N: text; ... and K more' (empty if no entries) """
+    if not entries:
+        return ''
+    shown = '; '.join('line '+str(n)+': '+text for n, text in entries[:IMPORT_SUMMARY_MAX_LINES])
+    if len(entries) > IMPORT_SUMMARY_MAX_LINES:
+        shown += '; ... and '+str(len(entries)-IMPORT_SUMMARY_MAX_LINES)+' more'
+    return '. '+title+': '+shown
+
+
+def import_spec_item_row(request, project, application, val_set, default_val_set, cat, sel_val, item):
+    """
+    Import one row (a dict read by csv.DictReader) of a spec item CSV file. Returns (reason, warnings):
+    reason is None if the row was imported, otherwise the text why it was rejected (nothing saved);
+    warnings is a list of texts about an imported row. The caller wraps the call in a transaction.
+    """
+    attrs = configs['cats'][cat]['attrs']
+    csv_domain = attrs['domain']['label']
+    csv_name = attrs['name']['label']
+    csv_val_set = attrs['val_set']['label']
+    warnings = []
+    if any(value is None for value in item.values()):
+        return 'row has fewer columns than the header', warnings
+    missing_fields = sorted(
+        field_config['label'] for field_config in attrs.values()
+        if field_config['req_in_form'] and not item.get(field_config['label'], '').strip())
+    if missing_fields:
+        return 'missing '+', '.join(missing_fields), warnings
+    try:
+        validate_identifier(item[csv_domain])
+        validate_identifier(item[csv_name])
+    except ValidationError as error:
+        return str(error), warnings
+    for attr_cfg in attrs.values():
+        if attr_cfg['kind'] == 'image':         # Task 6.6b: image-svg-unsanitised
+            svg_error = svg_rule_violation(item[attr_cfg['label']])
+            if svg_error:
+                return 'disallowed content in image ('+svg_error+')', warnings
+    if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
+        return 'incorrect Domain', warnings
+    if item[csv_val_set] != val_set.name:
+        return 'incorrect ValSet', warnings
+    q_all_cat = SpecItem.objects.filter(project_id=project.id, name=item[csv_name],
+                                        domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')
+    if q_all_cat.exclude(cat=cat).exists():
+        return 'identifier already in use outside selected category', warnings
+    if val_set.name != 'Default':
+        if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
+            return 'missing from Default ValSet', warnings
+    q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
+    now = datetime.now(tz=get_current_timezone())
+    if not bool(q_cat):     # The domain:name is new in selected category
+        new_spec_item = SpecItem()
+        new_spec_item.cat = cat
+        export_to_spec_item(request, project, item, new_spec_item)
+        new_spec_item.status = 'NEW'
+        new_spec_item.updated_at = now
+        new_spec_item.created_at = datetime.now(tz=get_current_timezone())
+        new_spec_item.previous = None
+        new_spec_item.owner = get_user(request)
+        new_spec_item.project = project
+        new_spec_item.application = application
+        new_spec_item.save()
+    else:
+        if q_cat[0].status == 'CNF':
+            spec_item = make_obs_spec_item_copy(request, q_cat[0])
+        else:
+            spec_item = q_cat[0]
+        export_to_spec_item(request, project, item, spec_item)
+        spec_item.updated_at = datetime.now(tz=get_current_timezone())
+        spec_item.owner = get_user(request)
+        spec_item.save()
+    return None, warnings
+
+
 @login_required
 def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
@@ -1001,9 +1079,6 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                            '/'+sel_val+'/'+str(0)+'/list_spec_items'    
   
     if request.method == 'POST':   
-        import_error_counts = {}
-        imported_count = 0
-        i = -1      # line number in the error message is i+2; defined before any row is read
         try:
             csv_file = request.FILES['upload_file']
         except Exception as e:
@@ -1038,102 +1113,50 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     'Uploaded CSV does not match the selected '+cat+' category: '+'; '.join(details)
                 )
                 return redirect(redirect_url)
-            csv_domain = configs['cats'][cat]['attrs']['domain']['label']
-            csv_name = configs['cats'][cat]['attrs']['name']['label']
-            csv_val_set = configs['cats'][cat]['attrs']['val_set']['label']
-            required_fields = {
-                field_config['label']
-                for field_config in configs['cats'][cat]['attrs'].values()
-                if field_config['req_in_form']
-            }
-            for i, item in enumerate(items):
-                missing_fields = [
-                    field for field in required_fields
-                    if not item.get(field, '').strip()
-                ]
-                if missing_fields:
-                    error = 'missing '+', '.join(sorted(missing_fields))
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
+            rejected = []       # [(line, reason)]
+            warned = []         # [(line, [warning, ...])] for imported rows
+            imported_count = 0
+            line = 0
+            stopped = None
+            while True:
                 try:
-                    validate_identifier(item[csv_domain])
-                    validate_identifier(item[csv_name])
-                except ValidationError as error:
-                    error = str(error)
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                svg_error = None
-                for attr_key, attr_cfg in configs['cats'][cat]['attrs'].items():
-                    if attr_cfg['kind'] == 'image':         # Task 6.6b: image-svg-unsanitised
-                        svg_error = svg_rule_violation(item[attr_cfg['label']])
-                        if svg_error:
-                            break
-                if svg_error:
-                    error = 'disallowed content in image (' + svg_error + ')'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
-                    error = 'incorrect Domain'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                if item[csv_val_set] != val_set.name:
-                    error = 'incorrect ValSet'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                q_all_cat = SpecItem.objects.filter(project_id=project_id, \
-                            name=item[csv_name], domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')    
-                if q_all_cat.exclude(cat=cat).exists():
-                    error = 'identifier already in use outside selected category'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                if val_set.name != 'Default':
-                    if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
-                        error = 'missing from Default ValSet'
-                        import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                        continue
-                q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
-                if not bool(q_cat):     # The domain:name is new in selected category
-                    new_spec_item = SpecItem()
-                    new_spec_item.cat = cat
-                    export_to_spec_item(request, project, item, new_spec_item)   
-                    new_spec_item.status = 'NEW'
-                    new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
-                    new_spec_item.created_at = datetime.now(tz=get_current_timezone())
-                    new_spec_item.previous = None
-                    new_spec_item.owner = get_user(request)
-                    new_spec_item.project = project
-                    new_spec_item.application = application                    
-                    new_spec_item.save()
+                    item = next(items)
+                except StopIteration:
+                    break
+                except csv.Error as e:          # unreadable CSV: rows read so far are kept
+                    stopped = 'import stopped at line '+str(items.line_num)+': unreadable CSV ('+str(e)+')'
+                    logger.exception('import_spec_items: CSV error (project %s, category %s)', project_id, cat)
+                    break
+                line = items.line_num       # last physical line of the record
+                try:
+                    with transaction.atomic():      # a row is saved completely or not at all
+                        reason, row_warnings = import_spec_item_row(
+                            request, project, application, val_set, default_val_set, cat, sel_val, item)
+                except Exception:
+                    logger.exception('import_spec_items: row at line %s failed (project %s, category %s)',
+                                     line, project_id, cat)
+                    reason, row_warnings = 'unexpected error (details in the server log)', []
+                if reason:
+                    rejected.append((line, reason))
                 else:
-                    if q_cat[0].status == 'CNF':
-                        overriden_item = q_cat[0]
-                        spec_item = make_obs_spec_item_copy(request, overriden_item)
-                        export_to_spec_item(request, project, item, spec_item)
-                        spec_item.updated_at = datetime.now(tz=get_current_timezone())
-                        spec_item.owner = get_user(request)
-                        spec_item.save()
-                    else:
-                        export_to_spec_item(request, project, item, q_cat[0]) 
-                        q_cat[0].updated_at = datetime.now(tz=get_current_timezone())
-                        q_cat[0].owner = get_user(request)
-                        q_cat[0].save()
-                imported_count += 1
-            if imported_count:
-                messages.success(request, str(imported_count)+' row(s) imported successfully')
-            if import_error_counts:
-                error_summary = '; '.join(
-                    str(count)+' '+error
-                    for error, count in sorted(import_error_counts.items())
-                )
-                messages.error(
-                    request,
-                    str(sum(import_error_counts.values()))+' row(s) could not be imported: '+error_summary
-                )
+                    imported_count += 1
+                    if row_warnings:
+                        warned.append((line, row_warnings))
+            summary = str(imported_count)+' imported, '+str(len(rejected))+' rejected'
+            summary += import_summary_details('Rejected', [(n, r) for n, r in rejected])
+            summary += import_summary_details('Warnings', [(n, '; '.join(w)) for n, w in warned])
+            if stopped:
+                summary += '. '+stopped[0].upper()+stopped[1:]
+            if rejected or stopped:
+                messages.error(request, summary)
+            elif warned:
+                messages.warning(request, summary)
+            else:
+                messages.success(request, summary)
         except Exception as e:
             logger.exception('import_spec_items: unable to process uploaded file (project %s, category %s)',
                              project_id, cat)
-            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+2)+
-                           '; the details were written to the server log')
+            messages.error(request, 'Unable to read or process uploaded file; the details were written to the server log')
     else:
         context = {'project': project, 'title': 'Upload CSV File'}
         return render(request, 'upload_file.html', context)

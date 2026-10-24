@@ -997,7 +997,7 @@ def test_import_spec_items_new_item(client, world):
                  Owner='someone-else', Title='Tä')
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [row]))
     assert response['Location'] == DI_LIST_URL
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     item = get_item(world, 'DataItem', 'Dom', 'Fresh')
     assert item.status == 'NEW'
     assert item.owner == world.rw                          # Owner column is ignored
@@ -1032,7 +1032,7 @@ def test_import_spec_items_existing_confirmed_item_gets_obs_copy(client, world):
     count_id = world.count.id
     row = di_row(Name='Count', Title='Count v2', Value='99', Description='now see #DataItem:Dom:Calc')
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [row]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     item = SpecItem.objects.get(id=count_id)                # original row is updated in place
     assert (item.status, item.title, item.value) == ('MOD', 'Count v2', '99')
     assert item.desc == 'now see #iref:108'
@@ -1051,7 +1051,7 @@ def test_import_spec_items_existing_modified_item_updated_in_place(client, world
     before = SpecItem.objects.count()
     row = di_row(Name='ColorVar', Title='Edited', Value='7', Type='Types:uint8', Kind='PAR')
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [row]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     assert SpecItem.objects.count() == before                # no OBS copy, no new row
     item = SpecItem.objects.get(id=world.colorvar.id)
     assert (item.status, item.title, item.value, item.p_kind) == ('MOD', 'Edited', '7', 'PAR')
@@ -1069,7 +1069,7 @@ def test_import_spec_items_existing_new_item_updated_in_place(client, world):
     labels = ['Domain', 'Name', 'Title', 'Description', 'Value', 'Rationale', 'Remarks', 'Implementation',
               'Type', 'Owner', 'Change Log', 'ValSet']
     response = post_csv(client, '/editor/EnumValue/1/0/1/Sel_All/import_spec_items', csv_bytes(labels, [row]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     assert SpecItem.objects.count() == before
     item = SpecItem.objects.get(id=world.red.id)
     assert (item.status, item.title, item.value, item.s_link) == ('NEW', 'Rot', '10', world.color)
@@ -1082,7 +1082,7 @@ def test_import_spec_items_existing_in_non_default_valset(client, world):
     url = '/editor/DataItem/1/0/2/Sel_All/import_spec_items'
     response = post_csv(client, url, csv_bytes(DI_LABELS, [di_row(Name='Count', ValSet='VS1', Value='44')]))
     assert response['Location'] == '/editor/DataItem/1/0/2/Sel_All/0/list_spec_items'
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     assert SpecItem.objects.count() == before
     assert SpecItem.objects.get(id=world.count_vs1.id).value == '44'
     assert SpecItem.objects.get(id=world.count.id).value == '42'
@@ -1096,7 +1096,7 @@ def test_import_spec_items_application_level(client, world):
     url = '/editor/Requirement/1/1/1/Sel_All/import_spec_items'
     response = post_csv(client, url, csv_bytes(REQ_LABELS, [row]))
     assert response['Location'] == '/editor/Requirement/1/1/1/Sel_All/0/list_spec_items'
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     item = get_item(world, 'Requirement', 'AppDom', 'R2')
     assert item.application == world.app
     assert item.value == 'Needs #iref:107'
@@ -1154,7 +1154,8 @@ def test_import_spec_items_header_only_file_imports_nothing(client, world):
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, []))
     assert response['Location'] == DI_LIST_URL
-    assert messages_of(response) == []
+    # Task 7.4b: every import ends with a summary (was: no message)
+    assert messages_of(response) == [('alert-success', '0 imported, 0 rejected')]
 
 
 def test_import_spec_items_required_field_missing(client, world):
@@ -1163,8 +1164,8 @@ def test_import_spec_items_required_field_missing(client, world):
             di_row(Name='Okay')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [
-        ('alert-success', '1 row(s) imported successfully'),
-        ('alert-danger', '3 row(s) could not be imported: 1 missing Kind, Type; 2 missing Value')]
+        ('alert-danger', '1 imported, 3 rejected. Rejected: line 2: missing Value; line 3: missing Value; '
+                         'line 4: missing Kind, Type')]
     assert SpecItem.objects.filter(project=world.project, name__in=['Q1', 'Q2', 'Q3']).count() == 0
     assert get_item(world, 'DataItem', 'Dom', 'Okay')
 
@@ -1175,7 +1176,8 @@ def test_import_spec_items_empty_domain_or_name_is_a_missing_field(client, world
     rows = [di_row(Domain='', Name='A1'), di_row(Name=''), di_row(Domain='', Name='')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [(
-        'alert-danger', '3 row(s) could not be imported: 1 missing Domain; 1 missing Domain, Name; 1 missing Name')]
+        'alert-danger', '0 imported, 3 rejected. Rejected: line 2: missing Domain; line 3: missing Name; '
+                        'line 4: missing Domain, Name')]
     assert not SpecItem.objects.filter(name='A1').exists()
 
 
@@ -1189,14 +1191,14 @@ def test_import_spec_items_invalid_identifier(client, world, domain, name):
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Domain=domain, Name=name)]))
     assert messages_of(response) == [(
-        'alert-danger', '1 row(s) could not be imported: 1 ' + IDENT_ERR)]
+        'alert-danger', '0 imported, 1 rejected. Rejected: line 2: ' + IDENT_ERR)]
     assert SpecItem.objects.filter(project=world.project).count() == 10
 
 
 def test_import_spec_items_valid_identifiers_with_inner_dots_and_dashes(client, world):
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Domain='a.b-c_d', Name='x.y.z-1')]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
 
 
 def test_import_spec_items_incorrect_domain_when_domain_selected(client, world):
@@ -1205,8 +1207,7 @@ def test_import_spec_items_incorrect_domain_when_domain_selected(client, world):
     response = post_csv(client, '/editor/DataItem/1/0/1/Dom/import_spec_items', csv_bytes(DI_LABELS, rows))
     assert response['Location'] == '/editor/DataItem/1/0/1/Dom/0/list_spec_items'
     assert messages_of(response) == [
-        ('alert-success', '1 row(s) imported successfully'),
-        ('alert-danger', '1 row(s) could not be imported: 1 incorrect Domain')]
+        ('alert-danger', '1 imported, 1 rejected. Rejected: line 3: incorrect Domain')]
     assert get_item(world, 'DataItem', 'Dom', 'InDom')
     assert not SpecItem.objects.filter(name='OutDom').exists()
 
@@ -1215,7 +1216,8 @@ def test_import_spec_items_incorrect_valset(client, world):
     client.force_login(world.rw)
     rows = [di_row(Name='ToVs1', ValSet='VS1'), di_row(Name='ToNowhere', ValSet='Nope')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [('alert-danger', '2 row(s) could not be imported: 2 incorrect ValSet')]
+    assert messages_of(response) == [(
+        'alert-danger', '0 imported, 2 rejected. Rejected: line 2: incorrect ValSet; line 3: incorrect ValSet')]
     assert not SpecItem.objects.filter(name__in=['ToVs1', 'ToNowhere']).exists()
 
 
@@ -1224,7 +1226,8 @@ def test_import_spec_items_identifier_used_outside_category(client, world):
     rows = [di_row(Domain='Types', Name='Color'), di_row(Domain='Types', Name='uint8')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [(
-        'alert-danger', '2 row(s) could not be imported: 2 identifier already in use outside selected category')]
+        'alert-danger', '0 imported, 2 rejected. Rejected: line 2: identifier already in use outside selected '
+                        'category; line 3: identifier already in use outside selected category')]
     assert SpecItem.objects.filter(project=world.project).count() == 10
 
 
@@ -1233,7 +1236,7 @@ def test_import_spec_items_obs_and_del_identifiers_do_not_block(client, world):
     SpecItem.objects.filter(id=world.color.id).update(status='DEL')
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Domain='Types', Name='Color')]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
 
 
 def test_import_spec_items_missing_from_default_valset(client, world):
@@ -1242,8 +1245,7 @@ def test_import_spec_items_missing_from_default_valset(client, world):
     rows = [di_row(Name='OnlyVs1', ValSet='VS1'), di_row(Name='Count', ValSet='VS1', Value='45')]
     response = post_csv(client, url, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [
-        ('alert-success', '1 row(s) imported successfully'),
-        ('alert-danger', '1 row(s) could not be imported: 1 missing from Default ValSet')]
+        ('alert-danger', '1 imported, 1 rejected. Rejected: line 2: missing from Default ValSet')]
     assert not SpecItem.objects.filter(name='OnlyVs1').exists()
     assert SpecItem.objects.get(id=world.count_vs1.id).value == '45'
 
@@ -1254,61 +1256,97 @@ def test_import_spec_items_aggregated_messages_are_sorted_and_counted(client, wo
             di_row(Name='V1', ValSet='VS1'), di_row(Name='M2', Value=''), di_row(Domain='Types', Name='Color'),
             di_row(Domain='Other', Name='O1')]
     response = post_csv(client, '/editor/DataItem/1/0/1/Dom/import_spec_items', csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [
-        ('alert-success', '2 row(s) imported successfully'),
-        ('alert-danger', '6 row(s) could not be imported: 1 ' + IDENT_ERR +
-         '; 2 incorrect Domain; 1 incorrect ValSet; 2 missing Value')]
+    # Task 7.4b (import-spec-items-no-rollback): one summary message, one entry per rejected row (CSV line)
+    assert messages_of(response) == [(
+        'alert-danger',
+        '2 imported, 6 rejected. Rejected: line 4: ' + IDENT_ERR + '; line 5: missing Value; '
+        'line 6: incorrect ValSet; line 7: missing Value; line 8: incorrect Domain; line 9: incorrect Domain')]
 
 
-def test_import_spec_items_mixed_file_is_not_rolled_back(client, world):
-    # KNOWN-ISSUE: import-spec-items-no-rollback -- valid rows are committed even when others fail
+def test_import_spec_items_mixed_file_keeps_valid_rows_and_ends_with_one_summary(client, world):
+    # FIXED: import-spec-items-no-rollback (was: valid rows committed and two separate messages, a success
+    # count and an aggregated error count without line numbers; operator 2026-10-24: keep per-row import,
+    # always one summary with the rejected CSV lines)
     client.force_login(world.rw)
     rows = [di_row(Name='Keep1'), di_row(Name='Bad Name'), di_row(Name='Keep2'), di_row(Name='Gone', Value='')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [
-        ('alert-success', '2 row(s) imported successfully'),
-        ('alert-danger', '2 row(s) could not be imported: 1 ' + IDENT_ERR + '; 1 missing Value')]
+    assert messages_of(response) == [(
+        'alert-danger',
+        '2 imported, 2 rejected. Rejected: line 3: ' + IDENT_ERR + '; line 5: missing Value')]
     assert SpecItem.objects.filter(project=world.project, name__in=['Keep1', 'Keep2']).count() == 2
     assert SpecItem.objects.filter(project=world.project).count() == 12
+
+
+def test_import_spec_items_summary_lists_at_most_20_rejected_lines(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='Bad Name %d' % n) for n in range(23)] + [di_row(Name='Fine')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    [(level, text)] = messages_of(response)
+    assert level == 'alert-danger'
+    assert text.startswith('1 imported, 23 rejected. Rejected: line 2: ')
+    assert text.count('line ') == 20
+    assert text.endswith('; line 21: ' + IDENT_ERR + '; ... and 3 more')
+
+
+def test_import_spec_items_summary_line_number_is_the_end_of_a_multiline_record(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='Bad Name', Description='two\nlines'), di_row(Name='Bad Name2')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    [(level, text)] = messages_of(response)
+    assert text == '0 imported, 2 rejected. Rejected: line 3: %s; line 4: %s' % (IDENT_ERR, IDENT_ERR)
+
+
+def test_import_spec_items_failing_row_leaves_no_half_saved_obs_copy(client, world, monkeypatch):
+    # a row that fails after the OBS copy of a CNF item was made is rolled back completely
+    import editor.views as views
+    client.force_login(world.rw)
+    def boom(*args):
+        raise RuntimeError('boom')
+    monkeypatch.setattr(views, 'export_to_spec_item', boom)
+    before = list(SpecItem.objects.order_by('id').values_list('id', 'status', 'title', 'previous_id'))
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='Count', Title='Count v2')]))
+    assert messages_of(response) == [(
+        'alert-danger', '0 imported, 1 rejected. Rejected: line 2: unexpected error (details in the server log)')]
+    assert list(SpecItem.objects.order_by('id').values_list('id', 'status', 'title', 'previous_id')) == before
 
 
 def test_import_spec_items_duplicate_rows_in_file_second_updates_first(client, world):
     client.force_login(world.rw)
     rows = [di_row(Name='Dup', Value='1'), di_row(Name='Dup', Value='2')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [('alert-success', '2 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '2 imported, 0 rejected')]
     item = get_item(world, 'DataItem', 'Dom', 'Dup')
     assert item.value == '2' and item.status == 'NEW'
 
 
-def test_import_spec_items_exception_midway_aborts_without_rollback(client, world):
-    # KNOWN-ISSUE: import-spec-items-abort-no-summary
-    # A row that raises (here: non-integer in an integer column) aborts the whole loop with a
-    # traceback message; earlier rows stay committed and neither success nor error summary is shown.
+def test_import_spec_items_exception_in_row_rejects_that_row_only(client, world, caplog):
+    # FIXED: import-spec-items-abort-no-summary (was: a row that raises aborted the whole loop with a
+    # message 'Unable to read or process uploaded file at line 3'; neither the success nor the error
+    # summary was shown and the rows after it were not read)
+    import logging
     client.force_login(world.rw)
     row = {'Domain': 'Types', 'Title': 't', 'Description': '', 'Default Value': '', 'Rationale': '',
            'Remarks': '', 'Native Type': '', 'ValSet': 'Default', 'Change Log': '', 'Owner': 'x', 'Size': '1'}
     rows = [dict(row, Name='E1'), dict(row, Name='E2', Size='abc'), dict(row, Name='E3')]
-    response = post_csv(client, '/editor/EnumType/1/0/1/Sel_All/import_spec_items', csv_bytes(ET_LABELS, rows))
+    with caplog.at_level(logging.ERROR, logger='editor.views'):
+        response = post_csv(client, '/editor/EnumType/1/0/1/Sel_All/import_spec_items', csv_bytes(ET_LABELS, rows))
     assert response['Location'] == '/editor/EnumType/1/0/1/Sel_All/0/list_spec_items'
-    [(level, text)] = messages_of(response)
-    assert level == 'alert-danger'
-    # FIXED: import-traceback-in-message (was: 'line 3; traceback: Traceback (most recent call last): ... ValueError')
-    assert text == 'Unable to read or process uploaded file at line 3; the details were written to the server log'
-    # (the failing save marked pytest-django's wrapping transaction for rollback; clear that test artifact)
-    from django.db import transaction
-    transaction.set_rollback(False)
+    assert messages_of(response) == [(
+        'alert-danger', '2 imported, 1 rejected. Rejected: line 3: unexpected error (details in the server log)')]
     names = set(SpecItem.objects.filter(project=world.project, cat='EnumType').values_list('name', flat=True))
-    assert 'E1' in names and 'E3' not in names and 'E2' not in names
+    assert 'E1' in names and 'E3' in names and 'E2' not in names
+    logged = [rec for rec in caplog.records if rec.name == 'editor.views' and rec.exc_info]
+    assert len(logged) == 1 and logged[0].exc_info[0] is ValueError
 
 
-def test_import_spec_items_short_row_aborts_with_line_number(client, world):
+def test_import_spec_items_short_row_is_rejected_with_line_number(client, world):
     client.force_login(world.rw)
     content = csv_bytes(DI_LABELS, [di_row(Name='S1')]) + b'Dom|Short|only|three\r\n'
     response = post_csv(client, DI_URL, content)
-    [(level, text)] = messages_of(response)
-    # FIXED: import-traceback-in-message (was: text continued with '; traceback: ' and the traceback)
-    assert text == 'Unable to read or process uploaded file at line 3; the details were written to the server log'
+    # FIXED: import-spec-items-abort-no-summary (was: the import aborted with 'Unable to read or process
+    # uploaded file at line 3; the details were written to the server log')
+    assert messages_of(response) == [(
+        'alert-danger', '1 imported, 1 rejected. Rejected: line 3: row has fewer columns than the header')]
     assert get_item(world, 'DataItem', 'Dom', 'S1')
 
 
@@ -1354,7 +1392,7 @@ def test_import_spec_items_file_just_below_chunk_size_is_accepted(client, world)
     content = csv_bytes(DI_LABELS, [di_row(Name='Edge', Description='x' * pad)])
     assert len(content) == 65536
     response = post_csv(client, DI_URL, content)
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
 
 
 def test_import_spec_items_roundtrip_of_export(client, world):
@@ -1365,7 +1403,7 @@ def test_import_spec_items_roundtrip_of_export(client, world):
               for i in SpecItem.objects.filter(project=world.project, cat='DataItem', val_set=world.default)
               .exclude(status='OBS')}
     response = post_csv(client, DI_URL, exported)
-    assert messages_of(response) == [('alert-success', '3 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '3 imported, 0 rejected')]
     after = {(i.domain, i.name): (i.title, i.desc, i.value, i.p_link_id, i.rationale, i.remarks, i.p_kind)
              for i in SpecItem.objects.filter(project=world.project, cat='DataItem', val_set=world.default)
              .exclude(status='OBS')}

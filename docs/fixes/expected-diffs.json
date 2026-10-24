@@ -8,5 +8,11 @@
   {"id": "link-suggest-js", "applies_to": "html", "normaliser": "norm_link_suggest_js",
    "description": "Tasks 6.6b/6.6d: backslash, CR, LF, U+2028 and U+2029 are escaped in the link_suggest `linkElements` JS string literals (forms only; not part of the rehearsal snapshot pages)."},
   {"id": "compat-allowlist-format", "applies_to": "compat", "compat": {},
-   "description": "Task 7.0: import compatibility corpus (tests/test_compat_corpus.py). Any entry (applies_to \"html\" or \"compat\") may carry an optional key \"compat\": {\"<corpus input name | *>\": [\"<table>.<field>\" | \"<table>.*\" | \"<table>.#rows\" | \"_outcome.exception\" | \"_outcome.message\" | \"_outcome.messages\" | \"_outcome.status\", ...]} listing the import-fingerprint fields that fix may change (e.g. \"editor_projectuser.role\"). Entries with applies_to \"compat\" are ignored by rehearse.py. This entry is documentation only (empty compat); a fix adds its own entry with its own id."}
+   "description": "Task 7.0: import compatibility corpus (tests/test_compat_corpus.py). Any entry (applies_to \"html\" or \"compat\") may carry an optional key \"compat\": {\"<corpus input name | *>\": [\"<table>.<field>\" | \"<table>.*\" | \"<table>.#rows\" | \"_outcome.exception\" | \"_outcome.message\" | \"_outcome.messages\" | \"_outcome.status\", ...]} listing the import-fingerprint fields that fix may change (e.g. \"editor_projectuser.role\"). Entries with applies_to \"compat\" are ignored by rehearse.py. This entry is documentation only (empty compat); a fix adds its own entry with its own id."},
+  {"id": "import-spec-items-no-rollback", "applies_to": "compat",
+   "compat": {"csv_golden_di_project": ["_outcome.messages"], "csv_golden_di_vs1": ["_outcome.messages"],
+              "csv_golden_enumtype": ["_outcome.messages"], "csv_golden_enumvalue": ["_outcome.messages"],
+              "csv_golden_req_application": ["_outcome.messages"], "csv_golden_req_no_application": ["_outcome.messages"],
+              "csv_ext_dataitem": ["_outcome.messages"], "csv_ext_dataitem_vs1": ["_outcome.messages"]},
+   "description": "Task 7.4b: the spec-item CSV import ends with ONE summary message ('N imported, M rejected' plus the rejected CSV lines) instead of a success count and an aggregated error count. Only the import message text changes; the imported database rows are identical."}
 ]
