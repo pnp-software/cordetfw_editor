@@ -48,7 +48,7 @@
                         <input type="password" id="{{ form.password.id_for_label }}"
                                   class="form-control {% if form.password.errors %}is-invalid{% endif %}
                                         link-suggest"
-                                  name="password" value="{{ form.password.value }}"
+                                  name="password" {% if not form.is_bound %}value="{{ form.password.value }}"{% endif %}
                                   {% if form.password.field.required %}required{% endif %}
                                   {% if form.password.field.disabled %}disabled{% endif %}>
                         {% if form.password.errors %}

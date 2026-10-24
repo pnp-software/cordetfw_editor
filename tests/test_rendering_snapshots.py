@@ -206,11 +206,12 @@ def test_snapshot_lockout_template():
 # ---------------------------------------------------------------------------
 
 def test_snapshot_login_failed_post(client):
-    """Failed login: pins the re-rendered page, which echoes the typed password."""
+    """Failed login: pins the re-rendered page, which must not echo the typed password."""
     make_user('alice')
     response = client.post('/editor/login/', {'username': 'alice', 'password': 'wrong-pw-123'})
-    # KNOWN-ISSUE: login-echoes-password (password re-rendered as value="..." in the HTML)
-    assert b'value="wrong-pw-123"' in response.content
+    # FIXED: login-echoes-password (was: assert b'value="wrong-pw-123"' in response.content)
+    assert b'wrong-pw-123' not in response.content
+    assert b'name="username" value="alice"' in response.content
     snap('login_failed_post', response)
 
 
