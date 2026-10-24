@@ -326,12 +326,11 @@ def test_model_get_choices_connect_failure(fake_db):
     ]
 
 
-def test_model_get_choices_null_domain_crashes(fake_db):
-    # KNOWN-ISSUE: ext-cats-null-domain
-    fake_db.responder = lambda sql: [diagram(1, 'n', None)]
-    with pytest.raises(TypeError):
-        ext_cats.ext_model_get_choices(make_request())
-    assert fake_db.conn.closed is True      # the connection is closed before the crash
+def test_model_get_choices_null_domain(fake_db):
+    # FIXED: ext-cats-null-domain (was: TypeError when a model has no domain)
+    fake_db.responder = lambda sql: [diagram(1, 'n', None), diagram(2, 'm', 'Dom')]
+    assert ext_cats.ext_model_get_choices(make_request()) == [(1, ' : n'), (2, 'Dom : m')]
+    assert fake_db.conn.closed is True
 
 
 # ---------------------------------------------------------------------------
@@ -577,11 +576,11 @@ def test_fcp_get_choices_unknown_user(fake_db):
                               'Error trying to retrieve the FCPs for user "alice@example.com:list index out of range')]
 
 
-def test_fcp_get_choices_null_domain_crashes(fake_db):
-    # KNOWN-ISSUE: ext-cats-null-domain
-    fake_db.responder = lambda sql: [(42,)] if sql.startswith('SELECT * FROM users') else [diagram(1, 'n', None)]
-    with pytest.raises(TypeError):
-        ext_cats.ext_fcp_get_choices(make_request())
+def test_fcp_get_choices_null_domain(fake_db):
+    # FIXED: ext-cats-null-domain (was: TypeError; a diagram without domain is now not an FCP and is skipped)
+    fake_db.responder = lambda sql: [(42,)] if sql.startswith('SELECT * FROM users') else \
+        [diagram(1, 'n', None), diagram(2, 'a', 'AFcp')]
+    assert ext_cats.ext_fcp_get_choices(make_request()) == [(2, 'AFcp : a')]
 
 
 def test_fcp_get_choice(fake_db):
@@ -603,19 +602,35 @@ def test_fcp_get_choice_query_error(fake_db):
     assert msgs(request) == [('alert-danger', 'Error while accessing model with ID "5: db down')]
 
 
-def test_fcp_get_choice_not_found_raises(fake_db):
-    # KNOWN-ISSUE: ext-cats-get-choice-not-found
+def test_fcp_get_choice_not_found_returns_none(fake_db):
+    # FIXED: ext-cats-get-choice-not-found (was: IndexError)
     fake_db.responder = lambda sql: []
-    with pytest.raises(IndexError):
-        ext_cats.ext_fcp_get_choice(make_request(), 5)
+    request = make_request()
+    assert ext_cats.ext_fcp_get_choice(request, 5) is None
+    assert msgs(request) == [('alert-warning', 'FCP not found in FW Profile Database (its ID is: 5)')]
+    assert fake_db.conn.closed is True
 
 
-def test_fcp_get_choice_without_title_raises(fake_db):
-    # KNOWN-ISSUE: ext-cats-fcp-no-title
-    # get_fcp_desc returns None when no state note holds 'Title:'; the subscript then fails.
+def test_fcp_get_choice_without_email_is_not_found(fake_db):
+    request = make_request(User(username='n', email=''))
+    assert ext_cats.ext_fcp_get_choice(request, 5) is None
+    assert fake_db.conn is None
+
+
+def test_fcp_get_choice_without_title(fake_db):
+    # FIXED: ext-cats-fcp-no-title (was: TypeError because get_fcp_desc returned None).
+    # Title and description are optional in the form, so the FCP is usable: empty title/desc plus a warning.
     fake_db.responder = lambda sql: [diagram(5, 'n', 'XFcp', json_rep=fcp_json('XFcp', 'no title'))]
-    with pytest.raises(TypeError):
-        ext_cats.ext_fcp_get_choice(make_request(), 5)
+    request = make_request()
+    result = ext_cats.ext_fcp_get_choice(request, 5)
+    assert (result['title'], result['desc'], result['name']) == ('', '', 'n')
+    assert msgs(request) == [('alert-warning', 'FCP with ID "5" has no title: no state note holds "Title:"')]
+
+
+def test_fcp_get_choice_null_domain(fake_db):
+    # FIXED: ext-cats-null-domain (was: a None domain was passed on)
+    fake_db.responder = lambda sql: [diagram(5, 'n', None, json_rep=fcp_json(None, 'Title: T\nd'))]
+    assert ext_cats.ext_fcp_get_choice(make_request(), 5)['domain'] == ''
 
 
 def test_fcp_refresh_not_found(fake_db):
@@ -638,20 +653,30 @@ def test_fcp_refresh_no_change(fake_db):
     assert ext_cats.ext_fcp_refresh(make_request(), make_item()) == 'NO_CHANGE'
 
 
-def test_fcp_refresh_changed_raises_name_error(fake_db):
-    # KNOWN-ISSUE: ext-fcp-refresh-nameerror
-    # ext_fcp_refresh writes into an undefined variable 'ext_item_dict' (copy/paste from
-    # ext_fcp_get_choice) so any real refresh raises NameError. By then domain and name of
-    # the spec_item have already been overwritten, and the connection is left open.
+def test_fcp_refresh_changed(fake_db):
+    # FIXED: ext-fcp-refresh-nameerror (was: NameError 'ext_item_dict' after domain and name were overwritten)
     fake_db.responder = lambda sql: [diagram(7, 'newname', 'NewFcp', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>',
-                                             json_rep=fcp_json('NewFcp', 'Title: T\nd'))]
+                                             json_rep=fcp_json('NewFcp', 'Title: NewT\nnew d'))]
     item = make_item()
-    with pytest.raises(NameError) as excinfo:
-        ext_cats.ext_fcp_refresh(make_request(), item)
-    assert 'ext_item_dict' in str(excinfo.value)
-    assert (item.domain, item.name) == ('NewFcp', 'newname')
-    assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
-    assert fake_db.conn.closed is True      # CHANGED: ext-cats-connection-leak (was: False; connection left open)
+    request = make_request()
+    assert ext_cats.ext_fcp_refresh(request, item) == 'REFRESH'
+    assert (item.domain, item.name, item.title, item.desc) == ('NewFcp', 'newname', 'NewT', 'new d')
+    assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>'
+    assert (item.n1, item.n2, item.n3) == (100, 200, 7)
+    assert item.updated_at == datetime(2024, 3, 4, 5, 6, 7)
+    assert fake_db.conn.closed is True
+    assert msgs(request) == []
+
+
+def test_fcp_refresh_changed_without_title(fake_db):
+    # FIXED: ext-cats-fcp-no-title (refresh path)
+    fake_db.responder = lambda sql: [diagram(7, 'newname', 'NewFcp', svg='<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>',
+                                             json_rep=fcp_json('NewFcp', 'nothing'))]
+    item = make_item()
+    request = make_request()
+    assert ext_cats.ext_fcp_refresh(request, item) == 'REFRESH'
+    assert (item.title, item.desc) == ('', '')
+    assert msgs(request) == [('alert-warning', 'FCP with ID "7" has no title: no state note holds "Title:"')]
 
 
 # ---------------------------------------------------------------------------

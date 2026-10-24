@@ -99,7 +99,7 @@ def ext_model_refresh(request, spec_item):
         messages.error(request, 'Model with ID \"'+str(model_id)+'\" not refreshed: its image contains disallowed content ('+svg_error+')')
         return 'INVALID'
 
-    spec_item.domain = get_model_domain(diagrams[0][6])        
+    spec_item.domain = get_model_domain(diagrams[0][6]) or ''        
     spec_item.name = diagrams[0][2]
     if diagrams[0][4] == 'Procedure':
         spec_item.p_kind = MODEL_KIND[1][0]
@@ -136,7 +136,7 @@ def ext_model_get_choice(request, model_id):
 
     ext_item_dict = {}
             
-    ext_item_dict['domain'] = get_model_domain(diagrams[0][6])        
+    ext_item_dict['domain'] = get_model_domain(diagrams[0][6]) or ''        
     ext_item_dict['name'] = diagrams[0][2]
     if diagrams[0][4] == 'Procedure':
         ext_item_dict['p_kind'] = MODEL_KIND[1][0]
@@ -168,7 +168,7 @@ def ext_model_get_choices(request):
     
     model_list = []
     for diagram in diagrams:
-        dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
+        dom_name = (diagram[0], (get_model_domain(diagram[6]) or '')+' : '+diagram[2])     # ext-cats-null-domain
         model_list.append(dom_name)
 
     if model_list == []:
@@ -237,11 +237,10 @@ def ext_fcp_get_choices(request):
 
     model_list = []
     for diagram in diagrams:
-        if get_model_domain(diagram[6]) != None:
-            if not get_model_domain(diagram[6]).endswith('Fcp'):
-                continue
-        dom_name = (diagram[0], get_model_domain(diagram[6])+' : '+diagram[2])
-        model_list.append(dom_name)
+        domain = get_model_domain(diagram[6])
+        if domain is None or not domain.endswith('Fcp'):       # ext-cats-null-domain: no domain = not an FCP
+            continue
+        model_list.append((diagram[0], domain+' : '+diagram[2]))
 
     if model_list == []:
         messages.error(request, 'No FCPs found in FW Profile Database for user \"'+\
@@ -268,6 +267,14 @@ def get_fcp_desc(json_rep):
             return {'title': title, 'desc': desc}
     return None    
 
+def get_fcp_title_desc(request, json_rep, fcp_id):
+    """ Return (title, desc) of an FCP; if it has no 'Title:' note: warn and return ('', '') """
+    fcp_desc = get_fcp_desc(json_rep)
+    if fcp_desc is None:
+        messages.warning(request, 'FCP with ID \"'+str(fcp_id)+'\" has no title: no state note holds \"Title:\"')
+        return ('', '')
+    return (fcp_desc['title'], fcp_desc['desc'])
+
 #--------------------------------------------------------------------------------
 def ext_fcp_get_choice(request, fcp_id):
     """ 
@@ -284,14 +291,16 @@ def ext_fcp_get_choice(request, fcp_id):
         messages.error(request, 'Error while accessing model with ID \"'+str(fcp_id)+': '+str(e))
         return None
 
+    if not diagrams:
+        messages.warning(request, 'FCP not found in FW Profile Database (its ID is: '+str(fcp_id)+')')
+        return None
+
     ext_item_dict = {}
             
-    ext_item_dict['domain'] = get_model_domain(diagrams[0][6])        
+    ext_item_dict['domain'] = get_model_domain(diagrams[0][6]) or ''        
     ext_item_dict['name'] = diagrams[0][2]
     ext_item_dict['updated_at'] = diagrams[0][5]
-    fcp_desc = get_fcp_desc(diagrams[0][6])
-    ext_item_dict['title'] = fcp_desc['title']
-    ext_item_dict['desc'] = fcp_desc['desc']
+    ext_item_dict['title'], ext_item_dict['desc'] = get_fcp_title_desc(request, diagrams[0][6], fcp_id)
     ext_item_dict['value'] = diagrams[0][7]     # svg representation of diagram
     ext_item_dict['n1'] = diagrams[0][8]        # figure width
     ext_item_dict['n2'] = diagrams[0][9]        # figure height
@@ -331,11 +340,9 @@ def ext_fcp_refresh(request, spec_item):
         messages.error(request, 'FCP with ID \"'+str(model_id)+'\" not refreshed: its image contains disallowed content ('+svg_error+')')
         return 'INVALID'
 
-    spec_item.domain = get_model_domain(diagrams[0][6])        
+    spec_item.domain = get_model_domain(diagrams[0][6]) or ''        
     spec_item.name = diagrams[0][2]
-    fcp_desc = get_fcp_desc(diagrams[0][6])
-    ext_item_dict['title'] = fcp_desc['title']
-    ext_item_dict['desc'] = fcp_desc['desc']
+    spec_item.title, spec_item.desc = get_fcp_title_desc(request, diagrams[0][6], model_id)
     spec_item.updated_at = diagrams[0][5]
     spec_item.value = diagrams[0][7]     # svg representation of diagram
     spec_item.n1 = diagrams[0][8]        # figure width
