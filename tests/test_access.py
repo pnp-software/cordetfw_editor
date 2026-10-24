@@ -228,7 +228,7 @@ def test_access_matrix_get(client, endpoint, role):
     response = do_get(client, s.url(endpoint))
     url = s.url(endpoint)
 
-    if role == 'anonymous' and endpoint != 'import_spec_items':
+    if role == 'anonymous':
         # @login_required: redirected to the login page
         assert response.status_code == 302
         assert response['Location'] == '/accounts/login/?next=' + url
@@ -297,16 +297,13 @@ def test_export_spec_items_content(client):
     assert response.content.decode().startswith('Domain|Name|')
 
 
-def test_import_spec_items_has_no_login_required(client):
-    """KNOWN-ISSUE: import-no-login-required. import_spec_items lacks @login_required: an anonymous
-    request is NOT redirected to the login page; it falls through to the project write-access
-    check, which fails and redirects to /editor with an error message."""
+def test_import_spec_items_requires_login(client):
     s = Setup()
     before = db_snapshot()
     response = client.get(s.url('import_spec_items'))
     assert response.status_code == 302
-    assert response['Location'] == '/editor'
-    assert msgs(response.wsgi_request) == [MSG_WRITE]
+    # FIXED: import-no-login-required (was: 302 to /editor with the write-access message)
+    assert response['Location'] == '/accounts/login/?next=' + s.url('import_spec_items')
     assert db_snapshot() == before
 
 
@@ -317,7 +314,8 @@ def test_import_spec_items_anonymous_post_does_not_import(client, tmp_path):
     f = SimpleUploadedFile('x.csv', b'a|b\n1|2\n')
     response = client.post(s.url('import_spec_items'), {'upload_file': f})
     assert response.status_code == 302
-    assert response['Location'] == '/editor'
+    # FIXED: import-no-login-required (was: 302 to /editor)
+    assert response['Location'] == '/accounts/login/?next=' + s.url('import_spec_items')
     assert db_snapshot() == before
 
 

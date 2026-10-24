@@ -967,6 +967,7 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     return response            
 
 
+@login_required
 def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
     if not has_write_access_to_project(request, project):
