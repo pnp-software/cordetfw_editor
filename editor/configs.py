@@ -18,7 +18,7 @@ def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
         choices for the 'p_link' attribute of a spec_item of a given category 
     """
     if p_parent_id != None:
-        return SpecItem.objects.filter(id=int(p_parent_id)) 
+        return SpecItem.objects.filter(id=int(p_parent_id), project_id=project.id)
         
     if cat == 'DataItem':
         q1 = SpecItem.objects.filter(project_id=project.id, cat='DataItemType').\
@@ -55,7 +55,7 @@ def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
 
     if cat == 'DerPacket':
         if s_parent_id != None:
-            s_parent = SpecItem.objects.get(id=s_parent_id)
+            s_parent = SpecItem.objects.get(id=s_parent_id, project_id=project.id)
             return SpecItem.objects.filter(project_id=project.id, cat='EnumValue', s_link=s_parent.s_link).\
                             exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
         else:
@@ -63,7 +63,7 @@ def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
                             exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
 
     if (cat == 'AdaptPoint') and (application != None):
-        return SpecItem.objects.filter(application_id=application.id, cat='Requirement').\
+        return SpecItem.objects.filter(project_id=project.id, application_id=application.id, cat='Requirement').\
                         exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
                         
     return SpecItem.objects.none()
@@ -76,7 +76,7 @@ def get_s_link_choices(cat, project, application, s_parent_id, p_parent_id):
         choices for the 's_link' attribute of a spec_item of a given category 
     """
     if s_parent_id != None:
-        return SpecItem.objects.filter(id=int(s_parent_id))
+        return SpecItem.objects.filter(id=int(s_parent_id), project_id=project.id)
         
     if cat == 'RiskScenario':
         return SpecItem.objects.filter(project_id=project.id, cat='DisrEvt').\

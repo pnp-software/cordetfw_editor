@@ -1,0 +1,2 @@
+# Golden files are byte-exact contracts: no EOL conversion, no whitespace checks.
+tests/golden/** -text -whitespace

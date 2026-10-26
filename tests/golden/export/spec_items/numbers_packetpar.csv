@@ -1,0 +1,3 @@
+Domain|Name|Title|Description|Default Value|Rationale|Remarks|Implementation|Role|Packet|Data Item|Position|Group Size|Rep counter|ValSet|Change Log|Owner
+Pkt|Big|Big numbers|||||||None|None|12345|-7|0|Default||owner
+Pkt|Edge|Edge numbers|||||||None|None|2147483647|-2147483648|1000000|Default||owner

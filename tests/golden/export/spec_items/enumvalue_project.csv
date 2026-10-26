@@ -1,0 +1,3 @@
+Domain|Name|Title|Description|Value|Rationale|Remarks|Implementation|Type|Owner|Change Log|ValSet
+Types|Green|Green||1||||Types:Color|owner||Default
+Types|Red|Red||0||||Types:Color|owner||Default

@@ -1,15 +1,10 @@
-asgiref
-cexprtk
-django==3.2
-django-admin-honeypot
-django-appconf
-django-axes
-django-crispy-forms
-django-ipware
-django-import-export<4.0
-mysqlclient
-pytz
-setuptools
-sqlparse
-tablib
-#django-tailwind
+# Direct runtime dependencies, exact pins (Python 3.12). Full resolved set: requirements-lock.txt.
+# Production baseline before the migration: requirements-baseline.txt.
+Django==5.2.18
+cexprtk==0.4.2
+crispy-bootstrap4==2026.2
+django-axes[ipware]==8.3.1
+django-crispy-forms==2.7
+django-import-export==4.4.3
+mysqlclient==2.3.0
+tablib==3.10.0

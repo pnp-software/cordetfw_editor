@@ -9,6 +9,7 @@ from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Appli
 from editor.utilities import frmt_string
 from editor.convert import convert_edit_to_db
 from editor.configs import configs
+from editor.svg_check import check_svg_value
 
 #--------------------------------------------------------------------------------
 def import_project_tables(request, imp_dir):
@@ -189,6 +190,8 @@ def import_project_tables(request, imp_dir):
     spec_item_new_id_2_old = {}
     for spec_item in spec_items:
         try:
+            if configs['cats'].get(spec_item['cat'], {}).get('attrs', {}).get('value', {}).get('kind') == 'image':
+                check_svg_value(spec_item['value'])       # Task 6.6b: image-svg-unsanitised
             new_spec_item = SpecItem(cat = spec_item['cat'],
                                      name = spec_item['name'],
                                      domain = spec_item['domain'],

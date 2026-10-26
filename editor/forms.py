@@ -11,6 +11,7 @@ from editor.convert import get_pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import configs, get_p_link_choices, get_s_link_choices, do_cat_specific_checks
 from editor import ext_cats
+from editor.svg_check import check_svg_value
 
 # Regex pattern for 'domain' and 'name' (alphanumeric characters, underscores, dashes, and dots only in internal positions)
 pattern_identifier = re.compile(r'[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$')
@@ -240,6 +241,14 @@ class SpecItemForm(forms.Form):
             return cd
 
         default_val_set_id = ValSet.objects.filter(project_id=self.project.id).get(name='Default')
+
+        # Task 6.6b (image-svg-unsanitised): in edit, copy and split mode the FW Profile attributes
+        # (ext_attrs, incl. the SVG `value`) are taken from the source item; a posted value is ignored.
+        if (len(self.config['ext_attrs']) > 0) and (self.mode in ('edit', 'copy', 'split')) \
+                and (self.item_id is not None):
+            source = SpecItem.objects.get(id=self.item_id)
+            for ext_attr in self.config['ext_attrs']:
+                cd[ext_attr] = getattr(source, ext_attr)
         
         # When in add mode: load data for external attributes
         if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
@@ -251,6 +260,14 @@ class SpecItemForm(forms.Form):
                 else:
                     cd[ext_attr] = ''
  
+        # Only add mode takes the value from outside (FW Profile choice): validate it there. In edit/copy/split
+        # it comes from the source item and in del nothing is written, so an item whose stored diagram is
+        # invalid (shown as placeholder) can still be edited, copied, split and deleted (Task 6.6d).
+        if self.mode == 'add':
+            for field in self.config['attrs']:
+                if (self.config['attrs'][field]['kind'] == 'image') and (field in cd):
+                    check_svg_value(cd[field])
+
         # Fields F of kind 'eval_ref' may only contain internal references to spec_items with the following
         # characteristics: (a) they contain field F and (b) field F is of type 'eval_ref'
         for field in self.fields:  

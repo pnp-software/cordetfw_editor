@@ -1,0 +1,10 @@
+[
+  {"id": "logout-post", "applies_to": "html", "normaliser": "norm_logout_post",
+   "description": "Task 3.5: the Logout nav link (GET) became a POST form with CSRF token and button."},
+  {"id": "post-only-mutations", "applies_to": "html", "normaliser": "norm_post_only_mutations",
+   "description": "Tasks 6.3/6.3b: static/style.css link, confirm-delete.js script and the delete-confirm modal on every page; project delete, spec-item refresh, user/ValSet removal and member add/role controls converted from GET links to POST forms/buttons (same target URL, title and ids are compared, only the control markup is folded); inline onclick confirm removed from the delete link of NEW items; data-confirm-message attributes."},
+  {"id": "escape-stored-text", "applies_to": "html", "normaliser": "escape_stored_text_hunks",
+   "description": "Task 6.6: stored text is HTML-escaped (& < > in text nodes; also \" ' in attributes). Applied last and per diff hunk: a hunk is accepted only if html.unescape of the old and new hunk are identical and the new hunk contains an entity whose raw character the old hunk contained. Any other remaining difference makes the page UNEXPLAINED."},
+  {"id": "link-suggest-js", "applies_to": "html", "normaliser": "norm_link_suggest_js",
+   "description": "Tasks 6.6b/6.6d: backslash, CR, LF, U+2028 and U+2029 are escaped in the link_suggest `linkElements` JS string literals (forms only; not part of the rehearsal snapshot pages)."}
+]

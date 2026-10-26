@@ -1,26 +1,41 @@
 from django import template
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
+from django.template.defaultfilters import linebreaksbr
+from django.utils.html import escape
 from django.db.models import Q
 from ..models import SpecItem
 from ..configs import configs
 from ..convert import conv_do_nothing, conv_db_disp_ref_text, conv_db_disp_plain_ref, \
                       conv_db_disp_spec_item_ref, conv_db_disp_date, eval_di_value, \
-                      convert_db_to_edit, convert_db_to_display, conv_db_disp_table
+                      convert_db_to_edit, convert_db_to_display, conv_db_disp_table, \
+                      conv_db_disp_plain_text, escape_text
 from .. import convert
 
 register = template.Library()
 
 # The key is the name of a kind of specification item attribute content; the value
 # is the function which transforms that content from database to display representation  
-conv_db_disp_func = {"plain_text": "conv_do_nothing",
+conv_db_disp_func = {"plain_text": "conv_db_disp_plain_text",
                      'ref_text': "conv_db_disp_ref_text",
                      'plain_ref': "conv_db_disp_plain_ref",
                      'spec_item_ref': "conv_db_disp_spec_item_ref",
                      'eval_ref': 'conv_db_disp_eval_ref',
                      'int': "conv_do_nothing",
-                     'image': "conv_do_nothing",
+                     'image': "conv_db_disp_image",
                      'date': "conv_db_disp_date",
                      'table': "conv_db_disp_table"}
+
+
+class ImageHtml(SafeString):
+    """Display value of an `image` (inline SVG) attribute: must not get <br> inserted for newlines."""
+
+
+@register.filter(needs_autoescape=True, is_safe=True)
+def linebreaksbr_cell(value, autoescape=True):
+    """linebreaksbr for table cells, except for `image` values which are output unchanged (Task 6.6d)."""
+    if isinstance(value, ImageHtml):
+        return value
+    return linebreaksbr(value, autoescape=autoescape)
 
 
 @register.simple_tag(takes_context=True)
@@ -39,10 +54,21 @@ def conv_db_disp(context, spec_item, attr_names):
         conv_func = conv_db_disp_func[attr_content_kind]
         s = getattr(convert, conv_func)(context, spec_item, attr_name, context['sel_rel'])
         if s != '':
-            values.append((context['config']['attrs'][attr_name]['label'], mark_safe(s)))
+            value = ImageHtml(s) if attr_content_kind == 'image' else mark_safe(s)
+            values.append((context['config']['attrs'][attr_name]['label'], value))
     return values
 
  
+def trac_link_html(target, item):
+    """
+    Hyperlink to 'item' for the traceability display. Attribute values (href, title) get the full
+    escape(); the text nodes (domain:name and title) escape only &, < and >.
+    """
+    return '<a class="link-table-list-spec" href="' + escape(target + '#' + item.domain + ':' + item.name) + \
+           '" title="' + escape(item.desc) + '">' + escape_text(item.domain) + ':' + escape_text(item.name) + \
+           '</a> (' + escape_text(item.title) + ')'
+
+
 @register.simple_tag(takes_context=True)
 def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
     """ 
@@ -96,17 +122,15 @@ def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
 
         if trac_link == 's_link' and link.p_link != None:
             target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'/'+str(sel_rel_id)+'\list_spec_items'
-            s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.p_link.domain+':'+link.p_link.name+'\" title=\"'+\
-                link.p_link.desc+'\">' + link.p_link.domain + ':' + link.p_link.name + '</a> (' + link.p_link.title + ')'
+                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
+            s = s + trac_link_html(target, link.p_link)
             s = s + '\n'
             continue
         
         if trac_link == 'p_link' and link.s_link != None:
             target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'/'+str(sel_rel_id)+'\list_spec_items'
-            s = s + '<a class=\"link-table-list-spec\" href=\"'+target+'#'+link.s_link.domain+':'+link.s_link.name+'\" title=\"'+\
-                link.s_link.desc+'\">' + link.s_link.domain + ':' + link.s_link.name + '</a> (' + link.s_link.title + ')'
+                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
+            s = s + trac_link_html(target, link.s_link)
             s = s + '\n'    
             continue
         
@@ -118,14 +142,14 @@ def filter_expand_tip(spec_item):
     """
     The argument is a spec_item which appears in an "expand" list.
     The function returns the hovering tip for the spec_item.
-    The input should be passed through escape() before being filtered to ensure that any html code entered 
-    by the (possibly malicious) user has been sanitized.
+    The tip is used inside a title="..." attribute: the stored values are escaped with escape()
+    (the '&#13;' line separators are added afterwards).
     """
     attrs = configs['cats'][spec_item.cat]['short_desc']['expand_tip']
     s = ''
     for attr in attrs:
         s = s + configs['cats'][spec_item.cat]['attrs'][attr]['label'] +': '+\
-                convert_db_to_edit(getattr(spec_item, attr)) + '&#13;'
+                escape(convert_db_to_edit(getattr(spec_item, attr))) + '&#13;'
     return mark_safe(s)
 
 
@@ -159,3 +183,18 @@ def get_short_desc(spec_item):
         return desc[:configs['general']['short_desc_len']]+' ...'
     else:
         return desc[:-2]
+
+
+@register.filter
+def js_str_after_html_escape(value):
+    """
+    For a value already HTML-escaped by autoescape and placed in a single-quoted JS string literal
+    that later reaches an `html:` sink (link_suggest.html). Autoescape already encodes < > & ' ";
+    this protects the literal itself: backslash, CR, LF, U+2028 and U+2029 become literal backslash
+    sequences, so the JS string decodes back to the HTML-escaped text. Other bytes are unchanged
+    (Task 6.6b, link-suggest-js-string).
+    """
+    s = str(value)
+    s = s.replace('\\', '\\\\').replace('\r', '\\r').replace('\n', '\\n')
+    s = s.replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
+    return mark_safe(s)

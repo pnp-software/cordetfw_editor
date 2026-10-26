@@ -1,0 +1,3 @@
+id,name,desc,cats,updated_at,owner,release
+1,Num Proj,"Demo project with unicode ä µ ☺
+second line","DataItem,EnumType,EnumValue,DataItemType",2024-02-20 16:45:30,owner,5

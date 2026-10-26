@@ -1,0 +1,6 @@
+id,release_author,desc,updated_at,project_version,application_version,previous
+1,owner,Initial release for project,2023-12-01 08:00:00,0,0,
+2,writer,"First ""release"" | with pipe
+and newline",2024-02-20 16:45:30,1,0,1
+3,owner,Initial release for application,2023-12-01 08:00:00,0,0,
+4,owner,Application release äµ,2024-02-20 16:45:30,1,1,3

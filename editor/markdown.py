@@ -21,9 +21,9 @@ with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file
 # Underline is: '++...++'
 # Italicize is: '__...__'
 # Teletype is: '``...``'
-pattern_emphasis = re.compile('(\*\*)(.+?)(\*\*)|(\+\+)(.+?)(\+\+)|(__)(.+?)(__)|(``)(.+?)(``)')     
+pattern_emphasis = re.compile('(\\*\\*)(.+?)(\\*\\*)|(\\+\\+)(.+?)(\\+\\+)|(__)(.+?)(__)|(``)(.+?)(``)')
 
-pattern_bullets = re.compile('((\n^-\s.+$)+)', re.MULTILINE)    
+pattern_bullets = re.compile('((\n^-\\s.+$)+)', re.MULTILINE)
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def bulleted_list_to_latex(match):
     for i, bullet_item in enumerate(bullet_items): 
         if i>0:
             s_html = s_html + '\\item '+bullet_item
-    return s_html + '\\end{itemize}'+' \ ' # Backslash adds a space
+    return s_html + '\\end{itemize}'+' \\ ' # Backslash adds a space
 
 # ----------------------------------------------------------------------
 def markdown_to_html(s):

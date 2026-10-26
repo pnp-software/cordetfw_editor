@@ -1,0 +1,5 @@
+Domain|Name|Title|Description|Value|Rationale|Remarks|Implementation|Type|Kind|Multiplicity|Unit|Owner|Change Log|ValSet
+Dom|ColorVar|Title of ColorVar|"See #EnumValue:Types:Red and #DataItemType:Types:uint8 and **bold**
+newline ""q"" | pipe; dangling ERROR:9999"|#iref:104|"x | y"|  padded  ||Types:Color|VAR|1|µm|owner||Default
+Dom|Calc|Title of Calc||#iref:107 * 2||||Types:uint8|CNS|||owner||Default
+Dom|Count|Title of Count||42||||Types:uint8|CNS|||owner||Default

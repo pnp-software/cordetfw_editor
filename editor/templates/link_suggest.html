@@ -1,9 +1,9 @@
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+{% load ref_filters %}<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 <script src="/static/bootstrap-suggest.min.js"></script>
 <script>
 var linkElements = [
   {% for spec_item in spec_items %}
-    {path: '{{spec_item.cat}}:{{spec_item.domain}}:{{spec_item.name}}', comment: '{{spec_item.title}}'},
+    {path: '{{spec_item.cat|escape|js_str_after_html_escape}}:{{spec_item.domain|escape|js_str_after_html_escape}}:{{spec_item.name|escape|js_str_after_html_escape}}', comment: '{{spec_item.title|escape|js_str_after_html_escape}}'},
   {% endfor %}
 ];
 $('.link-suggest').suggest('#', {

@@ -19,6 +19,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import update_session_auth_hash, get_user
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.forms.models import model_to_dict
@@ -44,14 +45,17 @@ from editor.imports import import_project_tables
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
+from editor.svg_check import svg_rule_violation
 from editor.access import is_project_owner, has_read_access_to_project, \
                     can_create_project, can_add_val_set, has_write_access_to_project, \
-                    can_repair
+                    can_repair, user_has_write_access_to_project, val_set_name_is_default_in_db, get_spec_item_in_project_or_404, get_application_in_project_or_404, \
+                    get_val_set_in_project_or_404, get_release_for_project_or_404, \
+                    check_parents_in_project_or_404, is_default_val_set_name
 
 import cexprtk
 import logging
     
-with open('/etc/dj_cordetfw_config.json') as config_file:
+with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
     config = json.load(config_file)
     
 base_url = config['BASE_URL']
@@ -214,39 +218,66 @@ def edit_project(request, project_id):
         return redirect(base_url)
     project = Project.objects.get(id=project_id)
     
-    # Handle case where edit_project is invoked to add a new user to the project or to change its role.
-    # If the new user is not yet attached to the project, it is added to it in the specified role.
-    # If the specified user is already attached to the project, it is checked whether it is necessary
-    # to change its role
-    user_id = request.GET.get('user_id')
-    user_role = request.GET.get('role')
-    if user_id != None:    
-        user =  ProjectUser.objects.filter(project_id=project_id, user_id=user_id)
-        if not ProjectUser.objects.filter(project_id=project_id, user_id=user_id).exists():
+    # Handle case where edit_project is invoked (by POST only) to add a new user to the project or
+    # to change its role. If the new user is not yet attached to the project, it is added to it in
+    # the specified role. If the specified user is already attached to the project, it is checked
+    # whether it is necessary to change its role. The role must be 'RO' or 'RW'.
+    user_id = request.POST.get('user_id')
+    user_role = request.POST.get('role')
+    if user_id != None:
+        if user_role not in ('RO', 'RW'):
+            messages.error(request, 'Invalid role '+repr(user_role)+': it must be RO or RW')
+            return redirect('edit_project', project_id=project_id)
+        try:
+            new_user = User.objects.get(id=user_id)
+        except (User.DoesNotExist, ValueError):
+            messages.error(request, 'Invalid user: '+repr(user_id))
+            return redirect('edit_project', project_id=project_id)
+        if not ProjectUser.objects.filter(project_id=project_id, user_id=new_user.id).exists():
             new_project_user = ProjectUser(updated_at = datetime.now(tz=get_current_timezone()),
-                                           user = User.objects.get(id=user_id),
+                                           user = new_user,
                                            project = project,
                                            role = user_role)
             new_project_user.save()
         else:
-            user =  ProjectUser.objects.get(project_id=project_id, user_id=user_id)
+            user =  ProjectUser.objects.get(project_id=project_id, user_id=new_user.id)
             if user.role != user_role:
                 user.role = user_role
                 user.save()
-    
-    # Handle case where edit_project is invoked to delete a user from the project 
-    del_user_id = request.GET.get('del_user_id')
-    if del_user_id != None:     
-        ProjectUser.objects.filter(id=del_user_id).delete()
+        return redirect('edit_project', project_id=project_id)
 
-    # Handle case where edit_project is invoked to delete a ValSet from the project 
-    del_val_set_id = request.GET.get('del_val_set_id')
-    if del_val_set_id != None:     
+    # Handle case where edit_project is invoked to delete a user or ValSet.
+    del_user_id = request.POST.get('del_user_id')
+    if del_user_id != None:
         try:
-            ValSet.objects.filter(id=del_val_set_id).delete()    
+            del_user_id = int(del_user_id)
+        except ValueError:
+            messages.error(request, 'Invalid user: '+repr(del_user_id))
+            return redirect('edit_project', project_id=project_id)
+        ProjectUser.objects.filter(id=del_user_id, project_id=project_id).delete()
+        return redirect('edit_project', project_id=project_id)
+
+    del_val_set_id = request.POST.get('del_val_set_id')
+    if del_val_set_id != None:
+        try:
+            del_val_set_id = int(del_val_set_id)
+        except ValueError:
+            messages.error(request, 'Invalid ValSet: '+repr(del_val_set_id))
+            return redirect('edit_project', project_id=project_id)
+        if ValSet.objects.filter(id=del_val_set_id, project_id=project_id).exists() and \
+                is_default_val_set_name(ValSet.objects.get(id=del_val_set_id).name):
+            messages.error(request, 'The Default ValSet cannot be deleted')
+            return redirect('edit_project', project_id=project_id)
+        try:
+            ValSet.objects.filter(id=del_val_set_id, project_id=project_id).delete()
         except Exception as e:
             messages.error(request, 'Failure to delete ValSet with id '+str(del_val_set_id)+\
                                     ', possibly because it is still in use: '+repr(e))
+        return redirect('edit_project', project_id=project_id)
+
+    if request.method != 'POST' and any(k in request.GET for k in ('user_id', 'del_user_id', 'del_val_set_id')):
+        # Old bookmarks / stale pages: these links used to change the project. They no longer do.
+        messages.warning(request, 'This link no longer changes the project. Use the buttons on this page.')
 
     if request.method == 'POST':    # Bind form to posted data 
         form = ProjectForm(project, request.POST)
@@ -272,6 +303,7 @@ def edit_project(request, project_id):
 
 
 @login_required         
+@require_POST
 def del_project(request, project_id):
     if not can_create_project(request):
         return redirect(base_url)
@@ -372,6 +404,9 @@ def add_val_set(request, project_id):
     redirect_url = '/editor/'+str(project_id)+'/edit_project'
     if request.method == 'POST':    
         form = ValSetForm(request.POST)
+        if form.is_valid() and (is_default_val_set_name(form.cleaned_data['name'])
+                                or val_set_name_is_default_in_db(project, form.cleaned_data['name'])):
+            form.add_error('name', 'The name Default is reserved for the Default ValSet of the project')
         if form.is_valid():
             new_val_set = ValSet(name = form.cleaned_data['name'],
                                  desc = form.cleaned_data['description'],
@@ -388,13 +423,17 @@ def add_val_set(request, project_id):
 @login_required         
 def edit_val_set(request, project_id, val_set_id):
     project = Project.objects.get(id=project_id)
-    val_set = ValSet.objects.get(id=val_set_id)
     if not can_add_val_set(request):
         return redirect(base_url)
+    val_set = get_val_set_in_project_or_404(project, val_set_id)
     
     redirect_url = '/editor/'+str(project_id)+'/edit_project'
     if request.method == 'POST':    
         form = ValSetForm(request.POST)
+        if form.is_valid() and (is_default_val_set_name(form.cleaned_data['name']) or is_default_val_set_name(val_set.name)
+                                or val_set_name_is_default_in_db(project, form.cleaned_data['name'], exclude_id=val_set.id)) \
+                and (form.cleaned_data['name'] != val_set.name):
+            form.add_error('name', 'The Default ValSet cannot be renamed and no other ValSet can be named Default')
         if form.is_valid():
             val_set.name = form.cleaned_data['name']
             val_set.desc = form.cleaned_data['description']
@@ -414,7 +453,16 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
 
-    val_set = ValSet.objects.get(id=val_set_id)
+    if request.method == 'POST' and not user_has_write_access_to_project(request.user.id, project):
+        # Find & Replace changes spec_items: read access is not enough
+        if request.headers.get('x-requested-with') != 'XMLHttpRequest':
+            has_write_access_to_project(request, project)       # queues the usual message
+            return redirect(base_url)
+        return JsonResponse({'errors': {'__all__': [{'message': 'This operation requires read/write access to project '+project.name,
+                                                     'code': 'forbidden'}]}}, status=403)
+
+    application = get_application_in_project_or_404(project, application_id)
+    val_set = get_val_set_in_project_or_404(project, val_set_id)
     val_sets = ValSet.objects.filter(project_id=project_id).order_by('name')
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     get_parameter_sting = '?'
@@ -433,10 +481,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
 
     # Get selected release object and the list of previous releases
-    if sel_rel_id != 0:
-        sel_rel = Release.objects.get(id=sel_rel_id)    # Release to be displayed
-    else:
-        sel_rel = None
+    sel_rel = get_release_for_project_or_404(project, application, sel_rel_id)    # Release to be displayed
     releases = get_previous_list(project.release)       # Only project releases are handled
 
     # Prepare data for dropdown in header through which users can access
@@ -510,7 +555,10 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             field_to_search = find_replace_form.cleaned_data['field']
             find_string = find_replace_form.cleaned_data['find']
             replace_string = find_replace_form.cleaned_data['replace']
-            if field_to_search in configs['cats'][cat]['attrs'].keys():
+            cat_cfg = configs['cats'][cat]
+            # Task 6.6b: FW Profile attributes (ext_attrs, incl. the SVG `image` field) are not editable
+            if field_to_search in cat_cfg['attrs'] and field_to_search not in cat_cfg['ext_attrs'] \
+                    and cat_cfg['attrs'][field_to_search]['kind'] != 'image':
                 try:
                     with transaction.atomic():
                         item_ids = items.values_list('id', flat=True)
@@ -601,19 +649,17 @@ def add_spec_item(request, cat, project_id, application_id, sel_val, sel_rel_id)
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
 
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
+    application = get_application_in_project_or_404(project, application_id)
+    if application is not None:
         title = 'Add '+configs['cats'][cat]['name']+' to Application '+application.name
     else:
-        application = None
         title = 'Add '+configs['cats'][cat]['name']
         
+    s_parent, p_parent = check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
     sub_title = ''    
     if (s_parent_id != None):
-        s_parent = SpecItem.objects.get(id=s_parent_id)
         sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(s_parent)     
     if (p_parent_id != None):
-        p_parent = SpecItem.objects.get(id=p_parent_id)
         sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(p_parent)     
         
     if request.method == 'POST':   
@@ -648,16 +694,16 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
-        title = 'Edit '+configs['cats'][cat]['name']+' in Application '+application.name
-    else:
-        application = None
-        title = 'Edit '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    application = get_application_in_project_or_404(project, application_id)
+    if application is not None:
+        title = 'Edit '+configs['cats'][cat]['name']+' in Application '+application.name
+    else:
+        title = 'Edit '+configs['cats'][cat]['name']+' in Project '+project.name
   
-    spec_item = SpecItem.objects.get(id=item_id)
+    spec_item = get_spec_item_in_project_or_404(project, item_id)
+    check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
     if not spec_item.status in ('CNF', 'MOD', 'NEW'):
         messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be edited ')
         return redirect(base_url)
@@ -698,13 +744,14 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
 
 
 @login_required         
+@require_POST
 def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
     
-    spec_item = SpecItem.objects.get(id=item_id)
+    spec_item = get_spec_item_in_project_or_404(project, item_id)
     refresh_outcome = ext_model_refresh(request, spec_item)
     if refresh_outcome == 'REFRESH':
         if spec_item.status == 'CNF':
@@ -714,6 +761,8 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
         spec_item.save()
     elif refresh_outcome == 'NOT_FOUND':
         messages.warning(request,'External spec_item no longer exists -- no refresh can be done')
+    elif refresh_outcome == 'INVALID':
+        pass        # ext_model_refresh has issued the error message; the item is unchanged
     elif refresh_outcome == 'NO_CHANGE':
         messages.warning(request,'External spec_item has not changed -- no refresh needed')
  
@@ -726,17 +775,19 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
 def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-    spec_item = SpecItem.objects.get(id=item_id)
-    spec_item.change_log = ''
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
+    if not has_write_access_to_project(request, project):
+        return redirect(base_url)
+    spec_item = get_spec_item_in_project_or_404(project, item_id)
+    spec_item.change_log = ''
+    application = get_application_in_project_or_404(project, application_id)
+    check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
+    if application is not None:
         title = 'Copy '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
-        application = None
         title = 'Copy '+configs['cats'][cat]['name']+' in Project '+project.name
-    if not has_write_access_to_project(request, project) or (spec_item.val_set.name != 'Default'):
+    if spec_item.val_set.name != 'Default':
         return redirect(base_url)
     if spec_item.val_set != default_val_set:
         messages.error(request, 'Only SpecItems in default ValSet can be copied ')
@@ -744,7 +795,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
   
     if request.method == 'POST':   
         form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, \
-                            p_parent_id, request.POST, initial=spec_item_to_edit(spec_item))
+                            p_parent_id, request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
         if form.is_valid():
             new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
@@ -772,16 +823,18 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
 def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-    spec_item = SpecItem.objects.get(id=item_id)
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
+    if not has_write_access_to_project(request, project):
+        return redirect(base_url)
+    spec_item = get_spec_item_in_project_or_404(project, item_id)
+    application = get_application_in_project_or_404(project, application_id)
+    check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
+    if application is not None:
         title = 'Split '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
-        application = None
         title = 'Split '+configs['cats'][cat]['name']+' in Project '+project.name
-    if not has_write_access_to_project(request, project)  or (spec_item.val_set.name != 'Default'):
+    if spec_item.val_set.name != 'Default':
         return redirect(base_url)
     if not spec_item.status in ('CNF', 'MOD', 'NEW'):
         messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be split ')
@@ -789,7 +842,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
   
     if request.method == 'POST':   
         form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                             request.POST, initial=spec_item_to_edit(spec_item))
+                             request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
         if form.is_valid():
             new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
             new_spec_item.cat = cat
@@ -817,24 +870,24 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
 
 @login_required         
 def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
-    spec_item = SpecItem.objects.get(id=item_id)
     project = Project.objects.get(id=project_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     s_parent_id = request.GET.get('s_parent_id')
     p_parent_id = request.GET.get('p_parent_id')
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
-        title = 'Delete '+configs['cats'][cat]['name']+' in Application '+application.name
-    else:
-        application = None
-        title = 'Delete '+configs['cats'][cat]['name']+' in Project '+project.name
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    spec_item = get_spec_item_in_project_or_404(project, item_id)
+    application = get_application_in_project_or_404(project, application_id)
+    check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
+    if application is not None:
+        title = 'Delete '+configs['cats'][cat]['name']+' in Application '+application.name
+    else:
+        title = 'Delete '+configs['cats'][cat]['name']+' in Project '+project.name
     if not spec_item.status in ('CNF', 'MOD', 'NEW'):
         messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be deleted ')
         return redirect(base_url)
 
-    if spec_item.status == 'NEW':
+    if request.method == 'POST' and spec_item.status == 'NEW':
         if spec_item.val_set.name == 'Default':
             remove_spec_item_aliases(request, spec_item)
         remove_spec_item(request, spec_item)
@@ -863,7 +916,8 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
     # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
-    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items}
+    context = {'form': form, 'project': project, 'title': title, 'spec_items': spec_items,
+               'confirm_delete': True}
     return render(request, 'spec_item_form.html', context) 
 
         
@@ -871,19 +925,14 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
 def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_val, sel_rel_id):
     project = Project.objects.get(id=project_id)
     order_by = request.GET.get('order_by')
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
-    else:
-        application = None
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
+    application = get_application_in_project_or_404(project, application_id)
+    get_val_set_in_project_or_404(project, val_set_id)
     export_type = request.GET.get('export')
 
     # Get selected release object 
-    if sel_rel_id != 0:
-        sel_rel = Release.objects.get(id=sel_rel_id)   # Selected release to be displayed
-    else:
-        sel_rel = None
+    sel_rel = get_release_for_project_or_404(project, application, sel_rel_id)   # Selected release to be displayed
 
     items = get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by)
 
@@ -919,14 +968,11 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
 
 def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
-    val_set = ValSet.objects.filter(project_id=project.id).get(id=val_set_id)
-    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
-    if application_id != 0:
-        application = Application.objects.get(id=application_id)
-    else:
-        application = None
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    val_set = get_val_set_in_project_or_404(project, val_set_id)
+    default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
+    application = get_application_in_project_or_404(project, application_id)
 
     redirect_url = '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(val_set_id)+\
                            '/'+sel_val+'/'+str(0)+'/list_spec_items'    
@@ -986,6 +1032,16 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     validate_identifier(item[csv_name])
                 except ValidationError as error:
                     error = str(error)
+                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
+                    continue
+                svg_error = None
+                for attr_key, attr_cfg in configs['cats'][cat]['attrs'].items():
+                    if attr_cfg['kind'] == 'image':         # Task 6.6b: image-svg-unsanitised
+                        svg_error = svg_rule_violation(item[attr_cfg['label']])
+                        if svg_error:
+                            break
+                if svg_error:
+                    error = 'disallowed content in image (' + svg_error + ')'
                     import_error_counts[error] = import_error_counts.get(error, 0) + 1
                     continue
                 if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
@@ -1105,19 +1161,19 @@ def export_project(request, project_id):
     if exp_dir == '':
         return redirect(base_url)
     
-    project_exp = ProjectResource().export(Project.objects.filter(id=project_id))
+    project_exp = ProjectResource().export(queryset=Project.objects.filter(id=project_id))
     with open(os.path.join(exp_dir,'project.csv'),'w', encoding='utf-8') as fd:
         fd.write(project_exp.csv)
 
-    spec_items_exp = SpecItemResource().export(SpecItem.objects.filter(project_id=project_id))
+    spec_items_exp = SpecItemResource().export(queryset=SpecItem.objects.filter(project_id=project_id))
     with open(os.path.join(exp_dir,'spec_items.csv'),'w', encoding='utf-8') as fd:
         fd.write(spec_items_exp.csv)
 
-    val_set_exp = ValSetResource().export(ValSet.objects.filter(project_id=project_id))
+    val_set_exp = ValSetResource().export(queryset=ValSet.objects.filter(project_id=project_id))
     with open(os.path.join(exp_dir,'val_sets.csv'),'w', encoding='utf-8') as fd:
         fd.write(val_set_exp.csv)
 
-    project_users_exp = ProjectUserResource().export(ProjectUser.objects.filter(project_id=project_id))
+    project_users_exp = ProjectUserResource().export(queryset=ProjectUser.objects.filter(project_id=project_id))
     with open(os.path.join(exp_dir,'project_users.csv'),'w', encoding='utf-8') as fd:
         fd.write(project_users_exp.csv)
 
@@ -1134,11 +1190,11 @@ def export_project(request, project_id):
             release = release.previous
     releases = Release.objects.filter(id__in=release_list)
     
-    releases_exp = ReleaseResource().export(releases)
+    releases_exp = ReleaseResource().export(queryset=releases)
     with open(os.path.join(exp_dir,'releases.csv'),'w', encoding='utf-8') as fd:
         fd.write(releases_exp.csv)
 
-    applications_exp = ApplicationResource().export(applications)
+    applications_exp = ApplicationResource().export(queryset=applications)
     with open(os.path.join(exp_dir,'applications.csv'),'w', encoding='utf-8') as fd:
         fd.write(applications_exp.csv)
 
@@ -1168,7 +1224,8 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
     disp = 'disp_def'
     disp_list = configs['cats'][cat][disp]
                                                     
-    spec_item = SpecItem.objects.get(id=item_id)
+    get_application_in_project_or_404(project, application_id)
+    spec_item = get_spec_item_in_project_or_404(project, item_id)
     items = get_previous_list(spec_item)
     context = {'page_items': items, 'project': project, 'application_id': application_id, 'sel_val': sel_val,\
                'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 'val_set_id': val_set.id, \

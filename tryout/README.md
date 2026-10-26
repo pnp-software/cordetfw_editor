@@ -4,16 +4,19 @@ FW Editor test system. **ONLY FOR TESTING!** It will map the code into the docke
 
 ## Precondition
  * docker installed
- * docker-compose installed
+ * docker compose (v2) installed
 
 ## Start
-> First start will fail, as the database setup takes some time.
-> Just wait a few seconds and shut it down with docker-compose down
+The editor waits until the database reports healthy (first start initializes the database,
+which takes a while).
 
 ```sh
 cd ./tryout
-docker-compose up --build
+docker compose up --build
 ```
+
+MySQL runs as `mysql:8.4`; its data lives in `./mysql84_db_persist`. An older
+`./mysql_db_persist` directory (from the previous unpinned `mysql` image) is not used.
 
 What it does:
  * setup a MySQL database with user: testuser and password: testpw
@@ -29,5 +32,5 @@ Cordet FW Editor is accessible on http://localhost:7000/editor with user `admin`
 ## Stop
 ```sh
 cd ./tryout
-docker-compose down
+docker compose down
 ```

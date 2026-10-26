@@ -1,20 +1,25 @@
-version: '3.1'
-
 services:
 
   db:
-    image: mysql
-    command: --default-authentication-plugin=mysql_native_password
+    # Pinned, tested version (Django 5.2 supports MySQL >= 8.0.11). The data directory is
+    # specific to this major version: never point a different major version at it.
+    image: mysql:8.4
     restart: always
     volumes:
-      - ./mysql_db_persist:/var/lib/mysql
+      - ./mysql84_db_persist:/var/lib/mysql
       - ./mysql_init:/docker-entrypoint-initdb.d
     environment:
       MYSQL_ROOT_PASSWORD: rootPassword
       MYSQL_DATABASE: cordetfw
       MYSQL_USER: testuser
       MYSQL_PASSWORD: testpw
-  
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootPassword", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
   phpmyadmin:
     image: phpmyadmin
     restart: always
@@ -22,6 +27,9 @@ services:
       - 7001:80
     environment:
       PMA_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
 
   cordet_editor:
     build:
@@ -32,3 +40,6 @@ services:
       - ../:/usr/src/app
     ports:
       - 7000:7000
+    depends_on:
+      db:
+        condition: service_healthy

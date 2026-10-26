@@ -15,7 +15,9 @@ import datetime
 from django.contrib.messages import constants as messages
 import json
 
-with open('/etc/dj_cordetfw_config.json') as config_file:
+from .config_helpers import parse_axes_lockout_parameters
+
+with open(os.environ.get('CORDETFW_CONFIG_PATH', '/etc/dj_cordetfw_config.json')) as config_file:
     config = json.load(config_file)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -32,6 +34,10 @@ SECRET_KEY = config['SECURE_KEY']
 DEBUG = config['DEBUG']
 
 ALLOWED_HOSTS = config['ALLOWED_HOSTS']
+
+# Django >= 4.0 checks the Origin header of unsafe requests. Behind a TLS-terminating proxy the
+# HTTPS origin must be listed here, e.g. ["https://editor.example.com"]. Optional config key.
+CSRF_TRUSTED_ORIGINS = config.get('CSRF_TRUSTED_ORIGINS', [])
 
 INTERNAL_IPS = [
     "127.0.0.1",
@@ -51,6 +57,7 @@ DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 INSTALLED_APPS = [
     'editor.apps.EditorConfig',
     'crispy_forms',
+    'crispy_bootstrap4',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -86,6 +93,12 @@ AUTHENTICATION_BACKENDS = [
 AXES_COOLOFF_TIME = datetime.timedelta(minutes = 3)
 AXES_LOCKOUT_TEMPLATE = '../templates/lockout.html'
 
+# Optional config key AXES_LOCKOUT_PARAMETERS. Absent = axes default (lock by client IP only).
+# Recommended: ["ip_address", "username"] (see docs/migration/ROLLOUT.md). Validated at startup.
+_axes_lockout_parameters = parse_axes_lockout_parameters(config)
+if _axes_lockout_parameters is not None:
+    AXES_LOCKOUT_PARAMETERS = _axes_lockout_parameters
+
 ROOT_URLCONF = 'cordetfw_editor.urls'
 
 TEMPLATES = [
@@ -112,7 +125,23 @@ WSGI_APPLICATION = 'cordetfw_editor.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-DATABASES = config['DATABASES']
+
+
+def apply_mysql_connection_defaults(databases):
+    """Keep the MySQL connection charset used before Django 5.2.
+
+    Django < 5.2 connected with charset 'utf8' (utf8mb3); Django 5.2 defaults to utf8mb4.
+    Switching changes which characters can be stored (4-byte characters such as emoji),
+    and data written that way would be mangled by a rollback to the old version, so the
+    old charset is kept unless the configuration sets OPTIONS['charset'] explicitly.
+    """
+    for db in databases.values():
+        if db.get('ENGINE') == 'django.db.backends.mysql':
+            db.setdefault('OPTIONS', {}).setdefault('charset', 'utf8')
+    return databases
+
+
+DATABASES = apply_mysql_connection_defaults(config['DATABASES'])
 
 
 # Password validation
@@ -139,14 +168,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
+# Django >= 5.0 always applies the locale's formats (USE_L10N was removed): the format module
+# cordetfw_editor/formats/en/formats.py is what takes effect; keep this value identical to it.
+DATETIME_FORMAT = 'd-m-Y H:i:s'
+FORMAT_MODULE_PATH = ['cordetfw_editor.formats']
 
 TIME_ZONE = 'UTC'
 
 # Disable internationalization
 USE_I18N = False
-# Disable local time formatting
-USE_L10N = False
 
 USE_TZ = True
 
@@ -166,6 +196,7 @@ STATIC_URL = '/static/'
 LOGIN_REDIRECT_URL = '/editor'
 LOGOUT_REDIRECT_URL = '/editor'
 
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap4'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # reconfigure messages tags to fit boostrap
