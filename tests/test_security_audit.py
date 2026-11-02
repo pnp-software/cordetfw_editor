@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 import textwrap
+import time
 from pathlib import Path
 from unittest import mock
 
@@ -355,14 +356,16 @@ def test_07_release_id_unscoped(w):
 # ---------------------------------------------------------------------------------------------
 
 def test_08_index_lists_all_projects(w):
-    # KNOWN-ISSUE: index-lists-all-projects
+    # FIXED: index-lists-all-projects (was: an outsider saw ProjB, its description, owner and applications)
     c = w.client(w.outsider)
     r = c.get('/editor/')
     assert r.status_code == 200
-    assert b'ProjB' in r.content and b'Secret B description' in r.content and b'owner_b' in r.content
-    assert b'AppB' in r.content
-    # ids of foreign projects are not linked for outsiders (only for user_has_access/owner)
+    assert b'ProjB' not in r.content and b'Secret B description' not in r.content
+    assert b'owner_b' not in r.content and b'AppB' not in r.content
     assert ('/editor/%d/export_project' % w.b.id).encode() not in r.content
+    # members of A see A only
+    r = w.client(w.ro_a).get('/editor/')
+    assert b'ProjB' not in r.content and b'ProjA' in r.content
 
 
 # ---------------------------------------------------------------------------------------------
@@ -373,7 +376,8 @@ LOOP_SUM = 'var s:=0; for (var i:=0; i<1000; i+=1) { s+=i; }; s'
 
 
 def test_09_eval_ref_rw_can_store_loop_and_list_page_evaluates_it(w):
-    # KNOWN-ISSUE: eval-ref-dos
+    # FIXED: eval-ref-dos (was: the loop was executed during page render, b'= 499500.0' in the list
+    # page, and in the LaTeX export; the value is still stored as typed but is no longer evaluated)
     c = w.client(w.rw_a)
     one = make_spec_item(w.a, cat='DataItem', domain='AD', name='one', value='0', p_link=w.a_type, p_kind='CNS')
     resp = c.post(aurl('DataItem', w.a.id),
@@ -382,27 +386,99 @@ def test_09_eval_ref_rw_can_store_loop_and_list_page_evaluates_it(w):
     assert resp.status_code == 302
     item = SpecItem.objects.get(project=w.a, name='loop')
     assert item.value == '#iref:%d; %s' % (one.id, LOOP_SUM)
+    t0 = time.monotonic()
     r = w.client(w.ro_a).get(lurl('DataItem', w.a.id, 0, w.dvs_a.id))
-    assert b'= 499500.0' in r.content                   # arbitrary loop executed during page render
     e = w.client(w.ro_a).get(eurl('DataItem', w.a.id, 0, w.dvs_a.id) + '?export=latex_format')
-    assert b'499500.0' in e.content                      # and during LaTeX export (no iref needed)
+    assert time.monotonic() - t0 < 1
+    assert b'499500.0' not in r.content
+    assert b'499500.0' not in e.content
+    # displayed like any invalid expression: the expression itself follows the '='
+    assert b'= #iref:%d; var s:=0; for (var i:=0; i&lt;1000; i+=1) { s+=i; }; s' % one.id in r.content
 
 
 def test_09_eval_ref_fanout_is_exponential(w):
-    # KNOWN-ISSUE: eval-ref-dos
+    # FIXED: eval-ref-dos (was: eval_di_value returned '1024.0' using 2046 queries for 11 stored rows)
     from django.db import connection
     from django.test.utils import CaptureQueriesContext
     from editor.convert import eval_di_value
     leaf = make_spec_item(w.a, cat='DataItem', domain='F', name='l0', value='1', p_link=w.a_type)
     prev = leaf
+    rows = [leaf]
     for k in range(1, 11):
         prev = make_spec_item(w.a, cat='DataItem', domain='F', name='l%d' % k,
                               value='#iref:%d+#iref:%d' % (prev.id, prev.id), p_link=w.a_type)
+        rows.append(prev)
+    t0 = time.monotonic()
     with CaptureQueriesContext(connection) as q:
-        assert eval_di_value(prev.value) == '1024.0'
-    assert len(q.captured_queries) == 2 ** 11 - 2       # 2046 queries for 11 stored rows
+        assert eval_di_value(prev.value, w.a.id) == prev.value        # rejected: like an invalid expression
+    assert time.monotonic() - t0 < 1
+    assert len(q.captured_queries) <= 11                            # one query per distinct row
+    # a fan-out within the limits (depth 5, 32 leaves) still evaluates
+    assert eval_di_value(rows[5].value, w.a.id) == '32.0'
 
 
+def test_09_eval_ref_depth_and_length_are_capped(w):
+    from editor import convert
+    from editor.convert import eval_di_value
+    prev = make_spec_item(w.a, cat='DataItem', domain='F', name='d0', value='1', p_link=w.a_type)
+    for k in range(1, 4):
+        prev = make_spec_item(w.a, cat='DataItem', domain='F', name='d%d' % k,
+                              value='#iref:%d+1' % prev.id, p_link=w.a_type)
+    assert eval_di_value(prev.value, w.a.id) == '4.0'               # depth 4 as in production
+    # a chain longer than EVAL_MAX_DEPTH is not evaluated (the unexpanded reference is left, so the
+    # expression is invalid and yields itself, as for a depth beyond max_depth before)
+    deep = make_spec_item(w.a, cat='DataItem', domain='F', name='e0', value='1', p_link=w.a_type)
+    for k in range(1, convert.EVAL_MAX_DEPTH + 3):
+        deep = make_spec_item(w.a, cat='DataItem', domain='F', name='e%d' % k,
+                              value='#iref:%d+1' % deep.id, p_link=w.a_type)
+    assert eval_di_value(deep.value, w.a.id) == deep.value
+    # many references in one value
+    many = '+'.join(['#iref:%d' % prev.id] * (convert.EVAL_MAX_SUBSTITUTIONS // 4 + 1))
+    assert eval_di_value(many, w.a.id) == many                      # 4 substitutions each: over the cap
+    big = make_spec_item(w.a, cat='DataItem', domain='F', name='big', value='1' * 1000, p_link=w.a_type)
+    assert eval_di_value('+'.join(['#iref:%d' % big.id] * 150), w.a.id) == '+'.join(['#iref:%d' % big.id] * 150)
+
+
+def test_09_eval_ref_keywords_rejected_only_as_cexprtk_keywords():
+    import cexprtk
+    from editor.convert import eval_di_value
+
+    def old(s):
+        try:
+            return str(cexprtk.evaluate_expression(s, {}))
+        except Exception:
+            return s
+    same_as_before = [
+        '1+2', 'sqrt(16)*2', '1;2', 'if(1>0, 3, 4)', 'for the nominal case', 'var is the variance',
+        'format(3)', 'transform 2+2', 'x_for(1)', 'my_while(2)', 'forever', 'variable', 'invar+1',
+        'Fortran 77', '#iref:99999999+1', 'abs([1])', 'sum of [1] and [2]', 'for', 'while', 'repeat until',
+        '  2 * 3  ', '',
+    ]
+    for expr in same_as_before:
+        assert eval_di_value(expr) == old(expr), expr
+    assert eval_di_value('1;2') == '2.0' and eval_di_value('sqrt(16)*2') == '8.0'
+    rejected = [
+        LOOP_SUM, 'var x:=1; while (x>0) { x+=1; }; x', 'for (var i:=0; i<1e10; i+=1) { 0 }',
+        'WHILE(1){1}', 'For (var i:=0;i<2;i+=1) {1}', 'repeat 1 until (1); 5', 'switch { case 1 > 0: 7; }',
+        'var v[20000000]; v[0]:=7; v[0]', 'VAR x := 3; x', 'x := 3', 'while(1){}',
+        # digit before the keyword: exprtk reads '2var' as 2 followed by var (Task 7.2b review)
+        '1; 2var x; 2while (x<1e12) { x+=1 }; x', '0var x; 0for (x; x<1e12; x+=1) { 0 }; x',
+        '0var x; 0repeat x+=1 0until (x>1e12); x', '1; 2var x; x+=5; x',
+    ]
+    t0 = time.monotonic()
+    for expr in rejected:
+        assert eval_di_value(expr) == expr, expr                  # same output as an invalid expression
+    assert time.monotonic() - t0 < 1
+
+
+def test_09_eval_ref_rejection_also_applies_after_reference_expansion(w):
+    from editor.convert import eval_di_value
+    loop = make_spec_item(w.a, cat='DataItem', domain='F', name='lp', p_link=w.a_type,
+                          value='var i:=0; while (i<1e12) { i+=1 }; i')
+    s = '1+#iref:%d' % loop.id
+    t0 = time.monotonic()
+    assert eval_di_value(s, w.a.id) == s
+    assert time.monotonic() - t0 < 1
 
 
 CEXPRTK_CHILD = textwrap.dedent('''
@@ -420,19 +496,27 @@ def run_cexprtk(expr, timeout):
 
 
 def test_09_eval_ref_unbounded_loop_never_returns():
-    # KNOWN-ISSUE: eval-ref-dos
-    # A stored value is passed to cexprtk without any limit on loops: it does not finish.
+    # FIXED: eval-ref-dos (was: this payload reached cexprtk and did not finish). The engine itself
+    # still loops, which is why the application refuses these expressions before calling it.
+    from editor.convert import eval_di_value
+    payloads = ['var x:=1; while (x>0) { x+=1; }; x', 'for (var i:=0; i<1e10; i+=1) { 0 }',
+                '1; 2var x; 2while (x<1e12) { x+=1 }; x']
+    t0 = time.monotonic()
+    for p in payloads:
+        assert eval_di_value(p) == p
+    assert time.monotonic() - t0 < 1
     with pytest.raises(subprocess.TimeoutExpired):
-        run_cexprtk('var x:=1; while (x>0) { x+=1; }; x', timeout=2)
-    with pytest.raises(subprocess.TimeoutExpired):
-        run_cexprtk('for (var i:=0; i<1e10; i+=1) { 0 }', timeout=2)
+        run_cexprtk(payloads[0], timeout=1)
 
 
 def test_09_eval_ref_large_vector_is_allocated():
-    # KNOWN-ISSUE: eval-ref-dos
-    # 20M doubles (160 MB) are accepted by cexprtk; only the child's RLIMIT_AS stops larger ones.
-    r = run_cexprtk('var v[20000000]; v[0]:=7; v[0]', timeout=10)
-    assert r.stdout.strip() == '7.0'
+    # FIXED: eval-ref-dos (was: 20M doubles were accepted by cexprtk and the expression gave '7.0')
+    from editor.convert import eval_di_value
+    expr = 'var v[20000000]; v[0]:=7; v[0]'
+    t0 = time.monotonic()
+    assert eval_di_value(expr) == expr
+    assert time.monotonic() - t0 < 1
+    assert run_cexprtk(expr, timeout=10).stdout.strip() == '7.0'     # the engine would still allow it
 
 
 # ---------------------------------------------------------------------------------------------
@@ -440,20 +524,106 @@ def test_09_eval_ref_large_vector_is_allocated():
 # ---------------------------------------------------------------------------------------------
 
 def test_10_iref_cross_project_disclosure(w):
-    # KNOWN-ISSUE: iref-cross-project-disclosure
+    # FIXED: iref-cross-project-disclosure (was: the literal '#iref:<foreign id>' was stored and then
+    # displayed, evaluated and shown in the tooltip with B's domain:name, title, desc and value)
     c = w.client(w.rw_a)
     resp = c.post(aurl('DataItem', w.a.id),
                   di_post(domain='AD', name='leak', value='#iref:%d' % w.b_di.id,
                           desc='see #iref:%d' % w.b_di.id, p_link=w.a_type.id))
     assert resp.status_code == 302
     leak = SpecItem.objects.get(project=w.a, name='leak')
-    assert leak.desc == 'see #iref:%d' % w.b_di.id          # literal iref passes convert_edit_to_db
+    assert leak.desc == 'see #iref:0'                       # not stored: neutralised on write
+    assert leak.value == '#iref:0'
     r = w.client(w.ro_a).get(lurl('DataItem', w.a.id, 0, w.dvs_a.id))
-    assert b'BD:BItem' in r.content
-    assert b'B secret title' in r.content and b'B secret desc' in r.content    # tooltip of B's item
-    assert b'= 42.0' in r.content                                            # B's value via eval
+    assert b'BD:BItem' not in r.content
+    assert b'B secret title' not in r.content and b'B secret desc' not in r.content
+    assert b'= 42.0' not in r.content
     ed = c.get(iurl('edit_spec_item', 'DataItem', w.a.id, leak.id))
-    assert ed.context['form'].initial['desc'] == 'see #DataItem:BD:BItem'
+    assert ed.context['form'].initial['desc'] == 'see ERROR:0'
+
+
+def test_10_stored_foreign_iref_behaves_like_dangling_everywhere(w):
+    # Data stored before the fix (or by other means): literal irefs to B's item in A's items.
+    from editor.convert import convert_db_to_display, convert_db_to_edit, convert_db_to_latex, eval_di_value
+    old = make_spec_item(w.a, cat='DataItem', domain='AD', name='old', p_link=w.a_type,
+                         value='#iref:%d' % w.b_di.id, desc='see #iref:%d' % w.b_di.id)
+    missing = SpecItem.objects.order_by('-id').first().id + 1000
+    foreign, dangling = '#iref:%d' % w.b_di.id, '#iref:%d' % missing
+    # display, edit conversion, LaTeX and eval: same output as a non-existent id (up to the id itself)
+    assert convert_db_to_display(foreign, None, w.a.id) == convert_db_to_display(dangling, None, w.a.id).replace(
+        str(missing), str(w.b_di.id))
+    assert convert_db_to_display(foreign, None, w.a.id) == 'ERROR:%d' % w.b_di.id
+    assert convert_db_to_edit(foreign, w.a.id) == 'ERROR:%d' % w.b_di.id
+    assert convert_db_to_latex(foreign, w.a.id) == 'ERROR:%d' % w.b_di.id
+    assert eval_di_value(foreign, w.a.id) == foreign
+    assert eval_di_value(foreign + '+1', w.a.id) == foreign + '+1'
+    # the same id still resolves for its own project
+    assert convert_db_to_edit(foreign, w.b.id) == '#DataItem:BD:BItem'
+    assert eval_di_value(foreign, w.b.id) == '42.0'
+    # pages and exports
+    r = w.client(w.ro_a).get(lurl('DataItem', w.a.id, 0, w.dvs_a.id))
+    assert b'BD:BItem' not in r.content and b'B secret' not in r.content and b'= 42.0' not in r.content
+    assert b'ERROR:%d' % w.b_di.id in r.content
+    e = w.client(w.ro_a).get(eurl('DataItem', w.a.id, 0, w.dvs_a.id) + '?export=latex_format')
+    assert b'BD:BItem' not in e.content and b'ERROR:%d' % w.b_di.id in e.content
+    x = w.client(w.ro_a).get(eurl('DataItem', w.a.id, 0, w.dvs_a.id))
+    assert b'BD:BItem' not in x.content
+    ed = w.client(w.rw_a).get(iurl('edit_spec_item', 'DataItem', w.a.id, old.id))
+    assert 'BD:BItem' not in str(ed.context['form'].initial)
+
+
+def test_10_convert_edit_to_db_keeps_own_and_dangling_irefs_drops_foreign(w):
+    from editor.convert import convert_edit_to_db
+    own = make_spec_item(w.a, cat='DataItem', domain='AD', name='own', p_link=w.a_type, value='1')
+    missing = SpecItem.objects.order_by('-id').first().id + 1000
+    s = '#iref:%d x #iref:%d y #iref:%d z #DataItem:AD:own' % (own.id, missing, w.b_di.id)
+    assert convert_edit_to_db(w.a, s) == '#iref:%d x #iref:%d y #iref:0 z #iref:%d' % (own.id, missing, own.id)
+
+
+def test_10_csv_import_path_does_not_store_foreign_iref(w):
+    from editor.convert import configs
+    from editor.utilities import export_to_spec_item
+    item = SpecItem(cat='DataItem')
+    labels = {v['label']: '' for v in configs['cats']['DataItem']['attrs'].values()}
+    labels['Value'] = '#iref:%d' % w.b_di.id
+    labels['Description'] = 'x #iref:%d' % w.b_di.id
+    labels[configs['cats']['DataItem']['attrs']['val_set']['label']] = 'Default'
+    warnings = []
+    export_to_spec_item(None, w.a, labels, item, warnings)
+    assert item.value == '#iref:0' and item.desc == 'x #iref:0'
+    assert warnings == ['2 reference(s) to items of another project removed']     # Task 7.9c
+    warnings = []
+    labels['Value'] = labels['Description'] = ''
+    export_to_spec_item(None, w.a, labels, item, warnings)
+    assert warnings == []
+
+
+def test_10_neutralise_foreign_irefs_reports_count(w):
+    from editor.convert import neutralise_foreign_irefs
+    removed = []
+    assert neutralise_foreign_irefs(w.a, '#iref:%d #iref:%d' % (w.b_di.id, w.b_di.id), removed) == '#iref:0 #iref:0'
+    assert len(removed) == 2
+    removed = []
+    assert neutralise_foreign_irefs(w.a, '#iref:%d' % w.a_type.id, removed) == '#iref:%d' % w.a_type.id
+    assert removed == []
+
+
+def test_10_project_zip_import_path_does_not_keep_foreign_iref(w):
+    from editor.convert import convert_edit_to_db
+    # imports.py runs every ref_text field through convert_edit_to_db(new_project, ...): same function
+    assert convert_edit_to_db(w.a, 't #iref:%d' % w.b_di.id) == 't #iref:0'
+
+
+def test_10_enum_check_is_project_scoped(w):
+    from editor.configs import do_cat_specific_checks
+    etype = make_spec_item(w.b, cat='EnumType', domain='BE', name='BEnum', status='CNF')
+    ev = make_spec_item(w.b, cat='EnumValue', domain='BE', name='v1', s_link=etype, status='CNF')
+
+    class F:
+        cat = 'DataItem'
+        project = w.a
+        cleaned_data = {'p_link': etype, 'value': '#iref:%d' % ev.id}
+    assert 'The reference is invalid' in do_cat_specific_checks(F)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -478,7 +648,8 @@ def test_11_latex_export_injection(w):
 # ---------------------------------------------------------------------------------------------
 
 def test_12_order_by_sensitive_owner_fields(w):
-    # KNOWN-ISSUE: order-by-unrestricted
+    # FIXED: order-by-unrestricted (was: owner__password / owner__is_superuser / owner__email
+    # sorted the list, a sort-order oracle on user data; now the default domain:name order)
     u1 = make_user('aaa_user')
     u2 = make_user('zzz_user')
     User.objects.filter(id=u1.id).update(password='md5$zzz', is_superuser=False)
@@ -486,11 +657,20 @@ def test_12_order_by_sensitive_owner_fields(w):
     make_spec_item(w.a, cat='DataItemType', domain='O', name='n1', owner=u1)
     make_spec_item(w.a, cat='DataItemType', domain='O', name='n2', owner=u2)
     c = w.client(w.ro_a)
-    for field, expected in (('owner__password', ['n2', 'n1']), ('-owner__password', ['n1', 'n2']),
-                            ('owner__is_superuser', ['n1', 'n2']), ('owner__email', ['n1', 'n2'])):
+    for field in ('owner__password', '-owner__password', 'owner__is_superuser', 'owner__email',
+                  'owner__username', 'project__owner__password', 'bogus_field', ''):
         r = c.get(lurl('DataItemType', w.a.id, 0, w.dvs_a.id, sel_val='O') + '?order_by=' + field)
         assert r.status_code == 200
-        assert [n for _, n in listed(r)] == expected, field
+        assert [n for _, n in listed(r)] == ['n1', 'n2'], field
+        assert r.context['order_by'] is None
+    # export honours the same restriction
+    r = c.get(eurl('DataItemType', w.a.id, 0, w.dvs_a.id, sel_val='O') + '?order_by=owner__password')
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert body.index('|n1|') < body.index('|n2|')
+    # the sort fields the UI offers still work
+    r = c.get(lurl('DataItemType', w.a.id, 0, w.dvs_a.id, sel_val='O') + '?order_by=owner')
+    assert r.context['order_by'] == 'owner'
 
 
 # ---------------------------------------------------------------------------------------------
@@ -557,19 +737,27 @@ def test_14_link_suggest_js_string(w):
 # 15 import-traceback-in-message
 # ---------------------------------------------------------------------------------------------
 
-def test_15_import_traceback_in_message(w):
-    # KNOWN-ISSUE: import-traceback-in-message
+def test_15_import_traceback_in_message(w, caplog):
+    # FIXED: import-traceback-in-message (was: the user message held the full traceback with server
+    # file paths)
+    import logging
     from django.core.files.uploadedfile import SimpleUploadedFile
     header = 'Domain|Name|Title|Description|Default Value|Rationale|Remarks|Native Type|ValSet|Change Log|Owner|Size'
-    row = 'D|n|t|d|v|r|r|i|Default|c|x|notanint'
+    row = 'D|n|t|d|v|r|r|i|Default|c|x|1'
     f = SimpleUploadedFile('x.csv', (header + '\n' + row + '\n').encode())
     c = w.client(w.rw_a)
-    r = c.post('/editor/DataItemType/%d/0/%d/Sel_All/import_spec_items' % (w.a.id, w.dvs_a.id),
-               {'upload_file': f})
+    # an unexpected error while saving the row (a bad number is now rejected with its own reason, Task 7.4c)
+    with caplog.at_level(logging.ERROR, logger='editor.views'), \
+            mock.patch.object(SpecItem, 'save', side_effect=ValueError('simulated failure')):
+        r = c.post('/editor/DataItemType/%d/0/%d/Sel_All/import_spec_items' % (w.a.id, w.dvs_a.id),
+                   {'upload_file': f})
     assert r.status_code == 302
     m = msgs(r)
-    assert len(m) == 1 and 'Traceback (most recent call last)' in m[0]
-    assert os.sep + 'editor' + os.sep + 'views.py' in m[0]        # server file paths disclosed
+    # Task 7.4b (import-spec-items-abort-no-summary): the row is rejected in the import summary
+    assert m == ['0 imported, 1 rejected. Rejected: line 2: unexpected error (details in the server log)']
+    assert 'Traceback' not in m[0] and 'views.py' not in m[0]
+    logged = [rec for rec in caplog.records if rec.name == 'editor.views' and rec.exc_info]
+    assert len(logged) == 1 and logged[0].exc_info[0] is ValueError
 
 
 # ---------------------------------------------------------------------------------------------
@@ -577,7 +765,8 @@ def test_15_import_traceback_in_message(w):
 # ---------------------------------------------------------------------------------------------
 
 def test_16_ext_cats_email_is_only_injection_vector(w):
-    # KNOWN-ISSUE: ext-cats-sql-injection
+    # Model paths fixed by upstream #91 (Task 7.1); the FCP paths are still open and pinned in
+    # tests/test_ext_cats.py
     validate_email("x'or+1#@a.com")          # Django's EmailValidator accepts the payload
     w.rw_a.email = "x'or+1#@a.com"
     w.rw_a.save()
@@ -588,7 +777,10 @@ def test_16_ext_cats_email_is_only_injection_vector(w):
     c = w.client(w.rw_a)
     with mock.patch('editor.ext_cats.mdb.connect', return_value=conn):
         c.get(aurl('Model', w.a.id, app_id=w.app_a.id))
-    assert cursor.execute.call_args_list[0].args[0] == "SELECT * FROM users WHERE email = 'x'or+1#@a.com'"
+    # CHANGED: upstream #91 (was: "SELECT * FROM users WHERE email = 'x'or+1#@a.com'" spliced into the SQL)
+    sql, params = cursor.execute.call_args_list[0].args
+    assert "x'or" not in sql and sql.count('%s') == 2
+    assert params == ["x'or+1#@a.com", "x'or+1#@a.com"]
 
 
 # ---------------------------------------------------------------------------------------------
@@ -626,39 +818,72 @@ def test_18_axes_lockout_by_ip_only(settings):
 
 
 def test_19_tracked_dev_secret_key():
-    # KNOWN-ISSUE: tracked-dev-secret-key
+    # FIXED: tracked-dev-secret-key (was: the tracked dj_cordetfw_config.json held a real 50-character key)
+    from django.core.exceptions import ImproperlyConfigured
+    from cordetfw_editor.config_helpers import check_secret_key
     tracked = subprocess.run(['git', 'ls-files', 'dj_cordetfw_config.json'], cwd=REPO_ROOT,
                              capture_output=True, text=True).stdout.strip()
-    assert tracked == 'dj_cordetfw_config.json'
+    assert tracked == 'dj_cordetfw_config.json'         # still used by tryout/Dockerfile
     cfg = json.loads((REPO_ROOT / 'dj_cordetfw_config.json').read_text())
-    assert cfg['DEBUG'] is True and len(cfg['SECURE_KEY']) == 50
+    assert cfg['SECURE_KEY'].startswith('insecure-dev-only-')
+    # the placeholder works for development (DEBUG on) but settings refuse it otherwise
+    assert check_secret_key(cfg['SECURE_KEY'], True) == cfg['SECURE_KEY']
+    with pytest.raises(ImproperlyConfigured):
+        check_secret_key(cfg['SECURE_KEY'], False)
+    # the key that used to be tracked is refused with DEBUG off as well (it is in the git history)
+    retired = subprocess.run(['git', 'show', '8117f73:dj_cordetfw_config.json'], cwd=REPO_ROOT,
+                             capture_output=True, text=True).stdout
+    if retired:                                         # skipped in a clone without that history
+        with pytest.raises(ImproperlyConfigured):
+            check_secret_key(json.loads(retired)['SECURE_KEY'], False)
+    assert check_secret_key('some-private-random-key', False) == 'some-private-random-key'
 
 
 def test_23_session_and_header_defaults(settings):
-    # KNOWN-ISSUE: session-and-reset-hardening
+    # FIXED: session-and-reset-hardening (was: session length fixed at Django's two weeks; operator 2026-10-24:
+    # optional config key SESSION_COOKIE_AGE, default unchanged; HSTS and the port 80 redirect are done by Apache)
     assert settings.SESSION_COOKIE_AGE == 1209600
     assert settings.SECURE_HSTS_SECONDS == 0
     assert settings.SECURE_SSL_REDIRECT is False
     assert 'csp' not in ' '.join(settings.MIDDLEWARE).lower()
 
 
+def test_23_session_cookie_age_config_key():
+    from django.core.exceptions import ImproperlyConfigured
+    from cordetfw_editor.config_helpers import parse_session_cookie_age
+    assert parse_session_cookie_age({}) is None
+    assert parse_session_cookie_age({'SESSION_COOKIE_AGE': 28800}) == 28800
+    for bad in (True, '28800', 28800.0, 0, 299, 365 * 24 * 3600 + 1, None):
+        with pytest.raises(ImproperlyConfigured, match='SESSION_COOKIE_AGE'):
+            parse_session_cookie_age({'SESSION_COOKIE_AGE': bad})
+
+
 # ---------------------------------------------------------------------------------------------
 # 20 temp-files-world-readable
 # ---------------------------------------------------------------------------------------------
 
-def test_20_temp_files_permissions_and_predictable_name(w, isolated_temp_dir):
-    # KNOWN-ISSUE: temp-files-world-readable
+def test_20_temp_files_permissions_and_predictable_name(w, isolated_temp_dir, monkeypatch):
+    # FIXED: temp-files-world-readable (was: dir 0o755 with a predictable timestamp name, files 0o644)
+    from editor import views
+    created = []
+    real = views.make_temp_dir
+
+    def spy(*args, **kwargs):
+        d = real(*args, **kwargs)
+        created.append((d, os.stat(d).st_mode & 0o777))
+        return d
+    monkeypatch.setattr(views, 'make_temp_dir', spy)
     old = os.umask(0o022)
     try:
         r = w.client(w.ro_a).get('/editor/%d/export_project' % w.a.id)
         b''.join(r.streaming_content)
     finally:
         os.umask(old)
-    (d,) = os.listdir(isolated_temp_dir)
-    assert d.startswith('cordetfw_editor_20')                   # timestamp name, predictable
-    full = os.path.join(isolated_temp_dir, d)
-    assert oct(os.stat(full).st_mode & 0o777) == '0o755'
-    assert oct(os.stat(os.path.join(full, 'spec_items.csv')).st_mode & 0o777) == '0o644'
+    [(d, mode)] = created
+    assert os.path.dirname(d) == str(isolated_temp_dir)
+    assert os.path.basename(d).startswith('cordetfw_editor_20')
+    assert oct(mode) == '0o700'                                # only the server user can read the files
+    assert not os.path.exists(d)                               # and the dir is gone after the response
 
 
 
@@ -688,34 +913,119 @@ def zip_upload(files):
     return SimpleUploadedFile('p.zip', buf.getvalue(), content_type='application/zip')
 
 
-def test_21_import_project_no_limits(w, isolated_temp_dir):
-    # KNOWN-ISSUE: import-project-no-limits
-    big = b'\0' * (20 * 1024 * 1024)                    # 20 MB member, ~20 KB compressed
-    up = zip_upload({'big.bin': big, '../escape.txt': b'x', 'project.csv': 'name\n'})
+def _import_messages(r):
+    from django.contrib.messages import get_messages
+    return [m.message for m in get_messages(r.wsgi_request)][-1:]       # newest only (the client keeps older ones)
+
+
+def test_21_import_project_no_limits(w, isolated_temp_dir, monkeypatch):
+    # FIXED: import-project-no-limits (was: any size/number of members was extracted, incl. a 20 MB member
+    # and '../escape.txt' handled by extractall)
+    from editor import imports
+    monkeypatch.setattr(imports, 'IMPORT_MAX_MEMBER_BYTES', 1024 * 1024)
+    big = b'\0' * (2 * 1024 * 1024)                    # 2 MB member, a few KB compressed
+    up = zip_upload({'spec_items.csv': big, 'project.csv': 'name\n'})
     assert up.size < 200 * 1024
     r = w.client(w.staff).post('/editor/import_project', {'upload_file': up})
     assert r.status_code == 302
-    (d,) = [x for x in os.listdir(isolated_temp_dir) if x.startswith('cordetfw_editor_')]
-    assert os.path.getsize(os.path.join(isolated_temp_dir, d, 'big.bin')) == 20 * 1024 * 1024
-    assert os.path.exists(os.path.join(isolated_temp_dir, d, 'escape.txt'))     # zip-slip neutralised
-    assert not os.path.exists(os.path.join(isolated_temp_dir, 'escape.txt'))
+    assert _import_messages(r) == ['Unable to import project zip file: the entry spec_items.csv is larger than 1 MB uncompressed']
+    assert os.listdir(isolated_temp_dir) == []          # nothing left behind
+
+
+def test_21b_import_project_total_count_and_upload_limits(w, isolated_temp_dir, monkeypatch):
+    from editor import imports, views
+    c = w.client(w.staff)
+    monkeypatch.setattr(imports, 'IMPORT_MAX_TOTAL_BYTES', 1024)
+    r = c.post('/editor/import_project', {'upload_file': zip_upload({'project.csv': 'x' * 2000})})
+    assert _import_messages(r) == ['Unable to import project zip file: the archive is larger than 0 MB uncompressed']
+    monkeypatch.setattr(imports, 'IMPORT_MAX_TOTAL_BYTES', 200 * 1024 * 1024)
+    monkeypatch.setattr(imports, 'IMPORT_MAX_MEMBERS', 3)
+    r = c.post('/editor/import_project', {'upload_file': zip_upload({'a%d' % i: 'x' for i in range(4)})})
+    assert _import_messages(r) == ['Unable to import project zip file: the archive has more than 3 entries']
+    monkeypatch.setattr(views, 'IMPORT_MAX_UPLOAD_BYTES', 10)
+    r = c.post('/editor/import_project', {'upload_file': zip_upload({'project.csv': 'x'})})
+    assert _import_messages(r) == ['Unable to import project zip file: the file is larger than 0 MB']
+    assert os.listdir(isolated_temp_dir) == []
+
+
+def test_21c_import_project_default_limits_leave_room_and_ignore_other_members(w, isolated_temp_dir, tmp_path):
+    from editor import imports
+    assert imports.IMPORT_MAX_TOTAL_BYTES >= 200 * 1024 * 1024
+    assert imports.IMPORT_MAX_MEMBER_BYTES >= 200 * 1024 * 1024
+    up = zip_upload({'../escape.txt': b'x', 'big.bin': b'y', 'project.csv': 'name\n'})
+    zpath = tmp_path / 'p.zip'
+    zpath.write_bytes(up.read())
+    out = tmp_path / 'out'
+    out.mkdir()
+    imports.extract_project_zip(str(zpath), str(out))
+    assert os.listdir(out) == ['project.csv']           # only expected tables are extracted
+    assert not (tmp_path / 'escape.txt').exists()
 
 
 def test_22_import_project_unvalidated_cat_status(w, isolated_temp_dir):
-    # KNOWN-ISSUE: import-project-attribution-forgery
-    import shutil
-    from editor.utilities import spec_item_to_edit
+    # FIXED: import-project-attribution-forgery (was: cat 'BogusCat' and status 'HACKED' were imported
+    # unchanged, and spec_item_to_edit then raised KeyError). Owner/author are staff-supplied data and stay.
+    import csv
+    import io
+    from django.contrib.messages import get_messages
     t = exported_tables(w)
-    for d in os.listdir(isolated_temp_dir):          # avoid the known same-second temp dir collision
-        shutil.rmtree(os.path.join(isolated_temp_dir, d))
+    rows = list(csv.DictReader(io.StringIO(t['spec_items.csv'], newline='')))
+    [base] = [r for r in rows if r['name'] == 'AInt']
+    bad_cat = dict(base, id='9001', name='BadCat', cat='BogusCat')
+    bad_status = dict(base, id='9002', name='BadStatus', status='HACKED')
+    good = dict(base, id='9003', name='GoodOne', status='MOD')
+    out = io.StringIO(newline='')
+    writer = csv.DictWriter(out, fieldnames=list(base.keys()))
+    writer.writeheader()
+    writer.writerows([base, bad_cat, bad_status, good])
+    t['spec_items.csv'] = out.getvalue()
     t['project.csv'] = t['project.csv'].replace('ProjA', 'ProjImported')
-    t['spec_items.csv'] = t['spec_items.csv'].replace('DataItemType', 'BogusCat').replace(',NEW,', ',HACKED,')
-    t['releases.csv'] = t['releases.csv'].replace('owner_a', 'owner_b')        # release author forged
+    t['releases.csv'] = t['releases.csv'].replace('owner_a', 'owner_b')        # release author: staff data, kept
     r = w.client(w.staff).post('/editor/import_project', {'upload_file': zip_upload(t)})
     assert r.status_code == 302
     p = Project.objects.get(name='ProjImported')
-    item = SpecItem.objects.get(project=p, name='AInt')
-    assert (item.cat, item.status) == ('BogusCat', 'HACKED')
+    assert sorted(SpecItem.objects.filter(project=p).values_list('name', 'cat', 'status')) == \
+        [('AInt', 'DataItemType', 'NEW'), ('GoodOne', 'DataItemType', 'MOD')]
     assert p.release.release_author == w.owner_b
-    with pytest.raises(KeyError):
-        spec_item_to_edit(item)
+    errors = [m.message for m in get_messages(r.wsgi_request)]
+    assert 'Failure to import spec_item BogusCat:AT:BadCat: the category BogusCat is not defined in configs.json' in errors
+    assert ('Failure to import spec_item DataItemType:AT:BadStatus: the status HACKED is not valid '
+            '(valid values are: DEL, OBS, CNF, MOD, NEW)') in errors
+
+
+def _extract(tmp_path, names_and_content):
+    """Write a zip with the entries in the given order (duplicates allowed) and extract it."""
+    import zipfile
+    from editor import imports
+    zpath = tmp_path / 'p.zip'
+    with zipfile.ZipFile(zpath, 'w') as zf:
+        for name, content in names_and_content:
+            zf.writestr(name, content)
+    out = tmp_path / 'out'
+    out.mkdir()
+    imports.extract_project_zip(str(zpath), str(out))
+    return out
+
+
+def test_21d_import_project_duplicate_member_last_wins(w, tmp_path):
+    # extractall (the former implementation) extracts entries in order, so the LAST entry of a name wins
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')      # zipfile warns about duplicate names
+        out = _extract(tmp_path, [('project.csv', 'first'), ('project.csv', 'second')])
+    assert (out / 'project.csv').read_text() == 'second'
+
+
+def test_21e_import_project_member_names_with_dot_slash_or_slash_prefix(w, tmp_path):
+    # extractall normalised './x.csv' and '/x.csv' to 'x.csv'; '../x.csv' is never accepted
+    out = _extract(tmp_path, [('./project.csv', 'dot'), ('/val_sets.csv', 'abs'), ('../releases.csv', 'up'),
+                              ('sub/../spec_items.csv', 'sub'), ('.//applications.csv', 'dotdouble')])
+    assert sorted(os.listdir(out)) == ['applications.csv', 'project.csv', 'val_sets.csv']
+    assert (out / 'project.csv').read_text() == 'dot'
+    assert (out / 'val_sets.csv').read_text() == 'abs'
+    assert not (tmp_path / 'releases.csv').exists()
+
+
+def test_21f_import_project_plain_name_and_prefixed_name_last_wins(w, tmp_path):
+    out = _extract(tmp_path, [('project.csv', 'plain'), ('./project.csv', 'prefixed')])
+    assert (out / 'project.csv').read_text() == 'prefixed'

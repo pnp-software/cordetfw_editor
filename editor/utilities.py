@@ -1,4 +1,7 @@
 import os
+import shutil
+import tempfile
+from django.http import FileResponse
 import re
 import cexprtk
 import logging
@@ -15,7 +18,8 @@ from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
 from editor.configs import configs
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
-                           convert_exp_to_db, convert_db_to_latex, eval_di_value
+                           resolve_exp_ref, convert_db_to_latex, eval_di_value, \
+                           neutralise_foreign_irefs
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +52,7 @@ def spec_item_to_edit(spec_item):
     dic = model_to_dict(spec_item)
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if value['kind'] == 'ref_text' or value['kind'] == 'eval_ref':
-            dic[key] = convert_db_to_edit(dic[key])
+            dic[key] = convert_db_to_edit(dic[key], spec_item.project_id)
     return dic
     
     
@@ -64,16 +68,16 @@ def spec_item_to_latex(spec_item):
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
-            dic[label] = convert_db_to_latex(getattr(spec_item, key))
+            dic[label] = convert_db_to_latex(getattr(spec_item, key), spec_item.project_id)
         elif value['kind'] == 'table':
-            dic[label] = convert_db_to_latex(str(getattr(spec_item, key)))
+            dic[label] = convert_db_to_latex(str(getattr(spec_item, key)), spec_item.project_id)
         elif value['kind'] == 'spec_item_ref':
             dic[label] = frmt_string(str(getattr(spec_item, key))).split(' ')[0]
         elif value['kind'] == 'plain_text':
             dic[label] = frmt_string(str(getattr(spec_item, key)))
         elif value['kind'] == 'eval_ref':
-            dic[label] = convert_db_to_latex(getattr(spec_item, key))
-            dic['NVal'] = eval_di_value(spec_item.value)
+            dic[label] = convert_db_to_latex(getattr(spec_item, key), spec_item.project_id)
+            dic['NVal'] = eval_di_value(spec_item.value, spec_item.project_id)
         elif value['kind'] == 'image':
             dic[label] = 'TBD image data'
         else:
@@ -99,7 +103,7 @@ def spec_item_to_export(spec_item):
     dic = {}
     for key, value in cat_attrs.items():
         if value['kind'] == 'ref_text':
-            dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key))
+            dic[cat_attrs[key]['label']] = convert_db_to_edit(getattr(spec_item, key), spec_item.project_id)
         elif value['kind'] == 'spec_item_ref':
             dic[cat_attrs[key]['label']] = str(getattr(spec_item, key)).split(' ')[0]
         else:
@@ -107,7 +111,7 @@ def spec_item_to_export(spec_item):
     return dic
         
             
-def export_to_spec_item(request, project, imp_dict, spec_item):
+def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
     """ 
     Argument imp_dict is a dictionary created by reading a line in a 
     plain import file.
@@ -118,7 +122,11 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
     Only attributes which are imported are initialized.
     The function will raise an exception if one of the fields expected
     in the dictionary is not found. 
+    If the list argument warnings is given, a text is appended for every link which is
+    stored empty because its target is unknown or ambiguous, and a text if references to items of
+    another project were removed (neutralise_foreign_irefs).
     """
+    removed = []
     cat_attrs = configs['cats'][spec_item.cat]['attrs']
     for key, value in configs['cats'][spec_item.cat]['attrs'].items():
         if key == 'val_set':
@@ -126,11 +134,23 @@ def export_to_spec_item(request, project, imp_dict, spec_item):
         elif key == 'owner' or key == 'status':    # These are overridden by import function: no need to copy them into spec_item
             continue
         elif value['kind'] == 'ref_text':
-            setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']]))
+            setattr(spec_item, key, convert_edit_to_db(project, imp_dict[cat_attrs[key]['label']], removed))
+        elif value['kind'] == 'eval_ref':
+            # exported as stored (literal #iref:<id>); only references into other projects are refused
+            setattr(spec_item, key, neutralise_foreign_irefs(project, imp_dict[cat_attrs[key]['label']], removed))
         elif value['kind'] == 'spec_item_ref':
-            setattr(spec_item, key, convert_exp_to_db(project, imp_dict[cat_attrs[key]['label']]))
+            label = cat_attrs[key]['label']
+            target, problem = resolve_exp_ref(project, imp_dict[label])
+            setattr(spec_item, key, target)
+            if problem and warnings is not None:
+                shown = imp_dict[label] if len(imp_dict[label]) <= 80 else imp_dict[label][:80]+'...'
+                warnings.append('link '+label+' "'+shown+'" '+(
+                    'is ambiguous (several items have this domain:name)' if problem == 'ambiguous'
+                    else 'matches no item')+', imported without link')
         else:
             setattr(spec_item, key, imp_dict[cat_attrs[key]['label']])
+    if removed and warnings is not None:
+        warnings.append(str(len(removed))+' reference(s) to items of another project removed')
 
 
 def get_user_choices(project):
@@ -142,7 +162,11 @@ def get_user_choices(project):
     if project != None:
         users = User.objects.all().exclude(id=project.owner.id).order_by('username').\
                                            values_list('id', 'username', 'first_name', 'last_name')
-        user_choices.append((project.owner.id, project.owner.username+' ('+project.owner.first_name+' '+project.owner.last_name+')'))
+        owner = project.owner
+        if (owner.first_name != '') or (owner.last_name != ''):
+            user_choices.append((owner.id, owner.username+' ('+owner.first_name+' '+owner.last_name+')'))
+        else:
+            user_choices.append((owner.id, owner.username))
     else:
         users = User.objects.all().order_by('username').values_list('id','username', 'first_name', 'last_name')
     for user in users:
@@ -221,12 +245,12 @@ def get_redirect_url(cat, project_id, application_id, default_val_set_id, \
         s_parent = SpecItem.objects.get(id=s_parent_id, project_id=project_id)
         target = '#'+s_parent.domain+':'+s_parent.name
         return '/editor/'+s_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+s_parent_id+'&expand_link=s_link'+target        
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+str(s_parent_id)+'&expand_link=s_link'+target        
     if (p_parent_id != None):
         p_parent = SpecItem.objects.get(id=p_parent_id, project_id=project_id)
         target = '#'+p_parent.domain+':'+p_parent.name 
         return '/editor/'+p_parent.cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
-                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+p_parent_id+'&expand_link=p_link'+target         
+                           '/'+sel_val+'/'+str(sel_rel_id)+'/list_spec_items?expand_id='+str(p_parent_id)+'&expand_link=p_link'+target         
     
     target = '#'+target_spec_item.domain+':'+target_spec_item.name if target_spec_item!=None else ''
     return '/editor/'+cat+'/'+str(project_id)+'/'+str(application_id)+'/'+str(default_val_set_id)+\
@@ -309,17 +333,30 @@ def do_project_release(request, project, description):
        do_application_release(request, application, description, is_proj_release = True)
     
     
-def make_temp_dir(dir_path, name):
-    """ Create a directory 'name_<TimeStamp>' in the directory 'dir_path' and return 
-        the dir name or an empty string if the creation failed
+def make_temp_dir(dir_path, name, request=None):
+    """ Create a new, private (mode 0700) and unique directory in the directory 'dir_path'. 
+        Its name is 'name<TimeStamp>_<random>'. Return the dir name or an empty string if the 
+        creation failed (an error message is then issued if a request is given).
     """
-    new_dir_path = os.path.join(dir_path,name+datetime.now(tz=get_current_timezone()).strftime('%Y_%m_%d_%H_%M_%S'))
-    try:  
-        os.mkdir(new_dir_path)  
-    except OSError as e:  
-        messages.error(request, 'Failure to create export directory at '+exp_dir+': '+str(e))
+    prefix = name+datetime.now(tz=get_current_timezone()).strftime('%Y_%m_%d_%H_%M_%S')+'_'
+    try:
+        return tempfile.mkdtemp(prefix=prefix, dir=dir_path)
+    except OSError as e:
+        if request is not None:
+            messages.error(request, 'Failure to create export directory at '+str(dir_path)+': '+str(e))
         return ''
-    return new_dir_path
+
+
+class CleanupFileResponse(FileResponse):
+    """ FileResponse which removes a directory tree when the response is closed """
+    def __init__(self, *args, cleanup_dir=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cleanup_dir = cleanup_dir
+
+    def close(self):
+        super().close()
+        if self._cleanup_dir:
+            shutil.rmtree(self._cleanup_dir, ignore_errors=True)
 
    
 def get_default_val_set_id(request, project):
@@ -466,6 +503,30 @@ def update_dom_name_in_val_set(spec_item):
                 child.save()
     
 
+# Plain SpecItem columns that stay sortable by URL although the list templates do not offer them
+_EXTRA_ORDER_BY_FIELDS = ('domain', 'name', 'title')
+
+
+def _ui_order_by_fields():
+    """The sort fields the list templates offer: every 'order_by' key of the column definitions."""
+    fields = set(_EXTRA_ORDER_BY_FIELDS)
+    for cat_config in configs['cats'].values():
+        for value in cat_config.values():
+            if isinstance(value, list):
+                for column in value:
+                    if isinstance(column, dict) and column.get('order_by'):
+                        fields.add(column['order_by'])
+    return fields
+
+
+def sanitize_order_by(order_by):
+    """Return order_by if it is a permitted sort field, optionally descending ('-field', accepted
+    before the fix and kept for old bookmarks), else None (= default domain:name order)."""
+    if isinstance(order_by, str) and order_by.removeprefix('-') in _ui_order_by_fields():
+        return order_by
+    return None
+
+
 def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by):
     """ 
     Query the database for all spec_items belonging to the argument project, application,
@@ -507,6 +568,7 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
     if (sel_val != "Sel_All"):
         items = items.filter(domain=sel_val)
         
+    order_by = sanitize_order_by(order_by)
     if order_by == None:    
         items = items.order_by('domain','name')
     elif order_by in ('p_link', 's_link'):

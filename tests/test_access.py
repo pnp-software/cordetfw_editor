@@ -113,17 +113,45 @@ def test_staff_who_is_project_user_follows_role(world):
     assert msgs(request) == []
 
 
-def test_write_access_uses_first_project_user_row(world):
-    """KNOWN-ISSUE: access-first-row. has_write_access uses ProjectUser[0].role of an
-    unordered queryset; a user with duplicate rows is judged by whichever row comes first
-    (normally the lowest id)."""
+def test_write_access_any_rw_project_user_row_wins(world):
+    """access-first-row (operator decision 2026-10-24): a user with duplicate ProjectUser rows
+    has write access if ANY row is RW, whatever the row order."""
     dup = make_user('dup')
     make_project_user(world.project, dup, 'RO')   # lower id
     make_project_user(world.project, dup, 'RW')
     request = make_request(dup)
+    # FIXED: access-first-row (was: False with MSG_WRITE, the first row (RO) decided)
+    assert access.has_write_access_to_project(request, world.project) is True
+    assert msgs(request) == []
+    assert access.has_read_access_to_project(make_request(dup), world.project) is True
+
+
+def test_write_access_duplicate_ro_rows_denied(world):
+    dup = make_user('dup2')
+    make_project_user(world.project, dup, 'RO')
+    make_project_user(world.project, dup, 'RO')
+    request = make_request(dup)
     assert access.has_write_access_to_project(request, world.project) is False
     assert msgs(request) == [MSG_WRITE]
-    assert access.has_read_access_to_project(make_request(dup), world.project) is True
+
+
+def test_write_access_rw_first_then_ro_still_allowed(world):
+    dup = make_user('dup3')
+    make_project_user(world.project, dup, 'RW')
+    make_project_user(world.project, dup, 'RO')
+    assert access.has_write_access_to_project(make_request(dup), world.project) is True
+
+
+@pytest.mark.parametrize('roles', [('RO', 'RW'), ('RW', 'RO')])
+def test_silent_write_access_any_rw_row_wins(world, roles):
+    # FIXED: access-first-row (was: the silent variant used by Find & Replace still took the first row)
+    dup = make_user('dup4')
+    for role in roles:
+        make_project_user(world.project, dup, role)
+    assert access.user_has_write_access_to_project(dup.id, world.project) is True
+    ro_only = make_user('dup5')
+    make_project_user(world.project, ro_only, 'RO')
+    assert access.user_has_write_access_to_project(ro_only.id, world.project) is False
 
 
 def test_access_is_per_project(world):
@@ -228,10 +256,10 @@ def test_access_matrix_get(client, endpoint, role):
     response = do_get(client, s.url(endpoint))
     url = s.url(endpoint)
 
-    if role == 'anonymous' and endpoint != 'import_spec_items':
+    if role == 'anonymous':
         # @login_required: redirected to the login page
         assert response.status_code == 302
-        assert response['Location'] == '/accounts/login/?next=' + url
+        assert response['Location'] == '/editor/login/?next=' + url
         assert db_snapshot() == before
         return
 
@@ -274,7 +302,7 @@ def test_access_matrix_post_refresh_spec_item(client, role):
         response = client.post(url)
     if role == 'anonymous':
         assert response.status_code == 302
-        assert response['Location'] == '/accounts/login/?next=' + url
+        assert response['Location'] == '/editor/login/?next=' + url
     elif role in WRITERS:
         # FW Profile DB unreachable -> NOT_FOUND outcome -> redirect to the item in the list
         assert response.status_code == 302
@@ -297,16 +325,13 @@ def test_export_spec_items_content(client):
     assert response.content.decode().startswith('Domain|Name|')
 
 
-def test_import_spec_items_has_no_login_required(client):
-    """KNOWN-ISSUE: import-no-login-required. import_spec_items lacks @login_required: an anonymous
-    request is NOT redirected to the login page; it falls through to the project write-access
-    check, which fails and redirects to /editor with an error message."""
+def test_import_spec_items_requires_login(client):
     s = Setup()
     before = db_snapshot()
     response = client.get(s.url('import_spec_items'))
     assert response.status_code == 302
-    assert response['Location'] == '/editor'
-    assert msgs(response.wsgi_request) == [MSG_WRITE]
+    # FIXED: import-no-login-required (was: 302 to /editor with the write-access message)
+    assert response['Location'] == '/editor/login/?next=' + s.url('import_spec_items')
     assert db_snapshot() == before
 
 
@@ -317,7 +342,8 @@ def test_import_spec_items_anonymous_post_does_not_import(client, tmp_path):
     f = SimpleUploadedFile('x.csv', b'a|b\n1|2\n')
     response = client.post(s.url('import_spec_items'), {'upload_file': f})
     assert response.status_code == 302
-    assert response['Location'] == '/editor'
+    # FIXED: import-no-login-required (was: 302 to /editor)
+    assert response['Location'] == '/editor/login/?next=' + s.url('import_spec_items')
     assert db_snapshot() == before
 
 

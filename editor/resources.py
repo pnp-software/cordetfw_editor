@@ -40,34 +40,34 @@ class SpecItemResource(resources.ModelResource):
         model = SpecItem        
 
     def dehydrate_desc(self, spec_item):
-        return convert_db_to_edit(spec_item.desc)
+        return convert_db_to_edit(spec_item.desc, spec_item.project_id)
 
     def dehydrate_rationale(self, spec_item):
-        return convert_db_to_edit(spec_item.rationale)
+        return convert_db_to_edit(spec_item.rationale, spec_item.project_id)
 
     def dehydrate_remarks(self, spec_item):
-        return convert_db_to_edit(spec_item.remarks)
+        return convert_db_to_edit(spec_item.remarks, spec_item.project_id)
         
     def dehydrate_implementation(self, spec_item):
-        return convert_db_to_edit(spec_item.implementation)
+        return convert_db_to_edit(spec_item.implementation, spec_item.project_id)
         
     def dehydrate_value(self, spec_item):
-        return convert_db_to_edit(spec_item.value)
+        return convert_db_to_edit(spec_item.value, spec_item.project_id)
 
     def dehydrate_t1(self, spec_item):
-        return convert_db_to_edit(spec_item.t1)
+        return convert_db_to_edit(spec_item.t1, spec_item.project_id)
 
     def dehydrate_t2(self, spec_item):
-        return convert_db_to_edit(spec_item.t2)
+        return convert_db_to_edit(spec_item.t2, spec_item.project_id)
         
     def dehydrate_t3(self, spec_item):
-        return convert_db_to_edit(spec_item.t3)
+        return convert_db_to_edit(spec_item.t3, spec_item.project_id)
         
     def dehydrate_t4(self, spec_item):
-        return convert_db_to_edit(spec_item.t4)
+        return convert_db_to_edit(spec_item.t4, spec_item.project_id)
         
     def dehydrate_t5(self, spec_item):
-        return convert_db_to_edit(spec_item.t5)
+        return convert_db_to_edit(spec_item.t5, spec_item.project_id)
         
     def dehydrate_owner(self, spec_item):
         return str(spec_item.owner)

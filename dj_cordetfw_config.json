@@ -1,6 +1,6 @@
 {
     "DEBUG": true,
-	"SECURE_KEY": "q2d*yipxml^#9wv%-w8-79@q=xwb$d#n1*%q4%oqn6q^a+lvh#",
+	"SECURE_KEY": "insecure-dev-only-tryout-key-not-for-production",
 	"DATABASES": {
     		"default": {
         		"ENGINE": "django.db.backends.mysql",

@@ -60,7 +60,8 @@ def test_project_form_owner_choices_owner_first():
     b = make_user('bob')
     project = make_project(owner)
     form = ProjectForm(project)
-    assert form.fields['owner'].choices == [(owner.id, 'zed ( )'), (a.id, 'alice'), (b.id, 'bob')]
+    # FIXED: owner-empty-names (was: 'zed ( )')
+    assert form.fields['owner'].choices == [(owner.id, 'zed'), (a.id, 'alice'), (b.id, 'bob')]
     # without a project all users are sorted by username
     form2 = ProjectForm(None)
     assert form2.fields['owner'].choices == [(a.id, 'alice'), (b.id, 'bob'), (owner.id, 'zed')]
@@ -70,9 +71,9 @@ def test_project_form_labels_and_widgets():
     owner = make_user()
     form = ProjectForm(None)
     assert form.fields['cats'].label == 'Categories'
-    # KNOWN-ISSUE: help-double-space  (predefined_cats is already ', '-joined, then ',' -> ', ' again)
-    assert form.fields['cats'].help_text.startswith('A subset of: ParReq,  DerReq,  VerItem,  VerStep,')
-    assert form.fields['cats'].help_text == 'A subset of: ' + ',  '.join(configs['cats'].keys())
+    # FIXED: help-double-space (was: two spaces after every comma, 'ParReq,  DerReq,  ...')
+    assert form.fields['cats'].help_text.startswith('A subset of: ParReq, DerReq, VerItem, VerStep,')
+    assert form.fields['cats'].help_text == 'A subset of: ' + ', '.join(configs['cats'].keys())
     assert form.fields['description'].widget.attrs['rows'] == 2
     assert type(form.fields['description'].widget).__name__ == 'Textarea'
     assert form.predefined_cats == ', '.join(configs['cats'].keys())
@@ -208,20 +209,25 @@ def test_application_form_cat_not_in_project(proj):
                                    'DataItem,EnumType,EnumValue,DataItemType']
 
 
-@pytest.mark.parametrize('cats', ['Item', 'Enum', 'Type,Value', 'DataItem,,EnumType', 'DataItemTyp'])
-def test_application_form_substring_of_project_cats_accepted(proj, cats):
-    # KNOWN-ISSUE: appform-cats-substring  (membership is tested on the project.cats STRING, so any
-    # substring such as 'Item' or even '' (from ',,') is accepted)
+@pytest.mark.parametrize('cats', ['Item', 'Enum', 'Type,Value', 'DataItem,,EnumType', 'DataItemTyp', 'DataItem,', ',,', ',DataItem'])
+def test_application_form_substring_or_empty_entry_rejected(proj, cats):
+    # FIXED: appform-cats-substring (was: accepted, membership was tested on the project.cats
+    # string so substrings such as 'Item' and '' (from ',,' or a trailing comma) passed)
+    form = _app_form(proj, cats=cats)
+    assert not form.is_valid()
+    assert form.errors['cats'] == ['Must contain a comma-separated list of categories from: '
+                                   'DataItem,EnumType,EnumValue,DataItemType']
+
+
+@pytest.mark.parametrize('cats,expected', [
+    ('DataItem', 'DataItem'), ('DataItemType', 'DataItemType'),
+    ('DataItem,EnumType', 'DataItem,EnumType'), ('DataItem, EnumType', 'DataItem,EnumType'),
+    ('DataItem,EnumType,EnumValue,DataItemType', 'DataItem,EnumType,EnumValue,DataItemType'),
+])
+def test_application_form_exact_members_accepted(proj, cats, expected):
     form = _app_form(proj, cats=cats)
     assert form.is_valid(), form.errors
-    assert form.cleaned_data['cats'] == cats
-
-
-def test_application_form_trailing_comma_accepted(proj):
-    # KNOWN-ISSUE: appform-cats-substring  ('' is a substring of project.cats)
-    form = _app_form(proj, cats='DataItem,')
-    assert form.is_valid()
-    assert form.cleaned_data['cats'] == 'DataItem,'
+    assert form.cleaned_data['cats'] == expected
 
 
 # ============================================================== ValSetForm/ReleaseForm
@@ -382,11 +388,13 @@ def fake_fw_db(monkeypatch):
     class Cur:
         rows = []
 
-        def execute(self, sql):
-            if 'FROM users' in sql:
-                self.rows = [(7,)]
-            elif 'WHERE userID' in sql or 'WHERE ID' in sql:
+        def execute(self, sql, params=None):
+            # CHANGED: upstream #91 (was: model queries were 'FROM users' + 'WHERE userID'/'WHERE ID';
+            # they are now one parameterized 'FROM diagrams' query, FCP queries unchanged)
+            if 'FROM diagrams' in sql:
                 self.rows = [diagram]
+            elif 'FROM users' in sql:
+                self.rows = [(7,)]
             else:
                 self.rows = []
 
@@ -1044,13 +1052,13 @@ def test_dataitem_enum_value_of_other_type(enum_world):
     assert form.non_field_errors() == [ENUM_MSG]
 
 
-def test_dataitem_enum_value_with_no_s_link_crashes(enum_world):
-    # KNOWN-ISSUE: enum-value-no-type  (EnumValue without s_link: enum_val.s_link.id -> AttributeError)
+def test_dataitem_enum_value_with_no_s_link_is_rejected(enum_world):
+    # FIXED: enum-value-no-type (was: AttributeError, EnumValue without s_link: enum_val.s_link.id)
     w = enum_world
     orphan = make_spec_item(w['project'], 'EnumValue', 'D', 'orphan', status='CNF', value='9')
     form = build(w, 'add', data=dataitem_post(w, value='#EnumValue:D:orphan'))
-    with pytest.raises(AttributeError):
-        form.is_valid()
+    assert not form.is_valid()
+    assert form.non_field_errors() == [ENUM_MSG]
     assert orphan.s_link is None
 
 
@@ -1064,18 +1072,17 @@ def test_do_cat_specific_checks_other_cats_return_empty(world):
     assert do_cat_specific_checks(stub) == ''
 
 
-def test_do_cat_specific_checks_dataitem_without_p_link_crashes():
-    # KNOWN-ISSUE: dataitem-no-plink  (cd['p_link'] is None -> AttributeError; unreachable through the
-    # form today because p_link is required for DataItem, but the function itself is unguarded)
+def test_do_cat_specific_checks_dataitem_without_p_link_is_ignored():
+    # FIXED: dataitem-no-plink (was: AttributeError for p_link None; the form's required-field check
+    # reports a missing p_link, so there is nothing to check here)
     stub = SimpleNamespace(cat='DataItem', cleaned_data={'p_link': None, 'value': ''})
-    with pytest.raises(AttributeError):
-        do_cat_specific_checks(stub)
+    assert do_cat_specific_checks(stub) == ''
 
 
 def test_do_cat_specific_checks_dataitem_missing_p_link_key():
+    # FIXED: dataitem-no-plink (was: KeyError)
     stub = SimpleNamespace(cat='DataItem', cleaned_data={'value': ''})
-    with pytest.raises(KeyError):
-        do_cat_specific_checks(stub)
+    assert do_cat_specific_checks(stub) == ''
 
 
 def test_dataitem_without_p_link_is_rejected_by_required(world):
@@ -1092,6 +1099,14 @@ def test_model_add_mode_uses_ext_item(world, fake_fw_db):
     assert cd['domain'] == 'DomFcp' and cd['name'] == 'mname'
     assert cd['value'] == '<svg xmlns="http://www.w3.org/2000/svg"><desc>1</desc></svg>'
     assert (cd['n1'], cd['n2'], cd['n3']) == (10, 20, 11)
+
+
+def test_model_add_ext_item_no_longer_accessible(world, fake_fw_db, monkeypatch):
+    # upstream #91: ext_model_get_choice returns None when the model is not (or no longer) visible
+    monkeypatch.setattr(ext_cats, 'ext_model_get_choice', lambda request, ext_item: None)
+    form = build(world, 'add', 'Model', data={'ext_item': '11', 'title': 'T', 'p_kind': 'SM'})
+    assert not form.is_valid()
+    assert form.errors['ext_item'] == ['Model not found or no longer accessible']
 
 
 def test_model_add_ext_item_invalid_choice(world, fake_fw_db):

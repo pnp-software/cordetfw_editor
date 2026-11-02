@@ -86,8 +86,8 @@ def test_index_anonymous(client):
     assert resp.status_code == 200
     assert 'index.html' in template_names(resp)
     ctx = resp.context['list_of_projects']
-    assert len(ctx) == 1
-    assert ctx[0]['user_has_access'] is False
+    # FIXED: index-lists-all-projects (was: len(ctx) == 1, anonymous users got every project)
+    assert ctx == []
     assert b'Sign-In' in resp.content
     assert b'Proj' not in resp.content
 
@@ -117,16 +117,45 @@ def test_index_orders_projects_by_name(client, owner):
     assert [p['project'].name for p in resp.context['list_of_projects']] == ['Abc', 'Zed']
 
 
-def test_index_user_has_access_substring_bug(client, owner, project):
+def test_index_user_has_access_is_exact_username_match(client, owner, project):
     bobby = make_user('bobby')
     bob = make_user('bob')
     make_project_user(project, bobby, 'RO')
-    client.force_login(bob)
+    client.force_login(bobby)
     resp = client.get('/editor/')
-    # KNOWN-ISSUE: index-username-substring
     assert resp.context['list_of_projects'][0]['user_has_access'] is True
-    client.force_login(make_user('carol'))
-    assert client.get('/editor/').context['list_of_projects'][0]['user_has_access'] is False
+    # FIXED: index-username-substring (was: user_has_access True for 'bob', a substring of 'bobby').
+    # Since index-lists-all-projects the non-member does not even see the project.
+    client.force_login(bob)
+    assert client.get('/editor/').context['list_of_projects'] == []
+    make_project_user(project, bob, 'RO')
+    assert client.get('/editor/').context['list_of_projects'][0]['user_has_access'] is True
+
+
+def test_index_visibility_matrix(client, owner, project):
+    other = make_project(owner, 'Hidden')
+    ro, rw, out = make_user('ro1'), make_user('rw1'), make_user('out1')
+    staff = make_user('staff1', is_staff=True)
+    make_project_user(project, ro, 'RO')
+    make_project_user(project, rw, 'RW')
+    make_project_user(other, rw, 'RO')
+    own = make_user('own1')
+    mine = make_project(own, 'Mine')
+
+    def names(user):
+        if user is None:
+            client.logout()
+        else:
+            client.force_login(user)
+        return [p['project'].name for p in client.get('/editor/').context['list_of_projects']]
+
+    assert names(None) == []
+    assert names(out) == []
+    assert names(ro) == [project.name]
+    assert names(rw) == sorted([project.name, 'Hidden'])
+    assert names(own) == ['Mine']
+    assert names(owner) == sorted([project.name, 'Hidden', 'Mine'])   # fixture owner is staff
+    assert names(staff) == sorted([project.name, 'Hidden', 'Mine'])
 
 
 def test_help(client):
@@ -159,17 +188,21 @@ def test_change_password_valid_post(client, owner):
     assert client.get('/editor/').context['user'].is_authenticated
 
 
-def test_change_password_get_raises(client, owner):
-    # KNOWN-ISSUE: change-password-no-response
-    with pytest.raises(ValueError):
-        client.get('/editor/change_password')
+def test_change_password_get_renders_form(client, owner):
+    # FIXED: change-password-no-response (was: ValueError, the view returned None)
+    resp = client.get('/editor/change_password')
+    assert resp.status_code == 200
+    assert 'old_password' in resp.context['form'].fields
+    assert resp.context['title'] == 'Change Password'
 
 
-def test_change_password_invalid_post_raises(client, owner):
-    # KNOWN-ISSUE: change-password-no-response
-    with pytest.raises(ValueError):
-        client.post('/editor/change_password', {
-            'old_password': 'wrong', 'new_password1': 'Zx9-brand-new-pw', 'new_password2': 'Zx9-brand-new-pw'})
+def test_change_password_invalid_post_renders_form_with_errors(client, owner):
+    resp = client.post('/editor/change_password', {
+        'old_password': 'wrong', 'new_password1': 'Zx9-brand-new-pw', 'new_password2': 'Zx9-brand-new-pw'})
+    # FIXED: change-password-no-response (was: ValueError, the view returned None)
+    assert resp.status_code == 200
+    assert 'old_password' in resp.context['form'].errors
+    assert msgs(resp) == [('alert-danger', 'Please correct the error below')]
     owner.refresh_from_db()
     assert owner.check_password('test-password-123')
 
@@ -492,16 +525,22 @@ def test_list_disp_variants(client, owner, project, dvs, items, disp):
     assert resp.context['get_parameter_sting'] == '?disp=%s&' % disp
 
 
-def test_list_unknown_disp_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(KeyError):
-        client.get(lurl('DataItem', project, dvs), {'disp': 'bogus'})
+@pytest.mark.parametrize('disp', ['bogus', '', 'attrs', 'page_size', 'disp_def2'])
+def test_list_unknown_disp_falls_back_to_default(client, owner, project, dvs, items, disp):
+    # FIXED: list-500s (was: KeyError, HTTP 500). Choice: an unknown disp shows the default display (disp_def)
+    resp = client.get(lurl('DataItem', project, dvs), {'disp': disp})
+    assert resp.status_code == 200
+    assert resp.context['disp'] == 'disp_def'
+    assert resp.context['get_parameter_sting'] == '?disp=disp_def&'
+    assert listed(resp) == [('A', 'a'), ('A', 'b'), ('B', 'c')]
 
 
-def test_list_unknown_cat_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(KeyError):
-        client.get(lurl('Bogus', project, dvs))
+def test_list_unknown_cat_is_404(client, owner, project, dvs, items):
+    # FIXED: list-500s (was: KeyError, HTTP 500). Choice: an unknown category has no page: 404
+    before = SpecItem.objects.count()
+    resp = client.get(lurl('Bogus', project, dvs))
+    assert resp.status_code == 404
+    assert SpecItem.objects.count() == before
 
 
 @pytest.mark.parametrize('order_by,expected', [
@@ -553,11 +592,13 @@ def test_list_order_by_ties_are_compared_as_set(client, owner, project, dvs, ite
     assert set(listed(resp)) == {('A', 'a'), ('A', 'b'), ('B', 'c')}
 
 
-def test_list_order_by_unknown_field_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    from django.core.exceptions import FieldError
-    with pytest.raises(FieldError):
-        client.get(lurl('DataItem', project, dvs), {'order_by': 'bogus'})
+def test_list_order_by_unknown_field_falls_back_to_default_order(client, owner, project, dvs, items):
+    # FIXED: order-by-unrestricted (was: FieldError -> HTTP 500)
+    resp = client.get(lurl('DataItem', project, dvs), {'order_by': 'bogus'})
+    assert resp.status_code == 200
+    assert resp.context['order_by'] is None
+    assert resp.context['get_parameter_sting'] == '?disp=disp_def&'
+    assert listed(resp) == [('A', 'a'), ('A', 'b'), ('B', 'c')]
 
 
 def test_list_sel_val_filters_domain(client, owner, project, dvs, items):
@@ -590,17 +631,27 @@ def test_list_pagination(client, owner, project, dvs, items, monkeypatch):
     assert (pg['page_number'], pg['has_previous'], pg['previous_page'], pg['has_next']) == (2, True, 1, False)
 
 
-def test_list_pagination_non_integer_page_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(ValueError):
-        client.get(lurl('DataItem', project, dvs), {'page': 'abc'})
+@pytest.mark.parametrize('page', ['abc', '', '1.5', '0', '-3'])
+def test_list_pagination_invalid_page(client, owner, project, dvs, items, monkeypatch, page):
+    # FIXED: list-500s (was: ValueError, HTTP 500 for a non-integer page). Choice: a non-integer page is
+    # page 1 (the UI default); page 0 or a negative page is out of range, see the next test
+    from editor.configs import configs
+    monkeypatch.setitem(configs['cats']['DataItem'], 'page_size', 2)
+    resp = client.get(lurl('DataItem', project, dvs), {'page': page})
+    assert resp.status_code == 200
+    expected = 2 if page in ('0', '-3') else 1
+    assert resp.context['pagination']['page_number'] == expected
 
 
-def test_list_pagination_out_of_range_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    from django.core.paginator import EmptyPage
-    with pytest.raises(EmptyPage):
-        client.get(lurl('DataItem', project, dvs), {'page': '9'})
+def test_list_pagination_out_of_range_is_last_page(client, owner, project, dvs, items, monkeypatch):
+    # FIXED: list-500s (was: EmptyPage, HTTP 500). Choice: a page beyond the last one shows the last page
+    from editor.configs import configs
+    monkeypatch.setitem(configs['cats']['DataItem'], 'page_size', 2)
+    resp = client.get(lurl('DataItem', project, dvs), {'page': '9'})
+    assert resp.status_code == 200
+    assert listed(resp) == [('B', 'c')]
+    pg = resp.context['pagination']
+    assert (pg['page_number'], pg['has_next'], pg['has_previous']) == (2, False, True)
 
 
 def test_list_expand_s_link(client, owner, project, dvs):
@@ -629,10 +680,22 @@ def test_list_expand_link_none_string(client, owner, project, dvs, items):
     assert resp.context['expand_id'] == '7'              # not cast
 
 
-def test_list_expand_without_link_raises(client, owner, project, dvs, items):
-    # KNOWN-ISSUE: list-500s
-    with pytest.raises(KeyError):
-        client.get(lurl('DataItem', project, dvs), {'expand_id': items[0].id})
+@pytest.mark.parametrize('params', [
+    {'expand_id': 'ID'},                                    # no expand_link
+    {'expand_id': 'ID', 'expand_link': 'bogus'},
+    {'expand_id': 'abc', 'expand_link': 's_link'},
+    {'expand_id': '', 'expand_link': 'p_link'},
+    {'expand_id': '\u00b2', 'expand_link': 's_link'},     # Unicode digit: isdigit() but not int() (7.3 review)
+])
+def test_list_invalid_expand_is_ignored(client, owner, project, dvs, items, params):
+    # FIXED: list-500s (was: KeyError for expand_id without expand_link, HTTP 500). Choice: incomplete or
+    # invalid expansion parameters are ignored, the plain list is shown
+    params = {k: (str(items[0].id) if v == 'ID' else v) for k, v in params.items()}
+    resp = client.get(lurl('DataItem', project, dvs), params)
+    assert resp.status_code == 200
+    assert resp.context['expand_items'] is None
+    assert resp.context['expand_id'] is None
+    assert resp.context['get_parameter_sting'] == '?disp=disp_def&'
 
 
 def test_list_expand_link_unused_for_cat(client, owner, project, dvs, items):
@@ -878,11 +941,12 @@ def test_add_spec_item_with_s_parent(client, owner, project, dvs):
     assert SpecItem.objects.get(name='v1').s_link == et
 
 
-def test_add_spec_item_with_p_parent_on_cat_without_s_link_raises(client, owner, project, dvs, dtype):
+def test_add_spec_item_with_p_parent_on_cat_without_s_link(client, owner, project, dvs, dtype):
     et = make_spec_item(project, cat='EnumType', domain='E', name='T')
-    # KNOWN-ISSUE: add-p-parent-label-keyerror
-    with pytest.raises(KeyError):
-        client.get(add_url('DataItem', project) + '?p_parent_id=%d' % et.id)
+    # FIXED: add-p-parent-label-keyerror (was: KeyError, the p_parent sub title used the s_link label)
+    resp = client.get(add_url('DataItem', project) + '?p_parent_id=%d' % et.id)
+    assert resp.status_code == 200
+    assert resp.context['sub_title'] == 'Type ' + str(et)
 
 
 def test_add_spec_item_with_p_parent(client, owner, project, dvs):
@@ -891,7 +955,8 @@ def test_add_spec_item_with_p_parent(client, owner, project, dvs):
     url = add_url('PacketPar', project) + '?p_parent_id=%d' % pk.id
     resp = client.get(url)
     assert resp.status_code == 200
-    assert resp.context['sub_title'] == 'Data Item ' + str(pk)   # label of the s_link attr is used (sic)
+    # FIXED: add-p-parent-label-keyerror (was: 'Data Item ' + str(pk), the s_link label)
+    assert resp.context['sub_title'] == 'Packet ' + str(pk)
     data = post_data(domain='P', name='par', p_link=pk.id, s_link=di.id, p_kind='HK')
     resp = client.post(url, data)
     assert resp.status_code == 302, resp.context['form'].errors
@@ -1085,14 +1150,14 @@ def test_copy_spec_item_duplicate_name(client, owner, project, dvs, dtype):
     assert resp.context['form'].errors['name'] == ["Error: Name 'It' already exists in domain 'Dom'"]
 
 
-def test_copy_spec_item_non_default_val_set_redirects_silently(client, owner, project, dvs, dtype):
+def test_copy_spec_item_non_default_val_set_redirects_with_message(client, owner, project, dvs, dtype):
     vs1 = make_val_set(project, 'VS1')
     item = make_spec_item(project, val_set=vs1, p_link=dtype)
     resp = client.get(item_url('copy_spec_item', 'DataItem', project, item))
     assert resp.status_code == 302
     assert resp.url == '/editor'
-    # KNOWN-ISSUE: copy-unreachable-valset-message
-    assert msgs(resp) == []
+    # FIXED: copy-unreachable-valset-message (was: assert msgs(resp) == [], silent redirect)
+    assert msgs(resp) == [('alert-danger', 'Only SpecItems in default ValSet can be copied ')]
 
 
 def test_split_spec_item(client, owner, project, dvs, dtype):
@@ -1176,6 +1241,22 @@ def test_del_new_item_referenced_keeps_item_and_reports_error(client, owner, pro
     assert text.startswith('Failure to delete Types:Int32 (Title of Int32), possibly because other spec_items reference it: ')
 
 
+def test_del_split_item_alias_form_validates(client, owner, project, dvs, dtype):
+    # upstream #99: the p_link of a split alias is the original DataItem, which is outside the normal
+    # p_link choices (DataItemType/EnumType); the delete form used to reject it and nothing was deleted
+    vs1 = make_val_set(project, 'VS1')
+    item = make_spec_item(project, domain='Dom', name='It', p_link=dtype, p_kind='CNS', value='1', status='CNF')
+    alias = make_spec_item(project, domain='Dom', name='It', val_set=vs1, p_link=item, p_kind='CNS',
+                           value='2', status='CNF')
+    url = item_url('del_spec_item', 'DataItem', project, alias, sel_val='Dom')
+    resp = client.post(url, {'change_log': 'drop alias'})
+    assert resp.status_code == 302, resp.context['form'].errors if resp.context else None
+    alias.refresh_from_db()
+    assert alias.status == 'DEL' and alias.change_log == 'drop alias'
+    item.refresh_from_db()
+    assert item.status == 'CNF'
+
+
 @pytest.mark.parametrize('status', ['CNF', 'MOD'])
 def test_del_cnf_mod_via_post(client, owner, project, dvs, dtype, status):
     vs1 = make_val_set(project, 'VS1')
@@ -1220,6 +1301,14 @@ def test_del_cnf_post_with_parent_redirect(client, owner, project, dvs):
 SVG_NEW = '<svg xmlns="http://www.w3.org/2000/svg"><desc>new</desc></svg>'
 
 
+VISIBLE_MODEL_SQL = (
+    'SELECT diagrams.* FROM diagrams WHERE ('
+    'EXISTS (SELECT 1 FROM users WHERE users.id = diagrams.userID AND users.email = %s) OR '
+    'EXISTS (SELECT 1 FROM shares WHERE shares.diagramID = diagrams.id '
+    "AND shares.email = %s AND shares.perm IN ('ro', 'rw')))"
+)
+
+
 def fake_connect(rows):
     cursor = mock.Mock()
     cursor.fetchall.return_value = rows
@@ -1254,7 +1343,9 @@ def test_refresh_changed(client, owner, project, dvs, model_item):
         resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert resp.url == '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items#NewDom:NewName' % (project.id, app.id, dvs.id)
-    cursor.execute.assert_called_once_with('SELECT * FROM diagrams WHERE ID = 77')
+    # CHANGED: upstream #91 (was: execute('SELECT * FROM diagrams WHERE ID = 77'))
+    cursor.execute.assert_called_once_with(VISIBLE_MODEL_SQL + ' AND diagrams.id = %s',
+                                           [owner.email, owner.email, 77])
     conn.close.assert_called_once_with()
     item.refresh_from_db()
     assert (item.domain, item.name, item.value, item.p_kind) == ('NewDom', 'NewName', SVG_NEW, 'PR')
@@ -1263,6 +1354,21 @@ def test_refresh_changed(client, owner, project, dvs, model_item):
     # KNOWN-ISSUE: refresh-timestamp-overwritten
     assert item.updated_at > FIXED_TIME            # view overwrites the external timestamp
     assert msgs(resp) == []
+
+
+def test_add_model_not_accessible_gives_form_error_and_creates_nothing(client, owner, project, dvs):
+    # upstream #91: the model was listed in the form, but is no longer visible when the form is posted
+    app = make_application(project, 'App', cats='Model')
+    url = add_url('Model', project, app=app.id)
+    patcher, cursor, conn = fake_connect([])
+    cursor.fetchall.side_effect = [[diagram_row()], []]       # choices (1st query) / get_choice (2nd query)
+    with patcher:
+        resp = client.post(url, {'ext_item': '77', 'title': 'T', 'p_kind': 'SM', 'change_log': 'l',
+                                 'n1': '0', 'n2': '0', 'n3': '0', 's_kind': 'INV', 's_data': '{}'})
+    assert resp.status_code == 200
+    assert resp.context['form'].errors['ext_item'] == ['Model not found or no longer accessible']
+    assert not SpecItem.objects.filter(cat='Model').exists()
+    assert conn.close.call_count == 2
 
 
 def test_refresh_changed_cnf_creates_obs_copy(client, owner, project, dvs, model_item):
@@ -1285,8 +1391,9 @@ def test_refresh_not_found(client, owner, project, dvs, model_item):
     assert resp.status_code == 302
     assert resp.url == '/editor/Model/%d/%d/%d/Sel_All/0/list_spec_items#OldDom:OldName' % (project.id, app.id, dvs.id)
     assert msgs(resp) == [
-        ('alert-warning', 'Model not found in FW Profile Database (its ID is: 77)'),
-        ('alert-warning', 'External spec_item no longer exists -- no refresh can be done')]
+        # CHANGED: upstream #91 (was: 'Model not found in FW Profile Database (its ID is: 77)')
+        ('alert-warning', 'Model not found or not shared with you in FW Profile Database (its ID is: 77)')]
+    # FIXED: refresh-not-shared-double-message (was: a second warning 'External spec_item no longer exists -- no refresh can be done')
     item.refresh_from_db()
     assert item.value == '<svg xmlns="http://www.w3.org/2000/svg"><desc>old</desc></svg>'
 
@@ -1310,8 +1417,8 @@ def test_refresh_db_error_reports_not_found(client, owner, project, dvs, model_i
         resp = client.post(refresh_url(project, app, item))
     assert resp.status_code == 302
     assert msgs(resp) == [
-        ('alert-danger', 'Error while accessing model with ID "77: db down'),
-        ('alert-warning', 'External spec_item no longer exists -- no refresh can be done')]
+        ('alert-danger', 'Error while accessing model with ID "77: db down')]
+    # FIXED: refresh-not-shared-double-message (was: a second warning 'External spec_item no longer exists -- no refresh can be done')
 
 
 # ----------------------------------------------------------------------------
@@ -1371,3 +1478,37 @@ def test_make_application_release(client, owner, project):
     assert item.status == 'CNF'
     project.refresh_from_db()
     assert str(project.release) == '0.0'
+
+
+# ------------------------------------------------------------------ outcomponent-disp-short-keyerror
+def test_configs_disp_lists_only_use_defined_attrs():
+    # FIXED: outcomponent-disp-short-keyerror (was: OutComponent disp_short listed `value`, not in its attrs)
+    from editor.configs import configs
+    for cat, cfg in configs['cats'].items():
+        for disp in ('disp_def', 'disp_short', 'disp_trac'):
+            for column in cfg.get(disp, []):
+                for attr in column.get('attrs', []):
+                    assert attr in cfg['attrs'], (cat, disp, attr)
+
+
+@pytest.mark.parametrize('disp', ['disp_def', 'disp_short'])
+def test_list_out_component_disp_variants(client, owner, project, dvs, disp):
+    # FIXED: outcomponent-disp-short-keyerror (was: KeyError, HTTP 500 for disp=disp_short)
+    pkt = make_spec_item(project, cat='Packet', domain='P', name='pk', p_kind='TM')
+    make_spec_item(project, cat='OutComponent', domain='O', name='oc', p_link=pkt, status='CNF')
+    resp = client.get(lurl('OutComponent', project, dvs), {'disp': disp})
+    assert resp.status_code == 200
+    assert resp.context['disp'] == disp
+
+
+@pytest.mark.parametrize('posted', ['other', '99999'])
+def test_add_spec_item_post_with_val_set_is_rejected(client, owner, project, dvs, dtype, posted):
+    # FIXED: add-spec-item-val-set-post (was: AttributeError 'NoneType' has no attribute 'model', HTTP 500)
+    other = ValSet.objects.create(project=project, name='Other', desc='')
+    val_set = str(other.id) if posted == 'other' else posted
+    before = SpecItem.objects.count()
+    resp = client.post(add_url('DataItem', project, sel_val='Dom'),
+                       post_data(p_link=dtype.id, p_kind='VAR', val_set=val_set))
+    assert resp.status_code == 200
+    assert 'val_set' in resp.context['form'].errors
+    assert SpecItem.objects.count() == before

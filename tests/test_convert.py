@@ -126,11 +126,11 @@ def test_markdown_bullet_item_with_hyphen_splits():
 def test_display_internal_ref_cnf_and_new(world):
     e, x = world['etype'], world['x']
     out = convert_db_to_display('hi #iref:%d and #iref:%d' % (e.id, x.id), None)
-    # KNOWN-ISSUE: ref-link-backslash  (target uses '\list_spec_items' with a backslash instead of '/')
+    # FIXED: ref-link-backslash (was: '0\\list_spec_items', a backslash instead of '/')
     assert out == (
-        'hi <a href="/editor/EnumType/%d/0/%d/D/0\\list_spec_items#D:T1" '
+        'hi <a href="/editor/EnumType/%d/0/%d/D/0/list_spec_items#D:T1" '
         'title="Title: t&#13;Description: d &lt;&amp;&gt;&#13;">D:T1</a> and '
-        '<a href="/editor/DataItem/%d/0/%d/D/0\\list_spec_items#D:x" class="link-danger" '
+        '<a href="/editor/DataItem/%d/0/%d/D/0/list_spec_items#D:x" class="link-danger" '
         'title="Status: NEW&#13;Title: Title of x&#13;Description: &#13;Value: 2*3&#13;">D:x</a>'
         % (world['project'].id, e.val_set_id, world['project'].id, x.val_set_id))
 
@@ -160,7 +160,7 @@ def test_display_missing_ref_and_markdown():
 def test_display_sel_rel_id_in_link(world):
     rel = make_release(world['owner'])
     out = convert_db_to_display('#iref:%d' % world['etype'].id, rel)
-    assert '/D/%d\\list_spec_items' % rel.id in out
+    assert '/D/%d/list_spec_items' % rel.id in out
 
 
 def test_display_application_id_in_link(world):
@@ -247,12 +247,15 @@ def test_convert_exp_to_db(world):
     assert convert_exp_to_db(p, 'D:missing') is None
 
 
-def test_convert_exp_to_db_dotted_or_dashed_names_not_supported(world):
-    # KNOWN-ISSUE: exp-ref-no-dots  (pattern_ref_exp has no '.'/'-': such references resolve to None)
-    make_spec_item(world['project'], 'DataItem', 'a.b', 'c', status='CNF', p_link=world['etype'])
-    make_spec_item(world['project'], 'DataItem', 'a-b', 'c', status='CNF', p_link=world['etype'])
-    assert convert_exp_to_db(world['project'], 'a.b:c') is None
-    assert convert_exp_to_db(world['project'], 'a-b:c') is None
+def test_convert_exp_to_db_dotted_or_dashed_names(world):
+    a = make_spec_item(world['project'], 'DataItem', 'a.b', 'c', status='CNF', p_link=world['etype'])
+    b = make_spec_item(world['project'], 'DataItem', 'a-b', 'c', status='CNF', p_link=world['etype'])
+    d = make_spec_item(world['project'], 'DataItem', 'a.b-c_d', 'x.y-z', status='CNF', p_link=world['etype'])
+    # FIXED: exp-ref-no-dots (was: pattern_ref_exp had no '.'/'-', so these references resolved to None)
+    assert convert_exp_to_db(world['project'], 'a.b:c') == a
+    assert convert_exp_to_db(world['project'], 'a-b:c') == b
+    assert convert_exp_to_db(world['project'], 'a.b-c_d:x.y-z (a title)') == d
+    assert convert_exp_to_db(world['project'], 'a.b.:c') is None      # dots must be internal
 
 
 def test_convert_exp_to_db_ambiguous_returns_none(world):
@@ -299,10 +302,12 @@ def test_conv_do_nothing_and_plain_ref(world):
     assert conv_db_disp_plain_ref({}, x, 'owner', None) == 'alice'
 
 
-def test_conv_db_disp_date_name_error():
-    # KNOWN-ISSUE: conv-date-nameerror  (body returns undefined name 's')
-    with pytest.raises(NameError):
-        conv_db_disp_date({}, None, 'x', None)
+def test_conv_db_disp_date_returns_escaped_value(world):
+    # FIXED: conv-date-nameerror (was: NameError, the body returned the undefined name 's')
+    x = world['x']
+    assert conv_db_disp_date({}, x, 'name', None) == 'x'
+    x.title = 'a<b&c'
+    assert conv_db_disp_date({}, x, 'title', None) == 'a&lt;b&amp;c'
 
 
 def test_conv_db_disp_ref_text(world):
@@ -476,7 +481,7 @@ def test_disp_trac_s_link(world):
     req = make_spec_item(p, 'Service', 'S', 'sv', status='CNF', title='ST', desc='SD')
     link = make_spec_item(p, 'VerLink', 'V', 'l', status='CNF', s_link=pkt, p_link=req)
     out = ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None)
-    assert out == ('<a class="link-table-list-spec" href="/editor/Service/%d/0/%d/S/0\\list_spec_items#S:sv" '
+    assert out == ('<a class="link-table-list-spec" href="/editor/Service/%d/0/%d/S/0/list_spec_items#S:sv" '
                    'title="SD">S:sv</a> (ST)' % (p.id, pkt.val_set_id))
     assert isinstance(out, SafeString)
 
@@ -487,7 +492,7 @@ def test_disp_trac_p_link_branch(world):
     pkt = make_spec_item(p, 'Packet', 'P', 'pk', status='CNF', p_kind='TC', title='PT', desc='PD')
     link = make_spec_item(p, 'VerLink', 'V', 'l', status='CNF', s_link=pkt, p_link=req)
     out = ref_filters.disp_trac(_tag_ctx(world), req, 'VerLink', 'p_link', None)
-    assert out == ('<a class="link-table-list-spec" href="/editor/Packet/%d/0/%d/P/0\\list_spec_items#P:pk" '
+    assert out == ('<a class="link-table-list-spec" href="/editor/Packet/%d/0/%d/P/0/list_spec_items#P:pk" '
                    'title="PD">P:pk</a> (PT)' % (p.id, req.val_set_id))
 
 
@@ -523,16 +528,19 @@ def test_disp_trac_with_release_filters_by_dates(world):
                    updated_at=datetime(2024, 3, 1, tzinfo=timezone.utc))
     out = ref_filters.disp_trac(_tag_ctx(world, rel), pkt, 'VerLink', 's_link', rel)
     assert 'S:ok' in out and 'S:late' not in out and 'S:new' not in out
-    assert '/S/%d\\list_spec_items' % rel.id in out
+    assert '/S/%d/list_spec_items' % rel.id in out
 
 
-def test_disp_trac_p_link_none_crash(world):
-    # KNOWN-ISSUE: disp-trac-plink-none  (link.p_link.application_id is evaluated before the None check)
+def test_disp_trac_p_link_none_is_skipped(world):
+    # FIXED: disp-trac-plink-none (was: AttributeError, link.p_link.application_id evaluated before the None check)
     p = world['project']
     pkt = make_spec_item(p, 'Packet', 'P', 'pk', status='CNF', p_kind='TC')
+    ok = make_spec_item(p, 'Service', 'S', 'ok', status='CNF')
     make_spec_item(p, 'VerLink', 'V', 'l', status='CNF', s_link=pkt, p_link=None)
-    with pytest.raises(AttributeError):
-        ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None)
+    assert ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None) == ''
+    make_spec_item(p, 'VerLink', 'V', 'l2', status='CNF', s_link=pkt, p_link=ok)
+    out = ref_filters.disp_trac(_tag_ctx(world), pkt, 'VerLink', 's_link', None)
+    assert 'S:ok' in out
 
 
 def test_disp_trac_application_id(world):
@@ -593,3 +601,16 @@ def test_filter_get_short_desc_boundary(world):
                           title='T' * 48, desc='d' * 48)   # 48+2+48+2 = 100
     out = ref_filters.get_short_desc(item)
     assert out == 'T' * 48 + ': ' + 'd' * 48
+
+
+def test_resolve_exp_ref_reports_unknown_and_ambiguous(world):
+    # FIXED: import-link-ambiguous (was: convert_exp_to_db returned None for all of these, indistinguishable)
+    from editor.convert import resolve_exp_ref
+    p = world['project']
+    make_spec_item(p, 'EnumType', 'D', 'x', status='CNF')       # D:x now exists in two categories
+    assert resolve_exp_ref(p, 'D:x') == (None, 'ambiguous')
+    assert resolve_exp_ref(p, 'D:missing') == (None, 'unknown')
+    assert resolve_exp_ref(p, 'nocolon') == (None, 'unknown')
+    assert resolve_exp_ref(p, '') == (None, None)
+    assert resolve_exp_ref(p, 'None') == (None, None)
+    assert resolve_exp_ref(p, 'D:T1')[1] is None

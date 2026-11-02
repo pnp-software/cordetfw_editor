@@ -1,6 +1,7 @@
 import os
+import re
+import shutil
 import csv
-import traceback
 import json
 
 from io import StringIO
@@ -15,7 +16,7 @@ from django.shortcuts import render, redirect
 from django.forms import formset_factory                                 
 from django.views import generic
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth import update_session_auth_hash, get_user
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.decorators import login_required
@@ -27,13 +28,13 @@ from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.utils.timezone import get_current_timezone
 from django.db import transaction
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Q, Subquery
 
 from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm, \
                          validate_identifier
-from editor.utilities import get_domains, do_application_release, do_project_release, \
+from editor.utilities import CleanupFileResponse, sanitize_order_by, get_domains, do_application_release, do_project_release, \
                              get_previous_list, spec_item_to_edit, spec_item_to_latex, \
                              spec_item_to_export, export_to_spec_item, get_expand_items, \
                              get_redirect_url, make_temp_dir, get_default_val_set_id, \
@@ -41,10 +42,11 @@ from editor.utilities import get_domains, do_application_release, do_project_rel
                              mark_spec_item_aliases_as_del, create_and_init_spec_item, \
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
                              get_spec_item_query
-from editor.imports import import_project_tables
+from editor.imports import import_project_tables, extract_project_zip, IMPORT_MAX_UPLOAD_BYTES
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
+from editor.convert import neutralise_foreign_irefs
 from editor.svg_check import svg_rule_violation
 from editor.access import is_project_owner, has_read_access_to_project, \
                     can_create_project, can_add_val_set, has_write_access_to_project, \
@@ -62,7 +64,7 @@ base_url = config['BASE_URL']
 logger = logging.getLogger(__name__)
 
 
-def get_find_replace_updates(items, project_id, val_set_id, field, find_string, replace_string):
+def get_find_replace_updates(items, project_id, val_set_id, field, find_string, replace_string, removed=None):
     updates = []
     model_field = SpecItem._meta.get_field(field)
     if find_string == replace_string:
@@ -76,6 +78,8 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
         if not isinstance(old_value, str) or find_string not in old_value:
             continue
         new_value = old_value.replace(find_string, replace_string)
+        if configs['cats'][item.cat]['attrs'].get(field, {}).get('kind') in ('ref_text', 'eval_ref'):
+            new_value = neutralise_foreign_irefs(item.project, new_value, removed)   # iref-cross-project-disclosure
         model_field.clean(new_value, item)
         updates.append((item, new_value))
 
@@ -100,12 +104,18 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
     return updates
 
 def index(request):
-    projects = Project.objects.order_by('name').all()
+    projects = Project.objects.order_by('name')
+    if not request.user.is_staff:
+        # non-staff users see only the projects they own or are a member of
+        if request.user.is_authenticated:
+            projects = projects.filter(Q(owner_id=request.user.id) |
+                                       Q(project_users__user_id=request.user.id)).distinct()
+        else:
+            projects = projects.none()
     listOfProjects = []
-    userRequestName = str(request.user)     
     for project in projects:
-        userHasAccess = ProjectUser.objects.filter(project_id=project).\
-                                        filter(user__username__contains=userRequestName).exists()
+        userHasAccess = request.user.is_authenticated and ProjectUser.objects.filter(
+            project_id=project, user_id=request.user.id).exists()
          
         applications = project.applications.all().order_by('name') 
         default_val_set_id = get_default_val_set_id(request, project)
@@ -152,6 +162,9 @@ def change_password(request):
             messages.error(request, 'Please correct the error below')
     else:
         form = PasswordChangeForm(request.user)
+
+    context = {'form': form, 'title': 'Change Password'}
+    return render(request, 'generic_form.html', context)
 
 
 @login_required         
@@ -452,6 +465,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     project = Project.objects.get(id=project_id)
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
+    if cat not in configs['cats']:      # list-500s: unknown category
+        raise Http404('Unknown category')
 
     if request.method == 'POST' and not user_has_write_access_to_project(request.user.id, project):
         # Find & Replace changes spec_items: read access is not enough
@@ -467,15 +482,21 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     get_parameter_sting = '?'
     expand_id = request.GET.get('expand_id')
+    expand_link = request.GET.get('expand_link')
+    if (expand_id != None) and (expand_link != 'None') and \
+            ((expand_link not in ('s_link', 'p_link')) or (not (expand_id.isascii() and expand_id.isdigit()))):
+        expand_id = expand_link = None      # list-500s: incomplete or invalid expansion parameters are ignored
     if expand_id is not None:
         get_parameter_sting += 'expand_id=' + str(expand_id) + '&'
-    expand_link = request.GET.get('expand_link')
     if expand_link is not None:
         get_parameter_sting += 'expand_link=' + str(expand_link) + '&'
-    disp = 'disp_def' if (request.GET.get('disp') == None) else request.GET.get('disp')
+    # list-500s: an unknown display mode falls back to the default one
+    disp = request.GET.get('disp')
+    if disp not in ('disp_def', 'disp_short', 'disp_trac') or disp not in configs['cats'][cat]:
+        disp = 'disp_def'
     if disp is not None:
         get_parameter_sting += 'disp=' + str(disp) + '&'
-    order_by = request.GET.get('order_by')
+    order_by = sanitize_order_by(request.GET.get('order_by'))
     if order_by is not None:
         get_parameter_sting += 'order_by=' + str(order_by) + '&'
     n_pad_fields = range(len(configs['cats'][cat][disp])-3)
@@ -547,11 +568,16 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
 
     find_replace_form = FindReplaceForm()
     find_replace_update_count = 0
+    find_replace_removed_refs = 0
 
     # Find & Replace (POST form)
     if request.method == 'POST':
         find_replace_form = FindReplaceForm(request.POST)
-        if find_replace_form.is_valid():
+        if sel_rel_id != 0:
+            # Release views list CNF/OBS/DEL historical rows: never rewrite them
+            release_msg = 'Find & Replace is not available on a release view'
+            find_replace_form.add_error(None, release_msg)
+        elif find_replace_form.is_valid():
             field_to_search = find_replace_form.cleaned_data['field']
             find_string = find_replace_form.cleaned_data['find']
             replace_string = find_replace_form.cleaned_data['replace']
@@ -560,12 +586,13 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             if field_to_search in cat_cfg['attrs'] and field_to_search not in cat_cfg['ext_attrs'] \
                     and cat_cfg['attrs'][field_to_search]['kind'] != 'image':
                 try:
+                    removed_refs = []
                     with transaction.atomic():
                         item_ids = items.values_list('id', flat=True)
                         locked_items = SpecItem.objects.select_for_update().filter(id__in=item_ids)
                         updates = get_find_replace_updates(
                             locked_items, project_id, val_set_id, field_to_search,
-                            find_string, replace_string
+                            find_string, replace_string, removed_refs
                         )
                         for update_spec_item, new_value in updates:
                             setattr(update_spec_item, field_to_search, new_value)
@@ -573,27 +600,36 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
                             update_spec_item.owner = get_user(request)
                             update_spec_item.save()
                         find_replace_update_count = len(updates)
+                    if removed_refs:
+                        find_replace_removed_refs = len(removed_refs)
+                        if request.headers.get('x-requested-with') != 'XMLHttpRequest':
+                            messages.warning(request, str(len(removed_refs))+
+                                             ' reference(s) to items of another project removed')
                 except ValidationError as error:
                     find_replace_form.add_error(None, error)
             else:
                 find_replace_form.add_error('field', 'Select a valid field')
 
+        if sel_rel_id != 0 and request.headers.get('x-requested-with') != 'XMLHttpRequest':
+            messages.error(request, release_msg)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             if find_replace_form.errors:
                 return JsonResponse(
                     {'errors': find_replace_form.errors.get_json_data()},
                     status=400
                 )
-            return JsonResponse({'updated_count': find_replace_update_count})
+            response = {'updated_count': find_replace_update_count}
+            if find_replace_removed_refs:
+                response['removed_foreign_refs'] = find_replace_removed_refs
+            return JsonResponse(response)
 
     domains = get_domains(cat, application_id, project_id)
 
     # Pagination
     paginator_items = Paginator(items, configs['cats'][cat]['page_size'])
-    page_number = 1
-    if 'page' in request.GET:
-        page_number = int(request.GET.get('page'))
-    page_items = paginator_items.page(page_number)
+    # list-500s: a non-integer page is page 1, a page beyond the last one is the last page
+    page_items = paginator_items.get_page(request.GET.get('page', 1))
+    page_number = page_items.number
     previous_page = None
     if page_items.has_previous():
         previous_page = page_items.previous_page_number()
@@ -660,7 +696,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_val, sel_rel_id)
     if (s_parent_id != None):
         sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(s_parent)     
     if (p_parent_id != None):
-        sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(p_parent)     
+        sub_title = sub_title + configs['cats'][cat]['attrs']['p_link']['label'] + ' ' + str(p_parent)     
         
     if request.method == 'POST':   
         form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, request.POST)
@@ -743,6 +779,10 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
     return render(request, 'spec_item_form.html', context) 
 
 
+# Attributes ext_model_refresh (editor/ext_cats.py) may change on the item
+REFRESHED_ATTRS = ('domain', 'name', 'p_kind', 'value', 'n1', 'n2', 'n3')
+
+
 @login_required         
 @require_POST
 def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val, sel_rel_id):
@@ -755,14 +795,18 @@ def refresh_spec_item(request, cat, project_id, application_id, item_id, sel_val
     refresh_outcome = ext_model_refresh(request, spec_item)
     if refresh_outcome == 'REFRESH':
         if spec_item.status == 'CNF':
-            spec_item = make_obs_spec_item_copy(request, spec_item)
+            # ext_model_refresh changed spec_item in memory only; the OBS copy must hold the
+            # previous version (refresh-cnf-obs-copy-new-content), so copy the stored item
+            # and then apply the refreshed values to the MOD item.
+            refreshed = {attr: getattr(spec_item, attr) for attr in REFRESHED_ATTRS}
+            spec_item = make_obs_spec_item_copy(request, SpecItem.objects.get(id=spec_item.id))
+            for attr, value in refreshed.items():
+                setattr(spec_item, attr, value)
         spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()
-    elif refresh_outcome == 'NOT_FOUND':
-        messages.warning(request,'External spec_item no longer exists -- no refresh can be done')
-    elif refresh_outcome == 'INVALID':
-        pass        # ext_model_refresh has issued the error message; the item is unchanged
+    elif refresh_outcome in ('NOT_FOUND', 'INVALID'):
+        pass        # ext_model_refresh has issued the (informative) message; the item is unchanged
     elif refresh_outcome == 'NO_CHANGE':
         messages.warning(request,'External spec_item has not changed -- no refresh needed')
  
@@ -787,8 +831,6 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
         title = 'Copy '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
         title = 'Copy '+configs['cats'][cat]['name']+' in Project '+project.name
-    if spec_item.val_set.name != 'Default':
-        return redirect(base_url)
     if spec_item.val_set != default_val_set:
         messages.error(request, 'Only SpecItems in default ValSet can be copied ')
         return redirect(base_url)
@@ -966,6 +1008,93 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     return response            
 
 
+IMPORT_SUMMARY_MAX_LINES = 20
+
+
+def import_summary_details(title, entries):
+    """ Format [(line, text)] as '. <Title>: line N: text; ... and K more' (empty if no entries) """
+    if not entries:
+        return ''
+    shown = '; '.join('line '+str(n)+': '+text for n, text in entries[:IMPORT_SUMMARY_MAX_LINES])
+    if len(entries) > IMPORT_SUMMARY_MAX_LINES:
+        shown += '; ... and '+str(len(entries)-IMPORT_SUMMARY_MAX_LINES)+' more'
+    return '. '+title+': '+shown
+
+
+def import_spec_item_row(request, project, application, val_set, default_val_set, cat, sel_val, item):
+    """
+    Import one row (a dict read by csv.DictReader) of a spec item CSV file. Returns (reason, warnings):
+    reason is None if the row was imported, otherwise the text why it was rejected (nothing saved);
+    warnings is a list of texts about an imported row. The caller wraps the call in a transaction.
+    """
+    attrs = configs['cats'][cat]['attrs']
+    csv_domain = attrs['domain']['label']
+    csv_name = attrs['name']['label']
+    csv_val_set = attrs['val_set']['label']
+    warnings = []
+    if any(value is None for value in item.values()):
+        return 'row has fewer columns than the header', warnings
+    missing_fields = sorted(
+        field_config['label'] for field_config in attrs.values()
+        if field_config['req_in_form'] and field_config['kind'] != 'int'
+        and not item.get(field_config['label'], '').strip())
+    if missing_fields:      # csv-export-not-reimportable: accepted again (the web form still requires them)
+        warnings.append('empty required field(s) '+', '.join(missing_fields))
+    for field_config in attrs.values():     # integer columns cannot be stored empty (Task 7.4b review)
+        if field_config['kind'] == 'int' and field_config['label'] in item:
+            cell = item[field_config['label']].strip()
+            if cell == '':
+                return 'missing '+field_config['label']+' (number)', warnings
+            if not re.fullmatch(r'[+-]?[0-9]+', cell):
+                return field_config['label']+' is not a whole number', warnings
+    try:
+        validate_identifier(item[csv_domain])
+        validate_identifier(item[csv_name])
+    except ValidationError as error:
+        return str(error), warnings
+    for attr_cfg in attrs.values():
+        if attr_cfg['kind'] == 'image':         # Task 6.6b: image-svg-unsanitised
+            svg_error = svg_rule_violation(item[attr_cfg['label']])
+            if svg_error:
+                return 'disallowed content in image ('+svg_error+')', warnings
+    if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
+        return 'incorrect Domain', warnings
+    if item[csv_val_set] != val_set.name:
+        return 'incorrect ValSet', warnings
+    q_all_cat = SpecItem.objects.filter(project_id=project.id, name=item[csv_name],
+                                        domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')
+    if q_all_cat.exclude(cat=cat).exists():
+        return 'identifier already in use outside selected category', warnings
+    if val_set.name != 'Default':
+        if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
+            return 'missing from Default ValSet', warnings
+    q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
+    now = datetime.now(tz=get_current_timezone())
+    if not bool(q_cat):     # The domain:name is new in selected category
+        new_spec_item = SpecItem()
+        new_spec_item.cat = cat
+        export_to_spec_item(request, project, item, new_spec_item, warnings)
+        new_spec_item.status = 'NEW'
+        new_spec_item.updated_at = now
+        new_spec_item.created_at = now
+        new_spec_item.previous = None
+        new_spec_item.owner = get_user(request)
+        new_spec_item.project = project
+        new_spec_item.application = application
+        new_spec_item.save()
+    else:
+        if q_cat[0].status == 'CNF':
+            spec_item = make_obs_spec_item_copy(request, q_cat[0])
+        else:
+            spec_item = q_cat[0]
+        export_to_spec_item(request, project, item, spec_item, warnings)
+        spec_item.updated_at = datetime.now(tz=get_current_timezone())
+        spec_item.owner = get_user(request)
+        spec_item.save()
+    return None, warnings
+
+
+@login_required
 def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_val):
     project = Project.objects.get(id=project_id)
     if not has_write_access_to_project(request, project):
@@ -978,8 +1107,6 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                            '/'+sel_val+'/'+str(0)+'/list_spec_items'    
   
     if request.method == 'POST':   
-        import_error_counts = {}
-        imported_count = 0
         try:
             csv_file = request.FILES['upload_file']
         except Exception as e:
@@ -990,6 +1117,10 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             return redirect(redirect_url)
         try:
             file_data = csv_file.read().decode('utf-8')
+        except UnicodeDecodeError:
+            messages.error(request, 'Uploaded file '+csv_file.name+' is not UTF-8 encoded; nothing was imported')
+            return redirect(redirect_url)
+        try:
             f = StringIO(file_data)
             items = csv.DictReader(f, delimiter=configs['general']['csv_sep'])
             expected_fields = {
@@ -1010,99 +1141,50 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                     'Uploaded CSV does not match the selected '+cat+' category: '+'; '.join(details)
                 )
                 return redirect(redirect_url)
-            csv_domain = configs['cats'][cat]['attrs']['domain']['label']
-            csv_name = configs['cats'][cat]['attrs']['name']['label']
-            csv_val_set = configs['cats'][cat]['attrs']['val_set']['label']
-            required_fields = {
-                field_config['label']
-                for field_config in configs['cats'][cat]['attrs'].values()
-                if field_config['req_in_form']
-            }
-            for i, item in enumerate(items):
-                missing_fields = [
-                    field for field in required_fields
-                    if not item.get(field, '').strip()
-                ]
-                if missing_fields:
-                    error = 'missing '+', '.join(sorted(missing_fields))
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
+            rejected = []       # [(line, reason)]
+            warned = []         # [(line, [warning, ...])] for imported rows
+            imported_count = 0
+            line = 0
+            stopped = None
+            while True:
                 try:
-                    validate_identifier(item[csv_domain])
-                    validate_identifier(item[csv_name])
-                except ValidationError as error:
-                    error = str(error)
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                svg_error = None
-                for attr_key, attr_cfg in configs['cats'][cat]['attrs'].items():
-                    if attr_cfg['kind'] == 'image':         # Task 6.6b: image-svg-unsanitised
-                        svg_error = svg_rule_violation(item[attr_cfg['label']])
-                        if svg_error:
-                            break
-                if svg_error:
-                    error = 'disallowed content in image (' + svg_error + ')'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
-                    error = 'incorrect Domain'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                if item[csv_val_set] != val_set.name:
-                    error = 'incorrect ValSet'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                q_all_cat = SpecItem.objects.filter(project_id=project_id, \
-                            name=item[csv_name], domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')    
-                if q_all_cat.exclude(cat=cat).exists():
-                    error = 'identifier already in use outside selected category'
-                    import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                    continue
-                if val_set.name != 'Default':
-                    if not q_all_cat.filter(cat=cat, val_set_id=default_val_set.id).exists():
-                        error = 'missing from Default ValSet'
-                        import_error_counts[error] = import_error_counts.get(error, 0) + 1
-                        continue
-                q_cat = q_all_cat.filter(cat=cat, val_set_id=val_set.id)
-                if not bool(q_cat):     # The domain:name is new in selected category
-                    new_spec_item = SpecItem()
-                    new_spec_item.cat = cat
-                    export_to_spec_item(request, project, item, new_spec_item)   
-                    new_spec_item.status = 'NEW'
-                    new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
-                    new_spec_item.created_at = datetime.now(tz=get_current_timezone())
-                    new_spec_item.previous = None
-                    new_spec_item.owner = get_user(request)
-                    new_spec_item.project = project
-                    new_spec_item.application = application                    
-                    new_spec_item.save()
+                    item = next(items)
+                except StopIteration:
+                    break
+                except csv.Error as e:          # unreadable CSV: rows read so far are kept
+                    stopped = 'import stopped at line '+str(items.line_num)+': unreadable CSV ('+str(e)+')'
+                    logger.exception('import_spec_items: CSV error (project %s, category %s)', project_id, cat)
+                    break
+                line = items.line_num       # last physical line of the record
+                try:
+                    with transaction.atomic():      # a row is saved completely or not at all
+                        reason, row_warnings = import_spec_item_row(
+                            request, project, application, val_set, default_val_set, cat, sel_val, item)
+                except Exception:
+                    logger.exception('import_spec_items: row at line %s failed (project %s, category %s)',
+                                     line, project_id, cat)
+                    reason, row_warnings = 'unexpected error (details in the server log)', []
+                if reason:
+                    rejected.append((line, reason))
                 else:
-                    if q_cat[0].status == 'CNF':
-                        overriden_item = q_cat[0]
-                        spec_item = make_obs_spec_item_copy(request, overriden_item)
-                        export_to_spec_item(request, project, item, spec_item)
-                        spec_item.updated_at = datetime.now(tz=get_current_timezone())
-                        spec_item.owner = get_user(request)
-                        spec_item.save()
-                    else:
-                        export_to_spec_item(request, project, item, q_cat[0]) 
-                        q_cat[0].updated_at = datetime.now(tz=get_current_timezone())
-                        q_cat[0].owner = get_user(request)
-                        q_cat[0].save()
-                imported_count += 1
-            if imported_count:
-                messages.success(request, str(imported_count)+' row(s) imported successfully')
-            if import_error_counts:
-                error_summary = '; '.join(
-                    str(count)+' '+error
-                    for error, count in sorted(import_error_counts.items())
-                )
-                messages.error(
-                    request,
-                    str(sum(import_error_counts.values()))+' row(s) could not be imported: '+error_summary
-                )
+                    imported_count += 1
+                    if row_warnings:
+                        warned.append((line, row_warnings))
+            summary = str(imported_count)+' imported, '+str(len(rejected))+' rejected'
+            summary += import_summary_details('Rejected', [(n, r) for n, r in rejected])
+            summary += import_summary_details('Warnings', [(n, '; '.join(w)) for n, w in warned])
+            if stopped:
+                summary += '. '+stopped[0].upper()+stopped[1:]
+            if rejected or stopped:
+                messages.error(request, summary)
+            elif warned:
+                messages.warning(request, summary)
+            else:
+                messages.success(request, summary)
         except Exception as e:
-            messages.error(request, 'Unable to read or process uploaded file at line '+str(i+2)+'; traceback: '+traceback.format_exc())
+            logger.exception('import_spec_items: unable to process uploaded file (project %s, category %s)',
+                             project_id, cat)
+            messages.error(request, 'Unable to read or process uploaded file; the details were written to the server log')
     else:
         context = {'project': project, 'title': 'Upload CSV File'}
         return render(request, 'upload_file.html', context)
@@ -1121,27 +1203,36 @@ def import_project(request):
             messages.error(request,'Unable to upload file: '+repr(e))
             return redirect(base_url)
 
+        if zip_file.size > IMPORT_MAX_UPLOAD_BYTES:         # import-project-no-limits
+            messages.error(request,'Unable to import project zip file: the file is larger than '+
+                           str(IMPORT_MAX_UPLOAD_BYTES//(1024*1024))+' MB')
+            return redirect(base_url)
+
         # Create directory where import file is unzipped
         temp_dir = configs['general']['temp_dir']
         csv_sep = configs['general']['csv_sep']
-        imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
+        imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_', request)
         if imp_dir == '':
             return redirect(base_url)
             
-        # Unzip import file    
-        imp_project = os.path.join(imp_dir,'import_project.zip')
-        with open(imp_project, 'wb') as fd:
-            for chunk in zip_file.chunks():
-                fd.write(chunk)
+        # Unzip import file    (the directory is removed in all cases: temp-dir-not-cleaned)
         try:
-            zip_obj = ZipFile(imp_project, 'r')
-            zip_obj.extractall(imp_dir)
-        except Exception as e:
-            messages.error(request,'Unable to import project zip file: '+repr(e))
-            return redirect(base_url)
-        zip_obj.close()
+            imp_project = os.path.join(imp_dir,'import_project.zip')
+            with open(imp_project, 'wb') as fd:
+                for chunk in zip_file.chunks():
+                    fd.write(chunk)
+            try:
+                extract_project_zip(imp_project, imp_dir)
+            except ValueError as e:         # import-project-no-limits
+                messages.error(request,'Unable to import project zip file: '+str(e))
+                return redirect(base_url)
+            except Exception as e:
+                messages.error(request,'Unable to import project zip file: '+repr(e))
+                return redirect(base_url)
 
-        import_project_tables(request, imp_dir)
+            import_project_tables(request, imp_dir)
+        finally:
+            shutil.rmtree(imp_dir, ignore_errors=True)
     else:
         context = {'title': 'Upload Zip File'}
         return render(request, 'upload_file.html', context)
@@ -1157,59 +1248,63 @@ def export_project(request, project_id):
 
     temp_dir = configs['general']['temp_dir']
     csv_sep = configs['general']['csv_sep']
-    exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_')
+    exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_', request)
     if exp_dir == '':
         return redirect(base_url)
     
-    project_exp = ProjectResource().export(queryset=Project.objects.filter(id=project_id))
-    with open(os.path.join(exp_dir,'project.csv'),'w', encoding='utf-8') as fd:
-        fd.write(project_exp.csv)
+    try:
+        project_exp = ProjectResource().export(queryset=Project.objects.filter(id=project_id))
+        with open(os.path.join(exp_dir,'project.csv'),'w', encoding='utf-8') as fd:
+            fd.write(project_exp.csv)
 
-    spec_items_exp = SpecItemResource().export(queryset=SpecItem.objects.filter(project_id=project_id))
-    with open(os.path.join(exp_dir,'spec_items.csv'),'w', encoding='utf-8') as fd:
-        fd.write(spec_items_exp.csv)
+        spec_items_exp = SpecItemResource().export(queryset=SpecItem.objects.filter(project_id=project_id))
+        with open(os.path.join(exp_dir,'spec_items.csv'),'w', encoding='utf-8') as fd:
+            fd.write(spec_items_exp.csv)
 
-    val_set_exp = ValSetResource().export(queryset=ValSet.objects.filter(project_id=project_id))
-    with open(os.path.join(exp_dir,'val_sets.csv'),'w', encoding='utf-8') as fd:
-        fd.write(val_set_exp.csv)
+        val_set_exp = ValSetResource().export(queryset=ValSet.objects.filter(project_id=project_id))
+        with open(os.path.join(exp_dir,'val_sets.csv'),'w', encoding='utf-8') as fd:
+            fd.write(val_set_exp.csv)
 
-    project_users_exp = ProjectUserResource().export(queryset=ProjectUser.objects.filter(project_id=project_id))
-    with open(os.path.join(exp_dir,'project_users.csv'),'w', encoding='utf-8') as fd:
-        fd.write(project_users_exp.csv)
+        project_users_exp = ProjectUserResource().export(queryset=ProjectUser.objects.filter(project_id=project_id))
+        with open(os.path.join(exp_dir,'project_users.csv'),'w', encoding='utf-8') as fd:
+            fd.write(project_users_exp.csv)
 
-    release_list = []
-    release = project.release
-    while release != None:
-        release_list.append(release.id)
-        release = release.previous
-    applications = Application.objects.filter(project_id=project_id)
-    for application in applications:
-        release = application.release
+        release_list = []
+        release = project.release
         while release != None:
             release_list.append(release.id)
             release = release.previous
-    releases = Release.objects.filter(id__in=release_list)
+        applications = Application.objects.filter(project_id=project_id)
+        for application in applications:
+            release = application.release
+            while release != None:
+                release_list.append(release.id)
+                release = release.previous
+        releases = Release.objects.filter(id__in=release_list)
     
-    releases_exp = ReleaseResource().export(queryset=releases)
-    with open(os.path.join(exp_dir,'releases.csv'),'w', encoding='utf-8') as fd:
-        fd.write(releases_exp.csv)
+        releases_exp = ReleaseResource().export(queryset=releases)
+        with open(os.path.join(exp_dir,'releases.csv'),'w', encoding='utf-8') as fd:
+            fd.write(releases_exp.csv)
 
-    applications_exp = ApplicationResource().export(queryset=applications)
-    with open(os.path.join(exp_dir,'applications.csv'),'w', encoding='utf-8') as fd:
-        fd.write(applications_exp.csv)
+        applications_exp = ApplicationResource().export(queryset=applications)
+        with open(os.path.join(exp_dir,'applications.csv'),'w', encoding='utf-8') as fd:
+            fd.write(applications_exp.csv)
 
-    zip_file_path = os.path.join(exp_dir,'cordetfw_editor_'+project.name+'.zip')
-    zip_obj = ZipFile(zip_file_path, 'w')
-    zip_obj.write(os.path.join(exp_dir,'project.csv'), 'project.csv')
-    zip_obj.write(os.path.join(exp_dir,'applications.csv'), 'applications.csv')
-    zip_obj.write(os.path.join(exp_dir,'val_sets.csv'), 'val_sets.csv')
-    zip_obj.write(os.path.join(exp_dir,'project_users.csv'), 'project_users.csv')
-    zip_obj.write(os.path.join(exp_dir,'releases.csv'), 'releases.csv')
-    zip_obj.write(os.path.join(exp_dir,'spec_items.csv'), 'spec_items.csv')
-    zip_obj.close()            
+        zip_file_path = os.path.join(exp_dir,'cordetfw_editor_'+project.name+'.zip')
+        zip_obj = ZipFile(zip_file_path, 'w')
+        zip_obj.write(os.path.join(exp_dir,'project.csv'), 'project.csv')
+        zip_obj.write(os.path.join(exp_dir,'applications.csv'), 'applications.csv')
+        zip_obj.write(os.path.join(exp_dir,'val_sets.csv'), 'val_sets.csv')
+        zip_obj.write(os.path.join(exp_dir,'project_users.csv'), 'project_users.csv')
+        zip_obj.write(os.path.join(exp_dir,'releases.csv'), 'releases.csv')
+        zip_obj.write(os.path.join(exp_dir,'spec_items.csv'), 'spec_items.csv')
+        zip_obj.close()            
             
-    zip_file = open(zip_file_path, 'rb')
-    return FileResponse(zip_file)        
+        zip_file = open(zip_file_path, 'rb')
+        return CleanupFileResponse(zip_file, cleanup_dir=exp_dir)     # removes exp_dir when the response is closed
+    except BaseException:
+        shutil.rmtree(exp_dir, ignore_errors=True)
+        raise
 
 
 @login_required         

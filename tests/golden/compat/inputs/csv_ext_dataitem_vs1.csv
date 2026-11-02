@@ -1,0 +1,3 @@
+Domain|Name|Title|Description|Value|Rationale|Remarks|Implementation|Type|Kind|Multiplicity|Unit|Owner|Change Log|ValSet
+Dom|Count|Title of Count||43||||Types:uint8|CNS|||owner||VS1
+Dom|ext-two|Ext two||9||||Types:uint8|CNS|||owner||VS1

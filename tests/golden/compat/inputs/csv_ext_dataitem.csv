@@ -1,0 +1,8 @@
+Domain|Name|Title|Description|Value|Rationale|Remarks|Implementation|Type|Kind|Multiplicity|Unit|Owner|Change Log|ValSet
+Dom|Calc|Title of Calc||#iref:107 * 2||||Types:uint8|CNS|||owner||Default
+Dom|ColorVar|Title of ColorVar|"See #EnumValue:Types:Red and #DataItemType:Types:uint8 and **bold**
+newline ""q"" | pipe; dangling ERROR:9999"|#iref:104|"x | y"|  padded  ||Types:Color|VAR|1|µm|owner||Default
+Dom|Count|Title of Count||42||||Types:uint8|CNS|||owner||Default
+Dom.sub|ext.one|Ext one|"Line1
+Line2 with #DataItem:Dom:Count and dangling ERROR:424242 and ä µ"|#iref:201 + 1|"because | pipe"|"r1
+r2"||Types:uint8|CNS|||owner||Default

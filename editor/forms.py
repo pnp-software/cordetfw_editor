@@ -36,7 +36,7 @@ class ProjectForm(forms.Form):
         self.fields['owner'].choices = get_user_choices(project)
         self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
-        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats.replace(',', ', ')
+        self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
 
     def clean_owner(self):
         owner_id = self.cleaned_data['owner']
@@ -83,10 +83,10 @@ class ApplicationForm(forms.Form):
         cats = self.cleaned_data['cats'].replace(' ','')
         cat_list = cats.split(',')
         err_msg = 'Must contain a comma-separated list of categories from: ' + self.project.cats
-        if len(cat_list) == 0:
-            raise forms.ValidationError(err_msg)
+        project_cats = [c.strip() for c in self.project.cats.split(',')]
         for cat_item in cat_list:
-            if not cat_item.strip() in self.project.cats:
+            # exact membership: no substrings, no empty entries
+            if cat_item == '' or cat_item not in project_cats:
                 raise forms.ValidationError(err_msg)
         return cats
 
@@ -192,6 +192,17 @@ class SpecItemForm(forms.Form):
             if not config['attrs'][field]['req_in_form']:
                 self.fields[field].required = False
 
+        # form-choice-empty-silent-default (Task 7.6b): in edit, copy and split mode a REQUIRED choice field whose
+        # stored value is empty (or not one of the choices) gets a blank option, which is then the selected one.
+        # Without it the browser would show and submit the first choice, silently storing it. Items with a valid
+        # stored value get no blank option. Add mode and optional fields are unchanged.
+        if self.mode in ('edit', 'copy', 'split'):
+            for field in ('p_kind', 's_kind'):
+                f = self.fields[field]
+                if f.required and not isinstance(f.widget, forms.HiddenInput) \
+                        and self.initial.get(field) not in [c[0] for c in f.choices]:
+                    f.choices = [('', '---------')] + list(f.choices)
+
         # For external spec_item in add mode: load choices of external item
         if (len(config['ext_attrs']) > 0) and (self.mode == 'add'):
             get_choices_func_name = 'ext_' + cat.lower() + '_get_choices'
@@ -203,6 +214,8 @@ class SpecItemForm(forms.Form):
         # In add mode, the ValSet is not visible
         if (self.mode == 'add'):
             self.fields['val_set'].widget = forms.HiddenInput()
+            # No valid choice: a posted value is a form error, not a crash (items go to the Default ValSet)
+            self.fields['val_set'].queryset = ValSet.objects.none()
 
         # In copy and edit mode, the ValSet cannot be edited but is visible
         if (self.mode == 'copy') or (self.mode == 'edit'):
@@ -228,6 +241,12 @@ class SpecItemForm(forms.Form):
                     self.fields[field].disabled = True
             val_set_id = self.initial['val_set']
             self.fields['val_set'].queryset = ValSet.objects.filter(id=val_set_id)
+            for link_field in ('p_link', 's_link'):
+                link_id = self.initial.get(link_field)
+                if link_id is not None:
+                    self.fields[link_field].queryset = (
+                        self.fields[link_field].queryset | SpecItem.objects.filter(id=link_id)
+                    )
 
     def clean_s_data(self):
         cs_s_data = self.cleaned_data['s_data']
@@ -254,6 +273,8 @@ class SpecItemForm(forms.Form):
         if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
             get_choice_func_name = 'ext_' + self.cat.lower() + '_get_choice'
             ext_choice = getattr(ext_cats, get_choice_func_name)(self.request, cd['ext_item'])
+            if ext_choice is None:
+                raise ValidationError({'ext_item': 'Model not found or no longer accessible'})
             for ext_attr in self.config['ext_attrs']:
                 if ext_attr in ext_choice:
                     cd[ext_attr] = ext_choice[ext_attr]

@@ -313,6 +313,33 @@ def test_find_replace_by_rw_member_still_works(w):
     assert resp.json() == {'updated_count': 1}
 
 
+def test_find_replace_cannot_store_foreign_iref(w):
+    # iref-cross-project-disclosure (Task 7.2b review): Find & Replace on a ref_text field neutralises
+    # a reference into another project like the forms do; references into the own project are kept
+    item = make_spec_item(w.a, cat='DataItemType', domain='AT', name='Rx', desc='see #iref:%d' % w.a_type.id)
+    c = w.client(w.rw)
+    url = '/editor/DataItemType/%d/0/%d/Sel_All/0/list_spec_items' % (w.a.id, w.dvs_a.id)
+    resp = c.post(url, {'field': 'desc', 'find': '#iref:%d' % w.a_type.id, 'replace': '#iref:%d' % w.b_enum.id},
+                  HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    # Task 7.9c: the number of removed references is reported in a separate key
+    assert resp.json() == {'updated_count': 1, 'removed_foreign_refs': 1}
+    item.refresh_from_db()
+    assert item.desc == 'see #iref:0'
+    resp = c.post(url, {'field': 'desc', 'find': '#iref:0', 'replace': '#iref:%d' % w.a_enum.id},
+                  HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.json() == {'updated_count': 1}       # nothing removed: no extra key
+    item.refresh_from_db()
+    assert item.desc == 'see #iref:%d' % w.a_enum.id
+
+
+def test_find_replace_foreign_iref_flash_message_without_xhr(w):
+    make_spec_item(w.a, cat='DataItemType', domain='AT', name='Rx', desc='see #iref:%d' % w.a_type.id)
+    c = w.client(w.rw)
+    url = '/editor/DataItemType/%d/0/%d/Sel_All/0/list_spec_items' % (w.a.id, w.dvs_a.id)
+    resp = c.post(url, {'field': 'desc', 'find': '#iref:%d' % w.a_type.id, 'replace': '#iref:%d' % w.b_enum.id})
+    assert '1 reference(s) to items of another project removed' in [str(m) for m in resp.context['messages']]
+
+
 def test_find_replace_by_outsider_is_refused(w):
     c = w.client(make_user('outsider'))
     before = snapshot()
@@ -444,3 +471,49 @@ def test_non_integer_ids_give_message_not_500(w, field):
     assert r.status_code == 302
     assert len(msgs(r)) == 1 and 'abc' in msgs(r)[0]
     assert snapshot() == before
+
+
+# FIXED: find-replace-on-release-view (was: Find & Replace offered and accepted on release views, rewriting historical rows)
+
+def _fr_url(w, rel):
+    return '/editor/DataItemType/%d/0/%d/Sel_All/%d/list_spec_items' % (w.a.id, w.dvs_a.id, rel)
+
+
+def test_find_replace_refused_on_release_view_xhr(w):
+    c = w.client(w.rw)
+    before = snapshot()
+    resp = c.post(_fr_url(w, w.a.release.id), {'field': 'name', 'find': 'AInt', 'replace': 'AInt2'},
+                  HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.status_code == 400
+    assert resp.json()['errors']['__all__'][0]['message'] == 'Find & Replace is not available on a release view'
+    assert snapshot() == before
+
+
+def test_find_replace_refused_on_release_view_plain_post(w):
+    c = w.client(w.rw)
+    before = snapshot()
+    resp = c.post(_fr_url(w, w.a.release.id), {'field': 'name', 'find': 'AInt', 'replace': 'AInt2'})
+    assert resp.status_code == 200
+    assert [str(m) for m in get_messages(resp.wsgi_request)] == ['Find & Replace is not available on a release view']
+    assert snapshot() == before
+
+
+@pytest.mark.parametrize('who', ['ro', 'outsider'])
+def test_find_replace_release_view_other_roles_still_refused(w, who):
+    if who == 'ro':
+        user = make_user('ro_fr')
+        make_project_user(w.a, user, 'RO')
+    else:
+        user = w.owner_b
+    c = w.client(user)
+    before = snapshot()
+    resp = c.post(_fr_url(w, w.a.release.id), {'field': 'name', 'find': 'AInt', 'replace': 'x'},
+                  HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    assert resp.status_code in (302, 403)
+    assert snapshot() == before
+
+
+def test_find_replace_not_offered_on_release_view_but_on_current_view(w):
+    c = w.client(w.rw)
+    assert b'findReplaceModal' not in c.get(_fr_url(w, w.a.release.id)).content
+    assert b'findReplaceModal' in c.get(_fr_url(w, 0)).content

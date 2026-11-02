@@ -134,6 +134,103 @@ decision recorded here.
     row checks (447 empty required field, 1 identifier) -> track K
   - Remaining: Task 4.4 staging walkthrough (operator, ROLLOUT.md §1)
 
+## Phase 7: Known-issue fixes (track K, branch `fix/known-issues`, plan: docs/fixes/register.md)
+Branched from `upgrade/django-lts` at c602bbb (local tag `track-s-rc1`) on 2026-10-24, before the track S deploy
+(operator: "we have not yet deployed, but continue with the new branch and the fixes"). Baseline for "unchanged" =
+`track-s-rc1`. If staging (Task 4.4) needs a fix on `upgrade/django-lts`, it is merged into this branch.
+- [x] **Task 7.0** `5e5ad1d` + 7.1b: compat corpus `tests/golden/compat/` (17 inputs: 9 project ZIPs, 8 spec-item CSVs;
+  DB fingerprints recorded on `track-s-rc1` code; tests/test_compat_corpus.py). Fixes declare allowed fingerprint fields
+  in docs/fixes/expected-diffs.json `"compat"`; a changed fingerprint always leaves `.actual`, so it must be reviewed and
+  promoted. 7.1b: `#iref:<id>` in text normalised to the item rank (ids differ on MySQL), bare `*` patterns rejected
+- [x] **Task 7.1** Merge upstream branches: `origin/99` (split deletion), `origin/91` (FW Profile models shared by other
+  authors); `origin/100` has 0 commits (nothing to merge).
+  `origin/99`: merge a176737 + test eb01138 (gate: SQLite 1885 passed / 9 skipped, MySQL 1894 passed). Users can now
+  delete a split item alias (its link points to the original item, outside the normal choices) instead of a form error.
+  `origin/91`: merge 8ac1c5c (gate: SQLite 1900 passed / 10 skipped, MySQL 1910 passed). FW Profile models shared
+  with the user (shares ro/rw) can be listed, added and refreshed; unavailable models give a clear message; model queries
+  are parameterized and close the connection. Register: `ext-cats-sql-injection`, `-connection-leak`,
+  `-get-choice-not-found` stay OPEN (FCP paths unfixed).
+  7.1b Opus review of 2968724..5e5ad1d: nothing blocking. Visible change to confirm with the operator: refresh is now
+  limited to models the user owns or that are shared with them (ro/rw) by e-mail; before, any writer could refresh any
+  Model item, so co-authors now need an FW Profile share (also applies to FCP items, which go through the same refresh
+  check, while FCP listing/import is still owner-only). New row `refresh-not-shared-double-message`.
+- [x] **Task 7.2** Less urgent security (K1), three parallel parts + one Opus review each:
+  - 7.2a (11 ids, commits `1f6a350`..`795331d` as cherry-picked): import-no-login-required, login-url-default
+    (`/editor/login/`), honeypot-logger-not-connected, access-first-row (any RW row), appform-cats-substring,
+    index-username-substring, index-lists-all-projects (non-staff: own/member projects; anonymous: none),
+    login-echoes-password, order-by-unrestricted (UI fields, `-field` kept), import-traceback-in-message,
+    find-replace-on-release-view. Goldens promoted: login_failed_post.html (password value removed),
+    list_data_items_release.html (Find & Replace modal removed on release views). Review follow-ups `a24fd91`.
+  - 7.2b: iref-cross-project-disclosure (`#iref` resolved only inside the item's project; foreign ids written by
+    form/CSV/ZIP/Find & Replace become `#iref:0`), eval-ref-dos (loop/assignment keywords refused, expansion capped:
+    depth 10, 2000 substitutions, 100,000 chars; iterative expansion). Review blocker fixed in 7.2d: keyword ban was
+    bypassable with a digit prefix (`2while`). Production check (dump 2026-10-21, aggregates): all 3,875 DataItem/
+    EnumValue values evaluate identically with old and new code; max expanded length 121.
+  - 7.2c: ext-cats FCP SQL parameterized + connections closed, FCP/model error paths, temp dirs (mkdtemp 0700,
+    removed after the response), ZIP import limits + selective extraction, per-row cat/status validation,
+    placeholder dev key refused when DEBUG is off. Production: all 16,306 items have a configured cat and a known
+    status. Open from the review (-> Task 7.4): a rejected row that another row links to still ends in the
+    `import-project-dangling-link-crash` KeyError.
+- [x] **Task 7.3** Crashes -> proper responses (K2): 11 ids, one commit each (`0817cb6`..`d8ce28e`):
+  change-password-no-response, conv-date-nameerror, disp-trac-plink-none, enum-value-no-type, dataitem-no-plink,
+  redirect-int-parent, add-p-parent-label-keyerror (subtitle now uses the p_link label, e.g. "Packet ..."),
+  outcomponent-disp-short-keyerror (configs.json: `value` removed from OutComponent disp_short; that view always
+  crashed), add-spec-item-val-set-post, import-spec-items-undefined-i, list-500s (unknown cat 404, bad disp -> disp_def,
+  page via get_page, invalid expand params ignored). Gate 1980 SQLite / 1990 MySQL. Opus review: nothing blocking;
+  follow-ups 7.3b (Unicode-digit expand_id, `i` defined before the import loop, register test columns)
+- [x] **Task 7.4** Import fidelity and atomicity (K3)
+  - 7.4b spec-item CSV import (`8f521d4`..`1af4aa9`): exp-ref-no-dots (link references with dots/dashes resolve),
+    import-spec-items-no-rollback + -abort-no-summary (per-row atomic import, one summary "N imported, M rejected"
+    with line numbers and reasons, warnings), csv-export-not-reimportable (empty required text/choice fields
+    imported with a warning), import-link-ambiguous (unknown/ambiguous links reported). Opus review: nothing
+    blocking; follow-ups 7.4c: empty or non-numeric integer cells rejected with a clear reason (they cannot be
+    stored empty), echoed link text truncated to 80 chars. Production (aggregates): 0 live items link to a target
+    whose domain/name contains characters outside [A-Za-z0-9_], so the wider link pattern changes no import result
+    of production exports
+  - 7.4a project ZIP import (`fa60e58`..`7dddd28`): one transaction (nothing created on failure), dangling or
+    rejected link targets cleared and reported, owner-not-member per operator rule (existing account -> RO member,
+    else project owner), role / application_version / created_at / updated_at / CRLF / empty application cats /
+    s_data restored, member names `./x.csv` accepted. Compat corpus: every ZIP input now reproduces the exported
+    values; re-export of an imported project equals the source export. Gate 2108 SQLite / 2118 MySQL.
+    Opus review: nothing blocking; 7.4d `5e235a7`: owner resolved only for rows actually saved, notes as warnings,
+    unreadable created_at keeps the default with a note, Release.updated_at timezone-aware, release views of a
+    source project and its imported copy compared by a test; s_data limitation documented (a stored string that
+    looks like a JSON object/list imports as the object)
+  - 7.4e re-import of production exports (dump 2026-10-21, docs/migration/rehearsal/reimport.py, aggregates only),
+    OLD = cd87ccb vs NEW = 95ac755: exports 9/9 ZIPs + 108/108 files identical. Project ZIP import: 16,306 of
+    16,306 items imported (old: 16,271; the 35 items of the owner-not-member case now kept, owner added as RO
+    member), 240/240 diagrams identical, `s_data` differences source vs import 0 (old: 11,089), fewer text
+    differences (CRLF restored). Spec-item CSVs: 11,045 of 11,046 rows imported (old: 10,598; 1 row still rejected
+    by the identifier rule), 0 import regressions. reimport.py: parses the new summary, never echoes message text
+- [ ] **Task 7.5** Export correctness, each byte change approved (K4)
+- [x] **Task 7.6** UI/behaviour bugs (K5): 8 ids (`fba05cb`.. as cherry-picked, ending `ccefe19`): help-double-space,
+  owner-empty-names, form-none-literal, p-link-selection-lost, copy-unreachable-valset-message,
+  refresh-not-shared-double-message, refresh-timestamp-overwritten, ref-link-backslash (browsers already treated `\`
+  as `/`). Goldens promoted one by one (help text, `value="None"` -> empty, p_link/owner `selected`, `\list_spec_items`
+  -> `/list_spec_items`). `s-data-string` not fixed: changes stored data/export -> ticket docs/fixes/tickets/s-data-string.md.
+  Opus review of 7.6 + 7.7: refresh-timestamp-overwritten fix reverted (`af4c9af`, WONTFIX: release views filter CNF
+  items by `updated_at`; an older external timestamp listed an item twice in an old release); migrations 0012/0013
+  verified no-op on MySQL and old code runs on the migrated DB. New row `refresh-cnf-obs-copy-new-content`.
+  7.6b `e2789e3` + `aa36b90`: form-choice-empty-silent-default (blank option in edit/copy/split when a required
+  choice is stored empty or invalid; add mode unchanged)
+- [x] **Task 7.7** Model defaults (K6): naive-created-at-default (migration 0012, aware UTC default) and
+  release-version-default-str (migration 0013, int defaults). sqlmigrate: MySQL no-op for both; SQLite rebuilds the
+  table with rows copied unchanged. No data migration; rollback with the old code works (no MySQL DDL)
+- [x] **Task 7.8** Decide-only items (K7), operator 2026-10-24: optional config key SESSION_COOKIE_AGE (default
+  unchanged); axes-ip-only-lockout, export-s-data-key-order, md-no-escape (markdown part) closed as WONTFIX; the
+  export byte changes and s-data-string stay open as tickets (docs/fixes/tickets/). Also `ef2fd0c` refresh-cnf-obs-copy-new-content (the OBS copy made by
+  a refresh of a CNF Model item keeps the previous version). Gate on 5e235a7: 2118 SQLite / 2128 MySQL
+- [x] **Task 7.9** Release gate for track K (HEAD d7c99d9):
+  - 7.9a `f2f4704` rehearsal on the production dump, OLD = track-s-rc1 vs NEW: 404/404 exports identical; 164 pages:
+    99 identical, 65 differ only by `ref-link-backslash`, 0 unexplained; rollback to track-s-rc1: 404/404 exports and
+    164/164 pages identical, migrate --plan empty, sessions/passwords valid both ways. Snapshot does not cover forms,
+    login, release views, non-staff index (-> staging checks in docs/fixes/RELEASE_NOTES_K.md)
+  - Opus review of track-s-rc1..ae6b0aa: nothing blocking in the code; 7.9b `599f3c8` known-issue docs updated for all
+    K rows; 7.9c `d7c99d9` foreign references removed by CSV import / Find & Replace are reported, ZIP abort message
+    without exception text, dead code removed
+  - Gate on d7c99d9: 2121 SQLite / 2131 MySQL 8.0; MySQL 8.4.13: 2131 passed
+  - Release notes: docs/fixes/RELEASE_NOTES_K.md. Still open (operator): export tickets + s-data-string
+
 ## Decisions
 - 2026-10-23 (operator): commit one checkpoint per gate on `upgrade/django-lts`, never pushed.
   Stop and ask on EXPECTED-CHANGE decisions or on gates that cannot pass without a behaviour change.
@@ -165,3 +262,18 @@ decision recorded here.
   sanitiser stays in track K (`image-svg-unsanitised`).
 - 2026-10-23 (operator), Task 6.6c: replace the SVG deny-list by an allowlist validator in track S (validate, never rewrite;
   must accept all 240 production diagrams; operator approves the allowlist).
+- 2026-10-24 (operator), track K: `access-first-row` -> write access if ANY of the user's ProjectUser rows for the
+  project is RW. Spec-item CSV import (`import-spec-items-no-rollback`, `-abort-no-summary`) -> keep per-row import
+  (valid rows saved, invalid skipped) and always end with a summary (N imported, M rejected with line + reason).
+  `index-lists-all-projects` -> non-staff users see only projects they own or are members of; staff see all.
+  Export byte changes: undecided; one ticket per change in docs/fixes/tickets/ (for GitHub and for checking the
+  scripts that read the exports). None of them is implemented before approval.
+- 2026-10-24, aggregate scan of the production dump of 2026-10-21 for Task 7.2: all 34 applications have categories that
+  are exact members of their project's categories (`appform-cats-substring` can be tightened without data impact);
+  no user has two ProjectUser rows for one project (`access-first-row` changes nothing for real data); 19 active users
+  (2 staff), 1 active non-staff user is in no project and will see an empty index after `index-lists-all-projects`.
+- 2026-10-24 (operator): project ZIP import, item owner neither owner nor member: if the account exists on the target
+  server keep the owner and add them as RO member of the imported project, otherwise reassign the item to the project
+  owner; both listed in the import message. Spec-item CSV import: accept empty required fields and list those rows as
+  warnings (cause: docs/fixes/csv-empty-required-fields.md). `form-choice-empty-silent-default`: blank option shown
+  when the stored value is empty; saving then requires a conscious choice.

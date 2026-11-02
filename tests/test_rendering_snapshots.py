@@ -129,7 +129,7 @@ def test_snapshot_password_reset_form(client):
 
 
 def test_snapshot_list_data_items(client, ds):
-    # KNOWN-ISSUE: ref-link-backslash (golden contains '0\\list_spec_items' links)
+    # FIXED: ref-link-backslash (was: golden contained '0\\list_spec_items' links)
     snap('list_data_items', client.get(lurl(ds)))
 
 
@@ -206,18 +206,28 @@ def test_snapshot_lockout_template():
 # ---------------------------------------------------------------------------
 
 def test_snapshot_login_failed_post(client):
-    """Failed login: pins the re-rendered page, which echoes the typed password."""
+    """Failed login: pins the re-rendered page, which must not echo the typed password."""
     make_user('alice')
     response = client.post('/editor/login/', {'username': 'alice', 'password': 'wrong-pw-123'})
-    # KNOWN-ISSUE: login-echoes-password (password re-rendered as value="..." in the HTML)
-    assert b'value="wrong-pw-123"' in response.content
+    # FIXED: login-echoes-password (was: assert b'value="wrong-pw-123"' in response.content)
+    assert b'wrong-pw-123' not in response.content
+    assert b'name="username" value="alice"' in response.content
     snap('login_failed_post', response)
 
 
-def test_snapshot_login_get_has_none_values(client):
-    # KNOWN-ISSUE: form-none-literal (unbound form: value="None" rendered in the login inputs)
+def test_snapshot_login_get_has_no_none_values(client):
     response = client.get('/editor/login/')
-    assert response.content.count(b'value="None"') == 2
+    # FIXED: form-none-literal (was: assert response.content.count(b'value="None"') == 2)
+    assert b'value="None"' not in response.content
+    assert b'name="username" value=""' in response.content
+
+
+def test_unbound_forms_render_no_none_literal(client, ds):
+    # FIXED: form-none-literal (was: add_spec_item name/domain value="None", make-release textarea 'None')
+    response = client.get('/editor/DataItem/%d/0/Sel_All/0/add_spec_item' % ds['project'].id)
+    assert b'value="None"' not in response.content
+    response = client.get('/editor/%d/make_project_release' % ds['project'].id)
+    assert b'>None</textarea>' not in response.content
 
 
 def test_snapshot_edit_spec_item_invalid_post(client, ds):
@@ -228,10 +238,11 @@ def test_snapshot_edit_spec_item_invalid_post(client, ds):
     })
     html = response.content.decode()
     assert 'is-invalid' in html and 'invalid-feedback' in html
-    # KNOWN-ISSUE: p-link-selection-lost (p_link selection not preserved on re-render, str vs int compare)
+    # FIXED: p-link-selection-lost (was: assert 'selected' not in p_link_select)
     p_link_select = html[html.index('id="id_p_link"'):]
     p_link_select = p_link_select[:p_link_select.index('</select>')]
-    assert 'selected' not in p_link_select
+    assert '<option value="%d" selected>' % ds['dtype'].id in p_link_select
+    assert p_link_select.count('selected') == 1
     snap('edit_spec_item_invalid_post', response)
 
 

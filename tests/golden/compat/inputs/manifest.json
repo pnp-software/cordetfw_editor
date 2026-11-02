@@ -1,0 +1,179 @@
+[
+ {
+  "name": "zip_golden_export",
+  "kind": "project_zip",
+  "members_dir": "export/project",
+  "users": [
+   "owner",
+   "reader",
+   "writer"
+  ],
+  "edge": "existing golden project export (iref, CRLF, s_data, RO/RW, VS1, app with cats, releases, NEW/MOD/CNF/OBS, p_link/s_link)"
+ },
+ {
+  "name": "zip_refs_text",
+  "kind": "project_zip",
+  "file": "zip_refs_text.zip",
+  "users": [
+   "ref_owner"
+  ],
+  "edge": "#iref: to live item, dangling #iref:, \"None\" text, CRLF in desc/remarks/rationale/value/t1, nested unicode s_data"
+ },
+ {
+  "name": "zip_roles_valsets_releases",
+  "kind": "project_zip",
+  "file": "zip_roles_valsets_releases.zip",
+  "users": [
+   "rv_owner",
+   "rv_ro1",
+   "rv_rw1",
+   "rv_rw2",
+   "rv_ro2"
+  ],
+  "known_issue": [
+   "import-project-role-lost"
+  ],
+  "edge": "owner + 2 RO + 2 RW members, ValSets Default/VS1/VS2 with items, 3-step project release chain"
+ },
+ {
+  "name": "zip_apps_versions",
+  "kind": "project_zip",
+  "file": "zip_apps_versions.zip",
+  "users": [
+   "ap_owner"
+  ],
+  "known_issue": [
+   "import-project-application-version-lost"
+  ],
+  "edge": "two applications with cats and application_version 1 / 2, items in project and in each app"
+ },
+ {
+  "name": "zip_app_empty_cats",
+  "kind": "project_zip",
+  "file": "zip_app_empty_cats.zip",
+  "users": [
+   "ec_owner"
+  ],
+  "known_issue": [
+   "import-project-empty-app-cats"
+  ],
+  "edge": "application with empty cats (rejected by the importer today)"
+ },
+ {
+  "name": "zip_statuses_links",
+  "kind": "project_zip",
+  "file": "zip_statuses_links.zip",
+  "users": [
+   "st_owner"
+  ],
+  "edge": "NEW/MOD/CNF/DEL/OBS items, previous chain, p_link and s_link (split items)"
+ },
+ {
+  "name": "zip_dotted_names",
+  "kind": "project_zip",
+  "file": "zip_dotted_names.zip",
+  "users": [
+   "dn_owner"
+  ],
+  "edge": "dots/dashes inside project, domain and item names, irefs to them"
+ },
+ {
+  "name": "zip_owner_not_member",
+  "kind": "project_zip",
+  "file": "zip_owner_not_member.zip",
+  "users": [
+   "om_owner",
+   "om_outsider"
+  ],
+  "known_issue": [
+   "import-project-owner-not-member"
+  ],
+  "edge": "unlinked item owned by a user who is neither project owner nor member (item dropped with message)"
+ },
+ {
+  "name": "zip_owner_not_member_linked",
+  "kind": "project_zip",
+  "file": "zip_owner_not_member_linked.zip",
+  "users": [
+   "ol_owner",
+   "ol_outsider"
+  ],
+  "known_issue": [
+   "import-project-owner-not-member",
+   "import-project-dangling-link-crash"
+  ],
+  "edge": "dropped item is the p_link target of a kept item (KeyError after partial import)"
+ },
+ {
+  "name": "csv_golden_di_project",
+  "kind": "spec_items_csv",
+  "golden": "export/spec_items/di_project.csv",
+  "cat": "DataItem",
+  "application": 0,
+  "val_set": 1,
+  "edge": "golden DataItem export, Default ValSet, into the same world (CNF items get OBS copies)"
+ },
+ {
+  "name": "csv_golden_di_vs1",
+  "kind": "spec_items_csv",
+  "golden": "export/spec_items/di_project_vs1.csv",
+  "cat": "DataItem",
+  "application": 0,
+  "val_set": 2,
+  "edge": "golden DataItem export of ValSet VS1"
+ },
+ {
+  "name": "csv_golden_enumtype",
+  "kind": "spec_items_csv",
+  "golden": "export/spec_items/enumtype_project.csv",
+  "cat": "EnumType",
+  "application": 0,
+  "val_set": 1,
+  "edge": "golden EnumType export"
+ },
+ {
+  "name": "csv_golden_enumvalue",
+  "kind": "spec_items_csv",
+  "golden": "export/spec_items/enumvalue_project.csv",
+  "cat": "EnumValue",
+  "application": 0,
+  "val_set": 1,
+  "edge": "golden EnumValue export (parent links)"
+ },
+ {
+  "name": "csv_golden_req_application",
+  "kind": "spec_items_csv",
+  "golden": "export/spec_items/req_application.csv",
+  "cat": "Requirement",
+  "application": 1,
+  "val_set": 1,
+  "edge": "golden Requirement export of an application"
+ },
+ {
+  "name": "csv_golden_req_no_application",
+  "kind": "spec_items_csv",
+  "golden": "export/spec_items/req_no_application.csv",
+  "cat": "Requirement",
+  "application": 0,
+  "val_set": 1,
+  "edge": "golden Requirement export of the project scope (no application), imported at application 0"
+ },
+ {
+  "name": "csv_ext_dataitem",
+  "kind": "spec_items_csv",
+  "file": "csv_ext_dataitem.csv",
+  "cat": "DataItem",
+  "application": 0,
+  "val_set": 1,
+  "edge": "DataItem export with dotted domain/name, iref + dangling iref, CRLF in desc/remarks, unicode; new items"
+ },
+ {
+  "name": "csv_ext_dataitem_vs1",
+  "kind": "spec_items_csv",
+  "file": "csv_ext_dataitem_vs1.csv",
+  "cat": "DataItem",
+  "application": 0,
+  "val_set": 2,
+  "edge": "DataItem export of a non-Default ValSet incl. an item missing from Default"
+ }
+]

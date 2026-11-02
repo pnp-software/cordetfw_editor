@@ -28,27 +28,17 @@ def user_has_write_access_to_project(user_id, project):
     """ Silent variant of has_write_access_to_project (same logic, no message queued) """
     if user_id == project.owner.id:
         return True
-    try:
-        user = ProjectUser.objects.filter(user_id=user_id, project_id=project.id)
-        return user[0].role == 'RW'
-    except Exception:
-        return False
+    return ProjectUser.objects.filter(user_id=user_id, project_id=project.id, role='RW').exists()
 
 
 def has_write_access_to_project(request, project):
     """ Return True if user owns the project or is assigned to it with read/write access """
     if (request.user.id == project.owner.id):
         return True
-    try:
-        user = ProjectUser.objects.filter(user_id=request.user.id, project_id=project.id)
-        if user[0].role == 'RW':
-            return True
-        else:
-            messages.error(request, 'This operation requires read/write access to project '+project.name)
-            return False
-    except Exception as e:
-        messages.error(request, 'This operation requires read/write access to project '+project.name)
-        return False
+    if ProjectUser.objects.filter(user_id=request.user.id, project_id=project.id, role='RW').exists():
+        return True
+    messages.error(request, 'This operation requires read/write access to project '+project.name)
+    return False
 
 
 def can_create_project(request):

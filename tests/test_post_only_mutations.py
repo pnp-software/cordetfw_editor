@@ -33,7 +33,7 @@ def csrf_client(user=None):
 
 def login_redirect(response, url):
     assert response.status_code == 302
-    assert response['Location'] == '/accounts/login/?next=' + url
+    assert response['Location'] == '/editor/login/?next=' + url
 
 
 # ------------------------------------------------------------------ del_project
@@ -467,7 +467,7 @@ def test_no_get_request_changes_the_database(client):
         before = db_snapshot()
         with fake_connect([ROW]) as connect, mock.patch(
                 'editor.views.make_temp_dir',
-                side_effect=lambda d, n: tempfile.mkdtemp(prefix=n, dir=d)):
+                side_effect=lambda d, n, request=None: tempfile.mkdtemp(prefix=n, dir=d)):    # request param added by temp-dir-collision fix
             for endpoint in sorted(urls):
                 response = client.get(urls[endpoint], params)
                 assert response.status_code in (200, 302, 405), endpoint

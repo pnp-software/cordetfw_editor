@@ -7,12 +7,14 @@ The byte-level goldens under tests/golden/export/ are the contract.
 """
 
 import csv
+import re
 import io
 import json
 import zipfile
 from datetime import datetime, timezone
 
 import pytest
+from unittest import mock
 from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 
@@ -229,16 +231,14 @@ def test_export_project_golden_contains_real_data(client, fresh_temp, world):
     assert read_csv_member(zf, 'project.csv')[0]['owner'] == 'owner'
 
 
-def test_export_project_leaves_files_in_temp_dir(client, fresh_temp, world):
-    # KNOWN-ISSUE: temp-dir-not-cleaned (export leaves the export directory behind)
+def test_export_project_removes_temp_dir(client, fresh_temp, world):
+    # FIXED: temp-dir-not-cleaned (was: the export directory with all files stayed behind)
     client.force_login(world.owner)
     tmp = fresh_temp()
     response = client.get('/editor/%d/export_project' % world.project.id)
-    b''.join(response.streaming_content)
-    subdirs = list(tmp.iterdir())
-    assert len(subdirs) == 1
-    assert subdirs[0].name.startswith('cordetfw_editor_')
-    assert sorted(p.name for p in subdirs[0].iterdir()) == sorted(PROJECT_MEMBERS + ['cordetfw_editor_Demo Proj.zip'])
+    data = b''.join(response.streaming_content)
+    assert zipfile.ZipFile(io.BytesIO(data)).namelist() == PROJECT_MEMBERS
+    assert list(tmp.iterdir()) == []
 
 
 def test_export_project_requires_read_access(client, fresh_temp, world):
@@ -259,10 +259,7 @@ def test_export_project_read_only_user_can_export(client, fresh_temp, world):
 
 
 def test_make_temp_dir_collision_within_one_second(client, monkeypatch, world, tmp_path):
-    # KNOWN-ISSUE: temp-dir-collision
-    # Directories are named by timestamp (1 s resolution). A second export/import in the same
-    # second fails in make_temp_dir; its error branch references the undefined names
-    # 'request' and 'exp_dir', so the user sees a 500 (NameError) instead of a message.
+    # FIXED: temp-dir-collision (was: second export within the same second -> NameError / 500)
     import editor.utilities as utilities
 
     class FrozenDatetime(datetime):
@@ -274,8 +271,9 @@ def test_make_temp_dir_collision_within_one_second(client, monkeypatch, world, t
     client.force_login(world.owner)
     first = client.get('/editor/%d/export_project' % world.project.id)
     assert first.status_code == 200
-    with pytest.raises(NameError):
-        client.get('/editor/%d/export_project' % world.project.id)
+    second = client.get('/editor/%d/export_project' % world.project.id)
+    assert second.status_code == 200
+    assert zipfile.ZipFile(io.BytesIO(b''.join(second.streaming_content))).namelist() == PROJECT_MEMBERS
 
 
 # ---------------------------------------------------------------------------
@@ -645,28 +643,29 @@ def test_import_project_round_trip_semantics(client, renamed_original, fresh_tem
            new_ids[('EnumType', 'Types', 'Color', 'Default', 'CNF')]
 
     # --- KNOWN-ISSUE losses ----------------------------------------------------------------
-    # KNOWN-ISSUE: import-project-role-lost -- every ProjectUser is imported as 'RO'
+    # FIXED: import-project-role-lost (was: every ProjectUser was imported as 'RO')
     assert before['users'] == [('reader', 'RO'), ('writer', 'RW')]
-    assert after['users'] == [('reader', 'RO'), ('writer', 'RO')]
-    # KNOWN-ISSUE: import-project-created-at-lost -- SpecItem.created_at falls back to its default
+    assert after['users'] == [('reader', 'RO'), ('writer', 'RW')]
+    # FIXED: import-project-created-at-lost (was: SpecItem.created_at fell back to its default 2000-01-01)
     assert {b['created_at'] for b in before['items'].values()} == {T0}
-    assert {a['created_at'] for a in after['items'].values()} == {datetime(2000, 1, 1, tzinfo=timezone.utc)}
-    # KNOWN-ISSUE: import-project-application-version-lost -- Release.application_version is not imported
+    assert {a['created_at'] for a in after['items'].values()} == {T0}
+    # FIXED: import-project-application-version-lost (was: Release.application_version was not imported, always 0)
     assert before['applications'][0][3][0][4] == 1
-    assert after['applications'][0][3][0][4] == 0
-    # KNOWN-ISSUE: import-project-s-data-double-encoded -- s_data JSON is stored as a JSON *string*
+    assert after['applications'][0][3][0][4] == 1
+    assert [r[3:] for r in after['applications'][0][3]] == [(1, 1), (0, 0)]
+    # FIXED: import-project-s-data-double-encoded (was: s_data was stored as a JSON *string*, {} became '')
     assert before['items'][color_var]['s_data'] == {'a': 1, 'k': [1, 2], 'u': 'ä'}
-    assert after['items'][color_var]['s_data'] == '{"a": 1, "k": [1, 2], "u": "\\u00e4"}'
-    assert before['items'][calc]['s_data'] == {} and after['items'][calc]['s_data'] == ''
-    # KNOWN-ISSUE: import-project-auto-now-timestamps -- updated_at of Project/Application/ValSet/ProjectUser
-    # are auto_now fields and are overwritten with the import time
-    assert old.updated_at == T1 and new.updated_at > T1
-    assert new.applications.get().updated_at > T1
-    assert all(v.updated_at > D_FIXED for v in new.val_sets.all())
-    assert all(pu.updated_at > D_FIXED for pu in new.project_users.all())
-    # KNOWN-ISSUE: import-project-crlf-lost -- CR LF inside a field is read back as LF
+    assert after['items'][color_var]['s_data'] == {'a': 1, 'k': [1, 2], 'u': 'ä'}
+    assert before['items'][calc]['s_data'] == {} and after['items'][calc]['s_data'] == {}
+    # FIXED: import-project-auto-now-timestamps (was: updated_at of Project/Application/ValSet/ProjectUser, auto_now
+    # fields, were overwritten with the import time)
+    assert old.updated_at == T1 and new.updated_at == T1
+    assert new.applications.get().updated_at == T1
+    assert [v.updated_at for v in new.val_sets.all()] == [D_FIXED, D_FIXED]
+    assert [pu.updated_at for pu in new.project_users.all()] == [D_FIXED, D_FIXED]
+    # FIXED: import-project-crlf-lost (was: CR LF inside a field was read back as LF)
     assert before['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\r\nwith CRLF'
-    assert after['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\nwith CRLF'
+    assert after['items'][('EnumType', 'Types', 'Color', 'Default', 'CNF')]['change_log'] == 'changed\r\nwith CRLF'
 
 
 def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_original, fresh_temp):
@@ -688,25 +687,8 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
                 if a[col] != b[col]:
                     differences.setdefault((member, col), []).append((a[col], b[col]))
 
-    # Everything else (ids aside) is identical; the only differences are the documented losses
-    assert sorted(differences) == [
-        ('applications.csv', 'updated_at'),
-        ('project.csv', 'updated_at'),
-        ('project_users.csv', 'role'),
-        ('project_users.csv', 'updated_at'),
-        ('releases.csv', 'application_version'),
-        ('spec_items.csv', 'change_log'),
-        ('spec_items.csv', 'created_at'),
-        ('spec_items.csv', 's_data'),
-        ('val_sets.csv', 'updated_at'),
-    ]
-    assert differences[('project_users.csv', 'role')] == [('RW', 'RO')]
-    assert differences[('releases.csv', 'application_version')] == [('1', '0')]
-    assert differences[('spec_items.csv', 'created_at')] == [('2023-12-01 08:00:00', '2000-01-01 00:00:00')] * 10
-    assert differences[('spec_items.csv', 'change_log')] == [('changed\r\nwith CRLF', 'changed\nwith CRLF')]
-    assert differences[('spec_items.csv', 's_data')] == [
-        ('{"a": 1, "k": [1, 2], "u": "\\u00e4"}', '"{\\"a\\": 1, \\"k\\": [1, 2], \\"u\\": \\"\\\\u00e4\\"}"')]
-    assert differences[('val_sets.csv', 'updated_at')][0][0] == '2024-01-15'
+    # Everything else (ids aside) is identical (import-project-* losses fixed: the re-export equals the export)
+    assert differences == {}
 
 
 def test_import_project_after_deleting_original(client, exported, fresh_temp):
@@ -785,17 +767,17 @@ def test_import_project_rejects_undefined_application_category(client, renamed_o
     assert Project.objects.count() == 1
 
 
-def test_import_project_rejects_application_with_empty_categories(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: import-project-empty-app-cats
-    # An application without categories (cats='') cannot be imported: ''.split(',') == [''] and
-    # '' is not a configured category. The message therefore contains two spaces.
+def test_import_project_accepts_application_with_empty_categories(client, renamed_original, fresh_temp):
+    # FIXED: import-project-empty-app-cats (was: rejected with "The category  in application App One is not defined
+    # in configs.json" and nothing imported). An application without categories imports.
     w = renamed_original
     data = modified_zip(w.zip, **{'applications.csv': _applications_csv_with(w.zip, '')})
     client.force_login(w.admin)
     response = upload_zip(client, data, fresh_temp)
-    assert messages_of(response) == [
-        ('alert-danger', 'The category  in application App One is not defined in configs.json')]
-    assert Project.objects.count() == 1
+    assert messages_of(response) == []
+    new = Project.objects.get(name='Demo Proj')
+    assert new.applications.get().cats == ''
+    assert new.project_spec_items.count() == 10
 
 
 @pytest.mark.parametrize('member,label', [
@@ -845,10 +827,9 @@ def test_import_project_unknown_project_user(client, renamed_original, fresh_tem
     assert Project.objects.count() == 1 and Release.objects.count() == 4
 
 
-def test_import_project_unknown_release_author_leaves_partial_data(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: import-project-not-atomic
-    # Releases are written one at a time; a later failure leaves the earlier ones behind
-    # (IMPORT_EXPORT_USE_TRANSACTIONS does not apply, import_project_tables does not use a Resource).
+def test_import_project_unknown_release_author_aborts_without_data(client, renamed_original, fresh_temp):
+    # FIXED: import-project-not-atomic (was: the two releases before the bad one were committed, Release.count()
+    # == 4 + 2). The import is one transaction: a failure creates nothing and gives one error message.
     w = renamed_original
     rows = read_csv_member(w.zip, 'releases.csv')
     rows[2]['release_author'] = 'ghost'
@@ -860,7 +841,40 @@ def test_import_project_unknown_release_author_leaves_partial_data(client, renam
     [(level, text)] = messages_of(response)
     assert text.startswith('The release author ghost does not exist: ')
     assert Project.objects.count() == 1
-    assert Release.objects.count() == 4 + 2        # the two releases before the bad one were committed
+    assert Release.objects.count() == 4
+
+
+def test_import_project_failure_after_writes_rolls_back_everything(client, renamed_original, fresh_temp, monkeypatch):
+    # import-project-not-atomic: an unexpected failure late in the import (here while resolving the links)
+    # leaves no Release, Project, ValSet, ProjectUser, Application or SpecItem behind; one error message.
+    import editor.imports as imports
+    def boom(*args, **kwargs):
+        raise RuntimeError('simulated failure')
+    monkeypatch.setattr(imports, 'convert_edit_to_db', boom)
+    w = renamed_original
+    counts = [m.objects.count() for m in (Release, Project, ValSet, ProjectUser, Application, SpecItem)]
+    client.force_login(w.admin)
+    response = upload_zip(client, w.zip_bytes, fresh_temp)
+    assert response.status_code == 302
+    [(level, text)] = messages_of(response)
+    assert level == 'alert-danger'
+    assert text == 'Unable to import project; nothing was imported (details in the server log)'
+    assert counts == [m.objects.count() for m in (Release, Project, ValSet, ProjectUser, Application, SpecItem)]
+
+
+def test_import_project_failure_message_hides_item_notes(client, renamed_original, fresh_temp, monkeypatch):
+    # import-project-not-atomic: notes about skipped items are shown only when the import succeeds
+    import editor.imports as imports
+    monkeypatch.setattr(imports, 'convert_edit_to_db', lambda *a, **k: 1 / 0)
+    w = renamed_original
+
+    def mutate(rows):
+        rows[0]['status'] = 'BOGUS'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    [(level, text)] = messages_of(response)
+    assert text == 'Unable to import project; nothing was imported (details in the server log)'
 
 
 def _spec_items_csv_with(zf, mutate):
@@ -873,6 +887,61 @@ def _spec_items_csv_with(zf, mutate):
 
 
 def test_import_project_failing_spec_item_is_reported_and_others_imported(client, renamed_original, fresh_temp):
+    # (import-project-owner-not-member: the failing row used to be one with an unknown owner; an unknown
+    # owner no longer fails, so the row now fails on an unknown ValSet identifier)
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['name'] == 'Calc':
+                row['val_set'] = '99'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    [(level, text)] = messages_of(response)
+    assert level == 'alert-danger'
+    assert text == ('Failure to import spec_item DataItem:Dom:Calc (staus: CNF) Probable causes are: '
+                    '(a) application identifier () is not recognized; '
+                    '(b) spec_item owner owner is not a project user '
+                    '(c) ValSet identifier (99) is not recognized; '
+                    '(d) Update time (2024-02-20 16:45:30) is not in format Y-m-d H-M-S; '
+                    "Error is: KeyError('99')")
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 9
+    assert not new.project_spec_items.filter(name='Calc').exists()
+
+
+def _drop_project_user(zf, username):
+    rows = [r for r in read_csv_member(zf, 'project_users.csv') if r['user'] != username]
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=list(read_csv_member(zf, 'project_users.csv')[0]), lineterminator='\r\n')
+    writer.writeheader(); writer.writerows(rows)
+    return out.getvalue().encode('utf-8')
+
+
+def test_import_project_item_owner_not_member_existing_user_becomes_ro_member(client, renamed_original, fresh_temp):
+    # FIXED: import-project-owner-not-member (was: KeyError, the item was dropped with "probable cause (b)")
+    # Operator decision 2026-10-24: the owner is kept and added once as a read-only project user.
+    w = renamed_original
+    members = [r['user'] for r in read_csv_member(w.zip, 'project_users.csv')]
+    assert 'writer' in members
+    client.force_login(w.admin)
+    data = modified_zip(w.zip, **{'project_users.csv': _drop_project_user(w.zip, 'writer')})
+    response = upload_zip(client, data, fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    n_reader_items = sum(1 for r in read_csv_member(w.zip, 'spec_items.csv') if r['owner'] == 'writer')
+    assert n_reader_items >= 1
+    assert new.project_spec_items.count() == 10
+    assert new.project_spec_items.filter(owner__username='writer').count() == n_reader_items
+    members = [(pu.user.username, pu.role) for pu in new.project_users.order_by('id')]
+    assert members.count(('writer', 'RO')) == 1 and len(members) == 2
+    assert messages_of(response) == [
+        ('alert-warning', 'The user writer owns imported items but is not a user of the project: '
+                         'added as read-only user of the project')]
+
+
+def test_import_project_item_owner_unknown_user_reassigned_to_project_owner(client, renamed_original, fresh_temp):
+    # FIXED: import-project-owner-not-member (was: the item was dropped); the user is not created
     w = renamed_original
 
     def mutate(rows):
@@ -882,44 +951,76 @@ def test_import_project_failing_spec_item_is_reported_and_others_imported(client
     client.force_login(w.admin)
     response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
                           fresh_temp)
-    [(level, text)] = messages_of(response)
-    assert level == 'alert-danger'
-    assert text == ('Failure to import spec_item DataItem:Dom:Calc (staus: CNF) Probable causes are: '
-                    '(a) application identifier () is not recognized; '
-                    '(b) spec_item owner ghost is not a project user '
-                    '(c) ValSet identifier (1) is not recognized; '
-                    '(d) Update time (2024-02-20 16:45:30) is not in format Y-m-d H-M-S; '
-                    "Error is: KeyError('ghost')")
     new = Project.objects.get(name='Demo Proj')
-    assert new.project_spec_items.count() == 9
-    assert not new.project_spec_items.filter(name='Calc').exists()
+    assert new.project_spec_items.count() == 10
+    assert new.project_spec_items.get(name='Calc').owner.username == 'owner'
+    assert not User.objects.filter(username='ghost').exists()
+    assert not new.project_users.filter(user__username='ghost').exists()
+    assert messages_of(response) == [
+        ('alert-warning', 'Spec_item DataItem:Dom:Calc (status: CNF): the owner ghost does not exist on this server, '
+                         'the item was assigned to the project owner owner')]
 
 
-def test_import_project_failing_referenced_spec_item_crashes(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: import-project-dangling-link-crash
-    # When a spec_item that is the target of p_link/previous/s_link fails to import, the link
-    # resolution step raises KeyError (not caught): the user sees a 500 and a half-imported project.
+def test_import_project_rejected_referenced_spec_item_clears_links(client, renamed_original, fresh_temp):
+    # FIXED: import-project-dangling-link-crash (was: KeyError -> HTTP 500 and a half-imported project)
+    # An item that is rejected (here: invalid status, as by the per-row check of Task 7.2c) and is the target
+    # of previous/p_link/s_link: the links to it become None and are listed in the message.
     w = renamed_original
 
     def mutate(rows):
         for row in rows:
             if row['name'] == 'uint8':
-                row['owner'] = 'ghost'
+                row['status'] = 'BOGUS'
     client.force_login(w.admin)
-    with pytest.raises(KeyError):
-        upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
-                   fresh_temp)
-    assert Project.objects.filter(name='Demo Proj').exists()
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    assert response.status_code == 302
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 9
+    assert not new.project_spec_items.filter(name='uint8').exists()
+    texts = [t for _, t in messages_of(response)]
+    assert texts[0].startswith('Failure to import spec_item DataItemType:Types:uint8: the status BOGUS is not valid')
+    link_msgs = texts[1:]
+    assert link_msgs and all('was set to None' in t for t in link_msgs)
+    assert len(link_msgs) == len(set(link_msgs))
+    for t in link_msgs:
+        assert t.startswith('Spec_item ') and ') is not in the imported data, the ' in t
+    # every dangling link is None in the database
+    assert not new.project_spec_items.filter(previous__isnull=False, previous__project=None).exists()
 
 
-def test_import_project_leaves_files_in_temp_dir(client, renamed_original, fresh_temp):
-    # KNOWN-ISSUE: temp-dir-not-cleaned (import leaves the unpacked archive behind)
+def test_import_project_dangling_previous_is_none(client, renamed_original, fresh_temp):
+    # import-project-dangling-link-crash: previous pointing to a row that is not in the file
+    w = renamed_original
+    seen = {}
+
+    def mutate(rows):
+        for row in rows:
+            if row['previous']:
+                seen['name'] = row['name']
+                row['previous'] = '9999'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 10
+    assert new.project_spec_items.get(name=seen['name'], status='CNF').previous is None
+    [(level, text)] = messages_of(response)
+    assert level == 'alert-warning'
+    assert text.endswith('the previous (item id 9999) is not in the imported data, the previous was set to None')
+
+
+def test_import_project_removes_temp_dir(client, renamed_original, fresh_temp):
+    # FIXED: temp-dir-not-cleaned (was: the unpacked archive stayed behind)
     w = renamed_original
     client.force_login(w.admin)
     tmp = fresh_temp()
     client.post('/editor/import_project', {'upload_file': SimpleUploadedFile('p.zip', w.zip_bytes)})
-    [subdir] = list(tmp.iterdir())
-    assert sorted(p.name for p in subdir.iterdir()) == sorted(PROJECT_MEMBERS + ['import_project.zip'])
+    assert Project.objects.filter(name='Demo Proj').exists()
+    assert list(tmp.iterdir()) == []
+    # also when the archive is unusable
+    client.post('/editor/import_project', {'upload_file': SimpleUploadedFile('p.zip', b'not a zip')})
+    assert list(tmp.iterdir()) == []
 
 
 # ---------------------------------------------------------------------------
@@ -998,7 +1099,7 @@ def test_import_spec_items_new_item(client, world):
                  Owner='someone-else', Title='Tä')
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [row]))
     assert response['Location'] == DI_LIST_URL
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     item = get_item(world, 'DataItem', 'Dom', 'Fresh')
     assert item.status == 'NEW'
     assert item.owner == world.rw                          # Owner column is ignored
@@ -1015,17 +1116,36 @@ def test_import_spec_items_new_item(client, world):
 
 def test_import_spec_items_unresolvable_link_becomes_none(client, world):
     client.force_login(world.rw)
-    post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L1', Type='Nope:Nothing')]))
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L1', Type='Nope:Nothing')]))
     assert get_item(world, 'DataItem', 'Dom', 'L1').p_link is None
+    # FIXED: import-link-ambiguous (was: an unknown link was dropped without any message)
+    assert messages_of(response) == [(
+        'alert-warning', '1 imported, 0 rejected. Warnings: line 2: link Type "Nope:Nothing" matches no item, '
+                         'imported without link')]
 
 
-def test_import_spec_items_ambiguous_link_becomes_none(client, world):
-    # KNOWN-ISSUE: import-link-ambiguous
-    # convert_exp_to_db looks the target up by domain:name only (any category, any ValSet);
-    # Dom:Count exists in two ValSets so MultipleObjectsReturned is swallowed and the link is lost.
+def test_import_spec_items_ambiguous_link_becomes_none_with_warning(client, world):
+    # convert_exp_to_db looks the target up by domain:name only (any category, any ValSet), and the export
+    # writes nothing more: Dom:Count exists in two ValSets, so the link cannot be resolved and is stored
+    # empty as before; the row is imported and the line is reported.
     client.force_login(world.rw)
-    post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L2', Type='Dom:Count')]))
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L2', Type='Dom:Count'),
+                                                              di_row(Name='L3', Type='Types:Color')]))
     assert get_item(world, 'DataItem', 'Dom', 'L2').p_link is None
+    assert get_item(world, 'DataItem', 'Dom', 'L3').p_link == world.color
+    # FIXED: import-link-ambiguous (was: the link was lost silently, no message)
+    assert messages_of(response) == [(
+        'alert-warning', '2 imported, 0 rejected. Warnings: line 2: link Type "Dom:Count" is ambiguous '
+                         '(several items have this domain:name), imported without link')]
+
+
+def test_import_spec_items_empty_or_none_link_gives_no_warning(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='L4', Type='None'), di_row(Name='L5', Type='')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    assert messages_of(response) == [('alert-warning', '2 imported, 0 rejected. Warnings: line 3: '
+                                      'empty required field(s) Type')]
+    assert get_item(world, 'DataItem', 'Dom', 'L4').p_link is None
 
 
 def test_import_spec_items_existing_confirmed_item_gets_obs_copy(client, world):
@@ -1033,7 +1153,7 @@ def test_import_spec_items_existing_confirmed_item_gets_obs_copy(client, world):
     count_id = world.count.id
     row = di_row(Name='Count', Title='Count v2', Value='99', Description='now see #DataItem:Dom:Calc')
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [row]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     item = SpecItem.objects.get(id=count_id)                # original row is updated in place
     assert (item.status, item.title, item.value) == ('MOD', 'Count v2', '99')
     assert item.desc == 'now see #iref:108'
@@ -1052,7 +1172,7 @@ def test_import_spec_items_existing_modified_item_updated_in_place(client, world
     before = SpecItem.objects.count()
     row = di_row(Name='ColorVar', Title='Edited', Value='7', Type='Types:uint8', Kind='PAR')
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [row]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     assert SpecItem.objects.count() == before                # no OBS copy, no new row
     item = SpecItem.objects.get(id=world.colorvar.id)
     assert (item.status, item.title, item.value, item.p_kind) == ('MOD', 'Edited', '7', 'PAR')
@@ -1070,7 +1190,7 @@ def test_import_spec_items_existing_new_item_updated_in_place(client, world):
     labels = ['Domain', 'Name', 'Title', 'Description', 'Value', 'Rationale', 'Remarks', 'Implementation',
               'Type', 'Owner', 'Change Log', 'ValSet']
     response = post_csv(client, '/editor/EnumValue/1/0/1/Sel_All/import_spec_items', csv_bytes(labels, [row]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     assert SpecItem.objects.count() == before
     item = SpecItem.objects.get(id=world.red.id)
     assert (item.status, item.title, item.value, item.s_link) == ('NEW', 'Rot', '10', world.color)
@@ -1083,7 +1203,7 @@ def test_import_spec_items_existing_in_non_default_valset(client, world):
     url = '/editor/DataItem/1/0/2/Sel_All/import_spec_items'
     response = post_csv(client, url, csv_bytes(DI_LABELS, [di_row(Name='Count', ValSet='VS1', Value='44')]))
     assert response['Location'] == '/editor/DataItem/1/0/2/Sel_All/0/list_spec_items'
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     assert SpecItem.objects.count() == before
     assert SpecItem.objects.get(id=world.count_vs1.id).value == '44'
     assert SpecItem.objects.get(id=world.count.id).value == '42'
@@ -1097,7 +1217,7 @@ def test_import_spec_items_application_level(client, world):
     url = '/editor/Requirement/1/1/1/Sel_All/import_spec_items'
     response = post_csv(client, url, csv_bytes(REQ_LABELS, [row]))
     assert response['Location'] == '/editor/Requirement/1/1/1/Sel_All/0/list_spec_items'
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
     item = get_item(world, 'Requirement', 'AppDom', 'R2')
     assert item.application == world.app
     assert item.value == 'Needs #iref:107'
@@ -1155,28 +1275,45 @@ def test_import_spec_items_header_only_file_imports_nothing(client, world):
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, []))
     assert response['Location'] == DI_LIST_URL
-    assert messages_of(response) == []
+    # Task 7.4b: every import ends with a summary (was: no message)
+    assert messages_of(response) == [('alert-success', '0 imported, 0 rejected')]
 
 
-def test_import_spec_items_required_field_missing(client, world):
+def test_import_spec_items_empty_required_fields_are_imported_with_warning(client, world):
+    # FIXED: csv-export-not-reimportable (was: rows with an empty required (req_in_form) field were rejected
+    # as 'missing <field>', so exports of production data (empty Ver/Value/Destination ...) could not be
+    # imported again; operator 2026-10-24: accept them and list them as warnings)
     client.force_login(world.rw)
     rows = [di_row(Name='Q1', Value=''), di_row(Name='Q2', Value='   '), di_row(Name='Q3', Kind='', Type=''),
             di_row(Name='Okay')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [
-        ('alert-success', '1 row(s) imported successfully'),
-        ('alert-danger', '3 row(s) could not be imported: 1 missing Kind, Type; 2 missing Value')]
-    assert SpecItem.objects.filter(project=world.project, name__in=['Q1', 'Q2', 'Q3']).count() == 0
+        ('alert-warning', '4 imported, 0 rejected. Warnings: line 2: empty required field(s) Value; '
+                          'line 3: empty required field(s) Value; line 4: empty required field(s) Kind, Type')]
+    assert SpecItem.objects.filter(project=world.project, name__in=['Q1', 'Q2', 'Q3']).count() == 3
     assert get_item(world, 'DataItem', 'Dom', 'Okay')
+    assert get_item(world, 'DataItem', 'Dom', 'Q1').value == ''
+    assert get_item(world, 'DataItem', 'Dom', 'Q3').p_kind == ''
 
 
-def test_import_spec_items_empty_domain_or_name_is_a_missing_field(client, world):
-    # commit 'import with empty domain field': an empty Domain is rejected as a missing required field
+def test_import_spec_items_warnings_and_rejections_in_one_summary(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='W1', Value=''), di_row(Name='Bad Name'), di_row(Name='W2')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    assert messages_of(response) == [(
+        'alert-danger', '2 imported, 1 rejected. Rejected: line 3: ' + IDENT_ERR +
+        '. Warnings: line 2: empty required field(s) Value')]
+
+
+def test_import_spec_items_empty_domain_or_name_is_rejected(client, world):
+    # an empty Domain or Name fails the identifier rule (it used to be reported as a missing required field)
     client.force_login(world.rw)
     rows = [di_row(Domain='', Name='A1'), di_row(Name=''), di_row(Domain='', Name='')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    # (identifier rule: an empty Domain or Name is still rejected, with the identifier message)
     assert messages_of(response) == [(
-        'alert-danger', '3 row(s) could not be imported: 1 missing Domain; 1 missing Domain, Name; 1 missing Name')]
+        'alert-danger', '0 imported, 3 rejected. Rejected: line 2: %s; line 3: %s; line 4: %s'
+                        % (IDENT_ERR, IDENT_ERR, IDENT_ERR))]
     assert not SpecItem.objects.filter(name='A1').exists()
 
 
@@ -1190,14 +1327,14 @@ def test_import_spec_items_invalid_identifier(client, world, domain, name):
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Domain=domain, Name=name)]))
     assert messages_of(response) == [(
-        'alert-danger', '1 row(s) could not be imported: 1 ' + IDENT_ERR)]
+        'alert-danger', '0 imported, 1 rejected. Rejected: line 2: ' + IDENT_ERR)]
     assert SpecItem.objects.filter(project=world.project).count() == 10
 
 
 def test_import_spec_items_valid_identifiers_with_inner_dots_and_dashes(client, world):
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Domain='a.b-c_d', Name='x.y.z-1')]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
 
 
 def test_import_spec_items_incorrect_domain_when_domain_selected(client, world):
@@ -1206,8 +1343,7 @@ def test_import_spec_items_incorrect_domain_when_domain_selected(client, world):
     response = post_csv(client, '/editor/DataItem/1/0/1/Dom/import_spec_items', csv_bytes(DI_LABELS, rows))
     assert response['Location'] == '/editor/DataItem/1/0/1/Dom/0/list_spec_items'
     assert messages_of(response) == [
-        ('alert-success', '1 row(s) imported successfully'),
-        ('alert-danger', '1 row(s) could not be imported: 1 incorrect Domain')]
+        ('alert-danger', '1 imported, 1 rejected. Rejected: line 3: incorrect Domain')]
     assert get_item(world, 'DataItem', 'Dom', 'InDom')
     assert not SpecItem.objects.filter(name='OutDom').exists()
 
@@ -1216,7 +1352,8 @@ def test_import_spec_items_incorrect_valset(client, world):
     client.force_login(world.rw)
     rows = [di_row(Name='ToVs1', ValSet='VS1'), di_row(Name='ToNowhere', ValSet='Nope')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [('alert-danger', '2 row(s) could not be imported: 2 incorrect ValSet')]
+    assert messages_of(response) == [(
+        'alert-danger', '0 imported, 2 rejected. Rejected: line 2: incorrect ValSet; line 3: incorrect ValSet')]
     assert not SpecItem.objects.filter(name__in=['ToVs1', 'ToNowhere']).exists()
 
 
@@ -1225,7 +1362,8 @@ def test_import_spec_items_identifier_used_outside_category(client, world):
     rows = [di_row(Domain='Types', Name='Color'), di_row(Domain='Types', Name='uint8')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [(
-        'alert-danger', '2 row(s) could not be imported: 2 identifier already in use outside selected category')]
+        'alert-danger', '0 imported, 2 rejected. Rejected: line 2: identifier already in use outside selected '
+                        'category; line 3: identifier already in use outside selected category')]
     assert SpecItem.objects.filter(project=world.project).count() == 10
 
 
@@ -1234,7 +1372,7 @@ def test_import_spec_items_obs_and_del_identifiers_do_not_block(client, world):
     SpecItem.objects.filter(id=world.color.id).update(status='DEL')
     client.force_login(world.rw)
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Domain='Types', Name='Color')]))
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
 
 
 def test_import_spec_items_missing_from_default_valset(client, world):
@@ -1243,8 +1381,7 @@ def test_import_spec_items_missing_from_default_valset(client, world):
     rows = [di_row(Name='OnlyVs1', ValSet='VS1'), di_row(Name='Count', ValSet='VS1', Value='45')]
     response = post_csv(client, url, csv_bytes(DI_LABELS, rows))
     assert messages_of(response) == [
-        ('alert-success', '1 row(s) imported successfully'),
-        ('alert-danger', '1 row(s) could not be imported: 1 missing from Default ValSet')]
+        ('alert-danger', '1 imported, 1 rejected. Rejected: line 2: missing from Default ValSet')]
     assert not SpecItem.objects.filter(name='OnlyVs1').exists()
     assert SpecItem.objects.get(id=world.count_vs1.id).value == '45'
 
@@ -1255,70 +1392,139 @@ def test_import_spec_items_aggregated_messages_are_sorted_and_counted(client, wo
             di_row(Name='V1', ValSet='VS1'), di_row(Name='M2', Value=''), di_row(Domain='Types', Name='Color'),
             di_row(Domain='Other', Name='O1')]
     response = post_csv(client, '/editor/DataItem/1/0/1/Dom/import_spec_items', csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [
-        ('alert-success', '2 row(s) imported successfully'),
-        ('alert-danger', '6 row(s) could not be imported: 1 ' + IDENT_ERR +
-         '; 2 incorrect Domain; 1 incorrect ValSet; 2 missing Value')]
+    # Task 7.4b (import-spec-items-no-rollback): one summary message, one entry per rejected row (CSV line)
+    assert messages_of(response) == [(
+        'alert-danger',
+        '4 imported, 4 rejected. Rejected: line 4: ' + IDENT_ERR + '; line 6: incorrect ValSet; '
+        'line 8: incorrect Domain; line 9: incorrect Domain. '
+        'Warnings: line 5: empty required field(s) Value; line 7: empty required field(s) Value')]
 
 
-def test_import_spec_items_mixed_file_is_not_rolled_back(client, world):
-    # KNOWN-ISSUE: import-spec-items-no-rollback -- valid rows are committed even when others fail
+def test_import_spec_items_mixed_file_keeps_valid_rows_and_ends_with_one_summary(client, world):
+    # FIXED: import-spec-items-no-rollback (was: valid rows committed and two separate messages, a success
+    # count and an aggregated error count without line numbers; operator 2026-10-24: keep per-row import,
+    # always one summary with the rejected CSV lines)
     client.force_login(world.rw)
     rows = [di_row(Name='Keep1'), di_row(Name='Bad Name'), di_row(Name='Keep2'), di_row(Name='Gone', Value='')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [
-        ('alert-success', '2 row(s) imported successfully'),
-        ('alert-danger', '2 row(s) could not be imported: 1 ' + IDENT_ERR + '; 1 missing Value')]
+    assert messages_of(response) == [(
+        'alert-danger',
+        '3 imported, 1 rejected. Rejected: line 3: ' + IDENT_ERR + '. Warnings: line 5: empty required field(s) Value')]
     assert SpecItem.objects.filter(project=world.project, name__in=['Keep1', 'Keep2']).count() == 2
-    assert SpecItem.objects.filter(project=world.project).count() == 12
+    assert SpecItem.objects.filter(project=world.project).count() == 13
+
+
+def test_import_spec_items_summary_lists_at_most_20_rejected_lines(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='Bad Name %d' % n) for n in range(23)] + [di_row(Name='Fine')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    [(level, text)] = messages_of(response)
+    assert level == 'alert-danger'
+    assert text.startswith('1 imported, 23 rejected. Rejected: line 2: ')
+    assert text.count('line ') == 20
+    assert text.endswith('; line 21: ' + IDENT_ERR + '; ... and 3 more')
+
+
+def test_import_spec_items_summary_line_number_is_the_end_of_a_multiline_record(client, world):
+    client.force_login(world.rw)
+    rows = [di_row(Name='Bad Name', Description='two\nlines'), di_row(Name='Bad Name2')]
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
+    [(level, text)] = messages_of(response)
+    assert text == '0 imported, 2 rejected. Rejected: line 3: %s; line 4: %s' % (IDENT_ERR, IDENT_ERR)
+
+
+def test_import_spec_items_failing_row_leaves_no_half_saved_obs_copy(client, world, monkeypatch):
+    # a row that fails after the OBS copy of a CNF item was made is rolled back completely
+    import editor.views as views
+    client.force_login(world.rw)
+    def boom(*args, **kwargs):
+        raise RuntimeError('boom')
+    monkeypatch.setattr(views, 'export_to_spec_item', boom)
+    before = list(SpecItem.objects.order_by('id').values_list('id', 'status', 'title', 'previous_id'))
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='Count', Title='Count v2')]))
+    assert messages_of(response) == [(
+        'alert-danger', '0 imported, 1 rejected. Rejected: line 2: unexpected error (details in the server log)')]
+    assert list(SpecItem.objects.order_by('id').values_list('id', 'status', 'title', 'previous_id')) == before
 
 
 def test_import_spec_items_duplicate_rows_in_file_second_updates_first(client, world):
     client.force_login(world.rw)
     rows = [di_row(Name='Dup', Value='1'), di_row(Name='Dup', Value='2')]
     response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, rows))
-    assert messages_of(response) == [('alert-success', '2 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '2 imported, 0 rejected')]
     item = get_item(world, 'DataItem', 'Dom', 'Dup')
     assert item.value == '2' and item.status == 'NEW'
 
 
-def test_import_spec_items_exception_midway_aborts_without_rollback(client, world):
-    # KNOWN-ISSUE: import-spec-items-abort-no-summary
-    # A row that raises (here: non-integer in an integer column) aborts the whole loop with a
-    # traceback message; earlier rows stay committed and neither success nor error summary is shown.
+def test_import_spec_items_bad_number_cell_rejected_with_reason(client, world):
+    # Task 7.4b review: an integer column (Size) that is empty or not a whole number is rejected with a clear
+    # reason instead of 'unexpected error' (empty required number fields cannot be accepted like text fields)
     client.force_login(world.rw)
     row = {'Domain': 'Types', 'Title': 't', 'Description': '', 'Default Value': '', 'Rationale': '',
            'Remarks': '', 'Native Type': '', 'ValSet': 'Default', 'Change Log': '', 'Owner': 'x', 'Size': '1'}
-    rows = [dict(row, Name='E1'), dict(row, Name='E2', Size='abc'), dict(row, Name='E3')]
+    rows = [dict(row, Name='N1', Size=''), dict(row, Name='N2', Size='abc'), dict(row, Name='N3', Size=' -4 ')]
     response = post_csv(client, '/editor/EnumType/1/0/1/Sel_All/import_spec_items', csv_bytes(ET_LABELS, rows))
-    assert response['Location'] == '/editor/EnumType/1/0/1/Sel_All/0/list_spec_items'
+    assert messages_of(response) == [(
+        'alert-danger', '1 imported, 2 rejected. Rejected: line 2: missing Size (number); '
+                        'line 3: Size is not a whole number')]
+    assert get_item(world, 'EnumType', 'Types', 'N3').n1 == -4
+
+
+def test_import_spec_items_link_warning_truncates_long_cell(client, world):
+    client.force_login(world.rw)
+    response = post_csv(client, DI_URL, csv_bytes(DI_LABELS, [di_row(Name='L1', Type='X:' + 'y' * 200)]))
     [(level, text)] = messages_of(response)
-    assert level == 'alert-danger'
-    assert text.startswith('Unable to read or process uploaded file at line 3; traceback: Traceback (most recent call last):')
-    assert 'ValueError' in text
-    # (the failing save marked pytest-django's wrapping transaction for rollback; clear that test artifact)
-    from django.db import transaction
-    transaction.set_rollback(False)
+    assert 'y' * 78 + '...' in text and 'y' * 81 not in text
+
+
+def test_import_spec_items_exception_in_row_rejects_that_row_only(client, world, caplog):
+    # FIXED: import-spec-items-abort-no-summary (was: a row that raises aborted the whole loop with a
+    # message 'Unable to read or process uploaded file at line 3'; neither the success nor the error
+    # summary was shown and the rows after it were not read)
+    import logging
+    client.force_login(world.rw)
+    row = {'Domain': 'Types', 'Title': 't', 'Description': '', 'Default Value': '', 'Rationale': '',
+           'Remarks': '', 'Native Type': '', 'ValSet': 'Default', 'Change Log': '', 'Owner': 'x', 'Size': '1'}
+    rows = [dict(row, Name='E1'), dict(row, Name='E2'), dict(row, Name='E3')]
+    original_save = SpecItem.save
+
+    def failing_save(self, *args, **kwargs):     # an unexpected error while saving row E2
+        if self.name == 'E2':
+            raise ValueError('simulated failure')
+        return original_save(self, *args, **kwargs)
+    with caplog.at_level(logging.ERROR, logger='editor.views'), mock.patch.object(SpecItem, 'save', failing_save):
+        response = post_csv(client, '/editor/EnumType/1/0/1/Sel_All/import_spec_items', csv_bytes(ET_LABELS, rows))
+    assert response['Location'] == '/editor/EnumType/1/0/1/Sel_All/0/list_spec_items'
+    assert messages_of(response) == [(
+        'alert-danger', '2 imported, 1 rejected. Rejected: line 3: unexpected error (details in the server log)')]
     names = set(SpecItem.objects.filter(project=world.project, cat='EnumType').values_list('name', flat=True))
-    assert 'E1' in names and 'E3' not in names and 'E2' not in names
+    assert 'E1' in names and 'E3' in names and 'E2' not in names
+    logged = [rec for rec in caplog.records if rec.name == 'editor.views' and rec.exc_info]
+    assert len(logged) == 1 and logged[0].exc_info[0] is ValueError
 
 
-def test_import_spec_items_short_row_aborts_with_line_number(client, world):
+def test_import_spec_items_short_row_is_rejected_with_line_number(client, world):
     client.force_login(world.rw)
     content = csv_bytes(DI_LABELS, [di_row(Name='S1')]) + b'Dom|Short|only|three\r\n'
     response = post_csv(client, DI_URL, content)
-    [(level, text)] = messages_of(response)
-    assert text.startswith('Unable to read or process uploaded file at line 3; traceback: ')
+    # FIXED: import-spec-items-abort-no-summary (was: the import aborted with 'Unable to read or process
+    # uploaded file at line 3; the details were written to the server log')
+    assert messages_of(response) == [(
+        'alert-danger', '1 imported, 1 rejected. Rejected: line 3: row has fewer columns than the header')]
     assert get_item(world, 'DataItem', 'Dom', 'S1')
 
 
-def test_import_spec_items_non_utf8_file_crashes(client, world):
-    # KNOWN-ISSUE: import-spec-items-undefined-i
-    # A decoding error happens before the loop variable 'i' exists; the error handler itself then
-    # raises UnboundLocalError, so the user gets a 500 instead of a message.
+def test_import_spec_items_non_utf8_file_is_refused(client, world):
+    # FIXED: import-spec-items-undefined-i (was: UnboundLocalError, HTTP 500; the decode error happened
+    # before the loop variable 'i' existed)
     client.force_login(world.rw)
-    with pytest.raises(UnboundLocalError):
-        post_csv(client, DI_URL, b'\xff\xfe\x00bad bytes')
+    before = SpecItem.objects.count()
+    response = post_csv(client, DI_URL, b'\xff\xfe\x00bad bytes')
+    assert response.status_code == 302
+    assert response['Location'] == DI_LIST_URL
+    assert messages_of(response) == [
+        ('alert-danger', 'Uploaded file items.csv is not UTF-8 encoded; nothing was imported')]
+    assert SpecItem.objects.count() == before
 
 
 def test_import_spec_items_no_file(client, world):
@@ -1350,7 +1556,7 @@ def test_import_spec_items_file_just_below_chunk_size_is_accepted(client, world)
     content = csv_bytes(DI_LABELS, [di_row(Name='Edge', Description='x' * pad)])
     assert len(content) == 65536
     response = post_csv(client, DI_URL, content)
-    assert messages_of(response) == [('alert-success', '1 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '1 imported, 0 rejected')]
 
 
 def test_import_spec_items_roundtrip_of_export(client, world):
@@ -1361,7 +1567,7 @@ def test_import_spec_items_roundtrip_of_export(client, world):
               for i in SpecItem.objects.filter(project=world.project, cat='DataItem', val_set=world.default)
               .exclude(status='OBS')}
     response = post_csv(client, DI_URL, exported)
-    assert messages_of(response) == [('alert-success', '3 row(s) imported successfully')]
+    assert messages_of(response) == [('alert-success', '3 imported, 0 rejected')]
     after = {(i.domain, i.name): (i.title, i.desc, i.value, i.p_link_id, i.rationale, i.remarks, i.p_kind)
              for i in SpecItem.objects.filter(project=world.project, cat='DataItem', val_set=world.default)
              .exclude(status='OBS')}
@@ -1553,3 +1759,163 @@ def test_export_spec_items_does_not_export_s_data(client):
     text = response.content.decode('utf-8')
     assert 'Order' in text
     assert 'zz' not in text and 'nested' not in text
+
+
+def test_import_project_unknown_role_is_read_only(client, renamed_original, fresh_temp):
+    # import-project-role-lost: roles are imported; a value that is not RO/RW falls back to RO
+    w = renamed_original
+    rows = read_csv_member(w.zip, 'project_users.csv')
+    for r in rows:
+        r['role'] = 'XX' if r['user'] == 'writer' else r['role']
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=list(rows[0]), lineterminator='\r\n')
+    writer.writeheader(); writer.writerows(rows)
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'project_users.csv': out.getvalue().encode()}), fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert sorted((pu.user.username, pu.role) for pu in new.project_users.all()) == [('reader', 'RO'), ('writer', 'RO')]
+    assert messages_of(response) == [
+        ('alert-warning', "The role 'XX' of project user writer is not known, the user was imported as read-only user")]
+
+
+def test_import_project_restores_distinct_updated_at_values(client, renamed_original, fresh_temp):
+    # import-project-auto-now-timestamps: each row gets its own exported updated_at, not the import time
+    w = renamed_original
+
+    def rewrite(member, values):
+        rows = read_csv_member(w.zip, member)
+        for row, value in zip(rows, values):
+            row['updated_at'] = value
+        out = io.StringIO()
+        writer = csv.DictWriter(out, fieldnames=list(rows[0]), lineterminator='\r\n')
+        writer.writeheader(); writer.writerows(rows)
+        return out.getvalue().encode('utf-8')
+
+    data = modified_zip(w.zip, **{
+        'project.csv': rewrite('project.csv', ['2021-05-06 07:08:09']),
+        'applications.csv': rewrite('applications.csv', ['2022-06-07 08:09:10']),
+        'val_sets.csv': rewrite('val_sets.csv', ['2020-01-02', '2020-01-03']),
+        'project_users.csv': rewrite('project_users.csv', ['2019-12-30', '2019-12-31'])})
+    client.force_login(w.admin)
+    assert messages_of(upload_zip(client, data, fresh_temp)) == []
+    new = Project.objects.get(name='Demo Proj')
+    assert new.updated_at == datetime(2021, 5, 6, 7, 8, 9, tzinfo=timezone.utc)
+    assert new.applications.get().updated_at == datetime(2022, 6, 7, 8, 9, 10, tzinfo=timezone.utc)
+    assert sorted(v.updated_at.isoformat() for v in new.val_sets.all()) == ['2020-01-02', '2020-01-03']
+    assert sorted(pu.updated_at.isoformat() for pu in new.project_users.all()) == ['2019-12-30', '2019-12-31']
+
+
+@pytest.mark.parametrize('cell,expected', [
+    ('', {}),                                           # {} (and any falsy value) is exported as an empty cell
+    ('{"a": 1}', {'a': 1}),                             # an object
+    ('[1, 2]', [1, 2]),
+    ('"{}"', '{}'),                                     # the string "{}" of s-data-string stays a string
+    ('"{\\"a\\": 1, \\"k\\": [1, 2]}"', {'a': 1, 'k': [1, 2]}),     # double-encoded text of the old importer
+    ('"plain text"', 'plain text'),
+    ('"[]"', '[]'),
+    ('not json', 'not json'),
+])
+def test_import_project_s_data_forms(client, renamed_original, fresh_temp, cell, expected):
+    # FIXED: import-project-s-data-double-encoded (was: the cell text was stored as a JSON string)
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['name'] == 'Calc':
+                row['s_data'] = cell
+    client.force_login(w.admin)
+    upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}), fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.get(name='Calc').s_data == expected
+    assert type(new.project_spec_items.get(name='Calc').s_data) is type(expected)
+
+
+def test_import_project_s_data_string_round_trips_exactly(client, renamed_original, fresh_temp):
+    # s-data-string: an item whose s_data is the JSON string "{}" exports as "{}" (quoted) and imports as
+    # the string again; {} exports as an empty cell and imports as {}
+    w = renamed_original
+    SpecItem.objects.filter(id=w.calc.id).update(s_data='{}')
+    client.force_login(w.owner)
+    response, data, zf = export_zip(client, w.project.id, fresh_temp)
+    Project.objects.filter(id=w.project.id).update(name='Original (renamed again)')
+    client.force_login(w.admin)
+    upload_zip(client, data, fresh_temp)
+    new = Project.objects.get(name='Original (renamed)')
+    assert new.project_spec_items.get(name='Calc').s_data == '{}'
+    assert new.project_spec_items.get(name='Count', val_set__name='Default').s_data == {}
+
+
+def test_import_project_rejected_row_does_not_add_its_owner(client, renamed_original, fresh_temp):
+    # The owner is resolved only for rows that are saved: a non-member owner whose only item is rejected
+    # (bad val_set) is neither added as a project user nor mentioned in a note.
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['owner'] == 'writer':
+                row['val_set'] = '99'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{
+        'spec_items.csv': _spec_items_csv_with(w.zip, mutate),
+        'project_users.csv': _drop_project_user(w.zip, 'writer')}), fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert not new.project_spec_items.filter(owner__username='writer').exists()
+    assert not new.project_users.filter(user__username='writer').exists()
+    texts = [t for _, t in messages_of(response)]
+    assert texts and all(t.startswith('Failure to import spec_item') for t in texts)
+    assert not any('read-only user of the project' in t or 'assigned to the project owner' in t for t in texts)
+
+
+def test_import_project_unreadable_created_at_is_ignored_with_note(client, renamed_original, fresh_temp):
+    w = renamed_original
+
+    def mutate(rows):
+        for row in rows:
+            if row['name'] == 'Calc':
+                row['created_at'] = 'yesterday'
+    client.force_login(w.admin)
+    response = upload_zip(client, modified_zip(w.zip, **{'spec_items.csv': _spec_items_csv_with(w.zip, mutate)}),
+                          fresh_temp)
+    new = Project.objects.get(name='Demo Proj')
+    assert new.project_spec_items.count() == 10
+    assert messages_of(response) == [
+        ('alert-warning', 'Spec_item DataItem:Dom:Calc (status: CNF): the creation time (yesterday) is not in '
+                          'format Y-m-d H:M:S, it was set to the import time')]
+
+
+def test_import_project_release_views_equal_after_round_trip(client, renamed_original, fresh_temp):
+    # The release views (get_spec_item_query for each release) of the source and of its copy are identical.
+    from editor.configs import configs
+    from editor.utilities import get_spec_item_query
+    w = renamed_original
+    for item in SpecItem.objects.filter(project=w.project):       # whole-second timestamps survive the export
+        SpecItem.objects.filter(pk=item.pk).update(created_at=item.created_at.replace(microsecond=0),
+                                                   updated_at=item.updated_at.replace(microsecond=0))
+    for rel in Release.objects.all():
+        Release.objects.filter(pk=rel.pk).update(updated_at=rel.updated_at.replace(microsecond=0))
+    client.force_login(w.owner)
+    _, data, _ = export_zip(client, w.project.id, fresh_temp)
+    Project.objects.filter(id=w.project.id).update(name='Source copy')       # make room for the import
+    client.force_login(w.admin)
+    upload_zip(client, data, fresh_temp)
+    old = Project.objects.get(id=w.project.id)
+    new = Project.objects.exclude(id=w.project.id).get()
+
+    def views(project):
+        result = {}
+        chain = []
+        rel = project.release
+        while rel is not None:
+            chain.append(rel)
+            rel = rel.previous
+        for n, rel in enumerate([None] + chain):
+            for cat in configs['cats']:
+                for vs in ValSet.objects.filter(project=project).order_by("id"):
+                    items = get_spec_item_query(project.id, 0, vs.id, cat, rel, 'Sel_All', None)
+                    key = [(i.domain, i.name, i.status, re.sub(r'#iref:\d+', '#iref:', i.value)) for i in items]   # ids differ
+                    if key:
+                        result[(n, cat, vs.name)] = key
+        return result
+    v_old, v_new = views(old), views(new)
+    assert v_old and any(k[0] > 0 for k in v_old)
+    assert v_old == v_new

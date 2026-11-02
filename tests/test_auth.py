@@ -77,14 +77,22 @@ def test_login_missing_password_rerenders_form(client):
     assert response.context['form'].errors
 
 
-def test_login_required_redirects_to_default_login_url_which_does_not_exist(client):
-    # KNOWN-ISSUE: login-url-default
-    # settings.LOGIN_URL is not set, so @login_required redirects to Django's default
-    # /accounts/login/, which is not routed (the login view lives at /editor/login/).
+def test_login_required_redirects_to_the_real_login_page(client):
     response = client.get('/editor/add_project')
     assert response.status_code == 302
-    assert response['Location'] == '/accounts/login/?next=/editor/add_project'
+    # FIXED: login-url-default (was: '/accounts/login/?next=/editor/add_project', which 404s)
+    assert response['Location'] == '/editor/login/?next=/editor/add_project'
+    assert client.get(response['Location']).status_code == 200
+    # the old default URL was never routed, so no old link can be broken by the change
     assert client.get('/accounts/login/').status_code == 404
+
+
+def test_login_with_next_returns_to_requested_page(client):
+    make_user('alice')
+    response = client.post(LOGIN_URL + '?next=/editor/add_project',
+                           {'username': 'alice', 'password': PASSWORD, 'next': '/editor/add_project'})
+    assert response.status_code == 302
+    assert response['Location'] == '/editor/add_project'
 
 
 # ---------------------------------------------------------------------------
@@ -426,16 +434,19 @@ def test_honeypot_post_records_attempt_and_never_authenticates(client, caplog):
     assert attempt.path == '/admin/login/'
     assert attempt.session_key is None
 
-    # KNOWN-ISSUE: honeypot-logger-not-connected
-    # editor/signals/handlers.py defines a receiver that logs honeypot attempts,
-    # but nothing imports it (EditorConfig has no ready()), so no log record is emitted.
-    assert [r for r in caplog.records if r.name == 'admin.honeypot'] == []
+    # FIXED: honeypot-logger-not-connected (was: no 'admin.honeypot' record, receiver never imported)
+    records = [r for r in caplog.records if r.name == 'admin.honeypot']
+    assert len(records) == 1
+    assert records[0].levelname == 'WARNING'
+    assert PASSWORD not in records[0].getMessage()
+    # username repr()'d so a crafted name cannot forge log lines (Task 7.2a review)
+    assert records[0].getMessage() == "logging attempt by: 'root'; 10.1.2.3"
 
 
-def test_honeypot_signal_has_no_receivers(client):
-    # KNOWN-ISSUE: honeypot-logger-not-connected
+def test_honeypot_signal_has_receivers(client):
+    # FIXED: honeypot-logger-not-connected (was: assert not honeypot.has_listeners(LoginAttempt))
     from admin_honeypot.signals import honeypot
-    assert not honeypot.has_listeners(LoginAttempt)
+    assert honeypot.has_listeners(LoginAttempt)
 
 
 def test_honeypot_records_each_attempt_with_path_and_next(client):

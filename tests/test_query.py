@@ -312,12 +312,23 @@ def test_query_order_by_p_link_ties_compared_as_set():
     assert len(names(q(project, vs, order_by='p_link'))) == 3
 
 
-def test_query_invalid_order_by_raises_field_error():
-    from django.core.exceptions import FieldError
+def test_query_invalid_order_by_falls_back_to_default_order():
+    # FIXED: order-by-unrestricted (was: FieldError for an unknown order_by field)
     project = make_project(make_user())
-    make_spec_item(project)
-    with pytest.raises(FieldError):
-        list(q(project, default_val_set(project), order_by='nonexistent'))
+    make_spec_item(project, domain='B', name='x')
+    make_spec_item(project, domain='A', name='y')
+    vs = default_val_set(project)
+    for bad in ('nonexistent', 'owner__password', '-owner__password', '--name', ''):
+        assert [(i.domain, i.name) for i in q(project, vs, order_by=bad)] == [('A', 'y'), ('B', 'x')]
+
+
+def test_query_descending_allowed_order_by_still_accepted():
+    # Descending sort of an offered field ('-name') worked before the order_by allowlist (old bookmarks)
+    project = make_project(make_user())
+    make_spec_item(project, domain='A', name='x')
+    make_spec_item(project, domain='B', name='y')
+    vs = default_val_set(project)
+    assert [(i.domain, i.name) for i in q(project, vs, order_by='-name')] == [('B', 'y'), ('A', 'x')]
 
 
 # ------------------------------------------------------------------ get_domains
@@ -597,14 +608,15 @@ def test_make_temp_dir_creates_timestamped_directory(tmp_path, monkeypatch):
 
     monkeypatch.setattr(utilities, 'datetime', FixedDatetime)
     path = utilities.make_temp_dir(str(tmp_path), 'exp_')
-    assert path == os.path.join(str(tmp_path), 'exp_2024_01_02_03_04_05')
+    # CHANGED: temp-dir-collision (was: path == tmp_path/exp_2024_01_02_03_04_05; now a random suffix follows)
+    assert os.path.dirname(path) == str(tmp_path)
+    assert os.path.basename(path).startswith('exp_2024_01_02_03_04_05_')
     assert os.path.isdir(path)
 
 
-def test_make_temp_dir_failure_path_raises_name_error(tmp_path, monkeypatch):
-    """KNOWN-ISSUE: make-temp-dir-name-error. When the directory already exists (e.g. two exports
-    within the same second) the error handler references the undefined names `request` and
-    `exp_dir`, so a NameError escapes instead of the intended error message / empty string."""
+def test_make_temp_dir_second_call_in_same_second_succeeds(tmp_path, monkeypatch):
+    """FIXED: make-temp-dir-name-error (was: NameError for undefined `request` and `exp_dir` when the
+    directory already existed, e.g. two exports within the same second)."""
     from editor import utilities
 
     class FixedDatetime:
@@ -613,6 +625,6 @@ def test_make_temp_dir_failure_path_raises_name_error(tmp_path, monkeypatch):
             return datetime(2024, 1, 2, 3, 4, 5, tzinfo=tz)
 
     monkeypatch.setattr(utilities, 'datetime', FixedDatetime)
-    utilities.make_temp_dir(str(tmp_path), 'exp_')
-    with pytest.raises(NameError):
-        utilities.make_temp_dir(str(tmp_path), 'exp_')
+    first = utilities.make_temp_dir(str(tmp_path), 'exp_')
+    second = utilities.make_temp_dir(str(tmp_path), 'exp_')
+    assert first and second and first != second

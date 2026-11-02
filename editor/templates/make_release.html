@@ -19,7 +19,7 @@
                                         link-suggest"
                                   name="description" rows="2"
                                   {% if form.description.field.required %}required{% endif %}
-                                  {% if form.description.field.disabled %}disabled{% endif %}>{{ form.description.value }}</textarea>
+                                  {% if form.description.field.disabled %}disabled{% endif %}>{{ form.description.value|default_if_none:"" }}</textarea>
                         {% if form.description.errors %}
                         <div class="invalid-feedback">
                             {% for error in form.description.errors %}

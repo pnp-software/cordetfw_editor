@@ -116,20 +116,20 @@ def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
     s = ''
     
     for link in trac_links:
-        application_id = str(link.p_link.application_id)
+        application_id = str(link.p_link.application_id) if link.p_link != None else 'None'
         if application_id == 'None':
             application_id = '0'
 
         if trac_link == 's_link' and link.p_link != None:
             target = '/editor/'+link.p_link.cat+'/'+str(link.p_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
+                    '/'+str(spec_item.val_set.id)+'/'+link.p_link.domain+'/'+str(sel_rel_id)+'/list_spec_items'
             s = s + trac_link_html(target, link.p_link)
             s = s + '\n'
             continue
         
         if trac_link == 'p_link' and link.s_link != None:
             target = '/editor/'+link.s_link.cat+'/'+str(link.s_link.project_id)+'/'+application_id+\
-                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'/'+str(sel_rel_id)+'\\list_spec_items'
+                    '/'+str(spec_item.val_set.id)+'/'+link.s_link.domain+'/'+str(sel_rel_id)+'/list_spec_items'
             s = s + trac_link_html(target, link.s_link)
             s = s + '\n'    
             continue
@@ -149,7 +149,7 @@ def filter_expand_tip(spec_item):
     s = ''
     for attr in attrs:
         s = s + configs['cats'][spec_item.cat]['attrs'][attr]['label'] +': '+\
-                escape(convert_db_to_edit(getattr(spec_item, attr))) + '&#13;'
+                escape(convert_db_to_edit(getattr(spec_item, attr), spec_item.project_id)) + '&#13;'
     return mark_safe(s)
 
 
