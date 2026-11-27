@@ -3,43 +3,44 @@
  * moved with the arrow buttons or by double click. The text input stays the field that is posted: it is
  * hidden and rewritten on every change. Texts are set with textContent only.
  */
-(function () {
-    'use strict';
-
+document.addEventListener('DOMContentLoaded', function () {
     function h(tag, attrs, children) {
         const el = document.createElement(tag);
-        Object.entries(attrs || {}).forEach(([k, v]) => {
-            if (k === 'text') {
-                el.textContent = v;
+        Object.entries(attrs).forEach(function ([key, value]) {
+            if (key === 'text') {
+                el.textContent = value;
             } else {
-                el.setAttribute(k, v);
+                el.setAttribute(key, value);
             }
         });
-        (children || []).forEach((c) => el.appendChild(c));
+        (children || []).forEach(function (child) {
+            el.appendChild(child);
+        });
         return el;
     }
 
-    // The layout is part of this file (not style.css), so a browser with an older cached style.css still shows
-    // the lists side by side: not added on the left, added on the right.
-    const CSS = [
-        '.cat-picker-grid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:.5rem;' +
-            'align-items:stretch}',
-        '.cat-picker-col{display:flex;flex-direction:column;min-width:0}',
-        '.cat-picker-col select{flex:1;min-height:16rem}',
-        '.cat-picker-title{font-weight:600;margin-bottom:.25rem}',
-        '.cat-picker-spacer{height:calc(1.5em + .5rem + 2px);margin-bottom:.25rem}',
-        '.cat-picker-buttons{display:flex;flex-direction:column;justify-content:center;gap:.25rem}',
-        '.cat-picker-buttons .btn{font-size:1.15rem;line-height:1.2;min-width:2.75rem}',
-    ].join('\n');
-
-    function addStyle() {
-        if (!document.getElementById('cat-picker-style')) {
-            document.head.appendChild(h('style', {id: 'cat-picker-style', text: CSS}));
-        }
+    function splitCats(value) {
+        return value.split(',').map(function (cat) { return cat.trim(); }).filter(function (cat) {
+            return cat !== '';
+        });
     }
 
-    function splitCats(value) {
-        return value.split(',').map((c) => c.trim()).filter((c) => c !== '');
+    function optionValues(select) {
+        const values = [];
+        for (let i = 0; i < select.options.length; i++) {
+            values.push(select.options[i].value);
+        }
+        return values;
+    }
+
+    function selectedValues(select) {
+        const values = [];
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].selected) {
+                values.push(select.options[i].value);
+            }
+        }
+        return values;
     }
 
     function init(box) {
@@ -48,22 +49,33 @@
             return;
         }
         box.dataset.ready = '1';
-        addStyle();
         let options;
         try {
             options = JSON.parse(box.dataset.options || '[]');
-        } catch (e) {
+        } catch (error) {
             return;                                   // keep the plain text input
         }
-        const names = new Map(options.map((o) => [o.id, o.name]));
-        // a category with a note (e.g. 'project level') is not offered; if already added it can only be removed
-        const notes = new Map(options.filter((o) => o.note).map((o) => [o.id, o.note]));
         let added = [];
-        splitCats(input.value).forEach((c) => {
-            if (!added.includes(c)) {
-                added.push(c);
+        splitCats(input.value).forEach(function (cat) {
+            if (!added.includes(cat)) {
+                added.push(cat);
             }
         });
+
+        function optionOf(id) {
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].id === id) {
+                    return options[i];
+                }
+            }
+            return null;
+        }
+
+        // A category with a note (e.g. 'project level') is not offered; if already added it can only be removed
+        function noteOf(id) {
+            const option = optionOf(id);
+            return option !== null && option.note ? option.note : '';
+        }
 
         const listId = input.id + '_available';
         const filter = h('input', {type: 'search', class: 'form-control form-control-sm mb-1',
@@ -72,42 +84,43 @@
             'aria-label': 'Categories not added'});
         const right = h('select', {multiple: '', size: '12', class: 'form-select',
             'aria-label': 'Categories added'});
-        const leftTitle = h('div', {class: 'cat-picker-title'});
-        const rightTitle = h('div', {class: 'cat-picker-title'});
+        const leftTitle = h('div', {class: 'fw-bold mb-1'});
+        const rightTitle = h('div', {class: 'fw-bold mb-1'});
 
         function button(text, title, onClick) {
-            const b = h('button', {type: 'button', class: 'btn btn-outline-secondary btn-sm', title: title,
-                'aria-label': title, text: text});
+            const b = h('button', {type: 'button', class: 'btn btn-outline-secondary btn-sm fs-5 lh-sm px-3',
+                title: title, 'aria-label': title, text: text});
             b.addEventListener('click', onClick);
             return b;
         }
 
         function label(id) {
-            const name = names.get(id);
-            if (name === undefined) {
+            const option = optionOf(id);
+            if (option === null) {
                 return id + ' (not defined)';
             }
-            const text = name === id ? id : name + ' (' + id + ')';
-            return notes.has(id) ? text + ' – ' + notes.get(id) : text;
-        }
-
-        function selectedValues(select) {
-            return Array.from(select.selectedOptions).map((o) => o.value);
+            const text = option.name === id ? id : option.name + ' (' + id + ')';
+            return noteOf(id) ? text + ' – ' + noteOf(id) : text;
         }
 
         function render(keepLeft, keepRight) {
             const query = filter.value.trim().toLowerCase();
-            const available = options.map((o) => o.id).filter((id) => !added.includes(id) && !notes.has(id));
-            left.replaceChildren();
-            available.filter((id) => !query || label(id).toLowerCase().includes(query)).forEach((id) => {
+            const available = options.map(function (option) { return option.id; }).filter(function (id) {
+                return !added.includes(id) && !noteOf(id);
+            });
+            left.textContent = '';
+            available.forEach(function (id) {
+                if (query && !label(id).toLowerCase().includes(query)) {
+                    return;
+                }
                 const o = h('option', {value: id, text: label(id)});
                 o.selected = keepLeft.includes(id);
                 left.appendChild(o);
             });
-            right.replaceChildren();
-            added.forEach((id) => {
+            right.textContent = '';
+            added.forEach(function (id) {
                 const o = h('option', {value: id, text: label(id)});
-                if (!names.has(id) || notes.has(id)) {
+                if (optionOf(id) === null || noteOf(id)) {
                     o.className = 'text-danger';
                 }
                 o.selected = keepRight.includes(id);
@@ -119,7 +132,7 @@
         }
 
         function add(ids) {
-            ids.forEach((id) => {
+            ids.forEach(function (id) {
                 if (!added.includes(id)) {
                     added.push(id);
                 }
@@ -128,7 +141,7 @@
         }
 
         function remove(ids) {
-            added = added.filter((id) => !ids.includes(id));
+            added = added.filter(function (id) { return !ids.includes(id); });
             render(ids, []);
         }
 
@@ -137,55 +150,60 @@
             const order = step < 0 ? added.slice() : added.slice().reverse();
             for (let i = 1; i < order.length; i++) {
                 if (ids.includes(order[i]) && !ids.includes(order[i - 1])) {
-                    [order[i - 1], order[i]] = [order[i], order[i - 1]];
+                    const id = order[i - 1];
+                    order[i - 1] = order[i];
+                    order[i] = id;
                 }
             }
             added = step < 0 ? order : order.reverse();
             render([], ids);
         }
 
-        const buttons = h('div', {class: 'cat-picker-buttons'}, [
-            button('→', 'Add selected categories', () => add(selectedValues(left))),
-            button('⇉', 'Add all shown categories', () => add(Array.from(left.options).map((o) => o.value))),
-            button('←', 'Remove selected categories', () => remove(selectedValues(right))),
-            button('⇇', 'Remove all categories', () => remove(added.slice())),
-            button('↑', 'Move selected categories up', () => move(-1)),
-            button('↓', 'Move selected categories down', () => move(1)),
+        const buttons = h('div', {class: 'col-auto d-flex flex-column justify-content-center gap-1'}, [
+            button('→', 'Add selected categories', function () { add(selectedValues(left)); }),
+            button('⇉', 'Add all shown categories', function () { add(optionValues(left)); }),
+            button('←', 'Remove selected categories', function () { remove(selectedValues(right)); }),
+            button('⇇', 'Remove all categories', function () { remove(added.slice()); }),
+            button('↑', 'Move selected categories up', function () { move(-1); }),
+            button('↓', 'Move selected categories down', function () { move(1); })
         ]);
-        left.addEventListener('dblclick', () => add(selectedValues(left)));
-        right.addEventListener('dblclick', () => remove(selectedValues(right)));
-        filter.addEventListener('input', () => render(selectedValues(left), selectedValues(right)));
+        left.addEventListener('dblclick', function () {
+            add(selectedValues(left));
+        });
+        right.addEventListener('dblclick', function () {
+            remove(selectedValues(right));
+        });
+        filter.addEventListener('input', function () {
+            render(selectedValues(left), selectedValues(right));
+        });
 
-        const grid = h('div', {class: 'cat-picker-grid'}, [
-            h('div', {class: 'cat-picker-col'}, [leftTitle, filter, left]),
+        // Not added on the left, added on the right. An invisible box as high as the filter puts the list of the
+        // added categories at the same height as the other one.
+        const grid = h('div', {class: 'row g-2'}, [
+            h('div', {class: 'col'}, [leftTitle, filter, left]),
             buttons,
-            h('div', {class: 'cat-picker-col'}, [rightTitle, h('div', {class: 'cat-picker-spacer'}), right]),
+            h('div', {class: 'col'}, [rightTitle, h('div', {class: 'form-control form-control-sm mb-1 invisible'}),
+                right])
         ]);
         if (input.disabled) {
-            grid.querySelectorAll('select, button, input').forEach((el) => { el.disabled = true; });
+            grid.querySelectorAll('select, button, input').forEach(function (el) {
+                el.disabled = true;
+            });
         }
         // The posted field is now hidden; the server still checks that it is not empty.
         input.required = false;
-        input.hidden = true;
+        input.classList.add('d-none');
         const help = box.querySelector('.cat-picker-help');
         if (help) {
-            help.hidden = true;
+            help.classList.add('d-none');
         }
-        const label_ = document.querySelector('label[for="' + input.id + '"]');
-        if (label_) {
-            label_.setAttribute('for', listId);
+        const fieldLabel = document.querySelector('label[for="' + input.id + '"]');
+        if (fieldLabel) {
+            fieldLabel.setAttribute('for', listId);
         }
         box.insertBefore(grid, input);
         render([], []);
     }
 
-    function initAll() {
-        document.querySelectorAll('.cat-picker').forEach(init);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAll);
-    } else {
-        initAll();
-    }
-})();
+    document.querySelectorAll('.cat-picker').forEach(init);
+});

@@ -10,7 +10,7 @@ from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
 from editor.convert import get_pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import get_p_link_choices, get_s_link_choices, do_cat_specific_checks
-from editor.project_config import get_project_config, load_template
+from editor.project_config import get_project_config, new_project_config
 from editor import ext_cats
 from editor.svg_check import check_svg_value
 
@@ -29,8 +29,9 @@ class CatPicker(forms.TextInput):
     The posted value stays the text, which is also the input without JavaScript.
     """
     def __init__(self, attrs=None):
-        super().__init__(attrs)
+        super(CatPicker, self).__init__(attrs)
         self.options = []
+        self.options_json = '[]'
 
     def set_options(self, cat_ids, config, level=None):
         """
@@ -47,10 +48,7 @@ class CatPicker(forms.TextInput):
                 option['note'] = '%s level' % cat_def.get('level')
             options.append(option)
         self.options = options
-
-    @property
-    def options_json(self):
-        return json.dumps(self.options)
+        self.options_json = json.dumps(options)
 
 
 class ProjectForm(forms.Form):
@@ -63,7 +61,7 @@ class ProjectForm(forms.Form):
         """Allowed categories are those of 'config' (default: the project's configuration, the template if new)."""
         super(ProjectForm, self).__init__(*args, **kwargs)
         if config is None:
-            config = get_project_config(project) if project is not None else load_template()
+            config = get_project_config(project) if project is not None else new_project_config()
         self.project_config = config
         self.predefined_cats = ', '.join(config['cats'].keys())
         self.fields['owner'].choices = get_user_choices(project)

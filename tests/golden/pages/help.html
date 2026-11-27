@@ -213,7 +213,7 @@
     dictionary</a>: it defines the categories of specification items of the project, their attributes, labels,
     choice lists, relationships, category-specific checks, table layouts and page sizes.
     Changing it affects only that project.
-    A project which has no configuration of its own uses the default configuration (file <code>configs.json</code>).
+    A new project starts with the default configuration (file <code>configs.json</code>).
     </p><p>
     The project owner edits the configuration on the <strong>Configuration</strong> page (the <i>configuration</i>
     button next to the project in the index page).
@@ -1140,8 +1140,7 @@
     is held in json format.
     Each project has its own dictionary, stored in the database and edited by the project owner on the
     <a class="text-decoration-none" href="#Project_Configuration">Configuration</a> page.
-    File <code>configs.json</code> holds the default dictionary: it is used by projects which have no dictionary of
-    their own and it is the template from which project dictionaries are created.
+    File <code>configs.json</code> holds the default dictionary: a new project starts with a copy of it.
     Additional information about its content is provided below.
     </p><p>
     Its two top-level elements are <code>general</code> and <code>cats</code>.

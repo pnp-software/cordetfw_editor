@@ -19,7 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 
 from editor.models import Application, Project, ProjectUser, Release, SpecItem, ValSet
-from tests.factories import FIXED_TIME, PASSWORD, make_user
+from tests.factories import FIXED_TIME, PASSWORD, make_user, template_config
 from tests.golden import assert_golden
 
 pytestmark = pytest.mark.django_db
@@ -63,7 +63,7 @@ def build_world(name='Demo Proj'):
 
     w.project = Project.objects.create(
         id=1, name=name, desc='Demo project with unicode ä µ \u263A\nsecond line',
-        cats='DataItem,EnumType,EnumValue,DataItemType', owner=w.owner, release=r1)
+        cats='DataItem,EnumType,EnumValue,DataItemType', owner=w.owner, release=r1, config=template_config())
     w.default = ValSet.objects.create(id=1, project=w.project, name='Default', desc='Default ValSet')
     w.vs1 = ValSet.objects.create(id=2, project=w.project, name='VS1', desc='Alternative "values"')
     w.pu_ro = ProjectUser.objects.create(id=1, project=w.project, user=w.ro, role='RO')

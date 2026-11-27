@@ -232,12 +232,12 @@ def test_cat_picker_renders_options_escaped_and_keeps_text_input(proj):
     from django.template.loader import render_to_string
     proj.cats = 'DataItem'
     form = ApplicationForm(proj, initial={'cats': 'DataItem'})
-    form.fields['cats'].widget.options = [{'id': 'X', 'name': '<b>"x"</b>'}]
+    form.fields['cats'].widget.set_options(['X'], {'cats': {'X': {'name': '<b>"x"</b>'}}})
     html = render_to_string('generic_form_field.html', {'field': form['cats']})
     assert 'class="cat-picker" data-options="[{&quot;id&quot;: &quot;X&quot;, &quot;name&quot;: ' \
            '&quot;&lt;b&gt;\\&quot;x\\&quot;&lt;/b&gt;&quot;}]"' in html
     assert 'name="cats"' in html and 'value="DataItem"' in html
-    assert '<script src="/static/cat_picker.js" defer></script>' in html
+    assert '<script src="/static/cat_picker.js"></script>' in html
 
 
 def test_application_form_valid(proj):

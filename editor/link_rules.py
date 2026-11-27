@@ -148,10 +148,10 @@ def rule_allows(rule, cat):
     return cat not in rule['all_except']
 
 
-def prune_link_rules(links, cats):
+def prune_link_rules(links, keeps_cat):
     """
-    Copy of a `links` object without names of categories not in `cats` in "targets"/"all_except"; a rule left
-    without targets is removed. Malformed parts are kept (check_link_rules reports them).
+    Copy of a `links` object without the categories for which keeps_cat(name) is False in "targets"/"all_except";
+    a rule left without targets is removed. Malformed parts are kept (check_link_rules reports them).
     """
     if not isinstance(links, dict):
         return links
@@ -160,10 +160,10 @@ def prune_link_rules(links, cats):
         if isinstance(rule, dict):
             rule = dict(rule)
             if 'targets' in rule and _is_str_list(rule['targets']):
-                rule['targets'] = [name for name in rule['targets'] if name in cats]
+                rule['targets'] = [name for name in rule['targets'] if keeps_cat(name)]
                 if not rule['targets']:
                     continue
             elif 'all_except' in rule and _is_str_list(rule['all_except']):
-                rule['all_except'] = [name for name in rule['all_except'] if name in cats]
+                rule['all_except'] = [name for name in rule['all_except'] if keeps_cat(name)]
         pruned[link] = rule
     return pruned

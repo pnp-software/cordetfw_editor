@@ -5,8 +5,6 @@ index menus and, per category, its form, table layouts, short descriptions and r
 show them (hidden attributes are listed separately). It only reads item counts and never stores anything. The
 template escapes every value, so names, labels and choices taken from the configuration cannot inject markup.
 """
-from django.db.models import Count
-
 from editor.config_cleanup import hidden_attributes
 from editor.link_rules import LINK_FIELDS
 from editor.models import SpecItem
@@ -95,8 +93,9 @@ def _category(cat, definition, cats, counts, hidden):
 def build_preview(config, project):
     """Template context for the preview of the (valid) configuration `config` of `project`."""
     cats = config['cats']
-    counts = {row['cat']: row['n'] for row in
-              SpecItem.objects.filter(project_id=project.id).values('cat').annotate(n=Count('id')).order_by()}
+    counts = {}
+    for cat in SpecItem.objects.filter(project_id=project.id).values_list('cat', flat=True):
+        counts[cat] = counts.get(cat, 0) + 1
     shown = shown_config(config)['cats']
     categories = [_category(cat, shown[cat], shown, counts,
                             [(name, definition['attrs'][name]['label']) for name in hidden_attributes(definition)])

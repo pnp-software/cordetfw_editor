@@ -30,6 +30,7 @@ from django.utils.timezone import get_current_timezone
 from django.db import transaction
 from django.db.models import OuterRef, Q, Subquery
 from django.conf import settings
+from django.template.loader import render_to_string
 
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm, \
@@ -43,8 +44,13 @@ from editor.utilities import CleanupFileResponse, sanitize_order_by, get_domains
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
                              get_spec_item_query, copy_hidden_values, get_hidden_fields
 from editor.imports import import_project_tables, extract_project_zip, IMPORT_MAX_UPLOAD_BYTES, CONFIG_MEMBER
-from editor.config_store import read_stored_config
-from editor.project_config import get_request_config, resolve_config, split_cats
+from editor.config_store import InvalidConfigError, StaleConfigError, config_token, save_project_config
+from editor.config_validation import ALLOWED_KINDS, MAX_JSON_BYTES, config_error, get_external_cats, validate_config, \
+                                     validate_config_file, validate_config_json
+from editor.config_cleanup import remove_attribute, remove_category
+from editor.config_preview import build_preview
+from editor.cat_validators import VALIDATORS
+from editor.project_config import get_request_config, new_project_config, resolve_config, split_cats
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
@@ -226,7 +232,8 @@ def add_project(request):
                                   desc = form.cleaned_data['description'],
                                   cats = form.cleaned_data['cats'],
                                   updated_at = datetime.now(tz=get_current_timezone()),
-                                  owner = form.cleaned_data['owner'])
+                                  owner = form.cleaned_data['owner'],
+                                  config = new_project_config())
             new_release = Release(desc = "Initial release for project " + new_project.name,
                                   release_author = get_user(request),
                                   updated_at = datetime.now(tz=get_current_timezone()),
@@ -432,6 +439,174 @@ def make_application_release(request, application_id):
         
     context = {'form': form, 'releases': get_previous_list(application.release), 'entity_being_released': application}
     return render(request, 'make_release.html', context)   
+
+
+@login_required
+def config_page(request, project_id):
+    """ Configuration page of the project (owner only) """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    # Not named 'config': base_generic.html reads config.name for the breadcrumb of the item pages.
+    # The configuration and the editor settings are JSON texts for the data attributes of the page.
+    context = {'project': project, 'title': 'Configuration',
+               'initial_config': json.dumps(resolve_config(project.config)),
+               'config_token': config_token(project.config), 'editor_meta': json.dumps(get_config_editor_meta())}
+    return render(request, 'project_config.html', context)
+
+
+def get_config_editor_meta():
+    """ The settings which the configuration editor offers (the server stays the authority) """
+    return {'allowed_kinds': {name: list(kinds) for name, kinds in ALLOWED_KINDS.items()},
+            'validators': {name: params for name, (function, params) in VALIDATORS.items()},
+            'external_cats': get_external_cats()}
+
+
+def config_refusal(status, message):
+    return JsonResponse({'errors': [config_error('', message)]}, status=status)
+
+
+def config_check_result(config, errors):
+    """ Response of validate and upload: 200 if the configuration is valid, 422 with the errors otherwise """
+    return JsonResponse({'valid': not errors, 'errors': errors, 'config': config}, status=200 if not errors else 422)
+
+
+def read_config_body(request):
+    """ (body, None) or (None, error response) for a request whose body is a configuration as JSON """
+    if request.content_type != 'application/json':
+        return None, config_refusal(415, 'the request must have the content type application/json')
+    try:
+        length = int(request.META.get('CONTENT_LENGTH') or 0)
+    except ValueError:
+        length = 0
+    if length > MAX_JSON_BYTES:
+        return None, config_refusal(413, 'the configuration is larger than %d bytes' % MAX_JSON_BYTES)
+    return request.body, None
+
+
+@login_required
+def config_download(request, project_id):
+    """ The configuration as a JSON file which can be uploaded again """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    response = HttpResponse(json.dumps(resolve_config(project.config), indent=2, ensure_ascii=False) + '\n',
+                            content_type='application/json; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="cordetfw_project_%d_config.json"' % project.id
+    return response
+
+
+@login_required
+def config_reload(request, project_id):
+    """ The stored configuration and its token, as JSON {"config": ..., "token": ...} """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    return JsonResponse({'config': resolve_config(project.config), 'token': config_token(project.config)})
+
+
+@login_required
+@require_POST
+def config_validate(request, project_id):
+    """ Validate the posted configuration (JSON body); nothing is stored """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    body, error = read_config_body(request)
+    if error:
+        return error
+    config, errors = validate_config_json(body, project)
+    return config_check_result(config, errors)
+
+
+@login_required
+@require_POST
+def config_preview(request, project_id):
+    """ The rendered preview (HTML fragment) of the posted configuration if it is valid; nothing is stored """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    body, error = read_config_body(request)
+    if error:
+        return error
+    config, errors = validate_config_json(body, project)
+    if errors:
+        return config_check_result(config, errors)
+    html = render_to_string('project_config_preview.html', build_preview(config, project), request=request)
+    return JsonResponse({'valid': True, 'errors': [], 'html': html})
+
+
+@login_required
+@require_POST
+def config_remove(request, project_id):
+    """
+    The posted configuration (body {"config": ..., "cat": ..., "attr": ...}) without the category, or the attribute
+    of the category, and without the references to it; nothing is stored
+    """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    body, error = read_config_body(request)
+    if error:
+        return error
+    try:
+        payload = json.loads(body)
+    except (ValueError, RecursionError):
+        return config_refusal(400, 'the request body is not valid JSON')
+    config = payload.get('config') if isinstance(payload, dict) else None
+    cat, attr = (payload.get('cat'), payload.get('attr')) if isinstance(payload, dict) else (None, None)
+    cats = config.get('cats') if isinstance(config, dict) else None
+    if not isinstance(cats, dict) or not isinstance(cat, str) or cat not in cats:
+        return config_refusal(422, 'the request needs a configuration and the identifier of one of its categories')
+    if attr is None:
+        cleaned = remove_category(config, cat)
+    else:
+        attrs = cats[cat].get('attrs') if isinstance(cats[cat], dict) else None
+        if not isinstance(attr, str) or not isinstance(attrs, dict) or attr not in attrs:
+            return config_refusal(422, 'the category has no field "%s"' % attr if isinstance(attr, str) else
+                                  'the field must be given as a text')
+        cleaned = remove_attribute(config, cat, attr)
+    # The result may be invalid (removing a mandatory field): the editor shows the errors
+    return JsonResponse({'config': cleaned, 'errors': validate_config(cleaned, project)})
+
+
+@login_required
+@require_POST
+def config_upload(request, project_id):
+    """ Validate an uploaded configuration file and return its content; nothing is stored """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    uploaded = request.FILES.get('upload_file')
+    if uploaded is None:
+        return config_refusal(400, 'no file was uploaded in the field "upload_file"')
+    if uploaded.size > MAX_JSON_BYTES:
+        return config_refusal(413, 'the configuration is larger than %d bytes' % MAX_JSON_BYTES)
+    config, errors = validate_config_file(uploaded, project)
+    return config_check_result(config, errors)
+
+
+@login_required
+@require_POST
+def config_save(request, project_id):
+    """ Validate and store the posted configuration if the header X-Config-Token is the token of the stored one """
+    project = Project.objects.get(id=project_id)
+    if not is_project_owner(request, project):
+        return redirect(base_url)
+    body, error = read_config_body(request)
+    if error:
+        return error
+    token = request.headers.get('X-Config-Token')
+    if not token:
+        return config_refusal(428, 'the header X-Config-Token with the token of the configuration the editor was '
+                                   'based on is required')
+    try:
+        new_token = save_project_config(project.id, body, token)
+    except StaleConfigError:
+        return config_refusal(409, 'the stored configuration has changed since it was loaded; reload it before saving')
+    except InvalidConfigError as invalid:
+        return JsonResponse({'saved': False, 'errors': invalid.errors}, status=422)
+    return JsonResponse({'saved': True, 'token': new_token})
 
 
 @login_required         
@@ -1359,7 +1534,7 @@ def export_project(request, project_id):
         # Last, so the six csv members keep their names, content and order: the stored configuration (template if
         # unconfigured, no server settings) with its hidden attribute definitions, which the import restores
         with open(os.path.join(exp_dir, CONFIG_MEMBER), 'w', encoding='utf-8') as fd:
-            json.dump(resolve_config(read_stored_config(project.id)), fd, indent=2, ensure_ascii=False)
+            json.dump(resolve_config(project.config), fd, indent=2, ensure_ascii=False)
             fd.write('\n')
         zip_obj.write(os.path.join(exp_dir, CONFIG_MEMBER), CONFIG_MEMBER)
         zip_obj.close()            

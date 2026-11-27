@@ -4,8 +4,9 @@
 and `validate_config_file` (an upload). It never raises for a malformed configuration, never modifies its argument
 and only reads the database (when `project` is given).
 
-Error contract: a list of `ConfigError(path, message)`; empty means valid. `path` is the JSON path of the
-offending setting, e.g. `cats.Packet.attrs.t1.label`, `cats.Packet.disp_def[2].attrs[0]`, `general.max_depth`;
+Error contract: a list of errors `{'path': ..., 'message': ...}` (config_error); empty means valid. `path` is the
+JSON path of the offending setting, e.g. `cats.Packet.attrs.t1.label`, `cats.Packet.disp_def[2].attrs[0]`,
+`general.max_depth`;
 the root is ''. A key which is not a plain identifier is written as `["a.b"]`. Messages are plain text built
 partly from submitted values: whoever displays them must escape them. The order is deterministic (categories
 and attributes are visited in sorted order, so the result does not depend on the key order of the JSON, which
@@ -42,13 +43,13 @@ here requires data to change.
 import json
 import re
 from collections import Counter
-from dataclasses import dataclass
 
+from editor import ext_cats
 from editor.cat_validators import check_validator_specs
 from editor.config_cleanup import hidden_attributes, shown_columns
 from editor.link_rules import LINK_FIELDS, check_link_rule, check_link_rules, check_trac_settings, rule_allows
 from editor.models import SpecItem
-from editor.project_config import DATA_COLUMNS, SERVER_ONLY_GENERAL_KEYS
+from editor.project_config import DATA_COLUMNS, SERVER_ONLY_GENERAL_KEYS, load_template
 
 MAX_ERRORS = 100
 MAX_JSON_BYTES = 1024 * 1024
@@ -93,19 +94,17 @@ _CAT_NAME = re.compile(r'[A-Za-z][A-Za-z0-9_]{0,%d}\Z' % (MAX_CAT_LENGTH - 1))
 _ABBR = re.compile(r'[A-Za-z0-9_-]{1,%d}\Z' % MAX_CAT_LENGTH)
 _CHOICE_VALUE = re.compile(r'[^\s\x00-\x1f\x7f]{1,%d}\Z' % MAX_CAT_LENGTH)
 _PLAIN_KEY = re.compile(r'[A-Za-z0-9_-]+\Z')
+_CONTROL_CHARS = re.compile(r'[\x00-\x1f\x7f-\x9f]')
 
 
-@dataclass(frozen=True)
-class ConfigError:
+def config_error(path, message):
     """One problem of a configuration: the JSON path of the setting and a plain-text message."""
-    path: str
-    message: str
+    return {'path': path, 'message': message}
 
-    def as_dict(self):
-        return {'path': self.path, 'message': self.message}
 
-    def __str__(self):
-        return '%s: %s' % (self.path or '(root)', self.message)
+def error_text(error):
+    """An error as one line of text (messages, logs)."""
+    return '%s: %s' % (error['path'] or '(root)', error['message'])
 
 
 def key_path(base, key):
@@ -113,11 +112,6 @@ def key_path(base, key):
     if isinstance(key, str) and _PLAIN_KEY.match(key):
         return base + '.' + key if base else key
     return '%s[%s]' % (base, json.dumps(key, default=repr, ensure_ascii=True)[:80])
-
-
-def _show(value):
-    text = repr(value)
-    return text if len(text) <= 60 else text[:57] + '...'
 
 
 def _is_int(value):
@@ -131,7 +125,7 @@ def _text_problem(value, maximum=MAX_TEXT):
         return 'must not be empty or start or end with a blank'
     if len(value) > maximum:
         return 'must have at most %d characters' % maximum
-    if not value.isprintable():
+    if _CONTROL_CHARS.search(value):
         return 'must not contain control characters'
     return ''
 
@@ -139,70 +133,71 @@ def _text_problem(value, maximum=MAX_TEXT):
 def _check_text(value, path, errors, maximum=MAX_TEXT):
     problem = _text_problem(value, maximum)
     if problem:
-        errors.append(ConfigError(path, problem))
+        errors.append(config_error(path, problem))
 
 
 def _check_range(value, path, errors, bounds):
     if not _is_int(value) or not bounds[0] <= value <= bounds[1]:
-        errors.append(ConfigError(path, 'must be an integer from %d to %d' % bounds))
+        errors.append(config_error(path, 'must be an integer from %d to %d' % bounds))
 
 
 def _unknown_keys(obj, allowed, path, errors):
     for key in sorted(obj, key=str):
         if key not in allowed:
-            errors.append(ConfigError(key_path(path, key), 'unknown setting'))
+            errors.append(config_error(key_path(path, key), 'unknown setting'))
 
 
 def _required_keys(obj, required, path, errors):
     for key in required:
         if key not in obj:
-            errors.append(ConfigError(key_path(path, key), 'is required'))
+            errors.append(config_error(key_path(path, key), 'is required'))
 
 
 def _tuples(problems, errors):
-    errors.extend(ConfigError(path, message) for path, message in problems)
+    errors.extend(config_error(path, message) for path, message in problems)
 
 
 def validate_config(config, project=None):
-    """List of ConfigError (see the module docstring); with `project` also checks the stored data."""
+    """List of errors (see the module docstring); with `project` also checks the stored data."""
     errors = []
     if not isinstance(config, dict):
-        return [ConfigError('', 'the configuration must be a JSON object')]
+        return [config_error('', 'the configuration must be a JSON object')]
     _unknown_keys(config, TOP_KEYS, '', errors)
     _required_keys(config, TOP_KEYS, '', errors)
     if 'general' in config:
         _check_general(config['general'], errors)
     if 'cats' in config:
         if not isinstance(config['cats'], dict):
-            errors.append(ConfigError('cats', 'must be an object'))
+            errors.append(config_error('cats', 'must be an object'))
         else:
             _check_cats(config['cats'], errors)
             if project is not None:
                 _check_stored_data(config['cats'], project, errors)
     if len(errors) > MAX_ERRORS:
         left = len(errors) - MAX_ERRORS
-        errors = errors[:MAX_ERRORS] + [ConfigError('', '%d more error(s) not shown' % left)]
+        errors = errors[:MAX_ERRORS] + [config_error('', '%d more error(s) not shown' % left)]
     return errors
 
 
 def _check_general(general, errors):
     if not isinstance(general, dict):
-        errors.append(ConfigError('general', 'must be an object'))
+        errors.append(config_error('general', 'must be an object'))
         return
     for key in sorted(general, key=str):
         if key in SERVER_ONLY_GENERAL_KEYS:
-            errors.append(ConfigError(key_path('general', key),
+            errors.append(config_error(key_path('general', key),
                                       'is a server setting and cannot be part of a project configuration'))
         elif key not in GENERAL_KEYS:
-            errors.append(ConfigError(key_path('general', key), 'unknown setting'))
+            errors.append(config_error(key_path('general', key), 'unknown setting'))
     _required_keys(general, GENERAL_KEYS, 'general', errors)
     csv_sep = general.get('csv_sep')
     if 'csv_sep' in general and (not isinstance(csv_sep, str) or len(csv_sep) != 1 or csv_sep.isalnum()
-                                 or csv_sep in CSV_SEP_FORBIDDEN or not (csv_sep.isprintable() or csv_sep == '\t')):
-        errors.append(ConfigError('general.csv_sep', 'must be one character which is not a letter, digit, '
+                                 or csv_sep in CSV_SEP_FORBIDDEN
+                                 or (_CONTROL_CHARS.search(csv_sep) and csv_sep != '\t')):
+        errors.append(config_error('general.csv_sep', 'must be one character which is not a letter, digit, '
                                                      'blank, quote or line break'))
     if 'eol_sep' in general and general['eol_sep'] not in EOL_SEPARATORS:
-        errors.append(ConfigError('general.eol_sep', 'must be "\\n" or "\\r\\n"'))
+        errors.append(config_error('general.eol_sep', 'must be "\\n" or "\\r\\n"'))
     if 'short_desc_len' in general:
         _check_range(general['short_desc_len'], 'general.short_desc_len', errors, SHORT_DESC_LEN_RANGE)
     if 'max_depth' in general:
@@ -215,12 +210,12 @@ def _check_cats(cats, errors):
     for key in names:
         path = key_path('cats', key)
         if not isinstance(key, str) or not _CAT_NAME.match(key):
-            errors.append(ConfigError(path, 'the category identifier must be 1-%d letters, digits or underscores '
+            errors.append(config_error(path, 'the category identifier must be 1-%d letters, digits or underscores '
                                             'and start with a letter' % MAX_CAT_LENGTH))
         elif key.lower() == 'none':
-            errors.append(ConfigError(path, '"None" is reserved'))
+            errors.append(config_error(path, '"None" is reserved'))
         elif key.lower() in first_by_lower:
-            errors.append(ConfigError(path, 'the identifier differs only in case from "%s"' % first_by_lower[key.lower()]))
+            errors.append(config_error(path, 'the identifier differs only in case from "%s"' % first_by_lower[key.lower()]))
         else:
             first_by_lower[key.lower()] = key
     # Attribute names of each category for the reference checks of the validators (a malformed `attrs` is empty)
@@ -236,7 +231,7 @@ def _check_cats(cats, errors):
             if not isinstance(value, str):
                 continue
             if value.lower() in first:
-                errors.append(ConfigError(key_path(key_path('cats', key), setting),
+                errors.append(config_error(key_path(key_path('cats', key), setting),
                                           'the %s "%s" is already used by category "%s"' % (
                                               label, value, first[value.lower()])))
             else:
@@ -246,7 +241,7 @@ def _check_cats(cats, errors):
 def _check_cat(cat, definition, cats, view, errors):
     path = key_path('cats', cat)
     if not isinstance(definition, dict):
-        errors.append(ConfigError(path, 'must be an object'))
+        errors.append(config_error(path, 'must be an object'))
         return
     _unknown_keys(definition, CAT_KEYS, path, errors)
     _required_keys(definition, CAT_KEYS, path, errors)
@@ -257,9 +252,9 @@ def _check_cat(cat, definition, cats, view, errors):
     if 'name' in definition:
         _check_text(definition['name'], at('name'), errors)
     if 'level' in definition and definition['level'] not in LEVELS:
-        errors.append(ConfigError(at('level'), 'must be one of: ' + ', '.join(LEVELS)))
+        errors.append(config_error(at('level'), 'must be one of: ' + ', '.join(LEVELS)))
     if 'abbr' in definition and (not isinstance(definition['abbr'], str) or not _ABBR.match(definition['abbr'])):
-        errors.append(ConfigError(at('abbr'), 'must be 1-%d letters, digits, underscores or dashes' % MAX_CAT_LENGTH))
+        errors.append(config_error(at('abbr'), 'must be 1-%d letters, digits, underscores or dashes' % MAX_CAT_LENGTH))
     if 'page_size' in definition:
         _check_range(definition['page_size'], at('page_size'), errors, PAGE_SIZE_RANGE)
     if 'access_from_index' in definition:
@@ -292,111 +287,103 @@ def _check_cat(cat, definition, cats, view, errors):
             _check_layout(definition[layout], at(layout), layout, attr_names, cats, errors)
     default_layout = definition.get('disp_def')
     if hidden and isinstance(default_layout, list) and default_layout and not shown_columns(default_layout, hidden):
-        errors.append(ConfigError(at('disp_def'), 'must have at least one column with an attribute which is not '
+        errors.append(config_error(at('disp_def'), 'must have at least one column with an attribute which is not '
                                                   'hidden: it is the default display'))
 
 
 def _check_access(access, level, path, errors):
     if not isinstance(access, dict):
-        errors.append(ConfigError(path, 'must be an object'))
+        errors.append(config_error(path, 'must be an object'))
         return
     _unknown_keys(access, ('level',), path, errors)
     _required_keys(access, ('level',), path, errors)
     if 'level' not in access:
         return
     if access['level'] not in ACCESS_LEVELS:
-        errors.append(ConfigError(path + '.level', 'must be one of: ' + ', '.join(ACCESS_LEVELS)))
+        errors.append(config_error(path + '.level', 'must be one of: ' + ', '.join(ACCESS_LEVELS)))
     elif isinstance(level, str) and level in ACCESS_BY_LEVEL and access['level'] not in ACCESS_BY_LEVEL[level]:
-        errors.append(ConfigError(path + '.level', 'a category of level "%s" can only be accessed from the index '
+        errors.append(config_error(path + '.level', 'a category of level "%s" can only be accessed from the index '
                                                    'with: %s' % (level, ', '.join(ACCESS_BY_LEVEL[level]))))
 
 
 def _check_attrs(attrs, path, errors):
     if not isinstance(attrs, dict):
-        errors.append(ConfigError(path, 'must be an object'))
+        errors.append(config_error(path, 'must be an object'))
         return
     for name in REQUIRED_ATTRS:
         if name not in attrs:
-            errors.append(ConfigError(key_path(path, name), 'is required'))
+            errors.append(config_error(key_path(path, name), 'is required'))
     labels = {}
     for name in sorted(attrs, key=str):
         attr_path = key_path(path, name)
         attr = attrs[name]
         if name not in ALLOWED_KINDS:
-            errors.append(ConfigError(attr_path, 'is not a field of the item model; allowed: '
+            errors.append(config_error(attr_path, 'is not a field of the item model; allowed: '
                                                  + ', '.join(sorted(ALLOWED_KINDS))))
         if not isinstance(attr, dict):
-            errors.append(ConfigError(attr_path, 'must be an object'))
+            errors.append(config_error(attr_path, 'must be an object'))
             continue
         _unknown_keys(attr, ATTR_KEYS + OPTIONAL_ATTR_KEYS, attr_path, errors)
         _required_keys(attr, ATTR_KEYS, attr_path, errors)
         if 'label' in attr:
             problem = _text_problem(attr['label'])
             if problem:
-                errors.append(ConfigError(attr_path + '.label', problem))
+                errors.append(config_error(attr_path + '.label', problem))
             else:
                 normalized = attr['label'].replace(' ', '').lower()
                 if normalized in labels:
-                    errors.append(ConfigError(attr_path + '.label', 'the label is already used by attribute "%s" '
+                    errors.append(config_error(attr_path + '.label', 'the label is already used by attribute "%s" '
                                                                     '(labels are the column names of exports)' % labels[normalized]))
                 else:
                     labels[normalized] = name
         if 'req_in_form' in attr:
             if not isinstance(attr['req_in_form'], bool):
-                errors.append(ConfigError(attr_path + '.req_in_form', 'must be true or false'))
+                errors.append(config_error(attr_path + '.req_in_form', 'must be true or false'))
             elif name in REQUIRED_ATTRS and not attr['req_in_form']:
-                errors.append(ConfigError(attr_path + '.req_in_form', 'must be true: the item is identified by it'))
+                errors.append(config_error(attr_path + '.req_in_form', 'must be true: the item is identified by it'))
         if 'hidden' in attr:
             if not isinstance(attr['hidden'], bool):
-                errors.append(ConfigError(attr_path + '.hidden', 'must be true or false'))
+                errors.append(config_error(attr_path + '.hidden', 'must be true or false'))
             elif name in REQUIRED_ATTRS and attr['hidden']:
-                errors.append(ConfigError(attr_path + '.hidden', 'must be false: the item is identified by it'))
+                errors.append(config_error(attr_path + '.hidden', 'must be false: the item is identified by it'))
         if 'kind' in attr:
             kind = attr['kind']
             kinds = ALLOWED_KINDS.get(name)
             if not isinstance(kind, str) or (kinds is not None and kind not in kinds):
                 allowed = kinds if kinds is not None else sorted({k for ks in ALLOWED_KINDS.values() for k in ks})
-                errors.append(ConfigError(attr_path + '.kind', 'must be %s: %s' % (
+                errors.append(config_error(attr_path + '.kind', 'must be %s: %s' % (
                     'one of' if len(allowed) > 1 else 'exactly', ', '.join(allowed))))
 
 
 def _check_name_list(names, path, attr_names, errors):
     if not isinstance(names, list):
-        errors.append(ConfigError(path, 'must be a list'))
+        errors.append(config_error(path, 'must be a list'))
         return
     for i, name in enumerate(names):
         item_path = '%s[%d]' % (path, i)
         if not isinstance(name, str):
-            errors.append(ConfigError(item_path, 'must be an attribute name'))
+            errors.append(config_error(item_path, 'must be an attribute name'))
         elif attr_names is not None and name not in attr_names:
-            errors.append(ConfigError(item_path, 'unknown attribute "%s"' % name))
+            errors.append(config_error(item_path, 'unknown attribute "%s"' % name))
 
 
 def _check_ext_attrs(cat, names, attr_names, path, errors):
     _check_name_list(names, path, attr_names, errors)
-    if isinstance(names, list) and names and not _has_external_support(cat):
-        errors.append(ConfigError(path, 'attributes can only be taken from the external repository for categories '
-                                        'which the editor supports (%s)' % ', '.join(_external_cats())))
+    if isinstance(names, list) and names and not hasattr(ext_cats, 'ext_' + cat.lower() + '_get_choices'):
+        errors.append(config_error(path, 'attributes can only be taken from the external repository for categories '
+                                        'which the editor supports (%s)' % ', '.join(get_external_cats())))
     if isinstance(names, list) and len(set(map(repr, names))) != len(names):
-        errors.append(ConfigError(path, 'must not list an attribute twice'))
+        errors.append(config_error(path, 'must not list an attribute twice'))
 
 
-def _external_cats():
-    from editor import ext_cats
-    return sorted(name[4:-len('_get_choices')] for name in dir(ext_cats)
-                  if name.startswith('ext_') and name.endswith('_get_choices'))
-
-
-def _has_external_support(cat):
-    """True if editor.ext_cats has the code which loads items of category `cat` from the external repository."""
-    from editor import ext_cats
-    return isinstance(cat, str) and all(callable(getattr(ext_cats, 'ext_%s_%s' % (cat.lower(), suffix), None))
-                                        for suffix in ('get_choices', 'get_choice'))
+def get_external_cats():
+    """Categories whose items editor.ext_cats loads from the external repository (ext_attrs in the template)."""
+    return sorted(cat for cat, definition in load_template()['cats'].items() if definition['ext_attrs'])
 
 
 def _check_expand(expand, cats, path, errors):
     if not isinstance(expand, dict):
-        errors.append(ConfigError(path, 'must be an object'))
+        errors.append(config_error(path, 'must be an object'))
         return
     _unknown_keys(expand, EXPAND_KEYS, path, errors)
     _required_keys(expand, ('s_link', 'p_link'), path, errors)
@@ -405,9 +392,9 @@ def _check_expand(expand, cats, path, errors):
             continue
         target = expand[link]
         if not isinstance(target, str) or (target != 'None' and target not in cats):
-            errors.append(ConfigError(key_path(path, link), 'must be "None" or the identifier of a category'))
+            errors.append(config_error(key_path(path, link), 'must be "None" or the identifier of a category'))
         elif target != 'None' and link[0] + '_label' not in expand:
-            errors.append(ConfigError(key_path(path, link[0] + '_label'), 'is required when the link is expanded'))
+            errors.append(config_error(key_path(path, link[0] + '_label'), 'is required when the link is expanded'))
         label = link[0] + '_label'
         if label in expand:
             _check_text(expand[label], key_path(path, label), errors)
@@ -415,7 +402,7 @@ def _check_expand(expand, cats, path, errors):
 
 def _check_short_desc(short_desc, attr_names, path, errors):
     if not isinstance(short_desc, dict):
-        errors.append(ConfigError(path, 'must be an object'))
+        errors.append(config_error(path, 'must be an object'))
         return
     _unknown_keys(short_desc, SHORT_DESC_KEYS, path, errors)
     _required_keys(short_desc, SHORT_DESC_KEYS, path, errors)
@@ -426,54 +413,55 @@ def _check_short_desc(short_desc, attr_names, path, errors):
 
 def _check_choices(choices, path, shown_and_required, errors):
     if not isinstance(choices, dict):
-        errors.append(ConfigError(path, 'must be an object'))
+        errors.append(config_error(path, 'must be an object'))
         return
     if shown_and_required and not choices:
-        errors.append(ConfigError(path, 'must have at least one choice: the attribute is required in the form'))
+        errors.append(config_error(path, 'must have at least one choice: the attribute is required in the form'))
     for value in sorted(choices, key=str):
         value_path = key_path(path, value)
         if not isinstance(value, str) or not _CHOICE_VALUE.match(value):
-            errors.append(ConfigError(value_path, 'the stored value must be 1-%d characters without blanks or '
+            errors.append(config_error(value_path, 'the stored value must be 1-%d characters without blanks or '
                                                   'control characters' % MAX_CAT_LENGTH))
         _check_text(choices[value], value_path, errors)
 
 
 def _check_layout(columns, path, layout, attr_names, cats, errors):
     if not isinstance(columns, list):
-        errors.append(ConfigError(path, 'must be a list'))
+        errors.append(config_error(path, 'must be a list'))
         return
     if layout == 'disp_def' and not columns:
-        errors.append(ConfigError(path, 'must have at least one column: it is the default display'))
+        errors.append(config_error(path, 'must have at least one column: it is the default display'))
     for i, column in enumerate(columns):
         column_path = '%s[%d]' % (path, i)
         if not isinstance(column, dict):
-            errors.append(ConfigError(column_path, 'must be an object'))
+            errors.append(config_error(column_path, 'must be an object'))
             continue
         _unknown_keys(column, COLUMN_KEYS, column_path, errors)
         if 'header' not in column:
-            errors.append(ConfigError(column_path + '.header', 'is required'))
+            errors.append(config_error(column_path + '.header', 'is required'))
         else:
             _check_text(column['header'], column_path + '.header', errors)
         if ('attrs' in column) == ('trac_cat' in column):
-            errors.append(ConfigError(column_path, 'exactly one of "attrs" and "trac_cat" is required'))
+            errors.append(config_error(column_path, 'exactly one of "attrs" and "trac_cat" is required'))
         if 'attrs' in column:
             if isinstance(column['attrs'], list) and not column['attrs']:
-                errors.append(ConfigError(column_path + '.attrs', 'must not be empty'))
+                errors.append(config_error(column_path + '.attrs', 'must not be empty'))
             _check_name_list(column['attrs'], column_path + '.attrs', attr_names, errors)
             if 'trac_link' in column:
-                errors.append(ConfigError(column_path + '.trac_link', 'only a traceability column has this setting'))
+                errors.append(config_error(column_path + '.trac_link', 'only a traceability column has this setting'))
             if 'order_by' in column and (not isinstance(column['order_by'], str)
                                          or (attr_names is not None and column['order_by'] not in attr_names)):
-                errors.append(ConfigError(column_path + '.order_by', 'must be an attribute of the category'))
+                errors.append(config_error(column_path + '.order_by', 'must be an attribute of the category'))
         if 'trac_cat' in column:
             if layout != 'disp_trac':
-                errors.append(ConfigError(column_path + '.trac_cat', 'traceability columns are only used in disp_trac'))
+                errors.append(config_error(column_path + '.trac_cat',
+                                           'traceability columns are only used in disp_trac'))
             if not isinstance(column['trac_cat'], str) or column['trac_cat'] not in cats:
-                errors.append(ConfigError(column_path + '.trac_cat', 'must be the identifier of a category'))
+                errors.append(config_error(column_path + '.trac_cat', 'must be the identifier of a category'))
             if column.get('trac_link') not in LINK_FIELDS:
-                errors.append(ConfigError(column_path + '.trac_link', 'must be one of: ' + ', '.join(LINK_FIELDS)))
+                errors.append(config_error(column_path + '.trac_link', 'must be one of: ' + ', '.join(LINK_FIELDS)))
             if 'order_by' in column:
-                errors.append(ConfigError(column_path + '.order_by', 'a traceability column cannot be sorted'))
+                errors.append(config_error(column_path + '.order_by', 'a traceability column cannot be sorted'))
 
 
 def _check_stored_data(cats, project, errors):
@@ -494,7 +482,7 @@ def _check_stored_data(cats, project, errors):
     for (cat, kind, value), count in sorted(kinds.items()):
         choices = cats[cat].get(kind + '_choices')
         if value != '' and isinstance(choices, dict) and value not in choices:
-            errors.append(ConfigError(key_path(key_path('cats', cat), kind + '_choices'),
+            errors.append(config_error(key_path(key_path('cats', cat), kind + '_choices'),
                                       'the stored %s value "%s" of %d item(s) is not a choice' % (kind, value, count)))
     for (cat, link, target), count in sorted(links.items()):
         if target not in cats:
@@ -504,40 +492,23 @@ def _check_stored_data(cats, project, errors):
         if rule is not None and check_link_rule(rule, link):
             continue                                    # malformed rule: already reported
         if rule is None or not rule_allows(rule, target):
-            errors.append(ConfigError(key_path(key_path(key_path('cats', cat), 'links'), link),
+            errors.append(config_error(key_path(key_path(key_path('cats', cat), 'links'), link),
                                       'stored %s of %d item(s) of category "%s" point to items of category "%s", '
                                       'which this %s' % (link, count, cat, target,
                                                          'rule does not allow' if rule is not None
                                                          else 'category has no rule for')))
 
 
-class _DuplicateKeys(dict):
-    """dict which remembers keys that occurred twice in the JSON object it was built from."""
-    duplicates = ()
-
-
-def _object_hook(pairs):
-    obj = _DuplicateKeys()
-    seen = set()
-    duplicates = []
-    for key, value in pairs:
-        if key in seen:
-            duplicates.append(key)
-        seen.add(key)
-        obj[key] = value
-    obj.duplicates = duplicates
-    return obj
-
-
-def _normalize(value, path, errors):
-    """Replace the _DuplicateKeys objects by plain dicts and report the duplicate keys with their path."""
-    if isinstance(value, _DuplicateKeys):
-        errors.extend(ConfigError(key_path(path, key), 'the key occurs more than once in the object')
-                      for key in value.duplicates)
-        return {key: _normalize(item, key_path(path, key), errors) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_normalize(item, '%s[%d]' % (path, i), errors) for i, item in enumerate(value)]
-    return value
+def _duplicate_key_errors(value, path, duplicates, errors):
+    """Errors for the keys in `duplicates` (pairs of a parsed object and a key which occurs twice in it)."""
+    if isinstance(value, dict):
+        errors.extend(config_error(key_path(path, key), 'the key occurs more than once in the object')
+                      for obj, key in duplicates if obj is value)
+        for key, item in value.items():
+            _duplicate_key_errors(item, key_path(path, key), duplicates, errors)
+    elif isinstance(value, list):
+        for i, item in enumerate(value):
+            _duplicate_key_errors(item, '%s[%d]' % (path, i), duplicates, errors)
 
 
 def _reject_constant(name):
@@ -551,27 +522,38 @@ def validate_config_json(text, project=None):
     """
     if isinstance(text, bytes):
         if len(text) > MAX_JSON_BYTES:
-            return None, [ConfigError('', 'the configuration is larger than %d bytes' % MAX_JSON_BYTES)]
+            return None, [config_error('', 'the configuration is larger than %d bytes' % MAX_JSON_BYTES)]
         try:
             text = text.decode('utf-8-sig')
         except UnicodeDecodeError:
-            return None, [ConfigError('', 'the configuration must be UTF-8 text')]
+            return None, [config_error('', 'the configuration must be UTF-8 text')]
     elif not isinstance(text, str):
-        return None, [ConfigError('', 'the configuration must be JSON text')]
+        return None, [config_error('', 'the configuration must be JSON text')]
     elif len(text.encode('utf-8', 'surrogatepass')) > MAX_JSON_BYTES:
-        return None, [ConfigError('', 'the configuration is larger than %d bytes' % MAX_JSON_BYTES)]
+        return None, [config_error('', 'the configuration is larger than %d bytes' % MAX_JSON_BYTES)]
+    duplicates = []
+
+    def object_pairs_hook(pairs):
+        obj = {}
+        for key, value in pairs:
+            if key in obj:
+                duplicates.append((obj, key))
+            obj[key] = value
+        return obj
+
     try:
-        parsed = json.loads(text, object_pairs_hook=_object_hook, parse_constant=_reject_constant)
+        config = json.loads(text, object_pairs_hook=object_pairs_hook, parse_constant=_reject_constant)
     except json.JSONDecodeError as exc:
-        return None, [ConfigError('', 'invalid JSON at line %d, column %d: %s' % (exc.lineno, exc.colno, exc.msg))]
+        return None, [config_error('', 'invalid JSON at line %d, column %d: %s' % (exc.lineno, exc.colno, exc.msg))]
     except (ValueError, RecursionError) as exc:
-        return None, [ConfigError('', 'invalid JSON: %s' % ('nested too deeply' if isinstance(exc, RecursionError)
+        return None, [config_error('', 'invalid JSON: %s' % ('nested too deeply' if isinstance(exc, RecursionError)
                                                             else exc))]
     errors = []
-    try:
-        config = _normalize(parsed, '', errors)
-    except RecursionError:
-        return None, [ConfigError('', 'invalid JSON: nested too deeply')]
+    if duplicates:
+        try:
+            _duplicate_key_errors(config, '', duplicates, errors)
+        except RecursionError:
+            return None, [config_error('', 'invalid JSON: nested too deeply')]
     return config, errors + validate_config(config, project)
 
 
@@ -580,7 +562,7 @@ def validate_config_file(uploaded, project=None):
     try:
         data = uploaded.read(MAX_JSON_BYTES + 1)
     except (OSError, ValueError):
-        return None, [ConfigError('', 'the file cannot be read')]
+        return None, [config_error('', 'the file cannot be read')]
     if isinstance(data, str):
         data = data.encode('utf-8', 'surrogatepass')
     return validate_config_json(data, project)

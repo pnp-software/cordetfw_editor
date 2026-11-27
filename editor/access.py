@@ -5,14 +5,9 @@ from editor.models import ProjectUser, SpecItem, Application, ValSet, Release
 from django.contrib import messages
 
 
-def user_is_project_owner(user, project):
-    """ Silent ownership test: True only for an authenticated user who is the project's owner (Project.owner) """
-    return bool(user.is_authenticated) and user.id == project.owner_id
-
-
 def is_project_owner(request, project):
     """ Return True if user owns the project """
-    if user_is_project_owner(request.user, project):
+    if request.user.id == project.owner.id:
         return True
     else:
         messages.error(request, 'This operation is only accessible to the owner of project '+project.name)

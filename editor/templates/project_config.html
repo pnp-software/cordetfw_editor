@@ -8,7 +8,9 @@
      data-save-url="{% url 'project_config_save' project.id %}"
      data-upload-url="{% url 'project_config_upload' project.id %}"
      data-preview-url="{% url 'project_config_preview' project.id %}"
-     data-remove-url="{% url 'project_config_remove' project.id %}">
+     data-remove-url="{% url 'project_config_remove' project.id %}"
+     data-meta="{{ editor_meta }}"
+     data-config="{{ initial_config }}">
     {% csrf_token %}
 
     <div class="d-flex flex-wrap align-items-center gap-2 my-3">
@@ -22,13 +24,9 @@
                href="{% url 'project_config_download' project.id %}"> Download</a>
             <button type="button" id="config-upload-button" class="btn btn-outline-primary bi-cloud-upload"> Upload</button>
         </div>
-        <input type="file" id="config-upload-file" class="d-none" accept=".json,application/json"
+        <input type="file" id="config-upload-file" class="d-none"
                aria-label="Configuration file to load into the editor">
     </div>
-
-    <noscript>
-        <div class="alert alert-warning">The configuration editor needs JavaScript.</div>
-    </noscript>
 
     <div id="config-conflict"></div>
     <div id="config-message" aria-live="polite"></div>
@@ -46,28 +44,38 @@
     </div>
 
     <div id="panel-forms" role="tabpanel" aria-labelledby="tab-forms">
-        <details class="config-section card mb-3" id="general-section" data-section="general">
-            <summary class="card-header fw-bold">General settings <span class="text-muted small fw-normal">CSV
-                separator, line ending, short description length, maximum depth</span></summary>
-            <div class="card-body"><div class="row g-2" id="general-settings"></div></div>
-        </details>
+        <div class="accordion mb-3" id="general-section">
+            <div class="accordion-item">
+                <h3 class="accordion-header" id="general-heading">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#general-body" aria-expanded="false" aria-controls="general-body">
+                        General settings
+                        <span class="text-muted small fw-normal ms-2">CSV separator, line ending, short description
+                            length, maximum depth</span>
+                    </button>
+                </h3>
+                <div id="general-body" class="accordion-collapse collapse" aria-labelledby="general-heading">
+                    <div class="accordion-body"><div class="row g-2" id="general-settings"></div></div>
+                </div>
+            </div>
+        </div>
         <div class="row g-3">
             <div class="col-lg-3">
                 <h3 class="fs-5">Categories</h3>
-                <ul class="list-group config-cat-list mb-2" id="category-list"></ul>
+                <ul class="list-group mb-2" id="category-list"></ul>
                 <button type="button" id="add-category-open" class="btn btn-outline-primary bi-plus-circle"> Add category</button>
                 <form id="add-category-form" class="card card-body mt-2 d-none" novalidate>
                     <div class="mb-3">
                         <label class="form-label" for="new-cat-id">Identifier</label>
-                        <input type="text" class="form-control" id="new-cat-id" maxlength="24" autocomplete="off">
+                        <input type="text" class="form-control" id="new-cat-id" maxlength="24">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new-cat-name">Name</label>
-                        <input type="text" class="form-control" id="new-cat-name" autocomplete="off">
+                        <input type="text" class="form-control" id="new-cat-name">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new-cat-abbr">Abbreviation</label>
-                        <input type="text" class="form-control" id="new-cat-abbr" autocomplete="off">
+                        <input type="text" class="form-control" id="new-cat-abbr">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="new-cat-level">Level</label>
@@ -83,7 +91,9 @@
                     </div>
                 </form>
             </div>
-            <div class="col-lg-9" id="category-editor"></div>
+            <div class="col-lg-9" id="category-editor">
+                <p class="text-muted">The configuration editor needs JavaScript.</p>
+            </div>
         </div>
     </div>
 
@@ -93,7 +103,7 @@
             configuration in the forms; nothing typed here is lost.
         </p>
         <div id="json-status" class="alert alert-danger d-none" role="alert"></div>
-        <textarea id="config-json" class="form-control font-monospace config-json" rows="32" spellcheck="false"
+        <textarea id="config-json" class="form-control font-monospace small" rows="32" spellcheck="false"
                   aria-label="Configuration as JSON"></textarea>
     </div>
 
@@ -124,7 +134,5 @@
     </div>
 </div>
 
-{{ initial_config|json_script:"project-config-initial" }}
-{{ editor_meta|json_script:"project-config-meta" }}
-<script src="/static/project_config.js" defer></script>
+<script src="/static/project_config.js"></script>
 {% endblock %}

@@ -2,10 +2,9 @@
 
 The token identifies the stored value: `sha256:` plus the SHA-256 of the canonical JSON of the stored value
 (sorted keys, no blanks), so it does not depend on the key order the database returns (MySQL reorders object
-keys). An unconfigured project (`{}`) has a token like any other. Nothing here keeps state between calls.
+keys). Nothing here keeps state between calls.
 """
 import hashlib
-import hmac
 import json
 
 from django.db import transaction
@@ -21,7 +20,7 @@ class StaleConfigError(Exception):
 
 
 class InvalidConfigError(Exception):
-    """The submitted configuration is not valid; `errors` is a list of ConfigError."""
+    """The submitted configuration is not valid; `errors` is a list of errors (config_error)."""
 
     def __init__(self, errors):
         super().__init__('invalid configuration')
@@ -31,11 +30,6 @@ class InvalidConfigError(Exception):
 def config_token(stored):
     canonical = json.dumps(stored, sort_keys=True, separators=(',', ':'))
     return TOKEN_PREFIX + hashlib.sha256(canonical.encode('utf-8')).hexdigest()
-
-
-def read_stored_config(project_id):
-    """The stored value (`{}` if unconfigured) from a fresh query, or None if there is no such project."""
-    return Project.objects.filter(id=project_id).values_list('config', flat=True).first()
 
 
 def save_project_config(project_id, body, token):
@@ -51,11 +45,11 @@ def save_project_config(project_id, body, token):
     """
     with transaction.atomic():
         project = Project.objects.select_for_update().get(id=project_id)
-        if not hmac.compare_digest(config_token(project.config).encode(), token.encode()):
+        if config_token(project.config) != token:
             raise StaleConfigError()
         config, errors = validate_config_json(body, project)
         if errors:
             raise InvalidConfigError(errors)
         project.config = config
         project.save(update_fields=['config'])     # update_fields: updated_at is not touched
-        return config_token(read_stored_config(project_id))
+        return config_token(config)

@@ -99,22 +99,23 @@ def _check_spec(spec, path, config, cat):
     return errors
 
 
-def spec_is_dangling(spec, cats, attrs):
-    """True if a well-formed spec refers to a category not in `cats` or an attribute not in `attrs`."""
+def spec_is_dangling(spec, keeps_cat, keeps_attr):
+    """True if a well-formed spec refers to a category or an attribute for which keeps_cat/keeps_attr is False."""
     declared = VALIDATORS[spec['name']][1]
-    return any((kind == 'cat' and spec['params'][key] not in cats) or
-               (kind == 'attr' and spec['params'][key] not in attrs)
+    return any((kind == 'cat' and not keeps_cat(spec['params'][key])) or
+               (kind == 'attr' and not keeps_attr(spec['params'][key]))
                for key, kind in declared.items())
 
 
-def prune_validators(specs, cats, attrs):
+def prune_validators(specs, keeps_cat, keeps_attr):
     """
     Copy of a `validators` list without the entries which refer to categories/attributes that no longer exist.
     Malformed entries are kept: reporting them is the job of check_validator_specs.
     """
     if not isinstance(specs, list):
         return specs
-    return [spec for spec in specs if _check_spec(spec, '', None, None) or not spec_is_dangling(spec, cats, attrs)]
+    return [spec for spec in specs
+            if _check_spec(spec, '', None, None) or not spec_is_dangling(spec, keeps_cat, keeps_attr)]
 
 
 def run_validators(form, cleaned_data, specs, path):

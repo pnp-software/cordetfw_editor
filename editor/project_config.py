@@ -4,12 +4,12 @@
 `get_request_config` give it as the item pages use it, without hidden attributes. Nothing here is cached beyond the
 lifetime of a request object.
 """
-import copy
 import json
 
 from django.conf import settings
 
-from editor.config_cleanup import has_hidden_attributes, remove_dangling_references, remove_hidden_attributes
+from editor.config_cleanup import copy_config, has_hidden_attributes, remove_dangling_references, \
+                                  remove_hidden_attributes
 from editor.models import Application, Project, SpecItem
 
 # Server settings which must never be part of a project configuration.
@@ -30,16 +30,18 @@ def load_template():
 
 
 def resolve_config(stored):
-    """
-    New, independent configuration from a stored Project.config value (the template if empty), without
-    SERVER_ONLY_GENERAL_KEYS.
-    """
-    config = copy.deepcopy(stored) if stored else load_template()
+    """New, independent copy of a stored Project.config value, without SERVER_ONLY_GENERAL_KEYS."""
+    config = copy_config(stored)
     general = config.get('general')
     if isinstance(general, dict):
         for key in SERVER_ONLY_GENERAL_KEYS:
             general.pop(key, None)
     return config
+
+
+def new_project_config():
+    """Configuration of a new project: the template without server settings."""
+    return resolve_config(load_template())
 
 
 def shown_config(config):
@@ -92,12 +94,6 @@ def get_data_usage(project):
     return usage
 
 
-def get_unknown_cats(template, project):
-    """Categories which the project, its applications or its items use but the template does not define."""
-    used = get_listed_cats(project) | set(get_data_usage(project))
-    return sorted(used - set(template['cats']))
-
-
 def filter_template_for_data(template, project):
     """
     New configuration for the project derived from the template (not modified). Categories listed in Project.cats or
@@ -106,14 +102,13 @@ def filter_template_for_data(template, project):
     """
     listed = get_listed_cats(project)
     usage = get_data_usage(project)
-    config = {'general': {key: copy.deepcopy(value) for key, value in template['general'].items()
-                          if key not in SERVER_ONLY_GENERAL_KEYS},
-              'cats': {}}
+    general = {key: value for key, value in template['general'].items() if key not in SERVER_ONLY_GENERAL_KEYS}
+    config = {'general': general, 'cats': {}}
     for cat, definition in template['cats'].items():
         if cat in listed:
-            config['cats'][cat] = copy.deepcopy(definition)
+            config['cats'][cat] = definition
         elif cat in usage:
-            config['cats'][cat] = copy.deepcopy(definition)
-            config['cats'][cat]['attrs'] = {name: attr for name, attr in copy.deepcopy(definition['attrs']).items()
+            config['cats'][cat] = dict(definition)
+            config['cats'][cat]['attrs'] = {name: attr for name, attr in definition['attrs'].items()
                                             if name in usage[cat]}
-    return remove_dangling_references(config)
+    return remove_dangling_references(config)          # a new copy: the template is not modified

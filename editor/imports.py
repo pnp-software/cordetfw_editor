@@ -13,7 +13,7 @@ from editor.utilities import frmt_string
 from editor.convert import convert_edit_to_db
 from editor.choices import HISTORY_STATUS
 from editor.svg_check import check_svg_value
-from editor.config_validation import MAX_JSON_BYTES, validate_config, validate_config_json
+from editor.config_validation import MAX_JSON_BYTES, error_text, validate_config, validate_config_json
 from editor.config_store import InvalidConfigError, StaleConfigError, config_token, save_project_config
 from editor.project_config import filter_template_for_data, load_template
 
@@ -215,7 +215,7 @@ def read_archive_config(imp_dir):
 
 def config_rejection(errors):
     """Message for a rejected archive configuration: the JSON path and the problem of the first errors."""
-    shown = '; '.join(str(e) for e in errors[:IMPORT_MAX_CONFIG_ERRORS_SHOWN])
+    shown = '; '.join(error_text(e) for e in errors[:IMPORT_MAX_CONFIG_ERRORS_SHOWN])
     more = len(errors) - IMPORT_MAX_CONFIG_ERRORS_SHOWN
     return ('The project configuration ('+CONFIG_MEMBER+') is not valid, nothing was imported. '+shown+
             ('; and '+str(more)+' more problem(s)' if more > 0 else ''))
@@ -237,7 +237,7 @@ def store_project_config(project, archive_config_text):
     Give the imported project its configuration, inside the import transaction (ImportAborted undoes the import).
     An archive configuration is validated against the imported data and stored by save_project_config (as the
     owner's Save; the new project's stored value is {}). Without one, filter_template_for_data of the imported data
-    is stored; its problems are only logged (as by init_project_configs) and shown when the owner validates.
+    is stored; its problems are only logged and shown when the owner validates.
     """
     if archive_config_text is not None:
         try:
@@ -253,7 +253,7 @@ def store_project_config(project, archive_config_text):
     project.save(update_fields=['config'])          # update_fields: updated_at (restored from the archive) is kept
     for error in problems[:IMPORT_MAX_CONFIG_ERRORS_SHOWN]:
         logger.warning('import_project: the configuration initialized for project %s has a problem at %s',
-                       project.id, error)
+                       project.id, error_text(error))
 
 
 def _import_project_tables(imp_dir, notes):

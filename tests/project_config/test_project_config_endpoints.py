@@ -1,57 +1,69 @@
-import copy
 import json
+import os
 import threading
 from unittest import mock
 
+import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import OperationalError, connection, connections
+from django.db import OperationalError, connection
 from django.db.models import QuerySet
-from django.test import Client, TransactionTestCase
+from django.test import Client
 from django.test.utils import CaptureQueriesContext
-from django.urls import reverse
 
-from editor import config_validation, config_views
+from editor import config_validation, views
 from editor.config_cleanup import remove_category
-from editor.config_store import StaleConfigError, config_token, save_project_config
+from editor.config_store import InvalidConfigError, StaleConfigError, config_token, save_project_config
 from editor.config_validation import MAX_JSON_BYTES
 from editor.models import Project, ProjectUser, SpecItem
-from editor.project_config import get_project_config, load_template
+from editor.project_config import load_template, new_project_config
 from tests.backend import is_mysql
-from tests.project_config.base import BACKEND, EditorTestCase
+from tests.project_config.base import BACKEND, World, make_item, make_project, make_user, messages_of
+
+pytestmark = pytest.mark.django_db
 
 GET_ENDPOINTS = ('project_config', 'project_config_download', 'project_config_reload')
 POST_ENDPOINTS = ('project_config_validate', 'project_config_upload', 'project_config_save')
 ALL_ENDPOINTS = GET_ENDPOINTS + POST_ENDPOINTS
 LOGIN_URL = '/editor/login/'
+NON_OWNERS = ('ro_user', 'rw_user', 'staff', 'other_owner')
+OWNER_ONLY = (302, '/editor', ['This operation is only accessible to the owner of project Proj'])
 
 
 def writes(queries):
     return [q['sql'] for q in queries if q['sql'].split(None, 1)[0].upper() in ('INSERT', 'UPDATE', 'DELETE')]
 
 
-class EndpointCase(EditorTestCase):
-    """The project belongs to `owner`; rw_user is RW (logged in on self.client by the base class)."""
+def refusal(response):
+    """(status, redirect target, messages) of a response, to compare with OWNER_ONLY."""
+    return response.status_code, response.get('Location'), messages_of(response)
 
-    def setUp(self):
-        super().setUp()
-        self.ro_user = self.make_user('ro_user')
+
+def changed_config():
+    config = new_project_config()
+    config['cats']['Packet']['page_size'] = 7
+    return config
+
+
+class EndpointWorld(World):
+    """World with an RO member, a staff user who is not the owner and project 'Other' of another owner;
+    owner_client is logged in as the owner of Proj."""
+
+    def __init__(self, client):
+        super().__init__(client)
+        self.ro_user = make_user('ro_user')
         ProjectUser.objects.create(project=self.project, user=self.ro_user, role='RO')
-        self.staff = self.make_user('staff_user', is_staff=True)
-        self.other_owner = self.make_user('other_owner')
-        self.other_project, _ = self.make_project('Other', owner=self.other_owner)
+        self.staff = make_user('staff_user', is_staff=True)
+        self.other_owner = make_user('other_owner')
+        self.other_project, self.other_val_set = make_project('Other', owner=self.other_owner)
         self.owner_client = self.client_for(self.owner)
 
     def client_for(self, user, **kwargs):
         client = Client(**kwargs)
-        if user is not None:
-            client.force_login(user, backend=BACKEND)
+        client.force_login(user, backend=BACKEND)
         return client
 
     def curl(self, name, project=None):
-        return reverse(name, args=[(project or self.project).id])
-
-    def valid_config(self):
-        return get_project_config(self.project)
+        return self.url(name, (project or self.project).id)
 
     def stored(self, project=None):
         return Project.objects.get(id=(project or self.project).id).config
@@ -73,587 +85,648 @@ class EndpointCase(EditorTestCase):
         token = self.token(project) if token is None else token
         return self.post_json(client, 'project_config_save', config, token, project, **headers)
 
-    def upload(self, client, content, name='config.json', project=None):
+    def upload(self, client, content, project=None):
         return client.post(self.curl('project_config_upload', project),
-                           {'upload_file': SimpleUploadedFile(name, content)})
+                           {'upload_file': SimpleUploadedFile('config.json', content)})
 
     def call(self, client, name, project=None):
         """A request which would succeed for the owner (current token, valid configuration)."""
         if name in GET_ENDPOINTS:
             return client.get(self.curl(name, project))
         if name == 'project_config_upload':
-            return self.upload(client, json.dumps(self.valid_config()).encode(), project=project)
-        return self.post_json(client, name, self.valid_config(), self.token(project), project)
-
-    def changed_config(self):
-        config = self.valid_config()
-        config['cats']['Packet']['page_size'] = 7
-        return config
-
-
-class AccessTests(EndpointCase):
-    def test_the_owner_may_use_every_endpoint(self):
-        for name in ALL_ENDPOINTS:
-            with self.subTest(endpoint=name):
-                self.assertEqual(self.call(self.owner_client, name).status_code, 200)
-
-    def test_anonymous_users_are_redirected_to_the_login_page(self):
-        anonymous = Client()
-        self.store(load_template())
-        before = self.stored()
-        for name in ALL_ENDPOINTS:
-            with self.subTest(endpoint=name):
-                response = self.call(anonymous, name)
-                self.assertEqual(response.status_code, 302)
-                self.assertTrue(response['Location'].startswith(LOGIN_URL), response['Location'])
-        self.assertEqual(self.stored(), before)
-
-    def test_nobody_but_the_owner_has_access(self):
-        users = {'RO member': self.ro_user, 'RW member': self.rw_user, 'staff, not the owner': self.staff,
-                 'owner of another project': self.other_owner}
-        for who, user in users.items():
-            client = self.client_for(user)
-            for name in ALL_ENDPOINTS:
-                with self.subTest(user=who, endpoint=name):
-                    before = self.stored()
-                    with CaptureQueriesContext(connection) as queries:
-                        response = self.call(client, name)
-                    self.assertEqual(response.status_code, 403)
-                    self.assertEqual(self.stored(), before)
-                    self.assertEqual(writes(queries.captured_queries), [])
-                    self.assertNotIn(b'"config"', response.content)       # nothing of the configuration leaks
-
-    def test_a_staff_owner_is_the_owner_like_any_other(self):
-        self.owner.is_staff = True
-        self.owner.save()
-        self.assertEqual(self.call(self.client_for(self.owner), 'project_config_reload').status_code, 200)
-
-    def test_ownership_decides_before_the_http_method(self):
-        for user in (self.rw_user, self.staff, self.other_owner):
-            for name in ALL_ENDPOINTS:
-                client = self.client_for(user)
-                response = client.post(self.curl(name)) if name in GET_ENDPOINTS else client.get(self.curl(name))
-                with self.subTest(user=user.username, endpoint=name):
-                    self.assertEqual(response.status_code, 403)
-
-    def test_an_unknown_project_is_forbidden_not_not_found(self):
-        missing = Project.objects.order_by('-id').first().id + 100
-        for name in ALL_ENDPOINTS:
-            with self.subTest(endpoint=name):
-                response = self.owner_client.get(reverse(name, args=[missing]))
-                self.assertEqual(response.status_code, 403)
-
-    def test_each_project_has_its_own_owner(self):
-        self.assertEqual(self.call(self.client_for(self.other_owner), 'project_config_reload',
-                                   self.other_project).status_code, 200)
-        self.assertEqual(self.call(self.owner_client, 'project_config_reload', self.other_project).status_code, 403)
-
-    def test_methods_are_restricted(self):
-        for name in POST_ENDPOINTS:
-            with self.subTest(endpoint=name, method='GET'):
-                response = self.owner_client.get(self.curl(name))
-                self.assertEqual(response.status_code, 405)
-                self.assertEqual(response['Allow'], 'POST')
-        for name in GET_ENDPOINTS:
-            for method in ('post', 'put', 'delete'):
-                with self.subTest(endpoint=name, method=method):
-                    response = getattr(self.owner_client, method)(self.curl(name))
-                    self.assertEqual(response.status_code, 405)
-        for name in POST_ENDPOINTS:
-            for method in ('put', 'delete', 'patch'):
-                with self.subTest(endpoint=name, method=method):
-                    self.assertEqual(getattr(self.owner_client, method)(self.curl(name)).status_code, 405)
-        self.assertEqual(self.stored(), {})
-
-    def test_a_get_cannot_change_the_configuration(self):
-        for name in POST_ENDPOINTS:
-            self.owner_client.get(self.curl(name) + '?config=%7B%7D')
-        self.assertEqual(self.stored(), {})
-
-
-class CsrfTests(EndpointCase):
-    """Clients which enforce CSRF checks like a browser does (the default test client does not)."""
-
-    def setUp(self):
-        super().setUp()
-        self.csrf_client = self.client_for(self.owner, enforce_csrf_checks=True)
-
-    def csrf_token(self):
-        self.assertEqual(self.csrf_client.get(self.curl('project_config')).status_code, 200)    # sets the cookie
-        return self.csrf_client.cookies['csrftoken'].value
-
-    def test_posts_without_a_csrf_token_are_rejected_and_change_nothing(self):
-        for name in POST_ENDPOINTS:
-            with self.subTest(endpoint=name):
-                before = self.stored()
-                response = self.call(self.csrf_client, name)
-                self.assertEqual(response.status_code, 403)
-                self.assertEqual(self.stored(), before)
-
-    def test_a_wrong_csrf_token_is_rejected(self):
-        self.csrf_token()
-        response = self.save(self.csrf_client, self.changed_config(), **{'X-CSRFToken': 'x' * 64})
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(self.stored(), {})
-
-    def test_with_the_csrf_token_the_posts_work(self):
-        token = self.csrf_token()
-        self.assertEqual(self.post_json(self.csrf_client, 'project_config_validate', self.valid_config(),
-                                        **{'X-CSRFToken': token}).status_code, 200)
-        self.assertEqual(self.save(self.csrf_client, self.changed_config(), **{'X-CSRFToken': token}).status_code, 200)
-        self.assertEqual(self.stored()['cats']['Packet']['page_size'], 7)
-        upload = self.csrf_client.post(self.curl('project_config_upload'),
-                                       {'upload_file': SimpleUploadedFile('c.json', json.dumps(self.valid_config()).encode())},
-                                       headers={'X-CSRFToken': token})
-        self.assertEqual(upload.status_code, 200)
-
-    def test_the_csrf_check_is_not_bypassed_for_a_non_owner(self):
-        client = self.client_for(self.rw_user, enforce_csrf_checks=True)
-        self.assertEqual(self.call(client, 'project_config_save').status_code, 403)
-
-
-class ReadEndpointTests(EndpointCase):
-    def test_reload_returns_the_stored_configuration_and_its_token(self):
-        config = self.changed_config()
-        self.store(config)
-        body = self.owner_client.get(self.curl('project_config_reload')).json()
-        self.assertEqual(body['config'], config)
-        self.assertEqual(body['token'], config_token(config))
-        self.assertTrue(body['token'].startswith('sha256:'))
-
-    def test_an_unconfigured_project_shows_the_template_without_server_settings(self):
-        body = self.owner_client.get(self.curl('project_config_reload')).json()
-        self.assertEqual(body['config'], get_project_config(self.project))
-        self.assertNotIn('temp_dir', body['config']['general'])
-        self.assertEqual(body['token'], config_token({}))
-
-    def test_reload_changes_nothing(self):
-        self.store(self.changed_config())
-        updated = self.project.updated_at
-        with CaptureQueriesContext(connection) as queries:
-            self.owner_client.get(self.curl('project_config_reload'))
-        self.assertEqual(writes(queries.captured_queries), [])
-        self.assertEqual(Project.objects.get(id=self.project.id).updated_at, updated)
-
-    def test_reload_does_not_touch_stored_items(self):
-        self.make_item(self.project, 'Requirement', 'D', 'r1', p_kind='STD')
-        rows = list(SpecItem.objects.values())
-        self.owner_client.get(self.curl('project_config_reload'))
-        self.assertEqual(list(SpecItem.objects.values()), rows)
-
-    def test_reload_after_a_change_by_somebody_else_shows_it(self):
-        old = self.owner_client.get(self.curl('project_config_reload')).json()
-        newer = self.changed_config()
-        self.store(newer)
-        body = self.owner_client.get(self.curl('project_config_reload')).json()
-        self.assertEqual(body['config'], newer)
-        self.assertNotEqual(body['token'], old['token'])
-
-    def test_download_is_a_json_file_which_can_be_uploaded_again(self):
-        self.store(self.changed_config())
-        response = self.owner_client.get(self.curl('project_config_download'))
-        self.assertEqual(response['Content-Type'], 'application/json; charset=utf-8')
-        self.assertEqual(response['Content-Disposition'],
-                         'attachment; filename="cordetfw_project_%d_config.json"' % self.project.id)
-        self.assertEqual(json.loads(response.content), self.changed_config())
-        uploaded = self.upload(self.owner_client, response.content)
-        self.assertEqual(uploaded.status_code, 200)
-        self.assertEqual(uploaded.json()['config'], self.changed_config())
-
-    def test_download_of_an_unconfigured_project_is_the_valid_template(self):
-        response = self.owner_client.get(self.curl('project_config_download'))
-        self.assertEqual(self.post_json(self.owner_client, 'project_config_validate', response.content).status_code, 200)
-
-    def test_the_page_shows_the_configuration_and_token_escaped(self):
-        config = self.changed_config()
-        config['cats']['Packet']['name'] = '<script>alert(1)</script>'
-        self.store(config)
-        response = self.owner_client.get(self.curl('project_config'))
-        self.assertEqual(response.status_code, 200)
-        content = response.content.decode()
-        self.assertNotIn('<script>alert(1)', content)
-        # The configuration is embedded with json_script (escaped for a <script> element)
-        self.assertIn('\\u003Cscript\\u003Ealert(1)\\u003C/script\\u003E', content)
-        self.assertIn('data-token="%s"' % config_token(config), content)
-        self.assertIn(self.curl('project_config_save'), content)
-
-    def test_responses_are_not_cached(self):
-        for name in GET_ENDPOINTS:
-            self.assertIn('no-store', self.owner_client.get(self.curl(name))['Cache-Control'])
-
-    def test_server_settings_in_a_stored_configuration_are_never_served(self):
-        config = self.valid_config()
-        config['general']['temp_dir'] = '/somewhere/else'
-        self.store(config)
-        for name in ('project_config_reload', 'project_config_download', 'project_config'):
-            with self.subTest(endpoint=name):
-                self.assertNotIn('/somewhere/else', self.owner_client.get(self.curl(name)).content.decode())
-
-
-class ValidateAndUploadTests(EndpointCase):
-    def test_a_valid_configuration_is_reported_valid_without_a_write(self):
-        config = self.changed_config()
-        with CaptureQueriesContext(connection) as queries:
-            response = self.post_json(self.owner_client, 'project_config_validate', config)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'valid': True, 'errors': [], 'config': config})
-        self.assertEqual(writes(queries.captured_queries), [])
-        self.assertEqual(self.stored(), {})
-
-    def test_an_invalid_configuration_gets_errors_with_paths(self):
-        config = self.valid_config()
-        config['cats']['Packet']['page_size'] = 0
-        config['cats']['Service']['level'] = 'galaxy'
-        response = self.post_json(self.owner_client, 'project_config_validate', config)
-        self.assertEqual(response.status_code, 422)
-        body = response.json()
-        self.assertFalse(body['valid'])
-        self.assertEqual({e['path'] for e in body['errors']}, {'cats.Packet.page_size', 'cats.Service.level'})
-        self.assertTrue(all(e['message'] for e in body['errors']))
-        self.assertEqual(self.stored(), {})
-
-    def test_stored_data_errors_surface_through_the_endpoint(self):
-        self.make_item(self.project, 'Requirement', 'D', 'r1', p_kind='STD')
-        config = self.valid_config()
-        del config['cats']['Requirement']['p_kind_choices']['STD']
-        response = self.post_json(self.owner_client, 'project_config_validate', config)
-        self.assertEqual(response.status_code, 422)
-        self.assertEqual([e['path'] for e in response.json()['errors']], ['cats.Requirement.p_kind_choices'])
-
-    def test_a_server_setting_in_the_payload_is_rejected(self):
-        config = self.valid_config()
-        config['general']['temp_dir'] = '/tmp/elsewhere'
-        for name in ('validate', 'save'):
-            with self.subTest(endpoint=name):
-                if name == 'validate':
-                    response = self.post_json(self.owner_client, 'project_config_validate', config)
-                else:
-                    response = self.save(self.owner_client, config)
-                self.assertEqual(response.status_code, 422)
-                self.assertEqual([e['path'] for e in response.json()['errors']], ['general.temp_dir'])
-        self.assertEqual(self.stored(), {})
-        upload = self.upload(self.owner_client, json.dumps(config).encode())
-        self.assertEqual([e['path'] for e in upload.json()['errors']], ['general.temp_dir'])
-
-    def test_malformed_bodies_are_errors_not_server_errors(self):
-        bodies = {'not json': b'{', 'blank': b'  ', 'list': b'[]', 'null': b'null', 'number': b'1', 'string': b'"x"',
-                  'not utf-8': b'\xff\xfe{}', 'nan': b'{"general": NaN}',
-                  'duplicate key': b'{"general": {}, "general": {}, "cats": {}}',
-                  'too deep': b'[' * 20000 + b']' * 20000, 'wrong shape': b'{"cats": 5, "general": []}'}
-        for what, body in bodies.items():
-            for name in ('project_config_validate', 'project_config_save'):
-                with self.subTest(body=what, endpoint=name):
-                    response = self.post_json(self.owner_client, name, body, token=self.token()) \
-                        if name == 'project_config_save' else self.post_json(self.owner_client, name, body)
-                    self.assertEqual(response.status_code, 422)
-                    self.assertTrue(response.json()['errors'])
-            with self.subTest(body=what, endpoint='upload'):
-                response = self.upload(self.owner_client, body)
-                self.assertEqual(response.status_code, 422)
-                self.assertTrue(response.json()['errors'])
-        self.assertEqual(self.stored(), {})
-
-    def test_the_duplicate_key_is_reported_with_its_path(self):
-        response = self.post_json(self.owner_client, 'project_config_validate',
-                                  b'{"general": {}, "general": {}, "cats": {}}')
-        self.assertIn('general', [e['path'] for e in response.json()['errors']])
-
-    def test_the_content_type_must_be_json(self):
-        for name in ('project_config_validate', 'project_config_save'):
-            with self.subTest(endpoint=name):
-                response = self.owner_client.post(self.curl(name), data=json.dumps(self.valid_config()),
-                                                  content_type='text/plain', headers={'X-Config-Token': self.token()})
-                self.assertEqual(response.status_code, 415)
-        self.assertEqual(self.stored(), {})
-
-    def test_an_oversized_body_is_refused_before_it_is_read(self):
-        too_big = b' ' * (MAX_JSON_BYTES + 1)
-        for name in ('project_config_validate', 'project_config_save'):
-            with self.subTest(endpoint=name):
-                response = self.post_json(self.owner_client, name, too_big, token=self.token())
-                self.assertEqual(response.status_code, 413)
-        self.assertEqual(self.upload(self.owner_client, too_big).status_code, 413)
-        self.assertEqual(self.stored(), {})
-
-    def test_upload_returns_the_content_and_stores_nothing(self):
-        config = self.changed_config()
-        with CaptureQueriesContext(connection) as queries:
-            response = self.upload(self.owner_client, json.dumps(config).encode())
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {'valid': True, 'errors': [], 'config': config})
-        self.assertEqual(writes(queries.captured_queries), [])
-        self.assertEqual(self.stored(), {})
-
-    def test_an_invalid_upload_is_reported_and_stores_nothing(self):
-        config = self.valid_config()
-        config['cats']['Packet']['page_size'] = 'many'
-        response = self.upload(self.owner_client, json.dumps(config).encode())
-        self.assertEqual(response.status_code, 422)
-        self.assertEqual([e['path'] for e in response.json()['errors']], ['cats.Packet.page_size'])
-        self.assertEqual(response.json()['config'], config)              # the editor can show it with the errors
-        self.assertEqual(self.stored(), {})
-
-    def test_an_upload_needs_a_file(self):
-        response = self.owner_client.post(self.curl('project_config_upload'), {'other': 'x'})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(self.stored(), {})
-
-    def test_preview_and_upload_leave_no_server_side_draft(self):
-        before = {model.objects.count() for model in (Project, SpecItem)}
-        rows = list(Project.objects.values())
-        files_before = self.temp_files()
-        self.post_json(self.owner_client, 'project_config_validate', self.changed_config())
-        self.upload(self.owner_client, json.dumps(self.changed_config()).encode())
-        self.assertEqual(list(Project.objects.values()), rows)
-        self.assertEqual({model.objects.count() for model in (Project, SpecItem)}, before)
-        self.assertEqual(self.temp_files(), files_before)
-        self.assertEqual(self.owner_client.get(self.curl('project_config_reload')).json()['config'],
-                         get_project_config(self.project))
-
-    def temp_files(self):
-        import os
-        from django.conf import settings
-        return sorted(os.listdir(settings.TEST_ROOT))
-
-    def test_validation_is_the_shared_validator(self):
-        with mock.patch.object(config_validation, 'validate_config', wraps=config_validation.validate_config) as validate:
-            self.upload(self.owner_client, json.dumps(self.valid_config()).encode())
-            self.post_json(self.owner_client, 'project_config_validate', self.valid_config())
-            self.save(self.owner_client, self.valid_config())
-        self.assertEqual(validate.call_count, 3)
-        for call in validate.call_args_list:
-            self.assertEqual(call.args[1].id, self.project.id)            # always against the project's data
-
-
-class SaveTests(EndpointCase):
-    def test_a_valid_save_stores_the_configuration_and_returns_the_new_token(self):
-        config = self.changed_config()
-        token = self.token()
-        response = self.save(self.owner_client, config)
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        self.assertTrue(body['saved'])
-        self.assertEqual(self.stored(), config)
-        self.assertEqual(body['token'], config_token(config))
-        self.assertNotEqual(body['token'], token)
-        self.assertEqual(self.owner_client.get(self.curl('project_config_reload')).json(),
-                         {'config': config, 'token': body['token']})
-
-    def test_the_new_token_allows_the_next_save(self):
-        first = self.save(self.owner_client, self.changed_config()).json()['token']
-        second = self.changed_config()
-        second['cats']['Packet']['page_size'] = 8
-        self.assertEqual(self.save(self.owner_client, second, token=first).status_code, 200)
-        self.assertEqual(self.stored()['cats']['Packet']['page_size'], 8)
-
-    def test_an_invalid_save_leaves_the_stored_configuration_unchanged(self):
-        stored = self.changed_config()
-        self.store(stored)
-        invalid = copy.deepcopy(stored)
-        invalid['cats']['Packet']['page_size'] = -1
-        updated = Project.objects.get(id=self.project.id).updated_at
-        response = self.save(self.owner_client, invalid)
-        self.assertEqual(response.status_code, 422)
-        body = response.json()
-        self.assertFalse(body['saved'])
-        self.assertEqual([e['path'] for e in body['errors']], ['cats.Packet.page_size'])
-        self.assertEqual(self.stored(), stored)
-        self.assertEqual(Project.objects.get(id=self.project.id).updated_at, updated)
-
-    def test_a_save_without_a_token_is_refused(self):
-        response = self.post_json(self.owner_client, 'project_config_save', self.changed_config())
-        self.assertEqual(response.status_code, 428)
-        self.assertEqual(self.stored(), {})
-
-    def test_a_save_with_a_wrong_token_is_a_conflict(self):
-        for token in ('', 'sha256:' + '0' * 64, 'garbage', config_token({'x': 1})):
-            with self.subTest(token=token):
-                response = self.save(self.owner_client, self.changed_config(), token=token or 'x')
-                self.assertEqual(response.status_code, 409)
-        self.assertEqual(self.stored(), {})
-
-    def test_a_stale_save_is_a_conflict_and_does_not_overwrite_newer_data(self):
-        editor_a, editor_b = self.token(), self.token()               # both loaded the same state
-        newer = self.changed_config()
-        self.assertEqual(self.save(self.owner_client, newer, token=editor_a).status_code, 200)
-        mine = self.valid_config()
-        mine['cats']['Packet']['page_size'] = 9
-        response = self.save(self.owner_client, mine, token=editor_b)
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json()['errors'][0]['path'], '')
-        self.assertIn('reload', response.json()['errors'][0]['message'])
-        self.assertNotIn('token', response.json())                     # no token which would allow overwriting
-        self.assertEqual(self.stored(), newer)
-
-    def test_a_conflict_is_reported_before_the_validation_errors(self):
-        self.store(self.changed_config())
-        invalid = self.valid_config()
-        invalid['cats']['Packet']['page_size'] = 0
-        self.assertEqual(self.save(self.owner_client, invalid, token=config_token({})).status_code, 409)
-
-    def test_the_token_does_not_depend_on_the_key_order(self):
-        config = self.changed_config()
-        reordered = {'cats': dict(reversed(list(config['cats'].items()))), 'general': config['general']}
-        self.assertEqual(config_token(config), config_token(reordered))
-        self.store(reordered)
-        self.assertEqual(self.save(self.owner_client, config, token=config_token(config)).status_code, 200)
-
-    def test_saving_a_configuration_which_hides_a_category_with_data_keeps_the_data(self):
-        service = self.make_item(self.project, 'Service', 'D', 's1', title='kept')
-        self.make_item(self.project, 'Packet', 'D', 'p1', p_link=service, p_kind='')
-        rows = list(SpecItem.objects.order_by('id').values())
-        config = remove_category(self.valid_config(), 'Packet')      # the cleanup the editor applies first
-        response = self.save(self.owner_client, config)
-        self.assertEqual(response.status_code, 200, response.content)
-        self.assertNotIn('Packet', self.stored()['cats'])
-        self.assertEqual(list(SpecItem.objects.order_by('id').values()), rows)
-
-    def test_a_save_changes_no_other_project(self):
-        other_config = load_template()
-        self.store(other_config, self.other_project)
-        self.save(self.owner_client, self.changed_config())
-        self.assertEqual(self.stored(self.other_project), other_config)
-
-    def test_a_non_owner_cannot_save_even_with_the_right_token(self):
-        for user in (self.rw_user, self.ro_user, self.staff, self.other_owner):
-            with self.subTest(user=user.username):
-                self.assertEqual(self.save(self.client_for(user), self.changed_config()).status_code, 403)
-        self.assertEqual(self.stored(), {})
-
-    def test_an_unconfigured_project_can_be_saved_from_the_template(self):
-        self.assertEqual(self.stored(), {})
-        self.assertEqual(self.save(self.owner_client, self.valid_config()).status_code, 200)
-        self.assertEqual(self.stored(), self.valid_config())
-
-
-class NextRequestTests(EndpointCase):
-    def packet_choices(self, client):
-        response = client.get(self.add_url('DataItem'))
-        self.assertEqual(response.status_code, 200)
-        return set(response.context['form'].fields['p_link'].queryset.values_list('id', flat=True))
-
-    def test_a_saved_setting_applies_to_the_next_request_without_a_restart(self):
-        item_type = self.make_item(self.project, 'DataItemType', 'D', 't')
-        enum_type = self.make_item(self.project, 'EnumType', 'D', 'e')
-        self.assertEqual(self.packet_choices(self.owner_client), {item_type.id, enum_type.id})
-        config = self.valid_config()
-        config['cats']['DataItem']['links']['p_link']['targets'] = ['EnumType']
-        self.assertEqual(self.save(self.owner_client, config).status_code, 200)
-        self.assertEqual(self.packet_choices(self.owner_client), {enum_type.id})
-        self.assertEqual(self.packet_choices(self.client_for(self.rw_user)), {enum_type.id})   # every user, new client
-
-    def test_a_failed_save_does_not_change_the_next_request(self):
-        item_type = self.make_item(self.project, 'DataItemType', 'D', 't')
-        config = self.valid_config()
-        config['cats']['DataItem']['links']['p_link']['targets'] = ['EnumType']
-        config['cats']['Packet']['page_size'] = 0
-        self.assertEqual(self.save(self.owner_client, config).status_code, 422)
-        self.assertIn(item_type.id, self.packet_choices(self.owner_client))
-
-    def test_another_project_is_not_affected(self):
-        other_type = self.make_item(self.other_project, 'DataItemType', 'D', 't')
-        config = self.valid_config()
-        config['cats']['DataItem']['links']['p_link']['targets'] = ['EnumType']
-        self.save(self.owner_client, config)
-        response = self.client_for(self.other_owner).get(
-            reverse('add_spec_item', args=['DataItem', self.other_project.id, 0, 'Sel_All', 0]))
-        self.assertIn(other_type.id, response.context['form'].fields['p_link'].queryset.values_list('id', flat=True))
-
-    def test_server_settings_come_from_the_server_not_from_the_project(self):
-        config = self.valid_config()
-        config['general']['temp_dir'] = '/does/not/exist'
-        self.store(config)                                             # bypasses the validator on purpose
-        self.assertEqual(self.owner_client.get(reverse('export_project', args=[self.project.id])).status_code, 200)
-
-
-class ConcurrencyTests(EndpointCase):
-    def test_the_token_is_compared_with_the_value_read_under_the_lock(self):
-        # The editor loaded the configuration; a competing save commits after this request has been
-        # accepted but before it locks the project: the stale save must be refused.
-        token = self.token()
-        competing = self.changed_config()
-        real = config_views.user_is_project_owner
-        done = []
-
-        def owner_check_then_competing_save(user, project):
-            result = real(user, project)
-            if not done:
-                done.append(True)
-                Project.objects.filter(id=project.id).update(config=competing)
-            return result
-
-        with mock.patch.object(config_views, 'user_is_project_owner', owner_check_then_competing_save):
-            response = self.save(self.owner_client, self.valid_config(), token=token)
-        self.assertEqual(done, [True])
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(self.stored(), competing)
-
-    def test_the_row_is_locked_before_the_token_is_checked_and_inside_the_transaction(self):
-        calls = []
-        original = QuerySet.select_for_update
-
-        def spy(queryset, *args, **kwargs):
-            calls.append((queryset.model, connection.in_atomic_block))
-            return original(queryset, *args, **kwargs)
-
-        with mock.patch.object(QuerySet, 'select_for_update', spy), CaptureQueriesContext(connection) as queries:
-            self.assertEqual(self.save(self.owner_client, self.changed_config()).status_code, 200)
-        self.assertEqual(calls, [(Project, True)])
-        locking = [q['sql'] for q in queries.captured_queries if 'FOR UPDATE' in q['sql']]
-        self.assertEqual(bool(locking), connection.features.has_select_for_update)   # MySQL: SELECT ... FOR UPDATE
-        if locking:
-            self.assertIn('editor_project', locking[0])
-
-    def test_a_save_which_fails_validation_does_not_hold_or_write(self):
-        invalid = self.valid_config()
-        invalid['cats']['Packet']['page_size'] = 0
-        with self.assertRaises(Exception) as caught:
-            save_project_config(self.project.id, json.dumps(invalid), self.token())
-        self.assertEqual(type(caught.exception).__name__, 'InvalidConfigError')
-        self.assertEqual(self.stored(), {})
-
-
-class ConcurrentSaveTests(TransactionTestCase):
-    """Two saves based on the same token, really in parallel (own connections): exactly one is applied."""
-
-    def setUp(self):
-        owner = EditorTestCase.make_user(self, 'owner')
-        self.make_user = lambda name, **kw: EditorTestCase.make_user(self, name, **kw)
-        self.project, _ = EditorTestCase.make_project(self, 'Race', owner=owner)
-
-    def test_only_one_of_two_parallel_saves_with_the_same_token_wins(self):
-        token = config_token(Project.objects.get(id=self.project.id).config)
-        bodies = []
-        for size in (5, 6):
-            config = get_project_config(self.project)
-            config['cats']['Packet']['page_size'] = size
-            bodies.append(json.dumps(config))
-        barrier = threading.Barrier(2)
-        results = [None, None]
-
-        def attempt(i):
-            try:
-                barrier.wait(timeout=10)
-                results[i] = save_project_config(self.project.id, bodies[i], token)
-            except StaleConfigError:
-                results[i] = 'stale'
-            except OperationalError:
-                results[i] = 'locked'                      # SQLite: single writer, the loser fails and writes nothing
-            finally:
-                connections.close_all()
-
-        threads = [threading.Thread(target=attempt, args=(i,)) for i in range(2)]
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join(30)
-        winners = [r for r in results if r not in ('stale', 'locked')]
-        stored = Project.objects.get(id=self.project.id).config
-        if is_mysql():
-            self.assertEqual(sorted(r if r == 'stale' else 'won' for r in results), ['stale', 'won'], results)
-        self.assertLessEqual(len(winners), 1, results)     # SQLite (shared in-memory cache) may fail both
-        if winners:
-            self.assertIn(stored['cats']['Packet']['page_size'], (5, 6))
-            self.assertEqual(winners[0], config_token(stored))
-        else:
-            self.assertEqual(stored, {})
+            return self.upload(client, json.dumps(new_project_config()).encode(), project)
+        return self.post_json(client, name, new_project_config(), self.token(project), project)
+
+
+@pytest.fixture
+def w(client):
+    return EndpointWorld(client)
+
+
+# ------------------------------------------------------------------ access
+
+@pytest.mark.parametrize('name', ALL_ENDPOINTS)
+def test_the_owner_may_use_every_endpoint(w, name):
+    assert w.call(w.owner_client, name).status_code == 200
+
+
+@pytest.mark.parametrize('name', ALL_ENDPOINTS)
+def test_anonymous_users_are_redirected_to_the_login_page(w, name):
+    w.store(load_template())
+    before = w.stored()
+    response = w.call(Client(), name)
+    assert response.status_code == 302
+    assert response['Location'].startswith(LOGIN_URL), response['Location']
+    assert w.stored() == before
+
+
+@pytest.mark.parametrize('name', ALL_ENDPOINTS)
+@pytest.mark.parametrize('who', NON_OWNERS)
+def test_nobody_but_the_owner_has_access(w, who, name):
+    client = w.client_for(getattr(w, who))
+    before = w.stored()
+    with CaptureQueriesContext(connection) as queries:
+        response = w.call(client, name)
+    assert refusal(response) == OWNER_ONLY
+    assert w.stored() == before
+    assert writes(queries.captured_queries) == []
+    assert b'"config"' not in response.content       # nothing of the configuration leaks
+
+
+def test_a_staff_owner_is_the_owner_like_any_other(w):
+    w.owner.is_staff = True
+    w.owner.save()
+    assert w.call(w.client_for(w.owner), 'project_config_reload').status_code == 200
+
+
+@pytest.mark.parametrize('who', ('rw_user', 'staff', 'other_owner'))
+def test_the_method_of_a_post_endpoint_is_checked_before_the_owner(w, who):
+    for name in POST_ENDPOINTS:
+        assert w.client_for(getattr(w, who)).get(w.curl(name)).status_code == 405, name
+    for name in GET_ENDPOINTS:
+        assert refusal(w.client_for(getattr(w, who)).post(w.curl(name))) == OWNER_ONLY, name
+
+
+@pytest.mark.parametrize('name', ALL_ENDPOINTS)
+def test_an_unknown_project_is_an_error(w, name):
+    url = w.url(name, Project.objects.order_by('-id').first().id + 100)
+    send = w.owner_client.get if name in GET_ENDPOINTS else w.owner_client.post
+    with pytest.raises(Project.DoesNotExist):
+        send(url)
+
+
+def test_each_project_has_its_own_owner(w):
+    assert w.call(w.client_for(w.other_owner), 'project_config_reload', w.other_project).status_code == 200
+    response = w.call(w.owner_client, 'project_config_reload', w.other_project)
+    assert refusal(response) == (302, '/editor', ['This operation is only accessible to the owner of project Other'])
+
+
+def test_post_endpoints_accept_only_post_and_get_endpoints_any_method(w):
+    for name in POST_ENDPOINTS:
+        response = w.owner_client.get(w.curl(name))
+        assert response.status_code == 405
+        assert response['Allow'] == 'POST'
+        for method in ('put', 'delete', 'patch'):
+            assert getattr(w.owner_client, method)(w.curl(name)).status_code == 405, (name, method)
+    for name in GET_ENDPOINTS:
+        for method in ('post', 'put', 'delete'):
+            assert getattr(w.owner_client, method)(w.curl(name)).status_code == 200, (name, method)
+    assert w.stored() == new_project_config()
+
+
+def test_a_get_cannot_change_the_configuration(w):
+    for name in POST_ENDPOINTS:
+        w.owner_client.get(w.curl(name) + '?config=%7B%7D')
+    assert w.stored() == new_project_config()
+
+
+# ------------------------------------------------------------------ CSRF
+
+@pytest.fixture
+def csrf_client(w):
+    """A client of the owner which enforces the CSRF checks like a browser does (the default test client does not)."""
+    return w.client_for(w.owner, enforce_csrf_checks=True)
+
+
+def csrf_cookie(w, client):
+    assert client.get(w.curl('project_config')).status_code == 200       # sets the cookie
+    return client.cookies['csrftoken'].value
+
+
+@pytest.mark.parametrize('name', POST_ENDPOINTS)
+def test_posts_without_a_csrf_token_are_rejected_and_change_nothing(w, csrf_client, name):
+    before = w.stored()
+    assert w.call(csrf_client, name).status_code == 403
+    assert w.stored() == before
+
+
+def test_a_wrong_csrf_token_is_rejected(w, csrf_client):
+    csrf_cookie(w, csrf_client)
+    response = w.save(csrf_client, changed_config(), **{'X-CSRFToken': 'x' * 64})
+    assert response.status_code == 403
+    assert w.stored() == new_project_config()
+
+
+def test_with_the_csrf_token_the_posts_work(w, csrf_client):
+    cookie = csrf_cookie(w, csrf_client)
+    assert w.post_json(csrf_client, 'project_config_validate', new_project_config(),
+                       **{'X-CSRFToken': cookie}).status_code == 200
+    assert w.save(csrf_client, changed_config(), **{'X-CSRFToken': cookie}).status_code == 200
+    assert w.stored()['cats']['Packet']['page_size'] == 7
+    upload = csrf_client.post(w.curl('project_config_upload'),
+                              {'upload_file': SimpleUploadedFile('c.json', json.dumps(new_project_config()).encode())},
+                              headers={'X-CSRFToken': cookie})
+    assert upload.status_code == 200
+
+
+def test_the_csrf_check_is_not_bypassed_for_a_non_owner(w):
+    client = w.client_for(w.rw_user, enforce_csrf_checks=True)
+    assert w.call(client, 'project_config_save').status_code == 403
+
+
+# ------------------------------------------------------------------ page, reload and download
+
+def test_reload_returns_the_stored_configuration_and_its_token(w):
+    config = changed_config()
+    w.store(config)
+    body = w.owner_client.get(w.curl('project_config_reload')).json()
+    assert body['config'] == config
+    assert body['token'] == config_token(config)
+    assert body['token'].startswith('sha256:')
+
+
+def test_a_new_project_shows_the_template_without_server_settings(w):
+    body = w.owner_client.get(w.curl('project_config_reload')).json()
+    assert body['config'] == new_project_config()
+    assert 'temp_dir' not in body['config']['general']
+    assert body['token'] == config_token(new_project_config())
+
+
+def test_reload_changes_nothing(w):
+    w.store(changed_config())
+    updated = w.project.updated_at
+    with CaptureQueriesContext(connection) as queries:
+        w.owner_client.get(w.curl('project_config_reload'))
+    assert writes(queries.captured_queries) == []
+    assert Project.objects.get(id=w.project.id).updated_at == updated
+
+
+def test_reload_does_not_touch_stored_items(w):
+    make_item(w.project, 'Requirement', 'D', 'r1', p_kind='STD')
+    rows = list(SpecItem.objects.values())
+    w.owner_client.get(w.curl('project_config_reload'))
+    assert list(SpecItem.objects.values()) == rows
+
+
+def test_reload_after_a_change_by_somebody_else_shows_it(w):
+    old = w.owner_client.get(w.curl('project_config_reload')).json()
+    newer = changed_config()
+    w.store(newer)
+    body = w.owner_client.get(w.curl('project_config_reload')).json()
+    assert body['config'] == newer
+    assert body['token'] != old['token']
+
+
+def test_download_is_a_json_file_which_can_be_uploaded_again(w):
+    w.store(changed_config())
+    response = w.owner_client.get(w.curl('project_config_download'))
+    assert response['Content-Type'] == 'application/json; charset=utf-8'
+    assert response['Content-Disposition'] == 'attachment; filename="cordetfw_project_%d_config.json"' % w.project.id
+    assert json.loads(response.content) == changed_config()
+    uploaded = w.upload(w.owner_client, response.content)
+    assert uploaded.status_code == 200
+    assert uploaded.json()['config'] == changed_config()
+
+
+def test_the_download_of_a_new_project_is_valid(w):
+    response = w.owner_client.get(w.curl('project_config_download'))
+    assert w.post_json(w.owner_client, 'project_config_validate', response.content).status_code == 200
+
+
+def test_the_page_shows_the_configuration_and_token_escaped(w):
+    config = changed_config()
+    config['cats']['Packet']['name'] = '<script>alert(1)</script>'
+    w.store(config)
+    response = w.owner_client.get(w.curl('project_config'))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert '<script>alert(1)' not in content
+    # The configuration is the attribute data-config, autoescaped
+    assert '&lt;script&gt;alert(1)&lt;/script&gt;' in content
+    assert 'data-token="%s"' % config_token(config) in content
+    assert w.curl('project_config_save') in content
+
+
+@pytest.mark.parametrize('name', GET_ENDPOINTS)
+def test_responses_have_no_cache_headers(w, name):
+    assert not w.owner_client.get(w.curl(name)).has_header('Cache-Control')
+
+
+@pytest.mark.parametrize('name', ('project_config_reload', 'project_config_download', 'project_config'))
+def test_server_settings_in_a_stored_configuration_are_never_served(w, name):
+    config = new_project_config()
+    config['general']['temp_dir'] = '/somewhere/else'
+    w.store(config)
+    assert '/somewhere/else' not in w.owner_client.get(w.curl(name)).content.decode()
+
+
+# ------------------------------------------------------------------ validate and upload
+
+def test_a_valid_configuration_is_reported_valid_without_a_write(w):
+    config = changed_config()
+    with CaptureQueriesContext(connection) as queries:
+        response = w.post_json(w.owner_client, 'project_config_validate', config)
+    assert response.status_code == 200
+    assert response.json() == {'valid': True, 'errors': [], 'config': config}
+    assert writes(queries.captured_queries) == []
+    assert w.stored() == new_project_config()
+
+
+def test_an_invalid_configuration_gets_errors_with_paths(w):
+    config = new_project_config()
+    config['cats']['Packet']['page_size'] = 0
+    config['cats']['Service']['level'] = 'galaxy'
+    response = w.post_json(w.owner_client, 'project_config_validate', config)
+    assert response.status_code == 422
+    body = response.json()
+    assert not body['valid']
+    assert {e['path'] for e in body['errors']} == {'cats.Packet.page_size', 'cats.Service.level'}
+    assert all(e['message'] for e in body['errors'])
+    assert w.stored() == new_project_config()
+
+
+def test_stored_data_errors_surface_through_the_endpoint(w):
+    make_item(w.project, 'Requirement', 'D', 'r1', p_kind='STD')
+    config = new_project_config()
+    del config['cats']['Requirement']['p_kind_choices']['STD']
+    response = w.post_json(w.owner_client, 'project_config_validate', config)
+    assert response.status_code == 422
+    assert [e['path'] for e in response.json()['errors']] == ['cats.Requirement.p_kind_choices']
+
+
+def test_a_server_setting_in_the_payload_is_rejected(w):
+    config = new_project_config()
+    config['general']['temp_dir'] = '/tmp/elsewhere'
+    for response in (w.post_json(w.owner_client, 'project_config_validate', config), w.save(w.owner_client, config)):
+        assert response.status_code == 422
+        assert [e['path'] for e in response.json()['errors']] == ['general.temp_dir']
+    assert w.stored() == new_project_config()
+    upload = w.upload(w.owner_client, json.dumps(config).encode())
+    assert [e['path'] for e in upload.json()['errors']] == ['general.temp_dir']
+
+
+MALFORMED_BODIES = {
+    'not json': b'{', 'blank': b'  ', 'list': b'[]', 'null': b'null', 'number': b'1', 'string': b'"x"',
+    'not utf-8': b'\xff\xfe{}', 'nan': b'{"general": NaN}', 'duplicate key': b'{"general": {}, "general": {}, "cats": {}}',
+    'too deep': b'[' * 20000 + b']' * 20000, 'wrong shape': b'{"cats": 5, "general": []}',
+}
+
+
+@pytest.mark.parametrize('body', list(MALFORMED_BODIES.values()), ids=list(MALFORMED_BODIES))
+def test_malformed_bodies_are_errors_not_server_errors(w, body):
+    for response in (w.post_json(w.owner_client, 'project_config_validate', body),
+                     w.post_json(w.owner_client, 'project_config_save', body, token=w.token()),
+                     w.upload(w.owner_client, body)):
+        assert response.status_code == 422
+        assert response.json()['errors']
+    assert w.stored() == new_project_config()
+
+
+def test_the_duplicate_key_is_reported_with_its_path(w):
+    response = w.post_json(w.owner_client, 'project_config_validate', b'{"general": {}, "general": {}, "cats": {}}')
+    assert 'general' in [e['path'] for e in response.json()['errors']]
+
+
+@pytest.mark.parametrize('name', ('project_config_validate', 'project_config_save'))
+def test_the_content_type_must_be_json(w, name):
+    response = w.owner_client.post(w.curl(name), data=json.dumps(new_project_config()), content_type='text/plain',
+                                   headers={'X-Config-Token': w.token()})
+    assert response.status_code == 415
+    assert w.stored() == new_project_config()
+
+
+def test_an_oversized_body_is_refused_before_it_is_read(w):
+    too_big = b' ' * (MAX_JSON_BYTES + 1)
+    for name in ('project_config_validate', 'project_config_save'):
+        assert w.post_json(w.owner_client, name, too_big, token=w.token()).status_code == 413, name
+    assert w.upload(w.owner_client, too_big).status_code == 413
+    assert w.stored() == new_project_config()
+
+
+def test_upload_returns_the_content_and_stores_nothing(w):
+    config = changed_config()
+    with CaptureQueriesContext(connection) as queries:
+        response = w.upload(w.owner_client, json.dumps(config).encode())
+    assert response.status_code == 200
+    assert response.json() == {'valid': True, 'errors': [], 'config': config}
+    assert writes(queries.captured_queries) == []
+    assert w.stored() == new_project_config()
+
+
+def test_an_invalid_upload_is_reported_and_stores_nothing(w):
+    config = new_project_config()
+    config['cats']['Packet']['page_size'] = 'many'
+    response = w.upload(w.owner_client, json.dumps(config).encode())
+    assert response.status_code == 422
+    assert [e['path'] for e in response.json()['errors']] == ['cats.Packet.page_size']
+    assert response.json()['config'] == config              # the editor can show it with the errors
+    assert w.stored() == new_project_config()
+
+
+def test_an_upload_needs_a_file(w):
+    response = w.owner_client.post(w.curl('project_config_upload'), {'other': 'x'})
+    assert response.status_code == 400
+    assert w.stored() == new_project_config()
+
+
+def test_preview_and_upload_leave_no_server_side_draft(w, settings):
+    before = [model.objects.count() for model in (Project, SpecItem)]
+    rows = list(Project.objects.values())
+    files_before = sorted(os.listdir(settings.TEST_ROOT))
+    w.post_json(w.owner_client, 'project_config_validate', changed_config())
+    w.upload(w.owner_client, json.dumps(changed_config()).encode())
+    assert list(Project.objects.values()) == rows
+    assert [model.objects.count() for model in (Project, SpecItem)] == before
+    assert sorted(os.listdir(settings.TEST_ROOT)) == files_before
+    assert w.owner_client.get(w.curl('project_config_reload')).json()['config'] == new_project_config()
+
+
+def test_validation_is_the_shared_validator(w):
+    with mock.patch.object(config_validation, 'validate_config', wraps=config_validation.validate_config) as validate:
+        w.upload(w.owner_client, json.dumps(new_project_config()).encode())
+        w.post_json(w.owner_client, 'project_config_validate', new_project_config())
+        w.save(w.owner_client, new_project_config())
+    assert validate.call_count == 3
+    for call in validate.call_args_list:
+        assert call.args[1].id == w.project.id             # always against the project's data
+
+
+# ------------------------------------------------------------------ save
+
+def test_a_valid_save_stores_the_configuration_and_returns_the_new_token(w):
+    config = changed_config()
+    token = w.token()
+    response = w.save(w.owner_client, config)
+    assert response.status_code == 200
+    body = response.json()
+    assert body['saved']
+    assert w.stored() == config
+    assert body['token'] == config_token(config)
+    assert body['token'] != token
+    assert w.owner_client.get(w.curl('project_config_reload')).json() == {'config': config, 'token': body['token']}
+
+
+def test_the_new_token_allows_the_next_save(w):
+    first = w.save(w.owner_client, changed_config()).json()['token']
+    second = changed_config()
+    second['cats']['Packet']['page_size'] = 8
+    assert w.save(w.owner_client, second, token=first).status_code == 200
+    assert w.stored()['cats']['Packet']['page_size'] == 8
+
+
+def test_an_invalid_save_leaves_the_stored_configuration_unchanged(w):
+    stored = changed_config()
+    w.store(stored)
+    invalid = changed_config()
+    invalid['cats']['Packet']['page_size'] = -1
+    updated = Project.objects.get(id=w.project.id).updated_at
+    response = w.save(w.owner_client, invalid)
+    assert response.status_code == 422
+    body = response.json()
+    assert not body['saved']
+    assert [e['path'] for e in body['errors']] == ['cats.Packet.page_size']
+    assert w.stored() == stored
+    assert Project.objects.get(id=w.project.id).updated_at == updated
+
+
+def test_a_save_without_a_token_is_refused(w):
+    response = w.post_json(w.owner_client, 'project_config_save', changed_config())
+    assert response.status_code == 428
+    assert w.stored() == new_project_config()
+
+
+@pytest.mark.parametrize('token', ['x', 'sha256:' + '0' * 64, 'garbage', config_token({'x': 1})])
+def test_a_save_with_a_wrong_token_is_a_conflict(w, token):
+    assert w.save(w.owner_client, changed_config(), token=token).status_code == 409
+    assert w.stored() == new_project_config()
+
+
+def test_a_stale_save_is_a_conflict_and_does_not_overwrite_newer_data(w):
+    editor_a, editor_b = w.token(), w.token()                   # both loaded the same state
+    newer = changed_config()
+    assert w.save(w.owner_client, newer, token=editor_a).status_code == 200
+    mine = new_project_config()
+    mine['cats']['Packet']['page_size'] = 9
+    response = w.save(w.owner_client, mine, token=editor_b)
+    assert response.status_code == 409
+    assert response.json()['errors'][0]['path'] == ''
+    assert 'reload' in response.json()['errors'][0]['message']
+    assert 'token' not in response.json()                       # no token which would allow overwriting
+    assert w.stored() == newer
+
+
+def test_a_conflict_is_reported_before_the_validation_errors(w):
+    loaded = w.token()
+    w.store(changed_config())
+    invalid = new_project_config()
+    invalid['cats']['Packet']['page_size'] = 0
+    assert w.save(w.owner_client, invalid, token=loaded).status_code == 409
+
+
+def test_the_token_does_not_depend_on_the_key_order(w):
+    config = changed_config()
+    reordered = {'cats': dict(list(config['cats'].items())[::-1]), 'general': config['general']}
+    assert config_token(config) == config_token(reordered)
+    w.store(reordered)
+    assert w.save(w.owner_client, config, token=config_token(config)).status_code == 200
+
+
+def test_saving_a_configuration_which_hides_a_category_with_data_keeps_the_data(w):
+    service = make_item(w.project, 'Service', 'D', 's1', title='kept')
+    make_item(w.project, 'Packet', 'D', 'p1', p_link=service, p_kind='')
+    rows = list(SpecItem.objects.order_by('id').values())
+    config = remove_category(new_project_config(), 'Packet')      # the cleanup the editor applies first
+    response = w.save(w.owner_client, config)
+    assert response.status_code == 200, response.content
+    assert 'Packet' not in w.stored()['cats']
+    assert list(SpecItem.objects.order_by('id').values()) == rows
+
+
+def test_a_save_changes_no_other_project(w):
+    other_config = load_template()
+    w.store(other_config, w.other_project)
+    w.save(w.owner_client, changed_config())
+    assert w.stored(w.other_project) == other_config
+
+
+@pytest.mark.parametrize('who', NON_OWNERS)
+def test_a_non_owner_cannot_save_even_with_the_right_token(w, who):
+    assert refusal(w.save(w.client_for(getattr(w, who)), changed_config())) == OWNER_ONLY
+    assert w.stored() == new_project_config()
+
+
+def test_saving_the_configuration_of_a_new_project_unchanged_keeps_its_token(w):
+    token = w.token()
+    response = w.save(w.owner_client, new_project_config())
+    assert response.status_code == 200
+    assert response.json()['token'] == token
+    assert w.stored() == new_project_config()
+
+
+# ------------------------------------------------------------------ the next request
+
+def packet_choices(w, client):
+    response = client.get(w.add_url('DataItem'))
+    assert response.status_code == 200
+    return set(response.context['form'].fields['p_link'].queryset.values_list('id', flat=True))
+
+
+def test_a_saved_setting_applies_to_the_next_request_without_a_restart(w):
+    item_type = make_item(w.project, 'DataItemType', 'D', 't')
+    enum_type = make_item(w.project, 'EnumType', 'D', 'e')
+    assert packet_choices(w, w.owner_client) == {item_type.id, enum_type.id}
+    config = new_project_config()
+    config['cats']['DataItem']['links']['p_link']['targets'] = ['EnumType']
+    assert w.save(w.owner_client, config).status_code == 200
+    assert packet_choices(w, w.owner_client) == {enum_type.id}
+    assert packet_choices(w, w.client_for(w.rw_user)) == {enum_type.id}      # every user, new client
+
+
+def test_a_failed_save_does_not_change_the_next_request(w):
+    item_type = make_item(w.project, 'DataItemType', 'D', 't')
+    config = new_project_config()
+    config['cats']['DataItem']['links']['p_link']['targets'] = ['EnumType']
+    config['cats']['Packet']['page_size'] = 0
+    assert w.save(w.owner_client, config).status_code == 422
+    assert item_type.id in packet_choices(w, w.owner_client)
+
+
+def test_another_project_is_not_affected(w):
+    other_type = make_item(w.other_project, 'DataItemType', 'D', 't')
+    config = new_project_config()
+    config['cats']['DataItem']['links']['p_link']['targets'] = ['EnumType']
+    w.save(w.owner_client, config)
+    response = w.client_for(w.other_owner).get(w.url('add_spec_item', 'DataItem', w.other_project.id, 0, 'Sel_All', 0))
+    assert other_type.id in response.context['form'].fields['p_link'].queryset.values_list('id', flat=True)
+
+
+def test_server_settings_come_from_the_server_not_from_the_project(w):
+    config = new_project_config()
+    config['general']['temp_dir'] = '/does/not/exist'
+    w.store(config)                                             # bypasses the validator on purpose
+    assert w.owner_client.get(w.url('export_project', w.project.id)).status_code == 200
+
+
+# ------------------------------------------------------------------ concurrent saves
+
+@pytest.mark.django_db(transaction=True)
+def test_the_token_is_compared_with_the_value_read_under_the_lock(w):
+    # The editor loaded the configuration; a competing save commits after this request has been
+    # accepted but before it locks the project: the stale save must be refused.
+    token = w.token()
+    competing = changed_config()
+    real = views.is_project_owner
+    done = []
+
+    def owner_check_then_competing_save(request, project):
+        result = real(request, project)
+        if not done:
+            done.append(True)
+            Project.objects.filter(id=project.id).update(config=competing)
+        return result
+
+    with mock.patch.object(views, 'is_project_owner', owner_check_then_competing_save):
+        response = w.save(w.owner_client, new_project_config(), token=token)
+    assert done == [True]
+    assert response.status_code == 409
+    assert w.stored() == competing
+
+
+@pytest.mark.django_db(transaction=True)
+def test_the_row_is_locked_before_the_token_is_checked_and_inside_the_transaction(w):
+    calls = []
+    original = QuerySet.select_for_update
+
+    def spy(queryset, *args, **kwargs):
+        calls.append((queryset.model, connection.in_atomic_block))
+        return original(queryset, *args, **kwargs)
+
+    with mock.patch.object(QuerySet, 'select_for_update', spy), CaptureQueriesContext(connection) as queries:
+        assert w.save(w.owner_client, changed_config()).status_code == 200
+    assert calls == [(Project, True)]
+    locking = [q['sql'] for q in queries.captured_queries if 'FOR UPDATE' in q['sql']]
+    assert bool(locking) == connection.features.has_select_for_update       # MySQL: SELECT ... FOR UPDATE
+    if locking:
+        assert 'editor_project' in locking[0]
+
+
+def test_a_save_which_fails_validation_does_not_hold_or_write(w):
+    invalid = new_project_config()
+    invalid['cats']['Packet']['page_size'] = 0
+    with pytest.raises(InvalidConfigError):
+        save_project_config(w.project.id, json.dumps(invalid), w.token())
+    assert w.stored() == new_project_config()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_only_one_of_two_parallel_saves_with_the_same_token_wins():
+    # Really in parallel: each save has its own connection, so its own thread.
+    project, _ = make_project('Race', owner=make_user('owner'))
+    token = config_token(Project.objects.get(id=project.id).config)
+    bodies = []
+    for size in (5, 6):
+        config = new_project_config()
+        config['cats']['Packet']['page_size'] = size
+        bodies.append(json.dumps(config))
+    barrier = threading.Barrier(2)
+    results = [None, None]
+
+    def attempt(i):
+        try:
+            barrier.wait(timeout=10)
+            results[i] = save_project_config(project.id, bodies[i], token)
+        except StaleConfigError:
+            results[i] = 'stale'
+        except OperationalError:
+            results[i] = 'locked'                      # SQLite: single writer, the loser fails and writes nothing
+        finally:
+            connection.close()                         # the connection of this thread
+
+    threads = [threading.Thread(target=attempt, args=(i,)) for i in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(30)
+    winners = [r for r in results if r not in ('stale', 'locked')]
+    stored = Project.objects.get(id=project.id).config
+    if is_mysql():
+        assert sorted(r if r == 'stale' else 'won' for r in results) == ['stale', 'won'], results
+    assert len(winners) <= 1, results                  # SQLite (shared in-memory cache) may fail both
+    if winners:
+        assert stored['cats']['Packet']['page_size'] in (5, 6)
+        assert winners[0] == config_token(stored)
+    else:
+        assert stored == new_project_config()
+
+
+# ------------------------------------------------------------------ the hidden setting of an attribute
+# The editor works on the stored configuration, which keeps the hidden attributes, not on the shown one.
+
+def test_the_hidden_setting_is_saved_reloaded_and_downloaded(w):
+    config = new_project_config()
+    config['cats']['Service']['attrs']['rationale']['hidden'] = True
+    response = w.save(w.owner_client, config)
+    assert response.status_code == 200, response.content
+    assert w.stored()['cats']['Service']['attrs']['rationale']['hidden'] is True
+    reloaded = w.owner_client.get(w.curl('project_config_reload')).json()
+    assert reloaded['config']['cats']['Service']['attrs']['rationale']['hidden'] is True
+    assert reloaded['token'] == config_token(w.stored())
+    download = json.loads(w.owner_client.get(w.curl('project_config_download')).content)
+    assert download['cats']['Service']['attrs']['rationale']['hidden'] is True
+    page = w.owner_client.get(w.curl('project_config'))
+    assert json.loads(page.context['initial_config'])['cats']['Service']['attrs']['rationale']['hidden'] is True
+
+
+def test_an_invalid_hidden_setting_is_not_saved(w):
+    config = new_project_config()
+    config['cats']['Service']['attrs']['name']['hidden'] = True
+    response = w.save(w.owner_client, config)
+    assert response.status_code == 422
+    assert [e['path'] for e in response.json()['errors']] == ['cats.Service.attrs.name.hidden']
+    assert w.stored() == new_project_config()
+
+
+def test_the_preview_shows_the_pages_without_the_hidden_field_and_lists_it(w):
+    config = new_project_config()
+    definition = config['cats']['Service']
+    definition['attrs']['rationale']['hidden'] = True
+    body = w.post_json(w.owner_client, 'project_config_preview', config).json()
+    assert body['valid'], body
+    heading = '<strong class="fs-5 me-2">%s</strong>' % definition['name']
+    service = next(part for part in body['html'].split('<div class="accordion-item">') if heading in part)
+    label = definition['attrs']['rationale']['label']
+    assert 'Hidden fields' in service
+    assert '%s (rationale)' % label in service
+    assert 'rationale, ' not in service                 # not a field of the preview form
+    assert label + ' /' not in service                  # not in a column of the preview layouts
+    assert '/ ' + label not in service

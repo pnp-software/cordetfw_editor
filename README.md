@@ -37,7 +37,7 @@
 
 ### Project Configuration
 The configuration of each project is stored in the `config` column of `editor_project`;
-`editor/static/json/configs.json` is only the template. Usage: online help (`/editor/help/`, section
+`editor/static/json/configs.json` is only the template from which a new project starts. Usage: online help (`/editor/help/`, section
 *Project Configuration*).
 
 ### Tests
@@ -68,9 +68,9 @@ For the Django 5.2 upgrade itself follow `docs/migration/ROLLOUT.md`.
 5. `sudo systemctl reload apache2.service`
 
 #### First Deployment of the Project Configuration
-Back up the database before `migrate` (see below); migration `0014_project_config` adds the column. After `migrate`
-run `python3 manage.py init_project_configs --dry-run`, check its output, then `python3 manage.py init_project_configs`
-(it initializes the projects without a configuration; idempotent, project data is not changed).
+Back up the database before `migrate` (see below); migration `0014_project_config` adds the column. Every project
+must have its configuration before the new version is used: the configurations are loaded into the database before
+the deployment. A project created later starts with the template.
 
 #### Backups and Restore Verification
 The new column must be part of the database backup. After the migration, verify once on the target server and with
@@ -79,8 +79,8 @@ the operators' own backup and restore procedure (this is not verified by the tes
    must be 1 and the `editor_project` rows must contain the configuration JSON.
 2. Restore it into a scratch database (`mysql cordetfw_restore_check < check.sql`) and compare
    `SELECT id, name, JSON_VALID(config), JSON_LENGTH(config, '$.cats') FROM editor_project;` with the live database.
-3. Point a copy of the application at the scratch database and run `python3 manage.py init_project_configs --dry-run`
-   (every project must be reported as skipped) and open a project and its Configuration tab as owner.
+3. `SELECT id FROM editor_project WHERE config = '{}';` must return no rows; point a copy of the application at the
+   scratch database and open a project and its Configuration tab as owner.
 4. Drop the scratch database. Migration rollback: `migrate editor 0013` drops the column (the configuration is lost,
    project data is not); the previous release ignores `config.json` in archives.
 
