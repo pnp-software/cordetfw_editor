@@ -41,7 +41,7 @@ from editor.utilities import CleanupFileResponse, sanitize_order_by, get_domains
                              del_release, list_trac_items_for_latex, make_obs_spec_item_copy, \
                              mark_spec_item_aliases_as_del, create_and_init_spec_item, \
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
-                             get_spec_item_query, copy_hidden_values
+                             get_spec_item_query, copy_hidden_values, get_hidden_fields
 from editor.imports import import_project_tables, extract_project_zip, IMPORT_MAX_UPLOAD_BYTES, CONFIG_MEMBER
 from editor.config_store import read_stored_config
 from editor.project_config import get_request_config, resolve_config, split_cats
@@ -788,8 +788,10 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
         if form.is_valid():
             if spec_item.status == 'CNF':
                 spec_item = make_obs_spec_item_copy(request, spec_item)
+            hidden = get_hidden_fields(project_config, cat)    # not in the form: the stored values are kept
             for key, value in form.cleaned_data.items():    # Copy form inputs into spec_item
-                setattr(spec_item, key, value)    
+                if key not in hidden:
+                    setattr(spec_item, key, value)
             spec_item.updated_at = datetime.now(tz=get_current_timezone())
             spec_item.owner = get_user(request)
             spec_item.save()

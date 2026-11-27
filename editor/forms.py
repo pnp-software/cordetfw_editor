@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
-from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices, get_hidden_fields
+from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
 from editor.convert import get_pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
 from editor.configs import get_p_link_choices, get_s_link_choices, do_cat_specific_checks
@@ -318,19 +318,11 @@ class SpecItemForm(forms.Form):
 
         # Task 6.6b (image-svg-unsanitised): in edit, copy and split mode the FW Profile attributes
         # (ext_attrs, incl. the SVG `value`) are taken from the source item; a posted value is ignored.
-        source = None
-        if (self.mode in ('edit', 'copy', 'split')) and (self.item_id is not None):
+        if (len(self.config['ext_attrs']) > 0) and (self.mode in ('edit', 'copy', 'split')) \
+                and (self.item_id is not None):
             source = SpecItem.objects.get(id=self.item_id)
-        if (len(self.config['ext_attrs']) > 0) and (source is not None):
             for ext_attr in self.config['ext_attrs']:
                 cd[ext_attr] = getattr(source, ext_attr)
-
-        # Attributes which the configuration does not define (hidden) keep their stored values, whatever was
-        # posted: the form does not show them, so it cannot have changed them.
-        if (self.mode in ('edit', 'copy')) and (source is not None):
-            for hidden_field in get_hidden_fields(self.project_config, self.cat):
-                if hidden_field in cd:
-                    cd[hidden_field] = getattr(source, hidden_field)
         
         # When in add mode: load data for external attributes
         if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
