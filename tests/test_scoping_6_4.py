@@ -16,7 +16,8 @@ from editor.models import Application, Project, ProjectUser, Release, SpecItem, 
 from editor.utilities import get_domains, get_redirect_url, get_spec_item_query
 from tests.backend import is_mysql
 from tests.factories import (default_val_set, make_application, make_project, make_project_user,
-                             make_release, make_spec_item, make_user, make_val_set)
+                             make_release, make_spec_item, make_user, make_val_set, template_config)
+from editor.project_config import get_project_config
 
 pytestmark = pytest.mark.django_db
 CATS = 'DataItem,EnumType,EnumValue,DataItemType,Requirement,Model,InfoItem'
@@ -119,11 +120,11 @@ def test_own_parent_id_still_works(w):
 
 def test_choice_builders_scoped_by_project(w):
     # defence in depth: a foreign parent id yields an empty choice list / no redirect target
-    assert list(get_p_link_choices('DataItem', w.a, None, str(w.b_type.id), None)) == []
-    assert list(get_s_link_choices('EnumValue', w.a, None, str(w.b_enum.id), None)) == []
-    assert list(get_p_link_choices('DataItem', w.a, None, str(w.a_type.id), None)) == [w.a_type]
-    assert list(get_s_link_choices('EnumValue', w.a, None, str(w.a_enum.id), None)) == [w.a_enum]
-    assert list(get_s_link_choices('EnumValue', w.a, None, None, None)) == [w.a_enum]
+    assert list(get_p_link_choices('DataItem', w.a, None, str(w.b_type.id), None, get_project_config(w.a))) == []
+    assert list(get_s_link_choices('EnumValue', w.a, None, str(w.b_enum.id), None, get_project_config(w.a))) == []
+    assert list(get_p_link_choices('DataItem', w.a, None, str(w.a_type.id), None, get_project_config(w.a))) == [w.a_type]
+    assert list(get_s_link_choices('EnumValue', w.a, None, str(w.a_enum.id), None, get_project_config(w.a))) == [w.a_enum]
+    assert list(get_s_link_choices('EnumValue', w.a, None, None, None, get_project_config(w.a))) == [w.a_enum]
     with pytest.raises(SpecItem.DoesNotExist):
         get_redirect_url('EnumType', w.a.id, 0, w.dvs_a.id, 'Sel_All', 0, str(w.b_enum.id), None, None)
     with pytest.raises(SpecItem.DoesNotExist):
@@ -136,8 +137,8 @@ def test_choice_builders_scoped_by_project(w):
 def test_adapt_point_choices_scoped_by_project(w):
     req_a = make_spec_item(w.a, cat='Requirement', domain='R', name='ra', application=w.app_a)
     make_spec_item(w.b, cat='Requirement', domain='R', name='rb', application=w.app_b)
-    assert list(get_p_link_choices('AdaptPoint', w.a, w.app_a, None, None)) == [req_a]
-    assert list(get_p_link_choices('AdaptPoint', w.a, w.app_b, None, None)) == []
+    assert list(get_p_link_choices('AdaptPoint', w.a, w.app_a, None, None, get_project_config(w.a))) == [req_a]
+    assert list(get_p_link_choices('AdaptPoint', w.a, w.app_b, None, None, get_project_config(w.a))) == []
 
 
 # ---- foreign item ids (idor-item-project) ------------------------------------------------------
@@ -298,8 +299,8 @@ def test_release_chain_and_application_release_accepted(w):
 
 def test_query_helpers_scoped_by_project(w):
     req_b = make_spec_item(w.b, cat='Requirement', domain='BR', name='rb', application=w.app_b)
-    assert list(get_spec_item_query(w.a.id, w.app_b.id, w.dvs_b.id, 'Requirement', None, 'Sel_All', None)) == []
-    assert list(get_spec_item_query(w.b.id, w.app_b.id, w.dvs_b.id, 'Requirement', None, 'Sel_All', None)) == [req_b]
+    assert list(get_spec_item_query(template_config(), w.a.id, w.app_b.id, w.dvs_b.id, 'Requirement', None, 'Sel_All', None)) == []
+    assert list(get_spec_item_query(template_config(), w.b.id, w.app_b.id, w.dvs_b.id, 'Requirement', None, 'Sel_All', None)) == [req_b]
     assert get_domains('Requirement', w.app_b.id, w.a.id) == ['Sel_All']
     assert get_domains('Requirement', w.app_b.id, w.b.id) == ['Sel_All', 'BR']
 

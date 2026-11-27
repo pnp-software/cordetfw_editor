@@ -15,18 +15,20 @@ from django.test import RequestFactory
 from django.contrib.messages.storage.cookie import CookieStorage
 
 from editor import ext_cats
-from editor.configs import configs, do_cat_specific_checks, get_p_link_choices, get_s_link_choices
+from editor.configs import do_cat_specific_checks, get_p_link_choices, get_s_link_choices
 from editor.forms import (validate_identifier, identifier_error, ProjectForm, ApplicationForm,
-                          ValSetForm, ReleaseForm, FindReplaceForm, SpecItemForm)
+                          ValSetForm, ReleaseForm, FindReplaceForm, SpecItemForm, CatPicker)
 from editor.models import SpecItem, ValSet
 from editor.utilities import spec_item_to_edit
 from editor.views import get_find_replace_updates
 from tests.backend import is_mysql
 from tests.factories import (make_user, make_project, make_spec_item, make_val_set, make_application,
-                             default_val_set)
+                             default_val_set, template_config)
+from editor.project_config import get_project_config
 
 pytestmark = pytest.mark.django_db
 
+configs = template_config()
 ALL_CATS = list(configs['cats'].keys())
 EXT_CATS = [c for c in ALL_CATS if configs['cats'][c]['ext_attrs']]
 IDENT_ERR = 'Error: Only alphanumeric characters, underscores and dashes allowed; dots must be internal'
@@ -187,7 +189,55 @@ def test_application_form_init(proj):
     assert form.fields['cats'].label == 'Categories'
     assert form.fields['cats'].help_text == 'A subset of: DataItem, EnumType, EnumValue, DataItemType'
     assert form.fields['description'].widget.attrs['rows'] == 2
-    assert form.fields['cats'].widget.attrs['rows'] == 2
+    # Category picker feature: 'cats' was a two-row textarea, now CatPicker; it still posts comma-separated text
+    assert isinstance(form.fields['cats'].widget, CatPicker)
+    assert [o['id'] for o in form.fields['cats'].widget.options] == ['DataItem', 'EnumType', 'EnumValue',
+                                                                     'DataItemType']
+
+
+# =============================================================== CatPicker (category picker)
+def test_project_form_cat_picker_offers_all_configured_cats_with_names():
+    form = ProjectForm(None)
+    widget = form.fields['cats'].widget
+    assert isinstance(widget, CatPicker)
+    assert widget.options == [{'id': c, 'name': configs['cats'][c]['name']} for c in ALL_CATS]
+    assert json.loads(widget.options_json) == widget.options
+
+
+def test_project_form_cat_picker_includes_category_added_in_configuration():
+    owner = make_user()
+    project = make_project(owner, cats='DataItem')
+    config = get_project_config(project)
+    config['cats']['MyCat'] = dict(config['cats']['DataItem'], name='My Category')
+    form = ProjectForm(project, config=config)
+    assert form.fields['cats'].widget.options[-1] == {'id': 'MyCat', 'name': 'My Category'}
+
+
+def test_application_form_cat_picker_offers_only_project_cats_of_application_level(proj):
+    proj.cats = 'InfoItem, DataItem, Unknown'
+    widget = ApplicationForm(proj).fields['cats'].widget
+    # a project-level category gets a note (cat_picker.js does not offer it, only lets it be removed);
+    # a category of Project.cats which the configuration does not define is labelled with its identifier
+    assert widget.options == [{'id': 'InfoItem', 'name': configs['cats']['InfoItem']['name']},
+                              {'id': 'DataItem', 'name': configs['cats']['DataItem']['name'],
+                               'note': 'project level'},
+                              {'id': 'Unknown', 'name': 'Unknown'}]
+
+
+def test_project_form_cat_picker_has_no_level_notes():
+    assert not [o for o in ProjectForm(None).fields['cats'].widget.options if 'note' in o]
+
+
+def test_cat_picker_renders_options_escaped_and_keeps_text_input(proj):
+    from django.template.loader import render_to_string
+    proj.cats = 'DataItem'
+    form = ApplicationForm(proj, initial={'cats': 'DataItem'})
+    form.fields['cats'].widget.set_options(['X'], {'cats': {'X': {'name': '<b>"x"</b>'}}})
+    html = render_to_string('generic_form_field.html', {'field': form['cats']})
+    assert 'class="cat-picker" data-options="[{&quot;id&quot;: &quot;X&quot;, &quot;name&quot;: ' \
+           '&quot;&lt;b&gt;\\&quot;x\\&quot;&lt;/b&gt;&quot;}]"' in html
+    assert 'name="cats"' in html and 'value="DataItem"' in html
+    assert '<script src="/static/cat_picker.js"></script>' in html
 
 
 def test_application_form_valid(proj):
@@ -267,7 +317,7 @@ def fr():
 
 def _gfr(fr, field, find, replace, items=None):
     items = items if items is not None else SpecItem.objects.filter(project_id=fr['project'].id, cat='DataItem')
-    return get_find_replace_updates(items, fr['project'].id, fr['vs'].id, field, find, replace)
+    return get_find_replace_updates(configs, items, fr['project'].id, fr['vs'].id, field, find, replace)
 
 
 def test_gfr_find_equals_replace(fr):
@@ -425,7 +475,7 @@ def build(world, mode, cat='DataItem', data=None, initial=None, item=None, appli
           s_parent_id=None, p_parent_id=None, item_id=None, request=None):
     """Construct a SpecItemForm like views.py does."""
     if item is not None and initial is None:
-        initial = spec_item_to_edit(item)
+        initial = spec_item_to_edit(item, configs)
         item_id = item.id if item_id is None else item_id
     kwargs = {'item_id': item_id}
     if data is not None:
@@ -433,7 +483,7 @@ def build(world, mode, cat='DataItem', data=None, initial=None, item=None, appli
     if initial is not None:
         kwargs['initial'] = initial
     return SpecItemForm(mode, request or _request(), cat, world['project'], application,
-                        configs['cats'][cat], s_parent_id, p_parent_id, **kwargs)
+                        configs, s_parent_id, p_parent_id, **kwargs)
 
 
 def fi(form, name):
@@ -476,9 +526,9 @@ def test_add_mode_kind_choices_and_links(world, fake_fw_db, cat):
     assert form.fields['p_kind'].choices == list(cfg['p_kind_choices'].items())
     assert form.fields['s_kind'].choices == list(cfg['s_kind_choices'].items())
     assert list(form.fields['p_link'].queryset) == list(
-        get_p_link_choices(cat, world['project'], None, None, None))
+        get_p_link_choices(cat, world['project'], None, None, None, get_project_config(world['project'])))
     assert list(form.fields['s_link'].queryset) == list(
-        get_s_link_choices(cat, world['project'], None, None, None))
+        get_s_link_choices(cat, world['project'], None, None, None, get_project_config(world['project'])))
     assert form.fields['p_link'].empty_label == ''
     assert form.fields['s_link'].empty_label == ''
     assert form.fields['val_set'].empty_label is None
@@ -878,7 +928,7 @@ def test_edit_form_keeps_item_id_for_self_exclusion(world, dt, item):
 
 
 def test_edit_without_item_id_still_validates(world, dt, item):
-    form = build(world, 'edit', initial=spec_item_to_edit(item), data=dataitem_post(world, name='zzz', p_link=str(dt.id)))
+    form = build(world, 'edit', initial=spec_item_to_edit(item, configs), data=dataitem_post(world, name='zzz', p_link=str(dt.id)))
     assert form.item_id is None
     assert form.is_valid(), form.errors
 
@@ -1069,20 +1119,20 @@ def test_dataitem_non_enum_type_has_no_value_constraint(world, dt):
 
 def test_do_cat_specific_checks_other_cats_return_empty(world):
     stub = SimpleNamespace(cat='EnumType', cleaned_data={})
-    assert do_cat_specific_checks(stub) == ''
+    assert do_cat_specific_checks(stub, template_config()) == ''
 
 
 def test_do_cat_specific_checks_dataitem_without_p_link_is_ignored():
     # FIXED: dataitem-no-plink (was: AttributeError for p_link None; the form's required-field check
     # reports a missing p_link, so there is nothing to check here)
     stub = SimpleNamespace(cat='DataItem', cleaned_data={'p_link': None, 'value': ''})
-    assert do_cat_specific_checks(stub) == ''
+    assert do_cat_specific_checks(stub, template_config()) == ''
 
 
 def test_do_cat_specific_checks_dataitem_missing_p_link_key():
     # FIXED: dataitem-no-plink (was: KeyError)
     stub = SimpleNamespace(cat='DataItem', cleaned_data={'value': ''})
-    assert do_cat_specific_checks(stub) == ''
+    assert do_cat_specific_checks(stub, template_config()) == ''
 
 
 def test_dataitem_without_p_link_is_rejected_by_required(world):

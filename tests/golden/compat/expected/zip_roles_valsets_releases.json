@@ -8,6 +8,7 @@
  "editor_project": [
   {
    "cats": "DataItem,EnumType,EnumValue,DataItemType,Requirement",
+   "config": "sha256:d0ada2bd9ba8a3370dad9600eca0f3aad39080c279bf613b34ca00d85bd80705",
    "desc": "Synthetic project Roles ValSets",
    "id": "#0",
    "name": "Roles ValSets",

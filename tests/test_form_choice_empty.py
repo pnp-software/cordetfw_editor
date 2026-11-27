@@ -3,12 +3,13 @@ a valid choice) renders a selected '---------' option in edit/copy/split mode, s
 'This field is required' instead of silently storing the first choice."""
 import pytest
 
-from editor.configs import configs
 from editor.utilities import spec_item_to_edit
-from tests.factories import make_spec_item
+from tests.factories import make_spec_item, template_config
 from tests.test_forms import build, world, ALL_CATS  # noqa: F401  (world is a fixture)
 
 pytestmark = pytest.mark.django_db
+
+configs = template_config()
 
 BLANK = ('', '---------')
 
@@ -72,7 +73,7 @@ def test_optional_choice_field_unchanged(world):
 
 def test_post_with_blank_choice_is_rejected_and_good_choice_saves(world):
     item = _item(world, 'Requirement', p_kind='CNS', s_kind='', value='v', desc='d')
-    data = spec_item_to_edit(item)
+    data = spec_item_to_edit(item, configs)
     data['s_kind'] = ''
     data['change_log'] = 'x'
     form = build(world, 'edit', 'Requirement', data=data, item=item)

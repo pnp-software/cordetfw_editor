@@ -1,16 +1,11 @@
 import re
-import json
 import cexprtk
 import logging
 from django.utils.html import escape
 from django.core.exceptions import ObjectDoesNotExist
-from django.conf import settings
 from editor.models import SpecItem, Project, ValSet
 from editor.markdown import markdown_to_html, markdown_to_latex
 from editor.svg_check import svg_rule_violation
-
-with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
-    configs = json.load(config_file)
 
 # Regex pattern for internal references to specification items as they
 # are stored in the database (e.g. '#iref:1234')
@@ -85,7 +80,29 @@ def frmt_string(s):
     return s
 
 
-def convert_db_to_display(s, sel_rel, project_id=UNSCOPED):
+def get_cat_definition(config, cat):
+    """Definition of 'cat' in the project configuration 'config', or None if it does not define it (hidden)."""
+    return config['cats'].get(cat)
+
+
+def get_tooltip(config, item, tip_key, project_id=UNSCOPED):
+    """
+    Text for a title="..." attribute: 'label: value&#13;' (both escaped) for each attribute in short_desc[tip_key]
+    of the category of 'item' in 'config'; empty if the configuration does not define them.
+    """
+    definition = get_cat_definition(config, item.cat)
+    if definition is None:
+        return ''
+    attrs = definition.get('attrs', {})
+    tip = ''
+    for attr in definition.get('short_desc', {}).get(tip_key, []):
+        if attr in attrs:
+            tip += escape(attrs[attr]['label']) + ': ' + \
+                   escape(convert_db_to_edit(str(getattr(item, attr)), project_id)) + '&#13;'
+    return tip
+
+
+def convert_db_to_display(s, sel_rel, config, project_id=UNSCOPED):
     """
     The string s is a text field read from the database. It
     contains markdown text and internal references in the form #iref:n. 
@@ -97,6 +114,8 @@ def convert_db_to_display(s, sel_rel, project_id=UNSCOPED):
     sel_rel.
     Invalid references (and references to items of another project than project_id)
     are replaced with: ERROR:n.
+    'config' is the project configuration: it gives the link tooltip, and a target in a category which it does
+    not define (hidden) is shown as plain <domain>:<name>, without link.
     Markdown text is converted to html.
     The output of this function is safe for display in an HTML page: the text read
     from the database is escaped (only &, < and >) BEFORE the references and the markdown
@@ -107,16 +126,14 @@ def convert_db_to_display(s, sel_rel, project_id=UNSCOPED):
         """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
         try:
             item = get_ref_item(match.group(2), project_id)
+            if get_cat_definition(config, item.cat) is None:
+                return escape(item.domain) + ':' + escape(item.name)
             item_project_id = str(item.project.id) if item.project != None else '0'
             sel_rel_id = sel_rel.id if sel_rel != None else 0
             application_id = str(item.application.id) if item.application != None else '0'
             target = '/editor/'+item.cat+'/'+item_project_id+'/'+application_id+'/'+str(item.val_set.id)+'/'+\
                     item.domain+'/'+str(sel_rel_id)+'/list_spec_items'
-            title_attrs = configs['cats'][item.cat]['short_desc']['href_tip']
-            title = ''
-            for title_attr in title_attrs:
-                title = title + configs['cats'][item.cat]['attrs'][title_attr]['label'] +': '+\
-                        escape(convert_db_to_edit(getattr(item, title_attr), project_id)) + '&#13;'
+            title = get_tooltip(config, item, 'href_tip', project_id)
             if item.status in ['DEL', 'MOD', 'NEW']:
                 title = 'Status: ' + escape(item.status) + '&#13;' + title
                 iref_html = '<a href=\"' + escape(target) + '#' + escape(item.domain) + ':' + \
@@ -181,7 +198,7 @@ def conv_db_disp_ref_text(context, item, name, sel_rel):
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
     s = getattr(item, name)
-    return convert_db_to_display(s, sel_rel, item.project_id)
+    return convert_db_to_display(s, sel_rel, context['project_config'], item.project_id)
     
     
 def conv_db_disp_table(context, item, name, sel_rel):
@@ -191,7 +208,7 @@ def conv_db_disp_table(context, item, name, sel_rel):
     TBD: the table is simply rendered as a json string with internal references and mark-up resolved.
     """
     s = getattr(item, name)     # 's' is a json object
-    return convert_db_to_display(str(s), sel_rel, item.project_id)
+    return convert_db_to_display(str(s), sel_rel, context['project_config'], item.project_id)
     
     
 def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
@@ -199,6 +216,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind).
     If the target spec_item is MODified or DELeted, then its hyperlink is in red.
+    A target in a category which context['project_config'] does not define (hidden) is shown without link.
     The output of this function is guaranteed to be safe for displat in an
     HTML page because the text read from the database is escaped.
     """
@@ -206,7 +224,11 @@ def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
     if spec_item_link == None:
         return ''
     cat = spec_item_link.cat
-    application_id = context['application_id'] if configs['cats'][cat]['level'] == 'application' else 0
+    config = context['project_config']
+    definition = get_cat_definition(config, cat)
+    if definition is None:
+        return escape(spec_item_link.domain + ':' + spec_item_link.name)
+    application_id = context['application_id'] if definition['level'] == 'application' else 0
     default_val_set_id = context['default_val_set_id']
     sel_rel_id = sel_rel.id if sel_rel != None else 0
     sel_val = context['sel_val']
@@ -214,11 +236,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
     s_href = '/editor/'+cat+'/'+str(spec_item.project.id)+'/'+str(application_id)+\
              '/'+str(default_val_set_id)+'/'+spec_item_link.domain+'/'+str(sel_rel_id)+'/list_spec_items#'+s_name
 
-    title_attrs = configs['cats'][spec_item_link.cat]['short_desc']['href_tip']
-    s_title = ''
-    for title_attr in title_attrs:
-        s_title = s_title + configs['cats'][spec_item_link.cat]['attrs'][title_attr]['label'] +': '+\
-                  escape(convert_db_to_edit(getattr(spec_item_link, title_attr), spec_item_link.project_id)) + '&#13;'
+    s_title = get_tooltip(config, spec_item_link, 'href_tip', spec_item_link.project_id)
     
     if spec_item_link.status in ['MOD', 'DEL', 'NEW']:
         s_title = 'Status: ' + spec_item_link.status + '&#13;' + s_title
@@ -235,11 +253,11 @@ def conv_db_disp_eval_ref(context, item, name, sel_rel):
     on the assumption that the attribute value is of 'eval_ref' kind)
     """
     s = getattr(item, name)
-    conv_s = convert_db_to_display(s, sel_rel, item.project_id)
+    conv_s = convert_db_to_display(s, sel_rel, context['project_config'], item.project_id)
     # The expression is evaluated on the raw string; only the displayed text is escaped. The
     # comparison is made with the escaped input (convert_db_to_display escapes first).
     if conv_s != escape_text(s):
-        nval = eval_di_value(s, item.project_id)
+        nval = eval_di_value(s, item.project_id, context['project_config'])
         return conv_s + ' = ' + escape_text(nval)
     else:
         return escape_text(s)
@@ -390,14 +408,14 @@ class EvalLimitExceeded(Exception):
     """ The expansion of the references in a value exceeded one of the EVAL_MAX_* limits """
 
 
-def render_for_eval(s, n, project_id=UNSCOPED, _state=None):
+def render_for_eval(s, n, project_id=UNSCOPED, _state=None, config=None):
     """ 
     String s is a text field read from the database. 
     It contains internal references in the form #iref:n. This function
     assumes that all such references are pointing to data items and 
     replaces these references with the numerical values of the data items.
     This function is called recursively to handle all references in string s.
-    The argument n is the depth of recursion. This is limited to EVAL_MAX_DEPTH.
+    The argument n is the depth of recursion. This is limited to EVAL_MAX_DEPTH and general.max_depth of 'config'.
     If the function finds an invalid reference (or a reference to an item of another project
     than project_id) or a reference to a specification item which is not a data item, it returns
     the string unchanged. Raises EvalLimitExceeded if the number of substitutions or the length
@@ -405,7 +423,8 @@ def render_for_eval(s, n, project_id=UNSCOPED, _state=None):
     """
     if _state is None:
         _state = {'subs': 0, 'values': {}}
-    if n > min(configs['general']['max_depth'], EVAL_MAX_DEPTH):
+    max_depth = EVAL_MAX_DEPTH if config is None else min(config['general']['max_depth'], EVAL_MAX_DEPTH)
+    if n > max_depth:
         logger.warning('Exceeded recursion depth when evaluating '+s[:200])
         return s
 
@@ -425,13 +444,13 @@ def render_for_eval(s, n, project_id=UNSCOPED, _state=None):
         _state['subs'] += 1
         if _state['subs'] > EVAL_MAX_SUBSTITUTIONS:
             raise EvalLimitExceeded('too many references')
-        out += rest[:match.start()] + render_for_eval(value, n+1, project_id, _state)
+        out += rest[:match.start()] + render_for_eval(value, n+1, project_id, _state, config)
         if len(out) > EVAL_MAX_LENGTH:
             raise EvalLimitExceeded('expression too long')
         rest = rest[match.end():]
 
 
-def eval_di_value(s, project_id=UNSCOPED):
+def eval_di_value(s, project_id=UNSCOPED, config=None):
     """
     The argument string is assumed to hold a mathematical expression expressed 
     in terms of references to data items.
@@ -442,7 +461,7 @@ def eval_di_value(s, project_id=UNSCOPED):
     the expansion limits are not evaluated: like any invalid expression, they yield s itself.
     """
     try:
-        se = render_for_eval(s, 1, project_id)
+        se = render_for_eval(s, 1, project_id, None, config)
     except EvalLimitExceeded as e:
         logger.warning('Expression not evaluated: '+str(e))
         return s

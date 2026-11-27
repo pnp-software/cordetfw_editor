@@ -14,6 +14,8 @@ class ReleaseResource(resources.ModelResource):
 class ProjectResource(resources.ModelResource):
     class Meta:
         model = Project
+        # The configuration travels in its own archive member (config.json), so project.csv keeps its columns.
+        exclude = ('config',)
 
     def dehydrate_owner(self, project):
         return str(project.owner)

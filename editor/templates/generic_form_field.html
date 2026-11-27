@@ -112,7 +112,35 @@
     </div>
 </div>
 {% endif %}
-{% if field.widget_type == "hidden" %}
+{% if field.widget_type == "catpicker" %}
+<div class="mb-3 row">
+    <label for="{{ field.id_for_label }}"
+           class="col-form-label col-2">
+        {{ field.label }}{% if field.field.required %}*{% endif %}
+    </label>
+    <div class="col-10 {{ field_width|default:'col-lg-8' }}">
+        <div class="cat-picker" data-options="{{ field.field.widget.options_json }}">
+            <input type="text" id="{{ field.id_for_label }}"
+                   class="form-control cat-picker-input {% if field.errors %}is-invalid{% endif %}"
+                   name="{{ field.html_name }}"
+                   {% if field.value %}value="{{ field.value }}"{% endif %}
+                   {% if field.field.required %}required{% endif %}
+                   {% if field.field.disabled %}disabled{% endif %}>
+            {% if field.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in field.errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if field.help_text %}
+            <div class="form-text cat-picker-help">{{ field.help_text }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script src="/static/cat_picker.js"></script>
+{% endif %}{% if field.widget_type == "hidden" %}
 <input type="hidden" id="{{ field.id_for_label }}" name="{{ field.html_name }}"
        {% if field.value != None %}value="{{ field.value }}{% endif %}">
 {% endif %}

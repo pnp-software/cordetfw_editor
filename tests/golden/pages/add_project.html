@@ -139,29 +139,31 @@
 
                 
                 
+
+
+
+
 <div class="mb-3 row">
     <label for="id_cats"
            class="col-form-label col-2">
         Categories*
     </label>
     <div class="col-10 col-lg-8">
-        <input type="text" id="id_cats"
-               class="form-control "
-               name="cats"
-               
-               
-               required
-               >
-        
-        
-        <div class="form-text">A subset of: ParReq, DerReq, VerItem, VerStep, VerLink, TracLink, AdaptPoint, Requirement, InfoItem, FCP, SysReq, Service, Packet, DerPacket, PacketPar, InCommand, OutComponent, FmeaItem, ComIntRep, ComIntCmd, ComIntFdir, ComIntEvt, DataItemType, EnumType, Model, EnumValue, OpContext, DisrEvt, RiskScenario, DataItem</div>
-        
+        <div class="cat-picker" data-options="[{&quot;id&quot;: &quot;ParReq&quot;, &quot;name&quot;: &quot;Parent Requirement&quot;}, {&quot;id&quot;: &quot;DerReq&quot;, &quot;name&quot;: &quot;Derived Requirement&quot;}, {&quot;id&quot;: &quot;VerItem&quot;, &quot;name&quot;: &quot;Verification Item&quot;}, {&quot;id&quot;: &quot;VerStep&quot;, &quot;name&quot;: &quot;Verification Step&quot;}, {&quot;id&quot;: &quot;VerLink&quot;, &quot;name&quot;: &quot;Verification Link&quot;}, {&quot;id&quot;: &quot;TracLink&quot;, &quot;name&quot;: &quot;Traceability Link&quot;}, {&quot;id&quot;: &quot;AdaptPoint&quot;, &quot;name&quot;: &quot;Adaptation Point&quot;}, {&quot;id&quot;: &quot;Requirement&quot;, &quot;name&quot;: &quot;Requirement&quot;}, {&quot;id&quot;: &quot;InfoItem&quot;, &quot;name&quot;: &quot;Info Item&quot;}, {&quot;id&quot;: &quot;FCP&quot;, &quot;name&quot;: &quot;Flight Control Procedure&quot;}, {&quot;id&quot;: &quot;SysReq&quot;, &quot;name&quot;: &quot;SysReq&quot;}, {&quot;id&quot;: &quot;Service&quot;, &quot;name&quot;: &quot;Service&quot;}, {&quot;id&quot;: &quot;Packet&quot;, &quot;name&quot;: &quot;Packet&quot;}, {&quot;id&quot;: &quot;DerPacket&quot;, &quot;name&quot;: &quot;Derived Packet&quot;}, {&quot;id&quot;: &quot;PacketPar&quot;, &quot;name&quot;: &quot;Packet Parameter&quot;}, {&quot;id&quot;: &quot;InCommand&quot;, &quot;name&quot;: &quot;Incoming Command&quot;}, {&quot;id&quot;: &quot;OutComponent&quot;, &quot;name&quot;: &quot;Outgoing Component&quot;}, {&quot;id&quot;: &quot;FmeaItem&quot;, &quot;name&quot;: &quot;FMEA Item&quot;}, {&quot;id&quot;: &quot;ComIntRep&quot;, &quot;name&quot;: &quot;Report&quot;}, {&quot;id&quot;: &quot;ComIntCmd&quot;, &quot;name&quot;: &quot;Command&quot;}, {&quot;id&quot;: &quot;ComIntFdir&quot;, &quot;name&quot;: &quot;Fdir&quot;}, {&quot;id&quot;: &quot;ComIntEvt&quot;, &quot;name&quot;: &quot;Event&quot;}, {&quot;id&quot;: &quot;DataItemType&quot;, &quot;name&quot;: &quot;Data Item Type&quot;}, {&quot;id&quot;: &quot;EnumType&quot;, &quot;name&quot;: &quot;Enumerated Type&quot;}, {&quot;id&quot;: &quot;Model&quot;, &quot;name&quot;: &quot;Behavioural Model&quot;}, {&quot;id&quot;: &quot;EnumValue&quot;, &quot;name&quot;: &quot;Enumerated Value&quot;}, {&quot;id&quot;: &quot;OpContext&quot;, &quot;name&quot;: &quot;Operational Context&quot;}, {&quot;id&quot;: &quot;DisrEvt&quot;, &quot;name&quot;: &quot;Disruptive Event&quot;}, {&quot;id&quot;: &quot;RiskScenario&quot;, &quot;name&quot;: &quot;Danger Situation&quot;}, {&quot;id&quot;: &quot;DataItem&quot;, &quot;name&quot;: &quot;Data Item&quot;}]">
+            <input type="text" id="id_cats"
+                   class="form-control cat-picker-input "
+                   name="cats"
+                   
+                   required
+                   >
+            
+            
+            <div class="form-text cat-picker-help">A subset of: ParReq, DerReq, VerItem, VerStep, VerLink, TracLink, AdaptPoint, Requirement, InfoItem, FCP, SysReq, Service, Packet, DerPacket, PacketPar, InCommand, OutComponent, FmeaItem, ComIntRep, ComIntCmd, ComIntFdir, ComIntEvt, DataItemType, EnumType, Model, EnumValue, OpContext, DisrEvt, RiskScenario, DataItem</div>
+            
+        </div>
     </div>
 </div>
-
-
-
-
+<script src="/static/cat_picker.js"></script>
 
 
                 

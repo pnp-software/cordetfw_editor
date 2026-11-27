@@ -19,7 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 
 from editor.models import Application, Project, ProjectUser, Release, SpecItem, ValSet
-from tests.factories import FIXED_TIME, PASSWORD, make_user
+from tests.factories import FIXED_TIME, PASSWORD, make_user, template_config
 from tests.golden import assert_golden
 
 pytestmark = pytest.mark.django_db
@@ -31,6 +31,8 @@ D_FIXED = datetime(2024, 1, 15).date()
 
 PROJECT_MEMBERS = ['project.csv', 'applications.csv', 'val_sets.csv',
                    'project_users.csv', 'releases.csv', 'spec_items.csv']
+# Project configuration feature: exports add config.json as the last member; the six csv members are unchanged.
+ARCHIVE_MEMBERS = PROJECT_MEMBERS + ['config.json']
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +63,7 @@ def build_world(name='Demo Proj'):
 
     w.project = Project.objects.create(
         id=1, name=name, desc='Demo project with unicode ä µ \u263A\nsecond line',
-        cats='DataItem,EnumType,EnumValue,DataItemType', owner=w.owner, release=r1)
+        cats='DataItem,EnumType,EnumValue,DataItemType', owner=w.owner, release=r1, config=template_config())
     w.default = ValSet.objects.create(id=1, project=w.project, name='Default', desc='Default ValSet')
     w.vs1 = ValSet.objects.create(id=2, project=w.project, name='VS1', desc='Alternative "values"')
     w.pu_ro = ProjectUser.objects.create(id=1, project=w.project, user=w.ro, role='RO')
@@ -116,17 +118,16 @@ def world():
 
 
 @pytest.fixture
-def fresh_temp(monkeypatch, tmp_path):
+def fresh_temp(settings, tmp_path):
     """Return a function giving every call a new, empty temp_dir (make_temp_dir names
     directories by the second, so two calls within a second would otherwise collide)."""
-    from editor.configs import configs
     counter = [0]
 
     def next_dir():
         counter[0] += 1
         d = tmp_path / ('t%d' % counter[0])
         d.mkdir()
-        monkeypatch.setitem(configs['general'], 'temp_dir', str(d))
+        settings.TEMP_DIR = str(d)
         return d
     return next_dir
 
@@ -193,9 +194,9 @@ def test_export_project_response_headers_and_members(client, fresh_temp, world):
     assert response['Content-Disposition'] == 'inline; filename="cordetfw_editor_Demo Proj.zip"'
     assert response['Content-Length'] == str(len(data))
     assert response.streaming is True
-    assert zf.namelist() == PROJECT_MEMBERS
+    assert zf.namelist() == ARCHIVE_MEMBERS
     assert zf.testzip() is None
-    assert [i.compress_type for i in zf.infolist()] == [zipfile.ZIP_STORED] * 6
+    assert [i.compress_type for i in zf.infolist()] == [zipfile.ZIP_STORED] * len(ARCHIVE_MEMBERS)
 
 
 @pytest.mark.parametrize('member', PROJECT_MEMBERS)
@@ -237,7 +238,7 @@ def test_export_project_removes_temp_dir(client, fresh_temp, world):
     tmp = fresh_temp()
     response = client.get('/editor/%d/export_project' % world.project.id)
     data = b''.join(response.streaming_content)
-    assert zipfile.ZipFile(io.BytesIO(data)).namelist() == PROJECT_MEMBERS
+    assert zipfile.ZipFile(io.BytesIO(data)).namelist() == ARCHIVE_MEMBERS
     assert list(tmp.iterdir()) == []
 
 
@@ -255,7 +256,7 @@ def test_export_project_requires_read_access(client, fresh_temp, world):
 def test_export_project_read_only_user_can_export(client, fresh_temp, world):
     client.force_login(world.ro)
     response, data, zf = export_zip(client, world.project.id, fresh_temp)
-    assert zf.namelist() == PROJECT_MEMBERS
+    assert zf.namelist() == ARCHIVE_MEMBERS
 
 
 def test_make_temp_dir_collision_within_one_second(client, monkeypatch, world, tmp_path):
@@ -273,7 +274,7 @@ def test_make_temp_dir_collision_within_one_second(client, monkeypatch, world, t
     assert first.status_code == 200
     second = client.get('/editor/%d/export_project' % world.project.id)
     assert second.status_code == 200
-    assert zipfile.ZipFile(io.BytesIO(b''.join(second.streaming_content))).namelist() == PROJECT_MEMBERS
+    assert zipfile.ZipFile(io.BytesIO(b''.join(second.streaming_content))).namelist() == ARCHIVE_MEMBERS
 
 
 # ---------------------------------------------------------------------------
@@ -675,7 +676,7 @@ def test_import_project_reexport_equals_first_export_modulo_ids(client, renamed_
     new = Project.objects.get(name='Demo Proj')
     client.force_login(w.owner)
     response, data2, zf2 = export_zip(client, new.id, fresh_temp)
-    assert zf2.namelist() == PROJECT_MEMBERS
+    assert zf2.namelist() == ARCHIVE_MEMBERS
 
     first, second = canonical_tables(w.zip), canonical_tables(zf2)
     differences = {}
@@ -1614,7 +1615,7 @@ def test_export_project_content_disposition_special_names(client, fresh_temp, na
     client.force_login(w.owner)
     response, data, zf = export_zip(client, w.project.id, fresh_temp)
     assert response['Content-Disposition'] == PROJECT_DISPOSITIONS[name]
-    assert zf.namelist() == PROJECT_MEMBERS
+    assert zf.namelist() == ARCHIVE_MEMBERS
 
 
 # project name -> (project-level filename header, app-level w/o application header)
@@ -1885,8 +1886,9 @@ def test_import_project_unreadable_created_at_is_ignored_with_note(client, renam
 
 def test_import_project_release_views_equal_after_round_trip(client, renamed_original, fresh_temp):
     # The release views (get_spec_item_query for each release) of the source and of its copy are identical.
-    from editor.configs import configs
+    from tests.factories import template_config
     from editor.utilities import get_spec_item_query
+    configs = template_config()
     w = renamed_original
     for item in SpecItem.objects.filter(project=w.project):       # whole-second timestamps survive the export
         SpecItem.objects.filter(pk=item.pk).update(created_at=item.created_at.replace(microsecond=0),
@@ -1911,7 +1913,7 @@ def test_import_project_release_views_equal_after_round_trip(client, renamed_ori
         for n, rel in enumerate([None] + chain):
             for cat in configs['cats']:
                 for vs in ValSet.objects.filter(project=project).order_by("id"):
-                    items = get_spec_item_query(project.id, 0, vs.id, cat, rel, 'Sel_All', None)
+                    items = get_spec_item_query(configs, project.id, 0, vs.id, cat, rel, 'Sel_All', None)
                     key = [(i.domain, i.name, i.status, re.sub(r'#iref:\d+', '#iref:', i.value)) for i in items]   # ids differ
                     if key:
                         result[(n, cat, vs.name)] = key

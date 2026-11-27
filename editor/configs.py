@@ -1,131 +1,52 @@
-import json
-import re
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user
 from django.contrib import messages
-from django.conf import settings
 from editor.models import SpecItem, ValSet
-from editor.convert import pattern_db
+from editor.cat_validators import run_validators
+from editor.link_rules import get_link_choices
 
-with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
-    configs = json.load(config_file)
+#-------------------------------------------------------------------------------------------------
+# Accessors which take the configuration explicitly (from get_project_config / get_request_config)
+def has_cat(config, cat):
+    return cat in config['cats']
 
-#-------------------------------------------------------------------------------------------------    
-def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id):
+def get_cat_config(config, cat):
+    return config['cats'][cat]
+
+def get_attr_config(config, cat, attr):
+    """Definition of an attribute (label, kind, req_in_form) of a category; KeyError if undefined."""
+    return config['cats'][cat]['attrs'][attr]
+
+def get_general_setting(config, key):
+    """A project-level general setting (csv_sep, eol_sep, short_desc_len, max_depth); never temp_dir."""
+    return config['general'][key]
+
+#-------------------------------------------------------------------------------------------------
+# Relationship choices and category-specific checks, driven by the `links` and `validators` settings of the
+# category (editor/link_rules.py, editor/cat_validators.py); `config` is the full project configuration.
+
+def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id, config):
     """ 
         If p_parent_id is different from None, the function returns the spec_items which 
         have p_parent_id as their p_link parent. Otherwise, it returns the range of 
         choices for the 'p_link' attribute of a spec_item of a given category 
     """
-    if p_parent_id != None:
-        return SpecItem.objects.filter(id=int(p_parent_id), project_id=project.id)
-        
-    if cat == 'DataItem':
-        q1 = SpecItem.objects.filter(project_id=project.id, cat='DataItemType').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')        
-        q2 = SpecItem.objects.filter(project_id=project.id, cat='EnumType').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name') 
-        return q1 | q2
+    return get_link_choices(config, 'p_link', cat, project, application,
+                            p_parent_id, s_parent_id)
 
-    if cat == 'RiskScenario':
-        return SpecItem.objects.filter(project_id=project.id, cat='OpContext').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-
-    if cat == 'VerLink':
-        return SpecItem.objects.filter(project_id=project.id, cat='VerItem').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-
-    if cat == 'Packet':
-        return SpecItem.objects.filter(project_id=project.id, cat='Service').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-
-    if cat == 'InCommand' or cat == 'OutComponent':
-        q1 = SpecItem.objects.filter(project_id=project.id, cat='Packet').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-        q2 = SpecItem.objects.filter(project_id=project.id, cat='DerPacket').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-        return q1 | q2   
-
-    if cat == 'PacketPar':
-        q1 = SpecItem.objects.filter(project_id=project.id, cat='Packet').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-        q2 = SpecItem.objects.filter(project_id=project.id, cat='DerPacket').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-        return q1 | q2
-
-    if cat == 'DerPacket':
-        if s_parent_id != None:
-            s_parent = SpecItem.objects.get(id=s_parent_id, project_id=project.id)
-            return SpecItem.objects.filter(project_id=project.id, cat='EnumValue', s_link=s_parent.s_link).\
-                            exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-        else:
-            return SpecItem.objects.filter(project_id=project.id, cat='EnumValue').\
-                            exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-
-    if (cat == 'AdaptPoint') and (application != None):
-        return SpecItem.objects.filter(project_id=project.id, application_id=application.id, cat='Requirement').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-                        
-    return SpecItem.objects.none()
-    
 #-------------------------------------------------------------------------------------------------    
-def get_s_link_choices(cat, project, application, s_parent_id, p_parent_id):
+def get_s_link_choices(cat, project, application, s_parent_id, p_parent_id, config):
     """ 
         If s_parent_id is different from None, the function returns the spec_items which 
         have s_parent_id as their s_link parent. Otherwise, it returns the range of 
         choices for the 's_link' attribute of a spec_item of a given category 
     """
-    if s_parent_id != None:
-        return SpecItem.objects.filter(id=int(s_parent_id), project_id=project.id)
-        
-    if cat == 'RiskScenario':
-        return SpecItem.objects.filter(project_id=project.id, cat='DisrEvt').\
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')    
-
-    if cat == 'EnumValue': 
-        return SpecItem.objects.filter(project_id=project.id, cat='EnumType'). \
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
-
-    if cat == 'PacketPar':  
-        return SpecItem.objects.filter(project_id=project.id, cat='DataItem'). \
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
-
-    if cat == 'DerPacket':  
-        return SpecItem.objects.filter(project_id=project.id, cat='Packet'). \
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
-
-    if cat == 'Packet':     
-        return SpecItem.objects.filter(project_id=project.id, cat='EnumType'). \
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
-
-    if cat == 'VerStep':     
-        return SpecItem.objects.filter(project_id=project.id, cat='VerItem'). \
-                        exclude(status='DEL').exclude(status='OBS').order_by('domain', 'name')
-
-    if cat == 'VerLink':
-        return SpecItem.objects.filter(project_id=project.id).exclude(cat='VerItem').exclude(cat='VerLink'). \
-                        exclude(status='DEL').exclude(status='OBS').order_by('cat', 'domain', 'name')
-                        
-    return SpecItem.objects.none()
+    return get_link_choices(config, 's_link', cat, project, application,
+                            s_parent_id, p_parent_id)
 
 #-------------------------------------------------------------------------------------------------    
-def do_cat_specific_checks(form):
-    """ Perform the category-specific checks for data items """
-    cd = form.cleaned_data
-    
-    # Verify that the value of a data item of enumerated type is an internal reference to an enumerated 
-    # value of the data item's type
-    if (form.cat == 'DataItem') and (cd.get('p_link') is not None) and (cd['p_link'].cat == 'EnumType'):
-        m = re.match(pattern_db, cd['value'].strip())
-        if (m == None) or (m.span()[1] != len(cd['value'].strip())):
-            return 'Data item value must be a reference to an enumerated value of the item type'
-        ref = cd['value'].strip().split(':')
-        try:
-            enum_val = SpecItem.objects.get(id=ref[1], cat='EnumValue', project_id=form.project.id)
-        except ObjectDoesNotExist:
-            return 'Data item value must be a reference to an enumerated value of the item type: '+\
-                   'The reference is invalid'
-        if (enum_val.s_link is None) or (enum_val.s_link.id != cd['p_link'].id):
-            return 'Data item value must be a reference to an enumerated value of the item type'
-    
-    return ''
+def do_cat_specific_checks(form, config):
+    """ Run the validators configured for the category of the form; return an error message or '' """
+    cat_config = config.get('cats', {}).get(form.cat)
+    if not isinstance(cat_config, dict) or 'validators' not in cat_config:
+        return ''
+    return run_validators(form, form.cleaned_data, cat_config['validators'], 'cats.%s.validators' % form.cat)

@@ -83,6 +83,11 @@
                         </div>
                         {% endif %}
                         {% if request.user == item.project.owner %}
+                        <a class="btn btn-outline-secondary bi-gear"
+                           href="{% url 'project_config' item.project.id %}"
+                           title="Configuration of {{item.project.name}} Project">
+                            configuration
+                        </a>
                         <a class="btn btn-outline-secondary"
                            href="{% url 'make_project_release' item.project.id %}"
                            title="Make Release for {{item.project.name}} Project">
@@ -133,7 +138,7 @@
                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenu{{application.name}}">
                                     {% for cat, value in item.project_configs.items %}
                                     {% if value.access_from_index.level == 'Application' %}
-                                    {% if cat in application.cats %}
+                                    {% if cat in application.cat_list %}
                                     <a class="dropdown-item"
                                        href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'Sel_All' 0 %}?disp=disp_def"
                                        title="Manage {{ value.name }}s">

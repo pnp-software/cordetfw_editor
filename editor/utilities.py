@@ -16,7 +16,6 @@ from django.db.models import ForeignKey, Q
 from django.utils.timezone import get_current_timezone
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
-from editor.configs import configs
 from editor.convert import convert_db_to_edit, frmt_string, convert_edit_to_db, \
                            resolve_exp_ref, convert_db_to_latex, eval_di_value, \
                            neutralise_foreign_irefs
@@ -44,28 +43,29 @@ def get_csv_line(csv_items):
     return s
 
           
-def spec_item_to_edit(spec_item):
+def spec_item_to_edit(spec_item, config):
     """ 
-    The argument is a specification item and the output is a dictionary representing the specification
-    item in a format suitable for display in a form.
+    The arguments are a specification item and the configuration of its project. The output is a 
+    dictionary representing the specification item in a format suitable for display in a form.
+    All model fields are included, also those which the configuration does not show.
     """
     dic = model_to_dict(spec_item)
-    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
+    for key, value in config['cats'][spec_item.cat]['attrs'].items():
         if value['kind'] == 'ref_text' or value['kind'] == 'eval_ref':
             dic[key] = convert_db_to_edit(dic[key], spec_item.project_id)
     return dic
     
     
-def spec_item_to_latex(spec_item):
+def spec_item_to_latex(spec_item, config):
     """ 
-    The argument is a specification item and the output is a dictionary as follows: 
+    The arguments are a specification item and its project configuration; the output is a dictionary as follows:
     - Key: label of the fields to be exported to latex format
     - Value: value of field in latex representation
-    The field label is the label as given in the configs dictionary without spaces.  
+    The field label is the label as given in the project configuration without spaces.  
     """
-    cat_attrs = configs['cats'][spec_item.cat]['attrs']
+    cat_attrs = config['cats'][spec_item.cat]['attrs']
     dic = {}
-    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
+    for key, value in cat_attrs.items():
         label = cat_attrs[key]['label'].replace(' ','')
         if value['kind'] == 'ref_text':
             dic[label] = convert_db_to_latex(getattr(spec_item, key), spec_item.project_id)
@@ -77,7 +77,7 @@ def spec_item_to_latex(spec_item):
             dic[label] = frmt_string(str(getattr(spec_item, key)))
         elif value['kind'] == 'eval_ref':
             dic[label] = convert_db_to_latex(getattr(spec_item, key), spec_item.project_id)
-            dic['NVal'] = eval_di_value(spec_item.value, spec_item.project_id)
+            dic['NVal'] = eval_di_value(spec_item.value, spec_item.project_id, config)
         elif value['kind'] == 'image':
             dic[label] = 'TBD image data'
         else:
@@ -92,14 +92,14 @@ def spec_item_to_latex(spec_item):
     return dic
     
 
-def spec_item_to_export(spec_item):
+def spec_item_to_export(spec_item, config):
     """ 
-    The argument is a specification item and the output is a dictionary as follows: 
+    The arguments are a specification item and its project configuration; the output is a dictionary as follows:
     - Key: label of the fields to be exported
     - Value: value of field in export representation
-    The field label is the label as given in the configs dictionary.  
+    The field label is the label as given in the project configuration.  
     """
-    cat_attrs = configs['cats'][spec_item.cat]['attrs']
+    cat_attrs = config['cats'][spec_item.cat]['attrs']
     dic = {}
     for key, value in cat_attrs.items():
         if value['kind'] == 'ref_text':
@@ -111,13 +111,13 @@ def spec_item_to_export(spec_item):
     return dic
         
             
-def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
+def export_to_spec_item(request, project, imp_dict, spec_item, config, warnings=None):
     """ 
     Argument imp_dict is a dictionary created by reading a line in a 
-    plain import file.
+    plain import file; config is the configuration of the project.
     The function converts the dictionary entries to db format and uses them 
     to initialize the argument spec_item.
-    Only attributes listed in the 'attrs' field of the configuration dictionary
+    Only attributes listed in the 'attrs' field of the configuration
     of the spec_item category are converted.
     Only attributes which are imported are initialized.
     The function will raise an exception if one of the fields expected
@@ -127,8 +127,8 @@ def export_to_spec_item(request, project, imp_dict, spec_item, warnings=None):
     another project were removed (neutralise_foreign_irefs).
     """
     removed = []
-    cat_attrs = configs['cats'][spec_item.cat]['attrs']
-    for key, value in configs['cats'][spec_item.cat]['attrs'].items():
+    cat_attrs = config['cats'][spec_item.cat]['attrs']
+    for key, value in cat_attrs.items():
         if key == 'val_set':
             spec_item.val_set = ValSet.objects.get(project_id=project.id, name=imp_dict[cat_attrs[key]['label']])
         elif key == 'owner' or key == 'status':    # These are overridden by import function: no need to copy them into spec_item
@@ -192,17 +192,17 @@ def get_previous_list(item):
     return items
         
         
-def get_p_kind_choices(cat):
+def get_p_kind_choices(config, cat):
     """ Return the range of choices for the 'p_kind' attribute of a specification of a given category """
-    return list(configs['cats'][cat]['p_kind_choices'].items())
+    return list(config['cats'][cat]['p_kind_choices'].items())
 
 
-def get_s_kind_choices(cat):
+def get_s_kind_choices(config, cat):
     """ Return the range of choices for the 's_kind' attribute of a specification of a given category """
-    return list(configs['cats'][cat]['s_kind_choices'].items())
+    return list(config['cats'][cat]['s_kind_choices'].items())
   
     
-def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
+def get_expand_items(config, cat, project_id, val_set_id, expand_id, expand_link):
     """ 
     Get the list of expand_items for the spec_item whose ID is expand_id.
     The expand_link is either 's_link' or 'p_link'    
@@ -212,21 +212,22 @@ def get_expand_items(cat, project_id, val_set_id, expand_id, expand_link):
     If the expand_link is 'p_link', the expand_items the spec_items whose
     p_link points to expand_id (i.e. they are the children of expand_id 
     according to p_link).
-    The information in configs[cat]['expand'] determines whether or not
+    The information in config['cats'][cat]['expand'] determines whether or not
     a given spec_item has s_link or p_link children. 
     """
-    if configs['cats'][cat]['expand'][expand_link] == 'None':
+    expand_cat = config['cats'][cat]['expand'][expand_link]
+    if expand_cat == 'None':
         return None
     expand_items = None
     if expand_link == 's_link':
         expand_items = SpecItem.objects.filter(project_id=project_id, \
-                            cat=configs['cats'][cat]['expand'][expand_link], \
+                            cat=expand_cat, \
                             s_link_id=expand_id, \
                             val_set_id=val_set_id).\
                             exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
     if expand_link == 'p_link':
         expand_items = SpecItem.objects.filter(project_id=project_id, \
-                            cat=configs['cats'][cat]['expand'][expand_link], \
+                            cat=expand_cat, \
                             p_link_id=expand_id, \
                             val_set_id=val_set_id).\
                             exclude(status='DEL').exclude(status='OBS').order_by('domain','name')
@@ -374,12 +375,12 @@ def get_default_val_set_id(request, project):
         return 0
     
 
-def del_release(request, release, n):
+def del_release(request, release, n, config):
     """ 
         Recursively delete a release and its previous releases. If the depth of recursion 
-        exceeds max_depth, an error is declared and False is returned.
+        exceeds config['general']['max_depth'], an error is declared and False is returned.
     """
-    if n > configs['general']['max_depth']:
+    if n > config['general']['max_depth']:
         messages.error(request, 'Attempt to delete a release has reached the limit '+\
                                     'on the depth of recursion: '+str(n))
         return False
@@ -387,7 +388,7 @@ def del_release(request, release, n):
     previous_release = release.previous
     release.delete()        
     if previous_release != None:
-        del_release(request, previous_release, n+1)
+        del_release(request, previous_release, n+1, config)
     return True                                 
 
 
@@ -452,10 +453,11 @@ def make_obs_spec_item_copy(request, spec_item):
     return edited_spec_item     # Return the modified instance of spec_item
 
 
-def create_and_init_spec_item(request, cat, init_dict):
-    """ Create a spec_item of category 'cat' and initialize it with the values in init_dict """
+def create_and_init_spec_item(request, config, cat, init_dict):
+    """ Create a spec_item of category 'cat' and initialize the attributes which the project configuration
+        defines for the category with the values in init_dict """
     new_spec_item = SpecItem()
-    for attr in configs['cats'][cat]['attrs']:
+    for attr in config['cats'][cat]['attrs']:
         if attr in init_dict:
             setattr(new_spec_item, attr, init_dict[attr])
     return new_spec_item
@@ -507,27 +509,28 @@ def update_dom_name_in_val_set(spec_item):
 _EXTRA_ORDER_BY_FIELDS = ('domain', 'name', 'title')
 
 
-def _ui_order_by_fields():
-    """The sort fields the list templates offer: every 'order_by' key of the column definitions."""
+def _ui_order_by_fields(config):
+    """The sort fields the list templates offer: every 'order_by' key (a SpecItem field) of the columns of 'config'."""
     fields = set(_EXTRA_ORDER_BY_FIELDS)
-    for cat_config in configs['cats'].values():
+    model_fields = {field.name for field in SpecItem._meta.get_fields()}
+    for cat_config in config['cats'].values():
         for value in cat_config.values():
             if isinstance(value, list):
                 for column in value:
-                    if isinstance(column, dict) and column.get('order_by'):
+                    if isinstance(column, dict) and column.get('order_by') in model_fields:
                         fields.add(column['order_by'])
     return fields
 
 
-def sanitize_order_by(order_by):
-    """Return order_by if it is a permitted sort field, optionally descending ('-field', accepted
+def sanitize_order_by(order_by, config):
+    """Return order_by if it is a permitted sort field of 'config', optionally descending ('-field', accepted
     before the fix and kept for old bookmarks), else None (= default domain:name order)."""
-    if isinstance(order_by, str) and order_by.removeprefix('-') in _ui_order_by_fields():
+    if isinstance(order_by, str) and order_by.removeprefix('-') in _ui_order_by_fields(config):
         return order_by
     return None
 
 
-def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by):
+def get_spec_item_query(config, project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by):
     """ 
     Query the database for all spec_items belonging to the argument project, application,
     val_set and catefory. 
@@ -539,14 +542,14 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
     they are ordered by the field names in 'order_by'.
     """
     if sel_rel is None:     # Return the latest version of the spec_items
-        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
+        if (config['cats'][cat]['level'] == 'project') or (application_id == 0):   
             items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='DEL').exclude(status='OBS') 
         else:               # Items to be listed are 'application items'
             items = SpecItem.objects.filter(project_id=project_id, application_id=application_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='DEL').exclude(status='OBS')
     else:
-        if (configs['cats'][cat]['level'] == 'project') or (application_id == 0):   
+        if (config['cats'][cat]['level'] == 'project') or (application_id == 0):   
             items = SpecItem.objects.filter(project_id=project_id).filter(cat=cat).filter(val_set_id=val_set_id).\
                         exclude(status='NEW').exclude(status='MOD')            
         else:               
@@ -568,7 +571,7 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
     if (sel_val != "Sel_All"):
         items = items.filter(domain=sel_val)
         
-    order_by = sanitize_order_by(order_by)
+    order_by = sanitize_order_by(order_by, config)
     if order_by == None:    
         items = items.order_by('domain','name')
     elif order_by in ('p_link', 's_link'):
@@ -580,3 +583,21 @@ def get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, se
 
     return items
     
+
+
+# SpecItem columns which a category definition may leave out of its attributes (hidden). The stored values of
+# hidden attributes survive editing, copying and splitting an item.
+HIDDEN_VALUE_FIELDS = ('title', 'desc', 'value', 'rationale', 'remarks', 'implementation', 'p_kind', 's_kind',
+                       't1', 't2', 't3', 't4', 't5', 'n1', 'n2', 'n3', 's_data', 'p_link', 's_link')
+
+
+def get_hidden_fields(config, cat):
+    """ Names of the columns in HIDDEN_VALUE_FIELDS which the project configuration does not define for 'cat' """
+    attrs = config['cats'][cat]['attrs']
+    return [field for field in HIDDEN_VALUE_FIELDS if field not in attrs]
+
+
+def copy_hidden_values(source, target, config, cat):
+    """ Copy from the spec_item 'source' to 'target' the values of the attributes which 'cat' does not define """
+    for field in get_hidden_fields(config, cat):
+        setattr(target, field, getattr(source, field))

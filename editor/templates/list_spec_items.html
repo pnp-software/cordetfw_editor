@@ -371,12 +371,7 @@
                        title="Add {{config.expand.p_label}} Child">
                     </a>
                     {% endif %}
-                    {% if 'trac' in display_list and sel_rel_id == 0 %}
-                    <a class="link-45deg me-1 text-decoration-none"
-                       href="{% url 'add_spec_item' 'VerLink' project.id application_id sel_val sel_rel_id %}?s_parent_id={{item.id}}&disp={{disp}}"
-                       title="Add Verification Link">
-                    </a>
-                    {% endif %}
+                    {# no category is named in this template: relationships come from the configuration #}
                     </nobr>
                 </td>
                 {% endif %}
@@ -387,11 +382,11 @@
                 <td>{{expand_item.domain}}</td>
                 <td>
                     <a href="{% url 'list_spec_items' expand_item.cat project.id application_id val_set.id expand_item.domain sel_rel_id %}#{{expand_item.domain}}:{{expand_item.name}}"
-                       title="{{expand_item|filter_expand_tip|linebreaksbr}}">
+                       title="{{expand_item|filter_expand_tip:project_config|linebreaksbr}}">
                         {{expand_item.name}}
                     </a>
                 </td>
-                <td colspan="{{n_pad_fields|length}}">{{expand_item|get_short_desc}}</td>
+                <td colspan="{{n_pad_fields|length}}">{{expand_item|get_short_desc:project_config}}</td>
                 <td></td>
                 <!-- The edit/copy/delete/split buttons  -->
                 <td>

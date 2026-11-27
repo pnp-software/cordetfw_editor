@@ -9,7 +9,6 @@ import pytest
 from django.utils.safestring import SafeString
 
 from editor import convert
-from editor.configs import configs
 from editor.convert import (frmt_string, convert_db_to_display, convert_edit_to_db,
                             convert_exp_to_db, convert_db_to_edit, convert_db_to_latex,
                             conv_do_nothing, conv_db_disp_plain_ref, conv_db_disp_date,
@@ -18,9 +17,12 @@ from editor.convert import (frmt_string, convert_db_to_display, convert_edit_to_
                             render_for_eval, eval_di_value, get_pattern_edit)
 from editor.markdown import markdown_to_html, markdown_to_latex
 from editor.templatetags import ref_filters
-from tests.factories import make_user, make_project, make_spec_item, make_release, make_application
+from tests.factories import make_user, make_project, make_spec_item, make_release, make_application, \
+                            template_config
 
 pytestmark = pytest.mark.django_db
+
+configs = template_config()
 
 CATS = 'DataItem,EnumType,EnumValue,DataItemType,VerLink,Packet,DerPacket,PacketPar,Service'
 
@@ -125,7 +127,7 @@ def test_markdown_bullet_item_with_hyphen_splits():
 # ------------------------------------------------------- convert_db_to_display
 def test_display_internal_ref_cnf_and_new(world):
     e, x = world['etype'], world['x']
-    out = convert_db_to_display('hi #iref:%d and #iref:%d' % (e.id, x.id), None)
+    out = convert_db_to_display('hi #iref:%d and #iref:%d' % (e.id, x.id), None, config=configs)
     # FIXED: ref-link-backslash (was: '0\\list_spec_items', a backslash instead of '/')
     assert out == (
         'hi <a href="/editor/EnumType/%d/0/%d/D/0/list_spec_items#D:T1" '
@@ -139,7 +141,7 @@ def test_display_internal_ref_cnf_and_new(world):
 def test_display_link_danger_for_status(world, status):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'st_' + status, status=status,
                           p_link=world['etype'])
-    out = convert_db_to_display('#iref:%d' % item.id, None)
+    out = convert_db_to_display('#iref:%d' % item.id, None, config=configs)
     assert 'class="link-danger"' in out
     assert 'title="Status: %s&#13;' % status in out
 
@@ -148,18 +150,18 @@ def test_display_link_danger_for_status(world, status):
 def test_display_no_danger_for_other_status(world, status):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'st_' + status, status=status,
                           p_link=world['etype'])
-    out = convert_db_to_display('#iref:%d' % item.id, None)
+    out = convert_db_to_display('#iref:%d' % item.id, None, config=configs)
     assert 'link-danger' not in out
     assert 'Status:' not in out
 
 
 def test_display_missing_ref_and_markdown():
-    assert convert_db_to_display('a #iref:9999 **x**', None) == 'a ERROR:9999 <b>x</b>'
+    assert convert_db_to_display('a #iref:9999 **x**', None, config=configs) == 'a ERROR:9999 <b>x</b>'
 
 
 def test_display_sel_rel_id_in_link(world):
     rel = make_release(world['owner'])
-    out = convert_db_to_display('#iref:%d' % world['etype'].id, rel)
+    out = convert_db_to_display('#iref:%d' % world['etype'].id, rel, config=configs)
     assert '/D/%d/list_spec_items' % rel.id in out
 
 
@@ -167,20 +169,20 @@ def test_display_application_id_in_link(world):
     app = make_application(world['project'], cats='DataItem')
     item = make_spec_item(world['project'], 'DataItem', 'D', 'appitem', application=app,
                           p_link=world['etype'])
-    out = convert_db_to_display('#iref:%d' % item.id, None)
+    out = convert_db_to_display('#iref:%d' % item.id, None, config=configs)
     assert '/editor/DataItem/%d/%d/' % (world['project'].id, app.id) in out
 
 
 def test_display_html_special_chars_in_names_escaped_but_text_not(world):
     # FIXED: xss-display (was: '<script>x</script> & <b>' returned raw)
-    out = convert_db_to_display('<script>x</script> & <b>', None)
+    out = convert_db_to_display('<script>x</script> & <b>', None, config=configs)
     assert out == '&lt;script&gt;x&lt;/script&gt; &amp; &lt;b&gt;'
 
 
 def test_display_ref_escapes_domain_name_title(world):
     item = make_spec_item(world['project'], 'EnumType', 'D', 'q', status='CNF',
                           title='<i>t</i>', desc='"q"')
-    out = convert_db_to_display('#iref:%d' % item.id, None)
+    out = convert_db_to_display('#iref:%d' % item.id, None, config=configs)
     assert 'Title: &lt;i&gt;t&lt;/i&gt;&#13;Description: &quot;q&quot;&#13;' in out
 
 
@@ -291,7 +293,7 @@ def test_pattern_edit_depends_on_project(world):
 def _ctx(world, sel_rel=None):
     return {'application_id': 0, 'default_val_set_id': world['x'].val_set_id,
             'sel_val': 'Sel_All', 'sel_rel': sel_rel,
-            'config': configs['cats']['DataItem']}
+            'config': configs['cats']['DataItem'], 'project_config': configs}
 
 
 def test_conv_do_nothing_and_plain_ref(world):
@@ -313,13 +315,13 @@ def test_conv_db_disp_date_returns_escaped_value(world):
 def test_conv_db_disp_ref_text(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'rt', p_link=world['etype'],
                           desc='see #iref:999 **b**')
-    assert conv_db_disp_ref_text({}, item, 'desc', None) == 'see ERROR:999 <b>b</b>'
+    assert conv_db_disp_ref_text({'project_config': configs}, item, 'desc', None) == 'see ERROR:999 <b>b</b>'
 
 
 def test_conv_db_disp_table(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tb', p_link=world['etype'],
                           s_data={'a': 1})
-    assert conv_db_disp_table({}, item, 's_data', None) == "{'a': 1}"
+    assert conv_db_disp_table({'project_config': configs}, item, 's_data', None) == "{'a': 1}"
 
 
 def test_conv_db_disp_spec_item_ref_none(world):
@@ -359,9 +361,9 @@ def test_conv_db_disp_spec_item_ref_application_level_and_release(world):
 def test_conv_db_disp_eval_ref(world):
     x, y = world['x'], world['y']
     # no references: value returned unchanged (no evaluation)
-    assert conv_db_disp_eval_ref({}, x, 'value', None) == '2*3'
+    assert conv_db_disp_eval_ref({'project_config': configs}, x, 'value', None) == '2*3'
     # with references: display + ' = ' + evaluated value
-    out = conv_db_disp_eval_ref({}, y, 'value', None)
+    out = conv_db_disp_eval_ref({'project_config': configs}, y, 'value', None)
     assert out.endswith('</a>+1 = 7.0')
     assert out.startswith('<a href="/editor/DataItem/')
 
@@ -369,7 +371,7 @@ def test_conv_db_disp_eval_ref(world):
 def test_conv_db_disp_eval_ref_unevaluable(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'bad', p_link=world['etype'],
                           value='#iref:%d+' % world['x'].id)
-    out = conv_db_disp_eval_ref({}, item, 'value', None)
+    out = conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None)
     assert out.endswith('</a>+ = #iref:%d+' % world['x'].id)
 
 
@@ -406,23 +408,25 @@ def test_render_for_eval_substitutes_without_evaluating(world):
     assert render_for_eval('#iref:9999', 1) == '#iref:9999'
 
 
-def test_render_for_eval_max_depth(world, monkeypatch, convert_log):
+def test_render_for_eval_max_depth(world, convert_log):
     loop = make_spec_item(world['project'], 'DataItem', 'D', 'loop', p_link=world['etype'], value='1')
     loop.value = '#iref:%d+1' % loop.id
     loop.save()
-    monkeypatch.setitem(convert.configs['general'], 'max_depth', 3)
-    out = render_for_eval(loop.value, 1)
+    config = template_config()
+    config['general']['max_depth'] = 3
+    out = render_for_eval(loop.value, 1, config=config)
     # depths 1..3 substitute the value; at depth 4 the reference is returned unchanged
     assert out == '#iref:%d+1+1+1+1' % loop.id
     assert convert_log == ['Exceeded recursion depth when evaluating #iref:%d+1' % loop.id]
 
 
-def test_render_for_eval_max_depth_exact(world, monkeypatch):
+def test_render_for_eval_max_depth_exact(world):
     loop = make_spec_item(world['project'], 'DataItem', 'D', 'loop', p_link=world['etype'], value='1')
     loop.value = 'A#iref:%d' % loop.id
     loop.save()
-    monkeypatch.setitem(convert.configs['general'], 'max_depth', 2)
-    out = render_for_eval(loop.value, 1)
+    config = template_config()
+    config['general']['max_depth'] = 2
+    out = render_for_eval(loop.value, 1, config=config)
     # n=1 -> item.value rendered at n=2 -> rendered at n=3 (>2) returned unchanged
     assert out == 'AAA#iref:%d' % loop.id
 
@@ -436,7 +440,7 @@ def test_eval_di_value_cyclic_reference_terminates(world):
 
 # ------------------------------------------------------------- ref_filters
 def _tag_ctx(world, sel_rel=None, cat='DataItem'):
-    return {'sel_rel': sel_rel, 'config': configs['cats'][cat], 'application_id': 0,
+    return {'sel_rel': sel_rel, 'config': configs['cats'][cat], 'project_config': configs, 'application_id': 0,
             'default_val_set_id': world['x'].val_set_id, 'sel_val': 'Sel_All'}
 
 
@@ -558,7 +562,7 @@ def test_filter_expand_tip(world):
     # expand_tip of DataItem: title, desc, value ; refs converted to edit format; escaped (Task 6.6)
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip', p_link=world['etype'],
                           desc='see #iref:%d <b>' % world['etype'].id, value='1')
-    out = ref_filters.filter_expand_tip(item)
+    out = ref_filters.filter_expand_tip(item, configs)
     assert out == 'Title: Title of tip&#13;Description: see #EnumType:D:T1 &lt;b&gt;&#13;Value: 1&#13;'
     assert isinstance(out, SafeString)
 
@@ -583,13 +587,13 @@ def test_filter_get_label():
 def test_filter_get_short_desc(world):
     x = world['x']       # expand_text = [title, desc]
     # desc is empty: 'Title of x: ' + '' + ': ' with the last two chars cut
-    assert ref_filters.get_short_desc(x) == 'Title of x: '
+    assert ref_filters.get_short_desc(x, configs) == 'Title of x: '
 
 
 def test_filter_get_short_desc_truncation(world):
     long = make_spec_item(world['project'], 'DataItem', 'D', 'long', p_link=world['etype'],
                           title='T' * 60, desc='d' * 60)
-    out = ref_filters.get_short_desc(long)
+    out = ref_filters.get_short_desc(long, configs)
     # desc = 'TTT..: ddd..: ' is 126 chars (> short_desc_len 100): cut at 100 and ' ...' appended
     assert out == ('T' * 60 + ': ' + 'd' * 38) + ' ...'
     assert len(out) == 104
@@ -599,7 +603,7 @@ def test_filter_get_short_desc_boundary(world):
     # exactly 100 chars of desc incl. the trailing ': ' separators is NOT truncated
     item = make_spec_item(world['project'], 'DataItem', 'D', 'b', p_link=world['etype'],
                           title='T' * 48, desc='d' * 48)   # 48+2+48+2 = 100
-    out = ref_filters.get_short_desc(item)
+    out = ref_filters.get_short_desc(item, configs)
     assert out == 'T' * 48 + ': ' + 'd' * 48
 
 

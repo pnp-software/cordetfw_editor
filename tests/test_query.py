@@ -15,9 +15,11 @@ from editor.utilities import (get_domains, get_expand_items, get_previous_list,
                               update_dom_name_in_val_set)
 from tests.backend import is_mysql
 from tests.factories import (default_val_set, make_application, make_project, make_release,
-                             make_spec_item, make_user, make_val_set)
+                             make_spec_item, make_user, make_val_set, template_config)
 
 pytestmark = pytest.mark.django_db
+
+configs = template_config()
 
 
 def utc(*args):
@@ -91,7 +93,7 @@ def timeline():
 
 
 def q(project, vs, release=None, cat='DataItem', app_id=0, sel_val='Sel_All', order_by=None):
-    return get_spec_item_query(project.id, app_id, vs.id, cat, release, sel_val, order_by)
+    return get_spec_item_query(configs, project.id, app_id, vs.id, cat, release, sel_val, order_by)
 
 
 def test_query_latest_excludes_del_and_obs(timeline):
@@ -381,9 +383,9 @@ def test_get_expand_items_s_link():
     make_spec_item(project, cat='EnumValue', name='elsewhere', s_link=other_parent)
     make_spec_item(project, cat='EnumValue', name='in_vs1', s_link=parent, val_set=make_val_set(project, 'VS1'))
     make_spec_item(project, cat='DataItem', name='wrongcat', s_link=parent)
-    result = get_expand_items('EnumType', project.id, vs.id, parent.id, 's_link')
+    result = get_expand_items(configs, 'EnumType', project.id, vs.id, parent.id, 's_link')
     assert names(result) == ['v1', 'v2']
-    assert names(get_expand_items('EnumType', project.id, vs.id, str(parent.id), 's_link')) == ['v1', 'v2']
+    assert names(get_expand_items(configs, 'EnumType', project.id, vs.id, str(parent.id), 's_link')) == ['v1', 'v2']
 
 
 def test_get_expand_items_p_link():
@@ -394,21 +396,21 @@ def test_get_expand_items_p_link():
     make_spec_item(project, cat='DataItem', domain='A', name='d1', p_link=parent)
     make_spec_item(project, cat='DataItem', name='dgone', p_link=parent, status='DEL')
     make_spec_item(project, cat='EnumValue', name='wrongcat', p_link=parent)
-    assert names(get_expand_items('EnumType', project.id, vs.id, parent.id, 'p_link')) == ['d1', 'd2']
+    assert names(get_expand_items(configs, 'EnumType', project.id, vs.id, parent.id, 'p_link')) == ['d1', 'd2']
 
 
 def test_get_expand_items_none_configured_returns_none():
     project = make_project(make_user())
     vs = default_val_set(project)
     parent = make_spec_item(project, cat='DataItem', name='D')
-    assert get_expand_items('DataItem', project.id, vs.id, parent.id, 'p_link') is None
-    assert get_expand_items('DataItem', project.id, vs.id, parent.id, 's_link') is None
+    assert get_expand_items(configs, 'DataItem', project.id, vs.id, parent.id, 'p_link') is None
+    assert get_expand_items(configs, 'DataItem', project.id, vs.id, parent.id, 's_link') is None
 
 
 def test_get_expand_items_unknown_link_raises_key_error():
     project = make_project(make_user())
     with pytest.raises(KeyError):
-        get_expand_items('EnumType', project.id, default_val_set(project).id, 1, 'bogus')
+        get_expand_items(configs, 'EnumType', project.id, default_val_set(project).id, 1, 'bogus')
 
 
 # ------------------------------------------------------------------ get_previous_list

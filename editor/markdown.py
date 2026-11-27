@@ -1,6 +1,5 @@
 import os
 import re
-import json
 import logging
 from django.contrib import messages
 from django.utils.html import escape
@@ -9,12 +8,8 @@ from django.contrib.auth import get_user
 from django.contrib.auth.models import User
 from django.forms.models import model_to_dict
 from django.db.models import ForeignKey
-from django.conf import settings
 from datetime import datetime
 from editor.models import SpecItem, ProjectUser, Application, Release, Project, ValSet
-       
-with open(settings.BASE_DIR + '/editor/static/json/configs.json') as config_file:
-    configs = json.load(config_file)
       
 # Regex pattern for text emphasis markdown
 # Bold is: '**...**'

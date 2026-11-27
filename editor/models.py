@@ -2,6 +2,7 @@ import json
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
+from editor.fields import OrderedJSONField
 from datetime import datetime, timezone
 
 class Release(models.Model):
@@ -21,6 +22,7 @@ class Project(models.Model):
     updated_at= models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(User, related_name='owned_projects', on_delete=models.PROTECT)
     release = models.ForeignKey(Release, on_delete=models.PROTECT)
+    config = OrderedJSONField(default=dict)
     def __str__(self):
         return self.name
     

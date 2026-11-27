@@ -4,11 +4,10 @@ from django.template.defaultfilters import linebreaksbr
 from django.utils.html import escape
 from django.db.models import Q
 from ..models import SpecItem
-from ..configs import configs
 from ..convert import conv_do_nothing, conv_db_disp_ref_text, conv_db_disp_plain_ref, \
                       conv_db_disp_spec_item_ref, conv_db_disp_date, eval_di_value, \
                       convert_db_to_edit, convert_db_to_display, conv_db_disp_table, \
-                      conv_db_disp_plain_text, escape_text
+                      conv_db_disp_plain_text, escape_text, get_cat_definition, get_tooltip
 from .. import convert
 
 register = template.Library()
@@ -47,10 +46,12 @@ def conv_db_disp(context, spec_item, attr_names):
     label corresponding to the attribute 'attr_name' and 'value' is the converted
     value of the attribute.
     Only non-empty attributes are returned. 
+    The kinds come from the project configuration context['project_config'], the labels from the
+    configuration of the listed category, context['config'].
     """
     values = []
     for attr_name in attr_names:
-        attr_content_kind = configs['cats'][spec_item.cat]['attrs'][attr_name]['kind']
+        attr_content_kind = context['project_config']['cats'][spec_item.cat]['attrs'][attr_name]['kind']
         conv_func = conv_db_disp_func[attr_content_kind]
         s = getattr(convert, conv_func)(context, spec_item, attr_name, context['sel_rel'])
         if s != '':
@@ -138,19 +139,14 @@ def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
  
  
 @register.filter(is_safe=True)
-def filter_expand_tip(spec_item):
+def filter_expand_tip(spec_item, project_config):
     """
     The argument is a spec_item which appears in an "expand" list.
     The function returns the hovering tip for the spec_item.
     The tip is used inside a title="..." attribute: the stored values are escaped with escape()
     (the '&#13;' line separators are added afterwards).
     """
-    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_tip']
-    s = ''
-    for attr in attrs:
-        s = s + configs['cats'][spec_item.cat]['attrs'][attr]['label'] +': '+\
-                escape(convert_db_to_edit(getattr(spec_item, attr), spec_item.project_id)) + '&#13;'
-    return mark_safe(s)
+    return mark_safe(get_tooltip(project_config, spec_item, 'expand_tip', spec_item.project_id))
 
 
 @register.filter(is_safe=True)
@@ -172,15 +168,21 @@ def get_label(config, attr):
 
 
 @register.filter(is_safe=True)
-def get_short_desc(spec_item):
-    """ Return a short description of the specification item """
-    attrs = configs['cats'][spec_item.cat]['short_desc']['expand_text']
+def get_short_desc(spec_item, project_config):
+    """
+    Short description of the specification item per its project configuration; <domain>:<name> if the
+    configuration does not define the category (hidden) or its short description.
+    """
+    definition = get_cat_definition(project_config, spec_item.cat)
+    if definition is None or 'expand_text' not in definition.get('short_desc', {}):
+        return spec_item.domain + ':' + spec_item.name
     desc = ''
-    for attr in attrs:
-        desc = desc + getattr(spec_item, attr) + ': '
+    for attr in definition['short_desc']['expand_text']:
+        desc = desc + str(getattr(spec_item, attr)) + ': '
 
-    if len(desc) > configs['general']['short_desc_len']:
-        return desc[:configs['general']['short_desc_len']]+' ...'
+    short_desc_len = project_config['general']['short_desc_len']
+    if len(desc) > short_desc_len:
+        return desc[:short_desc_len]+' ...'
     else:
         return desc[:-2]
 

@@ -17,6 +17,15 @@ urlpatterns = [
     path('import_project', views.import_project, name='import_project'),
     path('<int:project_id>/make_project_release', views.make_project_release, name='make_project_release'),
 
+    path('<int:project_id>/config', views.config_page, name='project_config'),
+    path('<int:project_id>/config/download', views.config_download, name='project_config_download'),
+    path('<int:project_id>/config/reload', views.config_reload, name='project_config_reload'),
+    path('<int:project_id>/config/validate', views.config_validate, name='project_config_validate'),
+    path('<int:project_id>/config/upload', views.config_upload, name='project_config_upload'),
+    path('<int:project_id>/config/save', views.config_save, name='project_config_save'),
+    path('<int:project_id>/config/preview', views.config_preview, name='project_config_preview'),
+    path('<int:project_id>/config/remove', views.config_remove, name='project_config_remove'),
+
     path('<int:project_id>/add_val_set', views.add_val_set, name='add_val_set'),
     path('<int:project_id>/<int:val_set_id>/edit_val_set', views.edit_val_set, name='edit_val_set'),
  

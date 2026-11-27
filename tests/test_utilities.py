@@ -7,7 +7,7 @@ from django.contrib.messages.storage.cookie import CookieStorage
 from django.contrib.auth.models import User
 from django.test import RequestFactory
 
-from editor.configs import configs, get_p_link_choices, get_s_link_choices
+from editor.configs import get_p_link_choices, get_s_link_choices
 from editor.models import SpecItem, ValSet, Project
 from editor.utilities import (spec_item_to_edit, spec_item_to_latex, spec_item_to_export,
                               export_to_spec_item, get_user_choices, get_redirect_url,
@@ -15,9 +15,12 @@ from editor.utilities import (spec_item_to_edit, spec_item_to_latex, spec_item_t
                               get_p_kind_choices, get_s_kind_choices, get_csv_line, snake_to_camel,
                               get_previous_list)
 from tests.factories import (make_user, make_project, make_spec_item, make_val_set, make_release,
-                             make_application, default_val_set, FIXED_TIME)
+                             make_application, default_val_set, FIXED_TIME, template_config)
+from editor.project_config import get_project_config
 
 pytestmark = pytest.mark.django_db
+
+configs = template_config()
 
 CATS = 'DataItem,EnumType,EnumValue,DataItemType'
 
@@ -62,7 +65,7 @@ def test_get_previous_list(world):
 
 # ---------------------------------------------------------------- spec_item_to_edit
 def test_spec_item_to_edit(world):
-    d = spec_item_to_edit(world['item'])
+    d = spec_item_to_edit(world['item'], configs)
     assert d['desc'] == 'x_y #EnumType:D:T1\nl2'
     assert d['value'] == '#EnumType:D:T1*2'
     assert d['domain'] == 'D' and d['name'] == 'x'
@@ -79,12 +82,12 @@ def test_spec_item_to_edit(world):
 
 def test_spec_item_to_edit_dangling_reference(world):
     world['item'].desc = 'see #iref:9999'
-    assert spec_item_to_edit(world['item'])['desc'] == 'see ERROR:9999'
+    assert spec_item_to_edit(world['item'], configs)['desc'] == 'see ERROR:9999'
 
 
 # ---------------------------------------------------------------- spec_item_to_latex
 def test_spec_item_to_latex_datait(world):
-    d = spec_item_to_latex(world['item'])
+    d = spec_item_to_latex(world['item'], configs)
     assert d == {
         'Domain': 'D', 'Name': 'x', 'Title': 'Title of x',
         'Description': 'x\\_y D:T1 \\newline l2',
@@ -99,7 +102,7 @@ def test_spec_item_to_latex_datait(world):
 
 
 def test_spec_item_to_latex_key_order(world):
-    assert list(spec_item_to_latex(world['item']).keys()) == [
+    assert list(spec_item_to_latex(world['item'], configs).keys()) == [
         'Domain', 'Name', 'Title', 'Description', 'Value', 'NVal', 'Rationale', 'Remarks',
         'Implementation', 'Type', 'Kind', 'Multiplicity', 'Unit', 'Owner', 'ChangeLog', 'ValSet',
         'UpdatedAt', 'CreatedAt', 'Status', 'Project', 'Application']
@@ -108,15 +111,15 @@ def test_spec_item_to_latex_key_order(world):
 
 def test_spec_item_to_latex_nval_evaluated(world):
     world['item'].value = '2*(3+4)'
-    d = spec_item_to_latex(world['item'])
+    d = spec_item_to_latex(world['item'], configs)
     assert d['Value'] == '2*(3+4)'
     assert d['NVal'] == '14.0'
 
 
 def test_spec_item_to_latex_int_and_spec_item_ref(world):
-    d = spec_item_to_latex(world['etype'])
+    d = spec_item_to_latex(world['etype'], configs)
     assert d['Size'] == '0'                      # int field -> frmt_string(str(n1))
-    d2 = spec_item_to_latex(world['item'])
+    d2 = spec_item_to_latex(world['item'], configs)
     assert d2['Type'] == 'D:T1'                 # 'spec_item_ref': str(item).split(' ')[0]
 
 
@@ -124,7 +127,7 @@ def test_spec_item_to_latex_application_and_escaping(world):
     app = make_application(world['project'], name='My_App', cats='Requirement')
     req = make_spec_item(world['project'], 'Requirement', 'R', 'r', application=app, value='v',
                          title='5% & #1')
-    d = spec_item_to_latex(req)
+    d = spec_item_to_latex(req, configs)
     assert d['Application'] == 'My\\_App'
     assert d['Title'] == '5\\% \\& \\#1'
     assert d['Project'] == 'Proj'
@@ -140,14 +143,14 @@ def test_spec_item_to_latex_date_format(world):
     from datetime import datetime, timezone
     world['item'].updated_at = datetime(2023, 12, 31, 23, 59, tzinfo=timezone.utc)
     world['item'].created_at = datetime(2020, 2, 3, 4, 5, tzinfo=timezone.utc)
-    d = spec_item_to_latex(world['item'])
+    d = spec_item_to_latex(world['item'], configs)
     assert d['UpdatedAt'] == '31-12-2023 23:59'
     assert d['CreatedAt'] == '03-02-2020 04:05'
 
 
 # --------------------------------------------------------- export / import round trip
 def test_spec_item_to_export(world):
-    assert spec_item_to_export(world['item']) == {
+    assert spec_item_to_export(world['item'], configs) == {
         'Domain': 'D', 'Name': 'x', 'Title': 'Title of x',
         'Description': 'x_y #EnumType:D:T1\nl2', 'Value': '#iref:%d*2' % world['etype'].id,
         'Rationale': '', 'Remarks': '', 'Implementation': '', 'Type': 'D:T1', 'Kind': '',
@@ -156,16 +159,16 @@ def test_spec_item_to_export(world):
 
 
 def test_spec_item_to_export_empty_spec_item_ref_is_None_string(world):
-    assert spec_item_to_export(world['etype'])['Size'] == '0'
+    assert spec_item_to_export(world['etype'], configs)['Size'] == '0'
     root = make_spec_item(world['project'], 'DataItem', 'D', 'nolink')
     # KNOWN-ISSUE: export-none-string  (empty link is exported as the string 'None')
-    assert spec_item_to_export(root)['Type'] == 'None'
+    assert spec_item_to_export(root, configs)['Type'] == 'None'
 
 
 def test_export_to_spec_item_round_trip(world):
-    exported = spec_item_to_export(world['item'])
+    exported = spec_item_to_export(world['item'], configs)
     new = SpecItem(cat='DataItem')
-    export_to_spec_item(None, world['project'], exported, new)
+    export_to_spec_item(None, world['project'], exported, new, configs)
     assert new.domain == 'D' and new.name == 'x' and new.title == 'Title of x'
     assert new.p_link == world['etype']
     assert new.val_set == default_val_set(world['project'])
@@ -178,40 +181,40 @@ def test_export_to_spec_item_round_trip(world):
 
 
 def test_export_to_spec_item_unknown_link_is_none(world):
-    exported = spec_item_to_export(world['item'])
+    exported = spec_item_to_export(world['item'], configs)
     exported['Type'] = 'Zz:nope'
     new = SpecItem(cat='DataItem')
-    export_to_spec_item(None, world['project'], exported, new)
+    export_to_spec_item(None, world['project'], exported, new, configs)
     assert new.p_link is None
 
 
 def test_export_to_spec_item_missing_column_raises(world):
-    exported = spec_item_to_export(world['item'])
+    exported = spec_item_to_export(world['item'], configs)
     del exported['Title']
     with pytest.raises(KeyError):
-        export_to_spec_item(None, world['project'], exported, SpecItem(cat='DataItem'))
+        export_to_spec_item(None, world['project'], exported, SpecItem(cat='DataItem'), configs)
 
 
 def test_export_to_spec_item_unknown_valset_raises(world):
-    exported = spec_item_to_export(world['item'])
+    exported = spec_item_to_export(world['item'], configs)
     exported['ValSet'] = 'Nope'
     with pytest.raises(ValSet.DoesNotExist):
-        export_to_spec_item(None, world['project'], exported, SpecItem(cat='DataItem'))
+        export_to_spec_item(None, world['project'], exported, SpecItem(cat='DataItem'), configs)
 
 
 def test_export_to_spec_item_int_not_converted(world):
-    exported = spec_item_to_export(world['etype'])
+    exported = spec_item_to_export(world['etype'], configs)
     exported['Size'] = '7'
     new = SpecItem(cat='EnumType')
-    export_to_spec_item(None, world['project'], exported, new)
+    export_to_spec_item(None, world['project'], exported, new, configs)
     assert new.n1 == '7'          # string, no int conversion
 
 
 def test_export_unicode_round_trip(world):
     world['item'].title = 'café € <b>&</b>'
-    exported = spec_item_to_export(world['item'])
+    exported = spec_item_to_export(world['item'], configs)
     new = SpecItem(cat='DataItem')
-    export_to_spec_item(None, world['project'], exported, new)
+    export_to_spec_item(None, world['project'], exported, new, configs)
     assert new.title == 'café € <b>&</b>'
 
 
@@ -253,12 +256,12 @@ def test_get_user_choices_only_first_name():
 
 # ------------------------------------------------------------------ kind choices
 def test_kind_choices():
-    assert get_p_kind_choices('DataItem') == [('CNS', 'Constant'), ('PAR', 'Configuration Parameter'),
+    assert get_p_kind_choices(configs, 'DataItem') == [('CNS', 'Constant'), ('PAR', 'Configuration Parameter'),
                                               ('VAR', 'Global Variable'), ('CTX', 'Context Variable'),
                                               ('PCK', 'Packet Parameter')]
-    assert get_s_kind_choices('Packet') == [('INV', 'Invalid')]
+    assert get_s_kind_choices(configs, 'Packet') == [('INV', 'Invalid')]
     with pytest.raises(KeyError):
-        get_p_kind_choices('Nope')
+        get_p_kind_choices(configs, 'Nope')
 
 
 # ----------------------------------------------------------------- get_redirect_url
@@ -368,7 +371,7 @@ def test_get_default_val_set_id_missing_returns_zero_and_message(world):
 
 # ---------------------------------------------------- create_and_init_spec_item
 def test_create_and_init_spec_item():
-    item = create_and_init_spec_item(None, 'DataItem', {
+    item = create_and_init_spec_item(None, configs, 'DataItem', {
         'domain': 'D', 'name': 'n', 'title': 'T', 'value': '1', 'n1': 5, 'unknown': 'zzz',
         'status': 'CNF', 'p_kind': 'CNS'})
     assert isinstance(item, SpecItem) and item.pk is None
@@ -383,7 +386,7 @@ def test_create_and_init_spec_item():
 
 def test_create_and_init_spec_item_unknown_cat():
     with pytest.raises(KeyError):
-        create_and_init_spec_item(None, 'Nope', {})
+        create_and_init_spec_item(None, configs, 'Nope', {})
 
 
 # ------------------------------------------------------ configs link choices
@@ -392,7 +395,7 @@ def _pairs(qs):
 
 
 def test_p_link_choices_parent_id(world):
-    qs = get_p_link_choices('DataItem', world['project'], None, str(world['etype'].id), None)
+    qs = get_p_link_choices('DataItem', world['project'], None, str(world['etype'].id), None, get_project_config(world['project']))
     assert list(qs) == [world['etype']]
 
 
@@ -402,14 +405,14 @@ def test_p_link_choices_dataitem_types_sorted(world):
     make_spec_item(p, 'DataItemType', 'A', 'dt2', status='DEL')
     make_spec_item(p, 'EnumType', 'A', 'et', status='CNF')
     make_spec_item(p, 'EnumType', 'A', 'obs', status='OBS')
-    qs = get_p_link_choices('DataItem', p, None, None, None)
+    qs = get_p_link_choices('DataItem', p, None, None, None, get_project_config(p))
     # q1 | q2 combine: the combined queryset is ordered by (domain, name)
     assert _pairs(qs) == [('EnumType', 'A', 'et'), ('DataItemType', 'B', 'dt'), ('EnumType', 'D', 'T1')]
 
 
 def test_p_link_choices_no_link_cats(world):
-    assert list(get_p_link_choices('EnumType', world['project'], None, None, None)) == []
-    assert list(get_p_link_choices('AdaptPoint', world['project'], None, None, None)) == []
+    assert list(get_p_link_choices('EnumType', world['project'], None, None, None, get_project_config(world['project']))) == []
+    assert list(get_p_link_choices('AdaptPoint', world['project'], None, None, None, get_project_config(world['project']))) == []
 
 
 def test_p_link_choices_adaptpoint_with_application(world):
@@ -420,7 +423,7 @@ def test_p_link_choices_adaptpoint_with_application(world):
     r2 = make_spec_item(p, 'Requirement', 'R', 'a', application=app, status='CNF')
     make_spec_item(p, 'Requirement', 'R', 'c', application=other, status='CNF')
     make_spec_item(p, 'Requirement', 'R', 'd', application=app, status='DEL')
-    assert list(get_p_link_choices('AdaptPoint', p, app, None, None)) == [r2, r1]
+    assert list(get_p_link_choices('AdaptPoint', p, app, None, None, get_project_config(p))) == [r2, r1]
 
 
 def test_p_link_choices_packet_cats(world):
@@ -428,9 +431,9 @@ def test_p_link_choices_packet_cats(world):
     svc = make_spec_item(p, 'Service', 'S', 's', status='CNF')
     pkt = make_spec_item(p, 'Packet', 'P', 'p', status='CNF')
     dpk = make_spec_item(p, 'DerPacket', 'P', 'a', status='CNF')
-    assert list(get_p_link_choices('Packet', p, None, None, None)) == [svc]
-    assert list(get_p_link_choices('InCommand', p, None, None, None)) == [dpk, pkt]
-    assert list(get_p_link_choices('PacketPar', p, None, None, None)) == [dpk, pkt]
+    assert list(get_p_link_choices('Packet', p, None, None, None, get_project_config(p))) == [svc]
+    assert list(get_p_link_choices('InCommand', p, None, None, None, get_project_config(p))) == [dpk, pkt]
+    assert list(get_p_link_choices('PacketPar', p, None, None, None, get_project_config(p))) == [dpk, pkt]
 
 
 def test_p_link_choices_derpacket(world):
@@ -440,18 +443,18 @@ def test_p_link_choices_derpacket(world):
     ev1 = make_spec_item(p, 'EnumValue', 'E', 'v1', status='CNF', s_link=et1)
     ev2 = make_spec_item(p, 'EnumValue', 'E', 'v2', status='CNF', s_link=et2)
     pkt = make_spec_item(p, 'Packet', 'P', 'p', status='CNF', s_link=et1)
-    assert list(get_p_link_choices('DerPacket', p, None, None, None)) == [ev1, ev2]
+    assert list(get_p_link_choices('DerPacket', p, None, None, None, get_project_config(p))) == [ev1, ev2]
     # with s_parent_id: only enum values of the same enum type as the parent's s_link
-    assert list(get_p_link_choices('DerPacket', p, None, None, pkt.id)) == [ev1]
+    assert list(get_p_link_choices('DerPacket', p, None, None, pkt.id, get_project_config(p))) == [ev1]
 
 
 def test_s_link_choices(world):
     p = world['project']
     ev_type = make_spec_item(p, 'EnumType', 'A', 'first', status='CNF')
     make_spec_item(p, 'EnumType', 'Z', 'gone', status='DEL')
-    assert list(get_s_link_choices('EnumValue', p, None, None, None)) == [ev_type, world['etype']]
-    assert list(get_s_link_choices('DataItem', p, None, None, None)) == []
-    assert list(get_s_link_choices('EnumValue', p, None, str(world['etype'].id), None)) == [world['etype']]
+    assert list(get_s_link_choices('EnumValue', p, None, None, None, get_project_config(p))) == [ev_type, world['etype']]
+    assert list(get_s_link_choices('DataItem', p, None, None, None, get_project_config(p))) == []
+    assert list(get_s_link_choices('EnumValue', p, None, str(world['etype'].id), None, get_project_config(p))) == [world['etype']]
 
 
 def test_s_link_choices_other_cats(world):
@@ -459,10 +462,10 @@ def test_s_link_choices_other_cats(world):
     di = world['item']
     pkt = make_spec_item(p, 'Packet', 'P', 'p', status='CNF')
     vi = make_spec_item(p, 'VerItem', 'V', 'vi', status='CNF')
-    assert list(get_s_link_choices('PacketPar', p, None, None, None)) == [di]
-    assert list(get_s_link_choices('DerPacket', p, None, None, None)) == [pkt]
-    assert list(get_s_link_choices('Packet', p, None, None, None)) == [world['etype']]
-    assert list(get_s_link_choices('VerStep', p, None, None, None)) == [vi]
+    assert list(get_s_link_choices('PacketPar', p, None, None, None, get_project_config(p))) == [di]
+    assert list(get_s_link_choices('DerPacket', p, None, None, None, get_project_config(p))) == [pkt]
+    assert list(get_s_link_choices('Packet', p, None, None, None, get_project_config(p))) == [world['etype']]
+    assert list(get_s_link_choices('VerStep', p, None, None, None, get_project_config(p))) == [vi]
     # VerLink: everything except VerItem and VerLink, ordered by cat, domain, name
-    assert _pairs(get_s_link_choices('VerLink', p, None, None, None)) == [
+    assert _pairs(get_s_link_choices('VerLink', p, None, None, None, get_project_config(p))) == [
         ('DataItem', 'D', 'x'), ('EnumType', 'D', 'T1'), ('Packet', 'P', 'p')]

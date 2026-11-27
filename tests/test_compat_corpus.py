@@ -41,6 +41,7 @@ from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import models as dj_models
 
+from editor.config_store import config_token
 from editor.models import Project
 from tests.factories import make_user
 from tests.golden import GOLDEN_DIR
@@ -143,6 +144,9 @@ def fingerprint():
                         row[field.name] = User.objects.get(pk=raw).username
                     else:
                         row[field.name] = ranks[rel][raw]
+                elif field.name == 'config':
+                    # The project configuration (thousands of lines) as its token: any change changes the token
+                    row['config'] = config_token(obj.config)
                 else:
                     value = _norm_value(getattr(obj, field.name), now)
                     if isinstance(value, str):

@@ -15,18 +15,19 @@ import pytest
 from django.utils.safestring import SafeString
 
 from editor import convert
-from editor.configs import configs
 from editor.convert import (convert_db_to_display, conv_db_disp_eval_ref, conv_db_disp_plain_ref,
                             conv_db_disp_ref_text, conv_do_nothing)
 from editor.templatetags import ref_filters
 from tests.factories import (default_val_set, make_application, make_project, make_spec_item,
-                             make_user, make_val_set)
+                             make_user, make_val_set, template_config)
 from tests.test_convert import world, _tag_ctx, CATS            # noqa: F401  (fixture)
 from tests.test_import_export import export_zip, upload_zip, fresh_temp   # noqa: F401
 from tests.test_post_only_mutations import model_setup, fake_connect, ROW
 from editor.models import Project, SpecItem
 
 pytestmark = pytest.mark.django_db
+
+configs = template_config()
 
 SCRIPT = '<script>alert(1)</script>'
 SCRIPT_ESC = '&lt;script&gt;alert(1)&lt;/script&gt;'
@@ -54,7 +55,7 @@ def test_escape_text_helper():
 ])
 def test_display_escapes_text(world, src, expected):
     # FIXED: xss-display (was: text outside references returned raw)
-    assert convert_db_to_display(src, None) == expected
+    assert convert_db_to_display(src, None, config=configs) == expected
 
 
 @pytest.mark.parametrize('src,expected', [
@@ -75,7 +76,7 @@ def test_display_escapes_text(world, src, expected):
 def test_display_markdown_with_escaped_text(world, src, expected):
     # md-no-escape, HTML part fixed in Task 6.6 (the id stays OPEN for the LaTeX part, track K):
     # the text is escaped before markdown is applied
-    assert convert_db_to_display(src, None) == expected
+    assert convert_db_to_display(src, None, config=configs) == expected
 
 
 def test_display_escaped_output_cannot_form_markers_or_irefs(world):
@@ -85,12 +86,12 @@ def test_display_escaped_output_cannot_form_markers_or_irefs(world):
     for marker in ('**', '++', '__', '``', '#iref', '\n-'):
         assert marker not in out
     # the literal text '&#13;' (an entity used in tooltips) cannot be injected either
-    assert convert_db_to_display('&#13;', None) == '&amp;#13;'
+    assert convert_db_to_display('&#13;', None, config=configs) == '&amp;#13;'
 
 
 def test_display_iref_next_to_escaped_text(world):
     e = world['etype']
-    out = convert_db_to_display('<i> #iref:%d & "q" **b**' % e.id, None)
+    out = convert_db_to_display('<i> #iref:%d & "q" **b**' % e.id, None, config=configs)
     assert out.startswith('&lt;i&gt; <a href="/editor/EnumType/')
     assert '>D:T1</a> &amp; "q" <b>b</b>' in out
     # the link tooltip is escaped as before (its desc contains <&>)
@@ -100,7 +101,7 @@ def test_display_iref_next_to_escaped_text(world):
 
 def test_display_title_quote_in_item_does_not_break_tooltip(world):
     item = make_spec_item(world['project'], 'EnumType', 'D', 'q2', status='CNF', title='a"b', desc='x')
-    out = convert_db_to_display('#iref:%d' % item.id, None)
+    out = convert_db_to_display('#iref:%d' % item.id, None, config=configs)
     assert 'Title: a&quot;b&#13;' in out        # unchanged behaviour (attribute escaping already done)
 
 
@@ -138,12 +139,12 @@ def test_tag_eval_ref_with_iref_and_special_chars(world):
     x = world['x']      # value '2*3'
     item = make_spec_item(world['project'], 'DataItem', 'D', 'ev', p_link=world['etype'],
                           value='#iref:%d+1' % x.id)
-    out = conv_db_disp_eval_ref({}, item, 'value', None)
+    out = conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None)
     assert out.endswith('</a>+1 = 7.0')
     # unevaluable raw input with special chars: displayed text escaped, '= <nval>' (the raw input) too
     item2 = make_spec_item(world['project'], 'DataItem', 'D', 'ev2', p_link=world['etype'],
                            value='#iref:%d < 1 & **b**' % x.id)
-    out2 = conv_db_disp_eval_ref({}, item2, 'value', None)
+    out2 = conv_db_disp_eval_ref({'project_config': configs}, item2, 'value', None)
     head, _, nval = out2.rpartition(' = ')
     assert ' &lt; 1 &amp; <b>b</b>' in head and '<a href=' in head
     assert nval == '#iref:%d &lt; 1 &amp; **b**' % x.id
@@ -153,9 +154,9 @@ def test_tag_eval_ref_with_iref_and_special_chars(world):
 def test_tag_eval_ref_plain_text_not_evaluated_twice(world):
     # no iref and no markdown: the text is returned (escaped) without ' = ...'
     item = make_spec_item(world['project'], 'DataItem', 'D', 'ev3', p_link=world['etype'], value='a < b')
-    assert conv_db_disp_eval_ref({}, item, 'value', None) == 'a &lt; b'
+    assert conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None) == 'a &lt; b'
     item = make_spec_item(world['project'], 'DataItem', 'D', 'ev4', p_link=world['etype'], value='1 < 2')
-    assert conv_db_disp_eval_ref({}, item, 'value', None) == '1 &lt; 2'
+    assert conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None) == '1 &lt; 2'
 
 
 def test_tag_int_kind_unchanged(world):
@@ -184,7 +185,7 @@ def test_expand_tip_quote_does_not_break_attribute(world):
     # FIXED: xss-tag (was: raw value inside title="...", a '"' ended the attribute)
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip', p_link=world['etype'],
                           title='a" onmouseover="alert(1)', desc="it's <b>&", value='1')
-    out = ref_filters.filter_expand_tip(item)
+    out = ref_filters.filter_expand_tip(item, configs)
     assert out == ('Title: a&quot; onmouseover=&quot;alert(1)&#13;'
                    'Description: it&#x27;s &lt;b&gt;&amp;&#13;Value: 1&#13;')
     assert isinstance(out, SafeString)
@@ -193,7 +194,7 @@ def test_expand_tip_quote_does_not_break_attribute(world):
 def test_expand_tip_iref_converted_then_escaped(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip2', p_link=world['etype'],
                           desc='see #iref:%d <b>' % world['etype'].id, value='1')
-    out = ref_filters.filter_expand_tip(item)
+    out = ref_filters.filter_expand_tip(item, configs)
     assert out == 'Title: Title of tip2&#13;Description: see #EnumType:D:T1 &lt;b&gt;&#13;Value: 1&#13;'
 
 
@@ -201,8 +202,8 @@ def test_expand_tip_in_template_keeps_linebreaksbr(world):
     from django.template import Context, Template
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip3', p_link=world['etype'],
                           desc='l1\nl2 "q"', value='1')
-    html = Template('{% load ref_filters %}<a title="{{ i|filter_expand_tip|linebreaksbr }}">').render(
-        Context({'i': item}))
+    html = Template('{% load ref_filters %}<a title="{{ i|filter_expand_tip:cfg|linebreaksbr }}">').render(
+        Context({'i': item, 'cfg': configs}))
     assert html == ('<a title="Title: Title of tip3&#13;Description: l1<br>l2 &quot;q&quot;&#13;'
                     'Value: 1&#13;">')
 

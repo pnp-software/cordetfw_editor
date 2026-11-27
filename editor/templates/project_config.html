@@ -1,0 +1,138 @@
+{% extends "base_generic.html" %}
+{% block content %}
+<div class="container-fluid px-md-4" id="project-config-app"
+     data-project-id="{{ project.id }}"
+     data-token="{{ config_token }}"
+     data-reload-url="{% url 'project_config_reload' project.id %}"
+     data-validate-url="{% url 'project_config_validate' project.id %}"
+     data-save-url="{% url 'project_config_save' project.id %}"
+     data-upload-url="{% url 'project_config_upload' project.id %}"
+     data-preview-url="{% url 'project_config_preview' project.id %}"
+     data-remove-url="{% url 'project_config_remove' project.id %}"
+     data-meta="{{ editor_meta }}"
+     data-config="{{ initial_config }}">
+    {% csrf_token %}
+
+    <div class="d-flex flex-wrap align-items-center gap-2 my-3">
+        <h2 class="mb-0 me-3">Configuration of {{ project.name }}</h2>
+        <span id="config-status" class="badge bg-success" role="status" aria-live="polite">No unsaved changes</span>
+        <div class="ms-md-auto btn-group" role="group" aria-label="configuration controls">
+            <button type="button" id="config-save" class="btn btn-primary bi-save"> Save</button>
+            <button type="button" id="config-validate" class="btn btn-outline-primary bi-check2-circle"> Validate</button>
+            <button type="button" id="config-reload" class="btn btn-outline-secondary bi-arrow-clockwise"> Reload</button>
+            <a class="btn btn-outline-primary bi-cloud-download" id="config-download"
+               href="{% url 'project_config_download' project.id %}"> Download</a>
+            <button type="button" id="config-upload-button" class="btn btn-outline-primary bi-cloud-upload"> Upload</button>
+        </div>
+        <input type="file" id="config-upload-file" class="d-none"
+               aria-label="Configuration file to load into the editor">
+    </div>
+
+    <div id="config-conflict"></div>
+    <div id="config-message" aria-live="polite"></div>
+    <div id="config-errors"></div>
+
+    <div class="nav-scroller mb-3">
+        <nav class="nav nav-tabs" role="tablist" aria-label="Editor mode">
+            <button type="button" id="tab-forms" class="nav-link active bi-sliders" role="tab" aria-selected="true"
+                    aria-controls="panel-forms"> Forms</button>
+            <button type="button" id="tab-json" class="nav-link bi-braces" role="tab" aria-selected="false"
+                    aria-controls="panel-json"> JSON (advanced)</button>
+            <button type="button" id="tab-preview" class="nav-link bi-eye" role="tab" aria-selected="false"
+                    aria-controls="panel-preview"> Preview</button>
+        </nav>
+    </div>
+
+    <div id="panel-forms" role="tabpanel" aria-labelledby="tab-forms">
+        <div class="accordion mb-3" id="general-section">
+            <div class="accordion-item">
+                <h3 class="accordion-header" id="general-heading">
+                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#general-body" aria-expanded="false" aria-controls="general-body">
+                        General settings
+                        <span class="text-muted small fw-normal ms-2">CSV separator, line ending, short description
+                            length, maximum depth</span>
+                    </button>
+                </h3>
+                <div id="general-body" class="accordion-collapse collapse" aria-labelledby="general-heading">
+                    <div class="accordion-body"><div class="row g-2" id="general-settings"></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-3">
+                <h3 class="fs-5">Categories</h3>
+                <ul class="list-group mb-2" id="category-list"></ul>
+                <button type="button" id="add-category-open" class="btn btn-outline-primary bi-plus-circle"> Add category</button>
+                <form id="add-category-form" class="card card-body mt-2 d-none" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-cat-id">Identifier</label>
+                        <input type="text" class="form-control" id="new-cat-id" maxlength="24">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-cat-name">Name</label>
+                        <input type="text" class="form-control" id="new-cat-name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-cat-abbr">Abbreviation</label>
+                        <input type="text" class="form-control" id="new-cat-abbr">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="new-cat-level">Level</label>
+                        <select class="form-select" id="new-cat-level">
+                            <option value="project">Project</option>
+                            <option value="application">Application</option>
+                        </select>
+                    </div>
+                    <div class="text-danger small mb-2" id="add-category-error" role="alert"></div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                        <button type="button" id="add-category-cancel" class="btn btn-outline-danger">Cancel</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-9" id="category-editor">
+                <p class="text-muted">The configuration editor needs JavaScript.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-json" class="d-none" role="tabpanel" aria-labelledby="tab-json">
+        <p class="small text-muted">
+            The forms and this editor change the same configuration. A syntax error keeps the last valid
+            configuration in the forms; nothing typed here is lost.
+        </p>
+        <div id="json-status" class="alert alert-danger d-none" role="alert"></div>
+        <textarea id="config-json" class="form-control font-monospace small" rows="32" spellcheck="false"
+                  aria-label="Configuration as JSON"></textarea>
+    </div>
+
+    <div id="panel-preview" class="d-none" role="tabpanel" aria-labelledby="tab-preview">
+        <button type="button" id="preview-refresh" class="btn btn-outline-primary mb-3 bi-arrow-clockwise"> Refresh preview</button>
+        <div id="preview-content"></div>
+    </div>
+</div>
+
+<div class="modal fade" id="configConfirmModal" tabindex="-1" aria-labelledby="configConfirmTitle"
+     aria-describedby="configConfirmBody" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content delete-confirm-modal">
+            <div class="modal-header border-0 pb-0">
+                <span class="delete-confirm-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill" id="configConfirmIcon"></i></span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <h2 class="modal-title fs-5 mb-2" id="configConfirmTitle"></h2>
+                <div class="text-muted" id="configConfirmBody"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" id="configConfirmCancel"
+                        data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="configConfirmSubmit">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/project_config.js"></script>
+{% endblock %}

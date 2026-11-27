@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from django.contrib.auth.models import User
 
 from editor.models import Application, Project, ProjectUser, Release, SpecItem, ValSet
+from editor.project_config import new_project_config
 
 FIXED_TIME = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
 PASSWORD = 'test-password-123'
@@ -32,7 +33,8 @@ def make_project(owner, name='Proj', cats='DataItem,EnumType,EnumValue,DataItemT
                  desc='Project description'):
     """Create a project the way views.add_project does: initial release 0.0 + Default ValSet."""
     release = make_release(owner, desc='Initial release for project ' + name)
-    project = Project.objects.create(name=name, desc=desc, cats=cats, owner=owner, release=release)
+    project = Project.objects.create(name=name, desc=desc, cats=cats, owner=owner, release=release,
+                                     config=new_project_config())
     ValSet.objects.create(project=project, name='Default', desc='Default ValSet')
     return project
 
@@ -65,3 +67,18 @@ def make_spec_item(project, cat='DataItem', domain='Dom', name='Item', owner=Non
         cat=cat, domain=domain, name=name, project=project, application=application,
         owner=owner or project.owner, val_set=val_set or default_val_set(project),
         status=status, **fields)
+
+
+def template_config():
+    """A new copy of the configuration which a new project gets (the template)."""
+    return new_project_config()
+
+
+def set_project_config(project, mutate=None):
+    """Store on the project the template configuration, changed by mutate(config) (a project's own settings)."""
+    config = template_config()
+    if mutate is not None:
+        mutate(config)
+    project.config = config
+    project.save(update_fields=['config'])
+    return config
