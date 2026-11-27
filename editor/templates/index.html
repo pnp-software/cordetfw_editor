@@ -133,7 +133,7 @@
                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenu{{application.name}}">
                                     {% for cat, value in item.project_configs.items %}
                                     {% if value.access_from_index.level == 'Application' %}
-                                    {% if cat in application.cats %}
+                                    {% if cat in application.cat_list %}
                                     <a class="dropdown-item"
                                        href="{% url 'list_spec_items' cat item.project.id application.id item.default_val_set_id 'Sel_All' 0 %}?disp=disp_def"
                                        title="Manage {{ value.name }}s">

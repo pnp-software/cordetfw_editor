@@ -65,6 +65,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | import-spec-items-undefined-i | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.3) |  |
 | import-traceback-in-message | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2a) |  |
 | index-lists-all-projects | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2a) | Operator 2026-10-24: non-staff see only own/member projects; staff see all |
+| index-app-cats-substring | — | views.md | tests/test_views.py | K | FIXED (feature/project-configuration) | Found 2026-11-13: same pattern as appform-cats-substring, in the index menu |
 | index-username-substring | — | views.md | tests/test_views.py | K | FIXED (Task 7.2a) |  |
 | iref-cross-project-disclosure | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2b) |  |
 | latex-export-injection | — | security-audit.md | tests/test_security_audit.py | K | OPEN | Export byte change, awaiting operator approval: docs/fixes/tickets/latex-export-injection.md |

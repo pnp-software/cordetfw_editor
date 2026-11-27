@@ -110,6 +110,19 @@ def test_index_logged_in_context(client, owner, project, dvs):
     assert app.name.encode() in resp.content
 
 
+def test_index_application_menu_matches_categories_exactly(client, owner, project, dvs, monkeypatch):
+    # FIXED: index-app-cats-substring (was: '{% if cat in application.cats %}' tested a substring of the
+    # comma-separated text, so an application with only 'InfoItem_x' also offered 'InfoItem')
+    from editor.configs import configs
+    monkeypatch.setitem(configs['cats'], 'InfoItem_x', dict(configs['cats']['InfoItem'], name='My Info'))
+    project.cats = ALL_CATS + ',InfoItem_x'
+    project.save()
+    app = make_application(project, 'App', cats='InfoItem_x')
+    html = client.get('/editor/').content.decode()
+    assert lurl('InfoItem_x', project, dvs, app=app.id) + '?disp=disp_def' in html
+    assert lurl('InfoItem', project, dvs, app=app.id) + '?disp=disp_def' not in html
+
+
 def test_index_orders_projects_by_name(client, owner):
     make_project(owner, 'Zed')
     make_project(owner, 'Abc')

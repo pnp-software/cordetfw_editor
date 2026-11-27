@@ -117,7 +117,10 @@ def index(request):
         userHasAccess = request.user.is_authenticated and ProjectUser.objects.filter(
             project_id=project, user_id=request.user.id).exists()
          
-        applications = project.applications.all().order_by('name') 
+        applications = project.applications.all().order_by('name')
+        for application in applications:
+            # list of category names: the menu matches them exactly (not as a substring of Application.cats)
+            application.cat_list = [name.strip() for name in application.cats.split(',') if name.strip()]
         default_val_set_id = get_default_val_set_id(request, project)
         
         # Create iterable holding the names of the categories for this project
