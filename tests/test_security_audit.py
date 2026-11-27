@@ -581,20 +581,21 @@ def test_10_convert_edit_to_db_keeps_own_and_dangling_irefs_drops_foreign(w):
 
 
 def test_10_csv_import_path_does_not_store_foreign_iref(w):
-    from editor.convert import configs
+    from tests.factories import template_config
     from editor.utilities import export_to_spec_item
+    configs = template_config()
     item = SpecItem(cat='DataItem')
     labels = {v['label']: '' for v in configs['cats']['DataItem']['attrs'].values()}
     labels['Value'] = '#iref:%d' % w.b_di.id
     labels['Description'] = 'x #iref:%d' % w.b_di.id
     labels[configs['cats']['DataItem']['attrs']['val_set']['label']] = 'Default'
     warnings = []
-    export_to_spec_item(None, w.a, labels, item, warnings)
+    export_to_spec_item(None, w.a, labels, item, configs, warnings)
     assert item.value == '#iref:0' and item.desc == 'x #iref:0'
     assert warnings == ['2 reference(s) to items of another project removed']     # Task 7.9c
     warnings = []
     labels['Value'] = labels['Description'] = ''
-    export_to_spec_item(None, w.a, labels, item, warnings)
+    export_to_spec_item(None, w.a, labels, item, configs, warnings)
     assert warnings == []
 
 
@@ -616,6 +617,7 @@ def test_10_project_zip_import_path_does_not_keep_foreign_iref(w):
 
 def test_10_enum_check_is_project_scoped(w):
     from editor.configs import do_cat_specific_checks
+    from editor.project_config import get_project_config
     etype = make_spec_item(w.b, cat='EnumType', domain='BE', name='BEnum', status='CNF')
     ev = make_spec_item(w.b, cat='EnumValue', domain='BE', name='v1', s_link=etype, status='CNF')
 
@@ -623,7 +625,7 @@ def test_10_enum_check_is_project_scoped(w):
         cat = 'DataItem'
         project = w.a
         cleaned_data = {'p_link': etype, 'value': '#iref:%d' % ev.id}
-    assert 'The reference is invalid' in do_cat_specific_checks(F)
+    assert 'The reference is invalid' in do_cat_specific_checks(F, get_project_config(F.project))
 
 
 # ---------------------------------------------------------------------------------------------

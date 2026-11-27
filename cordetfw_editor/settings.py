@@ -40,6 +40,10 @@ ALLOWED_HOSTS = config['ALLOWED_HOSTS']
 # HTTPS origin must be listed here, e.g. ["https://editor.example.com"]. Optional config key.
 CSRF_TRUSTED_ORIGINS = config.get('CSRF_TRUSTED_ORIGINS', [])
 
+# Directory for the temporary files of project exports and imports: a server setting, never part of the
+# project configuration. Optional config key TEMP_DIR; absent = /tmp (the value of the former configs.json).
+TEMP_DIR = config.get('TEMP_DIR', '/tmp')
+
 INTERNAL_IPS = [
     "127.0.0.1",
 ]

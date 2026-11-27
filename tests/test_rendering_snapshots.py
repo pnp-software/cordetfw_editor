@@ -298,9 +298,9 @@ def test_snapshot_password_reset_confirm_mismatch_post(client):
 # Pagination
 # ---------------------------------------------------------------------------
 
-def test_snapshot_pagination_elided_page_7(client, ds, monkeypatch):
-    from editor.configs import configs
-    monkeypatch.setitem(configs['cats']['EnumType'], 'page_size', 1)
+def test_snapshot_pagination_elided_page_7(client, ds):
+    from tests.factories import set_project_config
+    set_project_config(ds['project'], lambda config: config['cats']['EnumType'].update(page_size=1))
     for i in range(15):
         make_spec_item(ds['project'], cat='EnumType', domain='Pg', name='Pg%02d' % i, title='Paged %02d' % i,
                        status='CNF')

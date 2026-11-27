@@ -65,3 +65,19 @@ def make_spec_item(project, cat='DataItem', domain='Dom', name='Item', owner=Non
         cat=cat, domain=domain, name=name, project=project, application=application,
         owner=owner or project.owner, val_set=val_set or default_val_set(project),
         status=status, **fields)
+
+
+def template_config():
+    """A new copy of the template as the configuration of a project which has none of its own."""
+    from editor.project_config import resolve_config
+    return resolve_config(None)
+
+
+def set_project_config(project, mutate=None):
+    """Store on the project the template configuration, changed by mutate(config) (a project's own settings)."""
+    config = template_config()
+    if mutate is not None:
+        mutate(config)
+    project.config = config
+    project.save(update_fields=['config'])
+    return config

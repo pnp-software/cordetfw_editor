@@ -6,10 +6,11 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Button
-from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices
+from .utilities import get_user_choices, get_p_kind_choices, get_s_kind_choices, get_hidden_fields
 from editor.convert import get_pattern_edit, pattern_db, convert_edit_to_db
 from editor.models import Application, ValSet, Project, SpecItem
-from editor.configs import configs, get_p_link_choices, get_s_link_choices, do_cat_specific_checks
+from editor.configs import get_p_link_choices, get_s_link_choices, do_cat_specific_checks
+from editor.project_config import get_project_config, load_template
 from editor import ext_cats
 from editor.svg_check import check_svg_value
 
@@ -59,19 +60,23 @@ class ProjectForm(forms.Form):
     owner = forms.ChoiceField(choices=())
     cats = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
-    predefined_cats = ''
-    for item in configs['cats'].keys():
-        predefined_cats = predefined_cats + item + ', '
-    predefined_cats = predefined_cats[:-2] if len(predefined_cats)>2 else predefined_cats
 
-    def __init__(self, project, *args, **kwargs):
+    def __init__(self, project, *args, config=None, **kwargs):
+        """
+        The categories which the project may use are the ones defined by its configuration 'config' (default:
+        the configuration of 'project'; the template for a new project, which has none yet).
+        """
         super(ProjectForm, self).__init__(*args, **kwargs)
+        if config is None:
+            config = get_project_config(project) if project is not None else load_template()
+        self.project_config = config
+        self.predefined_cats = ', '.join(config['cats'].keys())
         self.fields['owner'].choices = get_user_choices(project)
         self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
         self.fields['cats'].widget = CatPicker()
-        self.fields['cats'].widget.set_options(list(configs['cats'].keys()), configs)
+        self.fields['cats'].widget.set_options(list(config['cats'].keys()), config)
 
     def clean_owner(self):
         owner_id = self.cleaned_data['owner']
@@ -80,22 +85,23 @@ class ProjectForm(forms.Form):
     def clean_cats(self):
         cats = self.cleaned_data['cats'].replace(' ','')
         cat_list = cats.split(',')
+        defined_cats = self.project_config['cats']
         err_msg = 'Must contain a comma-separated list of categories from: ' + self.predefined_cats
         if len(cat_list) == 0:
             raise forms.ValidationError(err_msg)
         for cat_item in cat_list:
-            if not cat_item.strip() in configs['cats']:
+            if not cat_item.strip() in defined_cats:
                 raise forms.ValidationError(err_msg)
         # If category C1 is included and category C1 has C2 as an 'expand link category' or
         # a 'traceability category', the category C2 must be included too
         for cat in cat_list:
-            dependent_cats = (configs['cats'][cat]['expand']['s_link'], configs['cats'][cat]['expand']['p_link'])
+            dependent_cats = (defined_cats[cat]['expand']['s_link'], defined_cats[cat]['expand']['p_link'])
             for dependent_cat in dependent_cats:
                 if dependent_cat != 'None':
                     if not dependent_cat in cat_list:
                         err_msg = 'Category '+cat+' requires dependent category '+dependent_cat
                         raise forms.ValidationError(err_msg)
-            for trac in configs['cats'][cat]['tracs']:
+            for trac in defined_cats[cat]['tracs']:
                 if not trac['trac_cat'] in cat_list:
                     err_msg = 'Category '+cat+' requires dependent category '+trac['trac_cat']
                     raise forms.ValidationError(err_msg)
@@ -117,7 +123,7 @@ class ApplicationForm(forms.Form):
         # Only categories of level 'application' are offered: items of a project-level category never belong to
         # an application (an application listing one keeps it, shown as 'project level', until it is removed)
         self.fields['cats'].widget.set_options([c.strip() for c in project.cats.split(',') if c.strip()],
-                                               configs, level='application')
+                                               get_project_config(project), level='application')
 
     def clean_cats(self):
         cats = self.cleaned_data['cats'].replace(' ','')
@@ -186,12 +192,18 @@ class SpecItemForm(forms.Form):
     cancel = forms.CharField(label='Cancel')
 
     def __init__(self, mode, request, cat, project, application, config, s_parent_id, p_parent_id, *args, item_id=None, **kwargs):
+        """
+        'config' is the configuration of the project (one read per request, see get_request_config); the
+        category 'cat' must be defined in it. Its definition is self.config.
+        """
         super(SpecItemForm, self).__init__(*args, **kwargs)
         self.project = project
         self.application = application
         self.mode = mode
         self.cat = cat
-        self.config = config
+        self.project_config = config
+        self.config = config['cats'][cat]
+        config = self.config
         self.request = request
         self.item_id = item_id
         if mode == 'del':
@@ -217,10 +229,22 @@ class SpecItemForm(forms.Form):
         self.fields['t3'].widget.attrs.update(rows = 1)
         self.fields['t4'].widget.attrs.update(rows = 1)
         self.fields['t5'].widget.attrs.update(rows = 1)
-        self.fields['p_kind'].choices = get_p_kind_choices(cat)
-        self.fields['s_kind'].choices = get_s_kind_choices(cat)
-        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id, s_parent_id)
-        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project, self.application, s_parent_id, p_parent_id)
+        self.fields['p_kind'].choices = get_p_kind_choices(self.project_config, cat)
+        self.fields['s_kind'].choices = get_s_kind_choices(self.project_config, cat)
+        # Relationship rules and category validators come from the configuration of the project
+        self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id,
+                                                            s_parent_id, self.project_config)
+        self.fields['s_link'].queryset = get_s_link_choices(cat, self.project, self.application, s_parent_id,
+                                                            p_parent_id, self.project_config)
+        # The stored links of an item remain valid when the item is edited or copied, also if the category of
+        # the target is hidden or the rules no longer offer it
+        if self.mode in ('edit', 'copy'):
+            for link_field in ('p_link', 's_link'):
+                link_id = self.initial.get(link_field)
+                if link_id is not None:
+                    self.fields[link_field].queryset = (
+                        self.fields[link_field].queryset | SpecItem.objects.filter(id=link_id, project_id=project.id)
+                    )
 
         # Hide fields which are not required for a given category
         for field in self.fields:
@@ -303,11 +327,19 @@ class SpecItemForm(forms.Form):
 
         # Task 6.6b (image-svg-unsanitised): in edit, copy and split mode the FW Profile attributes
         # (ext_attrs, incl. the SVG `value`) are taken from the source item; a posted value is ignored.
-        if (len(self.config['ext_attrs']) > 0) and (self.mode in ('edit', 'copy', 'split')) \
-                and (self.item_id is not None):
+        source = None
+        if (self.mode in ('edit', 'copy', 'split')) and (self.item_id is not None):
             source = SpecItem.objects.get(id=self.item_id)
+        if (len(self.config['ext_attrs']) > 0) and (source is not None):
             for ext_attr in self.config['ext_attrs']:
                 cd[ext_attr] = getattr(source, ext_attr)
+
+        # Attributes which the configuration does not define (hidden) keep their stored values, whatever was
+        # posted: the form does not show them, so it cannot have changed them.
+        if (self.mode in ('edit', 'copy')) and (source is not None):
+            for hidden_field in get_hidden_fields(self.project_config, self.cat):
+                if hidden_field in cd:
+                    cd[hidden_field] = getattr(source, hidden_field)
         
         # When in add mode: load data for external attributes
         if (len(self.config['ext_attrs']) > 0) and (self.mode == 'add'):
@@ -336,11 +368,12 @@ class SpecItemForm(forms.Form):
                 if self.config['attrs'][field]['kind'] == 'eval_ref':
                     internal_refs = re.findall(get_pattern_edit(self.project.id), cd[field])
                     for ref in internal_refs:
-                        if not field in configs['cats'][ref[0]]['attrs']:
+                        ref_attrs = self.project_config['cats'].get(ref[0], {}).get('attrs', {})
+                        if not field in ref_attrs:
                             err_msg = 'The field \"'+field+'\" of kind eval_ref contains internal reference ' + \
                                       str(ref) + ' to a spec_item which does not support field \"' + field + '\"'
                             raise forms.ValidationError(err_msg)
-                        if configs['cats'][ref[0]]['attrs'][field]['kind'] != 'eval_ref':
+                        if ref_attrs[field]['kind'] != 'eval_ref':
                             err_msg = 'The field \"'+field+'\" of kind eval_ref contains internal reference ' + \
                                       str(ref) + ' to a spec_item whose field \"' + field + '\" is not of kind eval_ref'
                             raise forms.ValidationError(err_msg)
@@ -381,7 +414,7 @@ class SpecItemForm(forms.Form):
                 raise forms.ValidationError('Split Error: ValSet is already in use for this domain:name')
         
         # Perform category-specific checks
-        check_msg = do_cat_specific_checks(self)
+        check_msg = do_cat_specific_checks(self, self.project_config)
         if check_msg != '':
             raise forms.ValidationError(check_msg)
  

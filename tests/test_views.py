@@ -15,7 +15,7 @@ from django.db.models import ProtectedError
 from editor.models import Application, ProjectUser, Release, SpecItem, ValSet, Project
 from tests.factories import (FIXED_TIME, default_val_set, make_application, make_project,
                              make_project_user, make_release, make_spec_item, make_user,
-                             make_val_set)
+                             make_val_set, set_project_config, template_config)
 
 pytestmark = pytest.mark.django_db
 
@@ -103,18 +103,19 @@ def test_index_logged_in_context(client, owner, project, dvs):
     assert [a.name for a in entry['applications']] == ['Alpha', 'App']
     assert entry['default_val_set_id'] == dvs.id
     assert list(entry['project_configs'].keys()) == [
-        k for k in __import__('editor.configs', fromlist=['configs']).configs['cats'] if k in ALL_CATS.split(',')]
+        k for k in template_config()['cats'] if k in ALL_CATS.split(',')]
     assert entry['user_has_access'] is False
     assert b'add project' in resp.content
     assert b'Proj' in resp.content
     assert app.name.encode() in resp.content
 
 
-def test_index_application_menu_matches_categories_exactly(client, owner, project, dvs, monkeypatch):
+def test_index_application_menu_matches_categories_exactly(client, owner, project, dvs):
     # FIXED: index-app-cats-substring (was: '{% if cat in application.cats %}' tested a substring of the
     # comma-separated text, so an application with only 'InfoItem_x' also offered 'InfoItem')
-    from editor.configs import configs
-    monkeypatch.setitem(configs['cats'], 'InfoItem_x', dict(configs['cats']['InfoItem'], name='My Info'))
+    def add_cat(config):
+        config['cats']['InfoItem_x'] = dict(config['cats']['InfoItem'], name='My Info')
+    set_project_config(project, add_cat)
     project.cats = ALL_CATS + ',InfoItem_x'
     project.save()
     app = make_application(project, 'App', cats='InfoItem_x')
@@ -631,9 +632,8 @@ def test_list_other_val_set(client, owner, project, dvs, items):
     assert [v.name for v in resp.context['val_sets']] == ['Default', 'VS1']
 
 
-def test_list_pagination(client, owner, project, dvs, items, monkeypatch):
-    from editor.configs import configs
-    monkeypatch.setitem(configs['cats']['DataItem'], 'page_size', 2)
+def test_list_pagination(client, owner, project, dvs, items):
+    set_project_config(project, lambda config: config['cats']['DataItem'].update(page_size=2))
     resp = client.get(lurl('DataItem', project, dvs))
     assert listed(resp) == [('A', 'a'), ('A', 'b')]
     pg = resp.context['pagination']
@@ -645,21 +645,19 @@ def test_list_pagination(client, owner, project, dvs, items, monkeypatch):
 
 
 @pytest.mark.parametrize('page', ['abc', '', '1.5', '0', '-3'])
-def test_list_pagination_invalid_page(client, owner, project, dvs, items, monkeypatch, page):
+def test_list_pagination_invalid_page(client, owner, project, dvs, items, page):
     # FIXED: list-500s (was: ValueError, HTTP 500 for a non-integer page). Choice: a non-integer page is
     # page 1 (the UI default); page 0 or a negative page is out of range, see the next test
-    from editor.configs import configs
-    monkeypatch.setitem(configs['cats']['DataItem'], 'page_size', 2)
+    set_project_config(project, lambda config: config['cats']['DataItem'].update(page_size=2))
     resp = client.get(lurl('DataItem', project, dvs), {'page': page})
     assert resp.status_code == 200
     expected = 2 if page in ('0', '-3') else 1
     assert resp.context['pagination']['page_number'] == expected
 
 
-def test_list_pagination_out_of_range_is_last_page(client, owner, project, dvs, items, monkeypatch):
+def test_list_pagination_out_of_range_is_last_page(client, owner, project, dvs, items):
     # FIXED: list-500s (was: EmptyPage, HTTP 500). Choice: a page beyond the last one shows the last page
-    from editor.configs import configs
-    monkeypatch.setitem(configs['cats']['DataItem'], 'page_size', 2)
+    set_project_config(project, lambda config: config['cats']['DataItem'].update(page_size=2))
     resp = client.get(lurl('DataItem', project, dvs), {'page': '9'})
     assert resp.status_code == 200
     assert listed(resp) == [('B', 'c')]
@@ -1521,8 +1519,7 @@ def test_make_application_release(client, owner, project):
 # ------------------------------------------------------------------ outcomponent-disp-short-keyerror
 def test_configs_disp_lists_only_use_defined_attrs():
     # FIXED: outcomponent-disp-short-keyerror (was: OutComponent disp_short listed `value`, not in its attrs)
-    from editor.configs import configs
-    for cat, cfg in configs['cats'].items():
+    for cat, cfg in template_config()['cats'].items():
         for disp in ('disp_def', 'disp_short', 'disp_trac'):
             for column in cfg.get(disp, []):
                 for attr in column.get('attrs', []):

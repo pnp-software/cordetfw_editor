@@ -23,6 +23,7 @@
  "editor_project": [
   {
    "cats": "DataItem,EnumType,EnumValue,DataItemType",
+   "config": {},
    "desc": "Demo project with unicode ä µ ☺\nsecond line",
    "id": "#0",
    "name": "Demo Proj",

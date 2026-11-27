@@ -83,6 +83,11 @@
                         </div>
                         {% endif %}
                         {% if request.user == item.project.owner %}
+                        <a class="btn btn-outline-secondary bi-gear"
+                           href="{% url 'project_config' item.project.id %}"
+                           title="Configuration of {{item.project.name}} Project">
+                            configuration
+                        </a>
                         <a class="btn btn-outline-secondary"
                            href="{% url 'make_project_release' item.project.id %}"
                            title="Make Release for {{item.project.name}} Project">

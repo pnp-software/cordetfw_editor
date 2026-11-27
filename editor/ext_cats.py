@@ -122,8 +122,8 @@ def ext_model_get_choice(request, model_id):
     by function ext_model_get_choices. It returns a dictionary holding the values of
     the external attributes for the chosen model instance (or None if the model
     instance cannot be found).
-    (NB: The external attributes are those listed at the 'ext_att' key in the
-         'configs' dictionary).
+    (NB: The external attributes are those listed at the 'ext_attrs' setting of the category
+         definition in the project configuration).
     """
     try:
         diagrams = get_visible_models(request, model_id)
@@ -283,8 +283,8 @@ def ext_fcp_get_choice(request, fcp_id):
     by function ext_fcp_get_choices. It returns a dictionary holding the values of
     the external attributes for the chosen FCP instance (or None if the FCP
     instance cannot be found).
-    (NB: The external attributes are those listed at the 'ext_att' key in the
-         'configs' dictionary).
+    (NB: The external attributes are those listed at the 'ext_attrs' setting of the category
+         definition in the project configuration).
     """        
     try:
         diagrams = get_owned_diagrams(request, fcp_id)

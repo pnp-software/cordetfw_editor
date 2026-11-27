@@ -1,7 +1,7 @@
 from django.urls import include, path
 from django.contrib.auth import views
 
-from . import views
+from . import views, config_views
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -16,6 +16,15 @@ urlpatterns = [
     path('<int:project_id>/export_project', views.export_project, name='export_project'),
     path('import_project', views.import_project, name='import_project'),
     path('<int:project_id>/make_project_release', views.make_project_release, name='make_project_release'),
+
+    path('<int:project_id>/config', config_views.config_page, name='project_config'),
+    path('<int:project_id>/config/download', config_views.config_download, name='project_config_download'),
+    path('<int:project_id>/config/reload', config_views.config_reload, name='project_config_reload'),
+    path('<int:project_id>/config/validate', config_views.config_validate, name='project_config_validate'),
+    path('<int:project_id>/config/upload', config_views.config_upload, name='project_config_upload'),
+    path('<int:project_id>/config/save', config_views.config_save, name='project_config_save'),
+    path('<int:project_id>/config/preview', config_views.config_preview, name='project_config_preview'),
+    path('<int:project_id>/config/remove', config_views.config_remove, name='project_config_remove'),
 
     path('<int:project_id>/add_val_set', views.add_val_set, name='add_val_set'),
     path('<int:project_id>/<int:val_set_id>/edit_val_set', views.edit_val_set, name='edit_val_set'),

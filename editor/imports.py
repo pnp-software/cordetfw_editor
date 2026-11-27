@@ -11,9 +11,11 @@ from django.utils.timezone import make_aware
 from editor.models import Project, ProjectUser, Release, ValSet, SpecItem, Application
 from editor.utilities import frmt_string
 from editor.convert import convert_edit_to_db
-from editor.configs import configs
 from editor.choices import HISTORY_STATUS
 from editor.svg_check import check_svg_value
+from editor.config_validation import MAX_JSON_BYTES, validate_config, validate_config_json
+from editor.config_store import InvalidConfigError, StaleConfigError, config_token, save_project_config
+from editor.project_config import filter_template_for_data, load_template
 
 # Limits for the project ZIP import (import-project-no-limits). A real export holds six csv files; a
 # project of ~20,000 items is a few MB to a few tens of MB uncompressed. The limits are >= 20x that.
@@ -25,6 +27,10 @@ IMPORT_MAX_MEMBER_BYTES = 200 * 1024 * 1024         # uncompressed size of one e
 IMPORT_MAX_TOTAL_BYTES = 200 * 1024 * 1024          # uncompressed size of all entries
 IMPORT_MEMBERS = ('project.csv', 'applications.csv', 'val_sets.csv', 'project_users.csv',
                   'releases.csv', 'spec_items.csv')
+# Optional member (archives written before the project configuration existed lack it): the JSON of the
+# project configuration, at most MAX_JSON_BYTES.
+CONFIG_MEMBER = 'config.json'
+IMPORT_MAX_CONFIG_ERRORS_SHOWN = 10
 
 
 def normalise_member_name(name):
@@ -58,7 +64,7 @@ def extract_project_zip(zip_path, imp_dir):
             # The last entry of a name wins, as for extractall. './x.csv' and '/x.csv' are x.csv (as extractall
             # normalised them); a name with a '..' component never matches an expected table.
             names[normalise_member_name(info.filename)] = info
-        for name in IMPORT_MEMBERS:
+        for name in IMPORT_MEMBERS + (CONFIG_MEMBER,):
             if name not in names:
                 continue
             read = 0
@@ -69,6 +75,8 @@ def extract_project_zip(zip_path, imp_dir):
                         break
                     read += len(chunk)
                     total += len(chunk)
+                    if name == CONFIG_MEMBER and read > MAX_JSON_BYTES:
+                        raise ValueError('the entry '+name+' is larger than '+str(MAX_JSON_BYTES//1024)+' KB uncompressed')
                     if read > IMPORT_MAX_MEMBER_BYTES:
                         raise ValueError('the entry '+name+' is larger than '+
                                          str(IMPORT_MAX_MEMBER_BYTES//(1024*1024))+' MB uncompressed')
@@ -194,6 +202,65 @@ def item_full_name(row):
     return row['cat']+':'+row['domain']+':'+row['name']+' (status: '+row['status']+')'
 
 
+def read_archive_config(imp_dir):
+    """The bytes of the configuration member of an extracted archive, or None if the archive has none."""
+    path = os.path.join(imp_dir, CONFIG_MEMBER)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, 'rb') as fd:
+            return fd.read(MAX_JSON_BYTES + 1)
+    except OSError as e:
+        raise ImportAborted('Failure to read the project configuration '+CONFIG_MEMBER+': '+str(e))
+
+
+def config_rejection(errors):
+    """Message for a rejected archive configuration: the JSON path and the problem of the first errors."""
+    shown = '; '.join(str(e) for e in errors[:IMPORT_MAX_CONFIG_ERRORS_SHOWN])
+    more = len(errors) - IMPORT_MAX_CONFIG_ERRORS_SHOWN
+    return ('The project configuration ('+CONFIG_MEMBER+') is not valid, nothing was imported. '+shown+
+            ('; and '+str(more)+' more problem(s)' if more > 0 else ''))
+
+
+def value_is_image(cat, template_cats, config):
+    """
+    Whether the value of items of this category is an SVG image which must pass check_svg_value. The template
+    (template_cats, its `cats`) decides as well as the archive's configuration: hiding a category or changing its
+    value kind in an archive must not skip the check for the stored data.
+    """
+    for cats in (template_cats, (config or {}).get('cats', {})):
+        if cats.get(cat, {}).get('attrs', {}).get('value', {}).get('kind') == 'image':
+            return True
+    return False
+
+
+def store_project_config(project, archive_config_text):
+    """
+    Give the imported project its configuration; called when all items are saved and linked, inside the
+    import transaction, so any ImportAborted raised here undoes the whole import.
+    With a configuration in the archive: it is validated against the imported data and stored by the shared
+    save_project_config (the same path as the owner's Save; the project is new, its stored value is {}).
+    Without: the shared filter_template_for_data of the data actually imported; problems of that proposal
+    are logged but do not reject the archive or add a message (init_project_configs also stores its proposal);
+    the owner sees them when validating the configuration.
+    """
+    if archive_config_text is not None:
+        try:
+            save_project_config(project.id, archive_config_text, config_token({}))
+        except InvalidConfigError as e:
+            raise ImportAborted(config_rejection(e.errors))
+        except StaleConfigError:
+            raise ImportAborted('The project configuration could not be stored; nothing was imported')
+        return
+    config = filter_template_for_data(load_template(), project)
+    problems = validate_config(config, project)
+    project.config = config
+    project.save(update_fields=['config'])          # update_fields: updated_at (restored from the archive) is kept
+    for error in problems[:IMPORT_MAX_CONFIG_ERRORS_SHOWN]:
+        logger.warning('import_project: the configuration initialized for project %s has a problem at %s',
+                       project.id, error)
+
+
 def _import_project_tables(imp_dir, notes):
     
     # Read the project table  
@@ -217,9 +284,26 @@ def _import_project_tables(imp_dir, notes):
     except Exception as e:
         raise ImportAborted('The project owner '+project_dict['owner']+' does not exist: '+str(e))
         
-    # Check that project categories are defined in configs.json
+    # Check that project categories are defined (by the template, or by the configuration of the archive)
+    archive_config_text = read_archive_config(imp_dir)
+    has_config = archive_config_text is not None
+    if has_config:
+        # Structure only; the data checks need the imported data and follow at the end of the import
+        config, errors = validate_config_json(archive_config_text)
+        if errors:
+            raise ImportAborted(config_rejection(errors))
+    # The shared template: the authority for archives without a configuration, and the superset which tells
+    # which categories hold SVG images
+    template_cats = load_template()['cats']
+
+    def cat_is_defined(cat):
+        # The template is the authority; an archive configuration may define further categories. A category
+        # defined by neither is rejected: an archive does not say which categories the owner has hidden, so the
+        # items of a hidden owner-defined category cannot be told from forged ones (open item, see the report).
+        return cat in template_cats or (has_config and cat in config['cats'])
+
     for cat in project_dict['cats'].split(','):
-        if not cat.strip() in configs['cats']:
+        if not cat_is_defined(cat.strip()):
             raise ImportAborted('The project category '+cat+' is not defined in configs.json')
     
     # Read the release table
@@ -280,7 +364,7 @@ def _import_project_tables(imp_dir, notes):
         if application['cats'].strip() == '':       # import-project-empty-app-cats: no categories is valid
             continue
         for cat in application['cats'].split(','):
-            if not cat.strip() in configs['cats']:
+            if not cat_is_defined(cat.strip()):
                 raise ImportAborted('The category '+cat+' in application '+application['name']+' is not defined in configs.json')
         
     # Read the SpecItem table
@@ -382,7 +466,7 @@ def _import_project_tables(imp_dir, notes):
     valid_status = [choice[0] for choice in HISTORY_STATUS]
     for spec_item in spec_items:
         # import-project-attribution-forgery: category and status must be known values
-        if spec_item['cat'] not in configs['cats']:
+        if not cat_is_defined(spec_item['cat']):
             notes.append('Failure to import spec_item ' + spec_item['cat']+':'+spec_item['domain']+':'+
                            spec_item['name'] + ': the category ' + spec_item['cat'] + ' is not defined in configs.json')
             continue
@@ -393,7 +477,7 @@ def _import_project_tables(imp_dir, notes):
             continue
         item_notes = []
         try:
-            if configs['cats'].get(spec_item['cat'], {}).get('attrs', {}).get('value', {}).get('kind') == 'image':
+            if value_is_image(spec_item['cat'], template_cats, config if has_config else None):
                 check_svg_value(spec_item['value'])       # Task 6.6b: image-svg-unsanitised
             new_spec_item = SpecItem(cat = spec_item['cat'],
                                      name = spec_item['name'],
@@ -470,6 +554,10 @@ def _import_project_tables(imp_dir, notes):
         new_spec_item.t5 = convert_edit_to_db(new_project, new_spec_item.t5)
         new_spec_item.value = convert_edit_to_db(new_project, new_spec_item.value)
         new_spec_item.save()
+
+    # The configuration is validated against the imported data once the old identifiers are mapped to the new
+    # ones (links, previous, #iref references)
+    store_project_config(new_project, archive_config_text)
         
         
         

@@ -6,7 +6,7 @@ import pytest
 
 from editor.models import SpecItem
 from editor.utilities import get_spec_item_query
-from tests.factories import make_application, make_release, make_spec_item
+from tests.factories import make_application, make_release, make_spec_item, template_config
 from tests.test_access import Setup
 from tests.test_post_only_mutations import ROW, fake_connect
 
@@ -51,9 +51,9 @@ def test_refresh_cnf_release_view_before_refresh_shows_old_content(client):
     with fake_connect([ROW]):
         client.post(url)
     vs = item.val_set_id
-    shown = list(get_spec_item_query(s.pid, app.id, vs, 'Model', release, 'Sel_All', None))
+    shown = list(get_spec_item_query(template_config(), s.pid, app.id, vs, 'Model', release, 'Sel_All', None))
     assert [(i.status, i.domain, i.name, i.value) for i in shown] == [('OBS', 'OldDom', 'OldName', OLD_SVG)]
-    latest = list(get_spec_item_query(s.pid, app.id, vs, 'Model', None, 'Sel_All', None))
+    latest = list(get_spec_item_query(template_config(), s.pid, app.id, vs, 'Model', None, 'Sel_All', None))
     assert [(i.status, i.domain, i.name, i.value) for i in latest] == [('MOD', 'NewDom', 'NewName', NEW_SVG)]
 
 

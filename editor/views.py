@@ -29,8 +29,8 @@ from django.http import FileResponse
 from django.utils.timezone import get_current_timezone
 from django.db import transaction
 from django.db.models import OuterRef, Q, Subquery
+from django.conf import settings
 
-from editor.configs import configs
 from editor.models import Project, ProjectUser, Application, Release, ValSet, SpecItem
 from editor.forms import ApplicationForm, ProjectForm, ValSetForm, ReleaseForm, SpecItemForm, FindReplaceForm, \
                          validate_identifier
@@ -41,8 +41,10 @@ from editor.utilities import CleanupFileResponse, sanitize_order_by, get_domains
                              del_release, list_trac_items_for_latex, make_obs_spec_item_copy, \
                              mark_spec_item_aliases_as_del, create_and_init_spec_item, \
                              remove_spec_item, update_dom_name_in_val_set, remove_spec_item_aliases, \
-                             get_spec_item_query
-from editor.imports import import_project_tables, extract_project_zip, IMPORT_MAX_UPLOAD_BYTES
+                             get_spec_item_query, copy_hidden_values
+from editor.imports import import_project_tables, extract_project_zip, IMPORT_MAX_UPLOAD_BYTES, CONFIG_MEMBER
+from editor.config_store import read_stored_config
+from editor.project_config import get_request_config, resolve_config, split_cats
 from editor.resources import ProjectResource, ApplicationResource, ProjectUserResource, \
                              ValSetResource, SpecItemResource, ReleaseResource
 from editor.ext_cats import ext_model_refresh
@@ -64,6 +66,17 @@ base_url = config['BASE_URL']
 logger = logging.getLogger(__name__)
 
 
+def get_cat_config_or_404(project_config, cat):
+    """
+    Definition of the category 'cat' in the configuration of the project. A category which the configuration
+    does not define (unknown, or hidden by the owner) has no pages: 404.
+    """
+    try:
+        return project_config['cats'][cat]
+    except KeyError:
+        raise Http404('Unknown category')
+
+
 def check_cat_level_or_404(cat_config, application):
     """
     Items of a category of level 'project' have no application, items of level 'application' have one: a page
@@ -74,7 +87,7 @@ def check_cat_level_or_404(cat_config, application):
         raise Http404('Category not available at this level')
 
 
-def get_find_replace_updates(items, project_id, val_set_id, field, find_string, replace_string, removed=None):
+def get_find_replace_updates(config, items, project_id, val_set_id, field, find_string, replace_string, removed=None):
     updates = []
     model_field = SpecItem._meta.get_field(field)
     if find_string == replace_string:
@@ -88,7 +101,7 @@ def get_find_replace_updates(items, project_id, val_set_id, field, find_string, 
         if not isinstance(old_value, str) or find_string not in old_value:
             continue
         new_value = old_value.replace(find_string, replace_string)
-        if configs['cats'][item.cat]['attrs'].get(field, {}).get('kind') in ('ref_text', 'eval_ref'):
+        if config['cats'][item.cat]['attrs'].get(field, {}).get('kind') in ('ref_text', 'eval_ref'):
             new_value = neutralise_foreign_irefs(item.project, new_value, removed)   # iref-cross-project-disclosure
         model_field.clean(new_value, item)
         updates.append((item, new_value))
@@ -130,13 +143,14 @@ def index(request):
         applications = project.applications.all().order_by('name')
         for application in applications:
             # list of category names: the menu matches them exactly (not as a substring of Application.cats)
-            application.cat_list = [name.strip() for name in application.cats.split(',') if name.strip()]
+            application.cat_list = split_cats(application.cats)
         default_val_set_id = get_default_val_set_id(request, project)
         
         # Create iterable holding the names of the categories for this project
         project_cats = list(map(lambda x: x.strip(), project.cats.split(',')))
-        # Create a subset of configs['cats'] holding only the project categories
-        project_configs = {key: value for key, value in configs['cats'].items() if key in project_cats}
+        # Create a subset of the project configuration holding only the project categories which it defines
+        project_config = get_request_config(request, project)
+        project_configs = {key: value for key, value in project_config['cats'].items() if key in project_cats}
         
         listOfProjects.append({'project': project, 
                                'applications': list(applications),
@@ -306,7 +320,7 @@ def edit_project(request, project_id):
         messages.warning(request, 'This link no longer changes the project. Use the buttons on this page.')
 
     if request.method == 'POST':    # Bind form to posted data 
-        form = ProjectForm(project, request.POST)
+        form = ProjectForm(project, request.POST, config=get_request_config(request, project))
         if form.is_valid():
             project.name = form.cleaned_data['name']
             project.desc = form.cleaned_data['description']
@@ -318,7 +332,8 @@ def edit_project(request, project_id):
         form = ProjectForm(project, initial={'name': project.name, 
                                              'description': project.desc, 
                                              'cats': project.cats,
-                                             'owner': project.owner})
+                                             'owner': project.owner},
+                           config=get_request_config(request, project))
     
     users = User.objects.all().exclude(username=project.owner).order_by('username').values()
     project_users = list(ProjectUser.objects.filter(project_id=project_id))
@@ -334,6 +349,7 @@ def del_project(request, project_id):
     if not can_create_project(request):
         return redirect(base_url)
     project = Project.objects.get(id=project_id)
+    project_config = get_request_config(request, project)     # read before the project is deleted
     
     project_release = project.release
     
@@ -350,11 +366,11 @@ def del_project(request, project_id):
     for application in applications:
         application_release = application.release
         application.delete()
-        del_release(request, application_release, 1)
+        del_release(request, application_release, 1, project_config)
         
     ProjectUser.objects.filter(project_id=project_id).delete()
     Project.objects.filter(id=project_id).delete()
-    del_release(request, project_release, 1)
+    del_release(request, project_release, 1, project_config)
 
     return redirect(base_url)    
 
@@ -478,8 +494,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     project = Project.objects.get(id=project_id)
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
-    if cat not in configs['cats']:      # list-500s: unknown category
-        raise Http404('Unknown category')
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)      # list-500s: unknown or hidden category
 
     if request.method == 'POST' and not user_has_write_access_to_project(request.user.id, project):
         # Find & Replace changes spec_items: read access is not enough
@@ -505,14 +521,14 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         get_parameter_sting += 'expand_link=' + str(expand_link) + '&'
     # list-500s: an unknown display mode falls back to the default one
     disp = request.GET.get('disp')
-    if disp not in ('disp_def', 'disp_short', 'disp_trac') or disp not in configs['cats'][cat]:
+    if disp not in ('disp_def', 'disp_short', 'disp_trac') or disp not in cat_config:
         disp = 'disp_def'
     if disp is not None:
         get_parameter_sting += 'disp=' + str(disp) + '&'
-    order_by = sanitize_order_by(request.GET.get('order_by'))
+    order_by = sanitize_order_by(request.GET.get('order_by'), project_config)
     if order_by is not None:
         get_parameter_sting += 'order_by=' + str(order_by) + '&'
-    n_pad_fields = range(len(configs['cats'][cat][disp])-3)
+    n_pad_fields = range(len(cat_config[disp])-3)
 
     # Get selected release object and the list of previous releases
     sel_rel = get_release_for_project_or_404(project, application, sel_rel_id)    # Release to be displayed
@@ -525,13 +541,15 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     drop_down_items = []
     project_cats = list(map(str.strip, project.cats.split(',')))
     for cat_item in project_cats:
-        if (cat_item == cat and application_id == 0) or configs['cats'][cat_item]['access_from_index']['level'] != 'Project':
+        if cat_item not in project_config['cats']:      # hidden category: not in the menus
+            continue
+        if (cat_item == cat and application_id == 0) or project_config['cats'][cat_item]['access_from_index']['level'] != 'Project':
             continue
         drop_down_item = {}
         if application_id == 0:
-            list_as = configs['cats'][cat_item]['name']
+            list_as = project_config['cats'][cat_item]['name']
         else:
-            list_as = project.name + ' / ' + configs['cats'][cat_item]['name']
+            list_as = project.name + ' / ' + project_config['cats'][cat_item]['name']
         drop_down_item['list_as'] = list_as
         drop_down_item['spec_item'] = cat_item
         drop_down_item['project_id'] = project_id
@@ -550,13 +568,15 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         if application_cats == ['']:    # There are no categories in this application
             continue
         for cat_item in application_cats:
-            if (cat_item == cat and application_id == application_item.id) or configs['cats'][cat_item]['access_from_index']['level'] != 'Application':
+            if cat_item not in project_config['cats']:      # hidden category: not in the menus
+                continue
+            if (cat_item == cat and application_id == application_item.id) or project_config['cats'][cat_item]['access_from_index']['level'] != 'Application':
                 continue
             drop_down_item = {}
             if application_id == application_item.id:
-                list_as = configs['cats'][cat_item]['name']
+                list_as = project_config['cats'][cat_item]['name']
             else:
-                list_as = project.name + ' / ' + application_item.name + ' / ' + configs['cats'][cat_item]['name']
+                list_as = project.name + ' / ' + application_item.name + ' / ' + project_config['cats'][cat_item]['name']
             drop_down_item['list_as'] = list_as
             drop_down_item['spec_item'] = cat_item
             drop_down_item['project_id'] = project_id
@@ -571,10 +591,10 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             breadcrumb['rest'] += drop_down_items
 
     # Create list of items to be displayed
-    items = get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by)
+    items = get_spec_item_query(project_config, project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by)
                              
     if (expand_id != None) and (expand_link != 'None'):   # parent_id must be listed together with its children
-        expand_items = get_expand_items(cat, project_id, val_set_id, expand_id, expand_link)     
+        expand_items = get_expand_items(project_config, cat, project_id, val_set_id, expand_id, expand_link)     
         expand_id = int(expand_id)      # Cast is necessary for comparison to spec_item_id in list_spec_items.html
     else:
         expand_items = None
@@ -594,7 +614,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
             field_to_search = find_replace_form.cleaned_data['field']
             find_string = find_replace_form.cleaned_data['find']
             replace_string = find_replace_form.cleaned_data['replace']
-            cat_cfg = configs['cats'][cat]
+            cat_cfg = cat_config
             # Task 6.6b: FW Profile attributes (ext_attrs, incl. the SVG `image` field) are not editable
             if field_to_search in cat_cfg['attrs'] and field_to_search not in cat_cfg['ext_attrs'] \
                     and cat_cfg['attrs'][field_to_search]['kind'] != 'image':
@@ -604,7 +624,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
                         item_ids = items.values_list('id', flat=True)
                         locked_items = SpecItem.objects.select_for_update().filter(id__in=item_ids)
                         updates = get_find_replace_updates(
-                            locked_items, project_id, val_set_id, field_to_search,
+                            project_config, locked_items, project_id, val_set_id, field_to_search,
                             find_string, replace_string, removed_refs
                         )
                         for update_spec_item, new_value in updates:
@@ -639,7 +659,7 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
     domains = get_domains(cat, application_id, project_id)
 
     # Pagination
-    paginator_items = Paginator(items, configs['cats'][cat]['page_size'])
+    paginator_items = Paginator(items, cat_config['page_size'])
     # list-500s: a non-integer page is page 1, a page beyond the last one is the last page
     page_items = paginator_items.get_page(request.GET.get('page', 1))
     page_number = page_items.number
@@ -668,7 +688,8 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         'val_set': val_set, 
         'val_sets': val_sets,
         'default_val_set_id': default_val_set.id,
-        'config': configs['cats'][cat], 
+        'config': cat_config, 
+        'project_config': project_config,
         'cat': cat, 
         'breadcrumb': breadcrumb,
         'expand_id': expand_id, 
@@ -676,9 +697,9 @@ def list_spec_items(request, cat, project_id, application_id, val_set_id, sel_va
         'expand_link': expand_link, 
         'n_pad_fields': n_pad_fields, 
         'disp': disp,
-        'disp_list': configs['cats'][cat][disp], 
+        'disp_list': cat_config[disp], 
         'history': False,
-        'find_replace_fields': configs['cats'][cat]['attrs'],
+        'find_replace_fields': cat_config['attrs'],
         'find_replace_form': find_replace_form,
         'order_by': order_by, 
         'sel_rel': sel_rel,
@@ -697,25 +718,27 @@ def add_spec_item(request, cat, project_id, application_id, sel_val, sel_rel_id)
     p_parent_id = request.GET.get('p_parent_id')
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
 
     application = get_application_in_project_or_404(project, application_id)
-    check_cat_level_or_404(configs['cats'][cat], application)
+    check_cat_level_or_404(cat_config, application)
     if application is not None:
-        title = 'Add '+configs['cats'][cat]['name']+' to Application '+application.name
+        title = 'Add '+cat_config['name']+' to Application '+application.name
     else:
-        title = 'Add '+configs['cats'][cat]['name']
+        title = 'Add '+cat_config['name']
         
     s_parent, p_parent = check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
     sub_title = ''    
     if (s_parent_id != None):
-        sub_title = sub_title + configs['cats'][cat]['attrs']['s_link']['label'] + ' ' + str(s_parent)     
+        sub_title = sub_title + cat_config['attrs'].get('s_link', {}).get('label', 's_link') + ' ' + str(s_parent)     
     if (p_parent_id != None):
-        sub_title = sub_title + configs['cats'][cat]['attrs']['p_link']['label'] + ' ' + str(p_parent)     
+        sub_title = sub_title + cat_config['attrs'].get('p_link', {}).get('label', 'p_link') + ' ' + str(p_parent)     
         
     if request.method == 'POST':   
-        form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, request.POST)
+        form = SpecItemForm('add', request, cat, project, application, project_config, s_parent_id, p_parent_id, request.POST)
         if form.is_valid():
-            new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
+            new_spec_item = create_and_init_spec_item(request, project_config, cat, form.cleaned_data)
             new_spec_item.cat = cat
             new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
@@ -729,12 +752,13 @@ def add_spec_item(request, cat, project_id, application_id, sel_val, sel_rel_id)
                                             sel_val, sel_rel_id, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('add', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id)
+        form = SpecItemForm('add', request, cat, project, application, project_config, s_parent_id, p_parent_id)
 
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
                         exclude(status='DEL').exclude(status='OBS').order_by('cat','domain','name')
     context = {'form': form, 'project': project, 'title': title, 'sub_title': sub_title, \
-               'sel_val': sel_val, 'config': configs['cats'][cat], 'cat': cat, 'spec_items': spec_items}
+               'sel_val': sel_val, 'config': cat_config, 'project_config': project_config, 'cat': cat,
+               'spec_items': spec_items}
     return render(request, 'spec_item_form.html', context)  
 
 
@@ -746,21 +770,24 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
     p_parent_id = request.GET.get('p_parent_id')
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
     application = get_application_in_project_or_404(project, application_id)
     if application is not None:
-        title = 'Edit '+configs['cats'][cat]['name']+' in Application '+application.name
+        title = 'Edit '+cat_config['name']+' in Application '+application.name
     else:
-        title = 'Edit '+configs['cats'][cat]['name']+' in Project '+project.name
+        title = 'Edit '+cat_config['name']+' in Project '+project.name
   
     spec_item = get_spec_item_in_project_or_404(project, item_id)
+    get_cat_config_or_404(project_config, spec_item.cat)
     check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
     if not spec_item.status in ('CNF', 'MOD', 'NEW'):
         messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be edited ')
         return redirect(base_url)
     
     if request.method == 'POST':   
-        form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
+        form = SpecItemForm('edit', request, cat, project, application, project_config, s_parent_id, p_parent_id, \
+                            request.POST, initial=spec_item_to_edit(spec_item, project_config), item_id=spec_item.id)
         if form.is_valid():
             if spec_item.status == 'CNF':
                 spec_item = make_obs_spec_item_copy(request, spec_item)
@@ -775,10 +802,10 @@ def edit_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
                                             sel_val, sel_rel_id, s_parent_id, p_parent_id, spec_item)
             return redirect(redirect_url)
     else:   
-        initial_spec_item_values = spec_item_to_edit(spec_item)
+        initial_spec_item_values = spec_item_to_edit(spec_item, project_config)
         if spec_item.status == 'CNF':
             initial_spec_item_values['change_log'] = ''
-        form = SpecItemForm('edit', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
+        form = SpecItemForm('edit', request, cat, project, application, project_config, s_parent_id, p_parent_id, \
                             initial=initial_spec_item_values, item_id=spec_item.id)
 
     # Generate list of items for the auto-completion list
@@ -837,25 +864,31 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
     p_parent_id = request.GET.get('p_parent_id')
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
     spec_item = get_spec_item_in_project_or_404(project, item_id)
+    get_cat_config_or_404(project_config, spec_item.cat)
     spec_item.change_log = ''
     application = get_application_in_project_or_404(project, application_id)
     check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
-    check_cat_level_or_404(configs['cats'][cat], application)
+    check_cat_level_or_404(cat_config, application)
     if application is not None:
-        title = 'Copy '+configs['cats'][cat]['name']+' in Application '+application.name
+        title = 'Copy '+cat_config['name']+' in Application '+application.name
     else:
-        title = 'Copy '+configs['cats'][cat]['name']+' in Project '+project.name
+        title = 'Copy '+cat_config['name']+' in Project '+project.name
     if spec_item.val_set != default_val_set:
         messages.error(request, 'Only SpecItems in default ValSet can be copied ')
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, \
-                            p_parent_id, request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
+        form = SpecItemForm('copy', request, cat, project, application, project_config, s_parent_id, \
+                            p_parent_id, request.POST, initial=spec_item_to_edit(spec_item, project_config),
+                            item_id=spec_item.id)
         if form.is_valid():
-            new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
+            new_spec_item = create_and_init_spec_item(request, project_config, cat, form.cleaned_data)
+            copy_hidden_values(spec_item, new_spec_item, project_config, cat)
             new_spec_item.cat = cat
+            new_spec_item.val_set = default_val_set
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
             new_spec_item.created_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
@@ -867,8 +900,8 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
                                             sel_val, sel_rel_id, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('copy', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('copy', request, cat, project, application, project_config, s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item, project_config))
 
     # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -884,14 +917,17 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
     p_parent_id = request.GET.get('p_parent_id')
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
     spec_item = get_spec_item_in_project_or_404(project, item_id)
+    get_cat_config_or_404(project_config, spec_item.cat)
     application = get_application_in_project_or_404(project, application_id)
     check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
-    check_cat_level_or_404(configs['cats'][cat], application)
+    check_cat_level_or_404(cat_config, application)
     if application is not None:
-        title = 'Split '+configs['cats'][cat]['name']+' in Application '+application.name
+        title = 'Split '+cat_config['name']+' in Application '+application.name
     else:
-        title = 'Split '+configs['cats'][cat]['name']+' in Project '+project.name
+        title = 'Split '+cat_config['name']+' in Project '+project.name
     if spec_item.val_set.name != 'Default':
         return redirect(base_url)
     if not spec_item.status in ('CNF', 'MOD', 'NEW'):
@@ -899,11 +935,13 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
         return redirect(base_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                             request.POST, initial=spec_item_to_edit(spec_item), item_id=spec_item.id)
+        form = SpecItemForm('split', request, cat, project, application, project_config, s_parent_id, p_parent_id, \
+                             request.POST, initial=spec_item_to_edit(spec_item, project_config), item_id=spec_item.id)
         if form.is_valid():
-            new_spec_item = create_and_init_spec_item(request, cat, form.cleaned_data)
+            new_spec_item = create_and_init_spec_item(request, project_config, cat, form.cleaned_data)
+            copy_hidden_values(spec_item, new_spec_item, project_config, cat)
             new_spec_item.cat = cat
+            new_spec_item.val_set = form.cleaned_data['val_set']
             new_spec_item.updated_at = datetime.now(tz=get_current_timezone())
             new_spec_item.created_at = datetime.now(tz=get_current_timezone())
             new_spec_item.owner = get_user(request)
@@ -916,8 +954,8 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
                                             sel_val, sel_rel_id, s_parent_id, p_parent_id, new_spec_item)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('split', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('split', request, cat, project, application, project_config, s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item, project_config))
 
     # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -934,13 +972,16 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
     p_parent_id = request.GET.get('p_parent_id')
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
     spec_item = get_spec_item_in_project_or_404(project, item_id)
+    get_cat_config_or_404(project_config, spec_item.cat)
     application = get_application_in_project_or_404(project, application_id)
     check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
     if application is not None:
-        title = 'Delete '+configs['cats'][cat]['name']+' in Application '+application.name
+        title = 'Delete '+cat_config['name']+' in Application '+application.name
     else:
-        title = 'Delete '+configs['cats'][cat]['name']+' in Project '+project.name
+        title = 'Delete '+cat_config['name']+' in Project '+project.name
     if not spec_item.status in ('CNF', 'MOD', 'NEW'):
         messages.error(request, 'Only SpecItems in state CNF, MOD or NEW can be deleted ')
         return redirect(base_url)
@@ -954,8 +995,8 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
         return redirect(redirect_url)
   
     if request.method == 'POST':   
-        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            request.POST, initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('del', request, cat, project, application, project_config, s_parent_id, p_parent_id, \
+                            request.POST, initial=spec_item_to_edit(spec_item, project_config))
         if form.is_valid():
             if spec_item.val_set.name == 'Default':
                 mark_spec_item_aliases_as_del(request, spec_item)
@@ -968,8 +1009,8 @@ def del_spec_item(request, cat, project_id, application_id, item_id, sel_val, se
                                                     sel_val, sel_rel_id, s_parent_id, p_parent_id, None)
             return redirect(redirect_url)
     else:   
-        form = SpecItemForm('del', request, cat, project, application, configs['cats'][cat], s_parent_id, p_parent_id, \
-                            initial=spec_item_to_edit(spec_item))
+        form = SpecItemForm('del', request, cat, project, application, project_config, s_parent_id, p_parent_id, \
+                            initial=spec_item_to_edit(spec_item, project_config))
 
     # Generate list of items for the auto-completion list
     spec_items = SpecItem.objects.filter(project_id=project_id, val_set=default_val_set.id).\
@@ -985,6 +1026,8 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     order_by = request.GET.get('order_by')
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
     application = get_application_in_project_or_404(project, application_id)
     get_val_set_in_project_or_404(project, val_set_id)
     export_type = request.GET.get('export')
@@ -992,9 +1035,9 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     # Get selected release object 
     sel_rel = get_release_for_project_or_404(project, application, sel_rel_id)   # Selected release to be displayed
 
-    items = get_spec_item_query(project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by)
+    items = get_spec_item_query(project_config, project_id, application_id, val_set_id, cat, sel_rel, sel_val, order_by)
 
-    if configs['cats'][cat]['level'] == 'project':   # Items to be exported are 'project items'
+    if cat_config['level'] == 'project':   # Items to be exported are 'project items'
         fdName = project.name.replace(' ','_') + cat + '.csv'
     else:                       # Items to be exported are 'application items'
         if application == None:
@@ -1002,15 +1045,15 @@ def export_spec_items(request, cat, project_id, application_id, val_set_id, sel_
         else:
             fdName = application.name.replace(' ','') + cat + '.csv'
         
-    csv_sep = configs['general']['csv_sep']
+    csv_sep = project_config['general']['csv_sep']
     fd = StringIO()
     for i, item in enumerate(items):
         if (export_type == 'latex_format'):
-            item_dic = spec_item_to_latex(item)
-            for trac in configs['cats'][cat]['tracs']:
+            item_dic = spec_item_to_latex(item, project_config)
+            for trac in cat_config['tracs']:
                 item_dic[trac['trac_cat']] = list_trac_items_for_latex(item, trac['trac_cat'], trac['trac_link'])
         else:
-            item_dic = spec_item_to_export(item)
+            item_dic = spec_item_to_export(item, project_config)
         if i == 0:      # Open DictWriter and write header fields
             csv_writer = csv.DictWriter(fd, delimiter=csv_sep, fieldnames=list(item_dic.keys()))
             csv_writer.writeheader()
@@ -1037,16 +1080,17 @@ def import_summary_details(title, entries):
     return '. '+title+': '+shown
 
 
-def import_spec_item_row(request, project, application, val_set, default_val_set, cat, sel_val, item):
+def import_spec_item_row(request, project, application, val_set, default_val_set, cat, sel_val, item, project_config):
     """
     Import one row (a dict read by csv.DictReader) of a spec item CSV file. Returns (reason, warnings):
     reason is None if the row was imported, otherwise the text why it was rejected (nothing saved);
     warnings is a list of texts about an imported row. The caller wraps the call in a transaction.
+    The attributes of the row are those which the configuration of the project defines for the category.
     """
-    attrs = configs['cats'][cat]['attrs']
+    attrs = project_config['cats'][cat]['attrs']
     csv_domain = attrs['domain']['label']
     csv_name = attrs['name']['label']
-    csv_val_set = attrs['val_set']['label']
+    csv_val_set = attrs['val_set']['label'] if 'val_set' in attrs else None
     warnings = []
     if any(value is None for value in item.values()):
         return 'row has fewer columns than the header', warnings
@@ -1075,7 +1119,7 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
                 return 'disallowed content in image ('+svg_error+')', warnings
     if (sel_val != 'Sel_All') and (item[csv_domain] != sel_val):
         return 'incorrect Domain', warnings
-    if item[csv_val_set] != val_set.name:
+    if csv_val_set is not None and item[csv_val_set] != val_set.name:
         return 'incorrect ValSet', warnings
     q_all_cat = SpecItem.objects.filter(project_id=project.id, name=item[csv_name],
                                         domain=item[csv_domain]).exclude(status='DEL').exclude(status='OBS')
@@ -1089,7 +1133,8 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
     if not bool(q_cat):     # The domain:name is new in selected category
         new_spec_item = SpecItem()
         new_spec_item.cat = cat
-        export_to_spec_item(request, project, item, new_spec_item, warnings)
+        new_spec_item.val_set = val_set
+        export_to_spec_item(request, project, item, new_spec_item, project_config, warnings)
         new_spec_item.status = 'NEW'
         new_spec_item.updated_at = now
         new_spec_item.created_at = now
@@ -1103,7 +1148,7 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
             spec_item = make_obs_spec_item_copy(request, q_cat[0])
         else:
             spec_item = q_cat[0]
-        export_to_spec_item(request, project, item, spec_item, warnings)
+        export_to_spec_item(request, project, item, spec_item, project_config, warnings)
         spec_item.updated_at = datetime.now(tz=get_current_timezone())
         spec_item.owner = get_user(request)
         spec_item.save()
@@ -1115,6 +1160,8 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
     project = Project.objects.get(id=project_id)
     if not has_write_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
     val_set = get_val_set_in_project_or_404(project, val_set_id)
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     application = get_application_in_project_or_404(project, application_id)
@@ -1138,10 +1185,10 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
             return redirect(redirect_url)
         try:
             f = StringIO(file_data)
-            items = csv.DictReader(f, delimiter=configs['general']['csv_sep'])
+            items = csv.DictReader(f, delimiter=project_config['general']['csv_sep'])
             expected_fields = {
                 field_config['label']
-                for field_config in configs['cats'][cat]['attrs'].values()
+                for field_config in cat_config['attrs'].values()
             }
             uploaded_fields = set(items.fieldnames or [])
             if uploaded_fields != expected_fields:
@@ -1175,7 +1222,8 @@ def import_spec_items(request, cat, project_id, application_id, val_set_id, sel_
                 try:
                     with transaction.atomic():      # a row is saved completely or not at all
                         reason, row_warnings = import_spec_item_row(
-                            request, project, application, val_set, default_val_set, cat, sel_val, item)
+                            request, project, application, val_set, default_val_set, cat, sel_val, item,
+                            project_config)
                 except Exception:
                     logger.exception('import_spec_items: row at line %s failed (project %s, category %s)',
                                      line, project_id, cat)
@@ -1224,10 +1272,8 @@ def import_project(request):
                            str(IMPORT_MAX_UPLOAD_BYTES//(1024*1024))+' MB')
             return redirect(base_url)
 
-        # Create directory where import file is unzipped
-        temp_dir = configs['general']['temp_dir']
-        csv_sep = configs['general']['csv_sep']
-        imp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_', request)
+        # Create directory where import file is unzipped (a server setting, not part of a project configuration)
+        imp_dir = make_temp_dir(settings.TEMP_DIR, 'cordetfw_editor_', request)
         if imp_dir == '':
             return redirect(base_url)
             
@@ -1262,9 +1308,7 @@ def export_project(request, project_id):
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
 
-    temp_dir = configs['general']['temp_dir']
-    csv_sep = configs['general']['csv_sep']
-    exp_dir = make_temp_dir(temp_dir, 'cordetfw_editor_', request)
+    exp_dir = make_temp_dir(settings.TEMP_DIR, 'cordetfw_editor_', request)
     if exp_dir == '':
         return redirect(base_url)
     
@@ -1314,6 +1358,13 @@ def export_project(request, project_id):
         zip_obj.write(os.path.join(exp_dir,'project_users.csv'), 'project_users.csv')
         zip_obj.write(os.path.join(exp_dir,'releases.csv'), 'releases.csv')
         zip_obj.write(os.path.join(exp_dir,'spec_items.csv'), 'spec_items.csv')
+        # The stored configuration (template fallback if unconfigured, no server settings) with its hidden
+        # attribute definitions, so that the import restores them; last: the six csv members keep their names,
+        # content and order
+        with open(os.path.join(exp_dir, CONFIG_MEMBER), 'w', encoding='utf-8') as fd:
+            json.dump(resolve_config(read_stored_config(project.id)), fd, indent=2, ensure_ascii=False)
+            fd.write('\n')
+        zip_obj.write(os.path.join(exp_dir, CONFIG_MEMBER), CONFIG_MEMBER)
         zip_obj.close()            
             
         zip_file = open(zip_file_path, 'rb')
@@ -1329,17 +1380,20 @@ def list_spec_item_history(request, cat, project_id, application_id, item_id, se
     project = Project.objects.get(id=project_id)
     if not has_read_access_to_project(request, project):
         return redirect(base_url)
+    project_config = get_request_config(request, project)
+    cat_config = get_cat_config_or_404(project_config, cat)
     
     default_val_set = ValSet.objects.filter(project_id=project.id).get(name='Default')
     val_set = ValSet.objects.get(id=default_val_set.id)
     disp = 'disp_def'
-    disp_list = configs['cats'][cat][disp]
+    disp_list = cat_config[disp]
                                                     
     get_application_in_project_or_404(project, application_id)
     spec_item = get_spec_item_in_project_or_404(project, item_id)
     items = get_previous_list(spec_item)
     context = {'page_items': items, 'project': project, 'application_id': application_id, 'sel_val': sel_val,\
-               'config': configs['cats'][cat], 'cat': cat, 'expand_id': 0, 'val_set_id': val_set.id, \
+               'config': cat_config, 'project_config': project_config, 'cat': cat, 'expand_id': 0,
+               'val_set_id': val_set.id, \
                'val_set': val_set, 'default_val_set_id': default_val_set.id, 'disp': disp, \
                'disp_list': disp_list, 'history': True, 'sel_rel': None, 'sel_rel_id': 0 }
     return render(request, 'list_spec_items.html', context)    

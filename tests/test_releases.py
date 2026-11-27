@@ -10,14 +10,15 @@ from django.db.models import ProtectedError
 from django.contrib.sessions.backends.db import SessionStore
 from django.test import RequestFactory
 
-from editor.configs import configs
 from editor.models import Application, Release, SpecItem
 from editor.utilities import (del_release, do_application_release, do_project_release,
                               get_previous_list)
 from tests.factories import (FIXED_TIME, default_val_set, make_application, make_project,
-                             make_release, make_spec_item, make_user, make_val_set)
+                             make_release, make_spec_item, make_user, make_val_set, template_config)
 
 pytestmark = pytest.mark.django_db
+
+configs = template_config()       # the configuration of a project which has none of its own (read-only here)
 
 
 def make_request(user):
@@ -255,7 +256,7 @@ def test_del_release_deletes_whole_chain():
     r1 = make_release(user, project_version=1, previous=r0)
     r2 = make_release(user, project_version=2, previous=r1)
     request = make_request(user)
-    assert del_release(request, r2, 1) is True
+    assert del_release(request, r2, 1, configs) is True
     assert Release.objects.count() == 0
     assert list(get_messages(request)) == []
 
@@ -265,14 +266,15 @@ def test_del_release_only_deletes_older_part_of_chain():
     r0 = make_release(user)
     r1 = make_release(user, project_version=1, previous=r0)
     r2 = make_release(user, project_version=2, previous=r1)
-    del_release(make_request(user), r1, 1)
+    del_release(make_request(user), r1, 1, configs)
     assert list(Release.objects.values_list('pk', flat=True)) == [r2.pk]
     r2.refresh_from_db()
     assert r2.previous is None   # SET_DEFAULT
 
 
-def test_del_release_depth_limit(monkeypatch):
-    monkeypatch.setitem(configs['general'], 'max_depth', 1)
+def test_del_release_depth_limit():
+    configs = template_config()
+    configs['general']['max_depth'] = 1
     user = make_user()
     r0 = make_release(user)
     r1 = make_release(user, project_version=1, previous=r0)
@@ -280,19 +282,19 @@ def test_del_release_depth_limit(monkeypatch):
     r3 = make_release(user, project_version=3, previous=r2)
     request = make_request(user)
     # n=1 deletes r3, recursion n=2 > max_depth(1) -> error message, r2/r1/r0 remain
-    assert del_release(request, r3, 1) is True
+    assert del_release(request, r3, 1, configs) is True
     assert sorted(Release.objects.values_list('pk', flat=True)) == [r0.pk, r1.pk, r2.pk]
     assert [m.message for m in get_messages(request)] == [
         'Attempt to delete a release has reached the limit on the depth of recursion: 2']
     # direct call above the limit returns False and deletes nothing
     request = make_request(user)
-    assert del_release(request, r2, 2) is False
+    assert del_release(request, r2, 2, configs) is False
     assert Release.objects.count() == 3
 
 
 def test_del_release_referenced_by_project_is_protected(sc):
     with pytest.raises(ProtectedError):
-        del_release(make_request(sc.owner), sc.project.release, 1)
+        del_release(make_request(sc.owner), sc.project.release, 1, configs)
 
 
 # ------------------------------------------------------------------ views

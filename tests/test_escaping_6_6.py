@@ -15,18 +15,19 @@ import pytest
 from django.utils.safestring import SafeString
 
 from editor import convert
-from editor.configs import configs
 from editor.convert import (convert_db_to_display, conv_db_disp_eval_ref, conv_db_disp_plain_ref,
                             conv_db_disp_ref_text, conv_do_nothing)
 from editor.templatetags import ref_filters
 from tests.factories import (default_val_set, make_application, make_project, make_spec_item,
-                             make_user, make_val_set)
+                             make_user, make_val_set, template_config)
 from tests.test_convert import world, _tag_ctx, CATS            # noqa: F401  (fixture)
 from tests.test_import_export import export_zip, upload_zip, fresh_temp   # noqa: F401
 from tests.test_post_only_mutations import model_setup, fake_connect, ROW
 from editor.models import Project, SpecItem
 
 pytestmark = pytest.mark.django_db
+
+configs = template_config()       # the configuration of a project which has none of its own (read-only here)
 
 SCRIPT = '<script>alert(1)</script>'
 SCRIPT_ESC = '&lt;script&gt;alert(1)&lt;/script&gt;'
@@ -90,7 +91,7 @@ def test_display_escaped_output_cannot_form_markers_or_irefs(world):
 
 def test_display_iref_next_to_escaped_text(world):
     e = world['etype']
-    out = convert_db_to_display('<i> #iref:%d & "q" **b**' % e.id, None)
+    out = convert_db_to_display('<i> #iref:%d & "q" **b**' % e.id, None, config=configs)
     assert out.startswith('&lt;i&gt; <a href="/editor/EnumType/')
     assert '>D:T1</a> &amp; "q" <b>b</b>' in out
     # the link tooltip is escaped as before (its desc contains <&>)
@@ -100,7 +101,7 @@ def test_display_iref_next_to_escaped_text(world):
 
 def test_display_title_quote_in_item_does_not_break_tooltip(world):
     item = make_spec_item(world['project'], 'EnumType', 'D', 'q2', status='CNF', title='a"b', desc='x')
-    out = convert_db_to_display('#iref:%d' % item.id, None)
+    out = convert_db_to_display('#iref:%d' % item.id, None, config=configs)
     assert 'Title: a&quot;b&#13;' in out        # unchanged behaviour (attribute escaping already done)
 
 
@@ -184,7 +185,7 @@ def test_expand_tip_quote_does_not_break_attribute(world):
     # FIXED: xss-tag (was: raw value inside title="...", a '"' ended the attribute)
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip', p_link=world['etype'],
                           title='a" onmouseover="alert(1)', desc="it's <b>&", value='1')
-    out = ref_filters.filter_expand_tip(item)
+    out = ref_filters.filter_expand_tip(item, configs)
     assert out == ('Title: a&quot; onmouseover=&quot;alert(1)&#13;'
                    'Description: it&#x27;s &lt;b&gt;&amp;&#13;Value: 1&#13;')
     assert isinstance(out, SafeString)
@@ -193,7 +194,7 @@ def test_expand_tip_quote_does_not_break_attribute(world):
 def test_expand_tip_iref_converted_then_escaped(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip2', p_link=world['etype'],
                           desc='see #iref:%d <b>' % world['etype'].id, value='1')
-    out = ref_filters.filter_expand_tip(item)
+    out = ref_filters.filter_expand_tip(item, configs)
     assert out == 'Title: Title of tip2&#13;Description: see #EnumType:D:T1 &lt;b&gt;&#13;Value: 1&#13;'
 
 
@@ -201,8 +202,8 @@ def test_expand_tip_in_template_keeps_linebreaksbr(world):
     from django.template import Context, Template
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tip3', p_link=world['etype'],
                           desc='l1\nl2 "q"', value='1')
-    html = Template('{% load ref_filters %}<a title="{{ i|filter_expand_tip|linebreaksbr }}">').render(
-        Context({'i': item}))
+    html = Template('{% load ref_filters %}<a title="{{ i|filter_expand_tip:cfg|linebreaksbr }}">').render(
+        Context({'i': item, 'cfg': configs}))
     assert html == ('<a title="Title: Title of tip3&#13;Description: l1<br>l2 &quot;q&quot;&#13;'
                     'Value: 1&#13;">')
 

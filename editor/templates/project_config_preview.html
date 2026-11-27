@@ -1,0 +1,125 @@
+<div class="config-preview">
+    <p class="text-muted small mb-3">
+        This is how the configuration in the editor (not yet saved) would appear. Nothing has been stored.
+        Open a category to see its form, lists, short description and relationships.
+    </p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">Project menu: manage item</div>
+                <ul class="list-group list-group-flush">
+                    {% for cat in project_menu %}
+                    <li class="list-group-item">{{ cat.name }} <span class="text-muted small">({{ cat.id }})</span></li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No category is offered here.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">Application menu: manage item</div>
+                <ul class="list-group list-group-flush">
+                    {% for cat in application_menu %}
+                    <li class="list-group-item">{{ cat.name }} <span class="text-muted small">({{ cat.id }})</span></li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">No category is offered here.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% if hidden %}
+    <div class="alert alert-info" role="status">
+        Categories with saved items which this configuration does not define are hidden; their data is kept:
+        {% for cat in hidden %}{{ cat.id }} ({{ cat.count }} item{{ cat.count|pluralize }}){% if not forloop.last %}, {% endif %}{% endfor %}.
+    </div>
+    {% endif %}
+
+    {% for cat in categories %}
+    <details class="card mb-3 config-section config-preview-category" data-cat="{{ cat.id }}">
+        <summary class="card-header d-flex flex-wrap align-items-baseline gap-2">
+            <strong class="fs-5">{{ cat.name }}</strong>
+            <span class="text-muted">{{ cat.id }}, abbreviation {{ cat.abbr }}, {{ cat.level }} level</span>
+            <span class="ms-auto text-muted small">
+                {{ cat.page_size }} items per page; {{ cat.item_count }} saved item{{ cat.item_count|pluralize }}
+            </span>
+        </summary>
+        <div class="card-body">
+            <h3 class="fs-6 text-uppercase text-muted">Add and edit form</h3>
+            <fieldset disabled class="config-preview-form mb-4">
+                {% for field in cat.fields %}
+                <div class="row mb-2">
+                    <label class="col-sm-3 col-form-label">
+                        {{ field.label }}{% if field.required %}<span class="text-danger" title="required"> *</span>{% endif %}
+                    </label>
+                    <div class="col-sm-9">
+                        {% if field.control == 'select' %}
+                        <select class="form-select">
+                            {% for value, label in field.choices %}<option>{{ label }} ({{ value }})</option>{% empty %}<option>{% if field.relation %}{{ field.relation }}{% else %}-{% endif %}</option>{% endfor %}
+                        </select>
+                        {% elif field.control == 'textarea' %}
+                        <textarea class="form-control" rows="2"></textarea>
+                        {% elif field.control == 'number' %}
+                        <input type="number" class="form-control">
+                        {% else %}
+                        <input type="text" class="form-control">
+                        {% endif %}
+                        <div class="form-text">{{ field.id }}, {{ field.kind }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </fieldset>
+            {% if cat.hidden_fields %}
+            <p class="small text-muted mb-4">
+                Hidden fields (not shown in the forms, lists and CSV exports of this category; their values and
+                settings are kept):
+                {% for field in cat.hidden_fields %}{{ field.label }} ({{ field.id }}){% if not forloop.last %}, {% endif %}{% endfor %}.
+            </p>
+            {% endif %}
+
+            {% for layout in cat.layouts %}
+            <h3 class="fs-6 text-uppercase text-muted">{{ layout.title }}</h3>
+            <div class="table-responsive mb-4">
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>{% for row in layout.rows %}<th>{{ row.header }}{% if row.order_by %} <span class="text-muted small fw-normal">(sorted by {{ row.order_by }})</span>{% endif %}</th>{% endfor %}</tr>
+                    </thead>
+                    <tbody>
+                        <tr class="text-muted fst-italic">{% for row in layout.rows %}<td>{{ row.cell }}</td>{% endfor %}</tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+
+            <h3 class="fs-6 text-uppercase text-muted">Short description</h3>
+            <dl class="row mb-4">
+                {% for part in cat.short_desc %}
+                <dt class="col-sm-3">{{ part.title }}</dt>
+                <dd class="col-sm-9">{{ part.labels|join:", "|default:"-" }}</dd>
+                {% endfor %}
+            </dl>
+
+            <h3 class="fs-6 text-uppercase text-muted">Relationships</h3>
+            <ul class="mb-0">
+                {% for field in cat.fields %}{% if field.id == 'p_link' or field.id == 's_link' %}
+                <li>{{ field.label }} ({{ field.id }}): {{ field.relation }}</li>
+                {% endif %}{% endfor %}
+                {% for expansion in cat.expansions %}
+                <li>Expanded {{ expansion.link }}: {{ expansion.target }}{% if expansion.label %} ({{ expansion.label }}){% endif %}</li>
+                {% endfor %}
+                {% for trac in cat.tracs %}
+                <li>Traceability through {{ trac.cat }} ({{ trac.link }})</li>
+                {% endfor %}
+                {% for name in cat.validators %}
+                <li>Validator: {{ name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </details>
+    {% empty %}
+    <p class="text-muted">The configuration defines no category.</p>
+    {% endfor %}
+</div>
