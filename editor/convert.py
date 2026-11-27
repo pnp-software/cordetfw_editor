@@ -81,10 +81,8 @@ def frmt_string(s):
 
 
 def get_cat_definition(config, cat):
-    """Definition of 'cat' in the project configuration 'config', or None (no config, or a hidden category)."""
-    cats = config.get('cats') if isinstance(config, dict) else None
-    definition = cats.get(cat) if isinstance(cats, dict) else None
-    return definition if isinstance(definition, dict) else None
+    """Definition of 'cat' in the project configuration 'config', or None if it does not define it (hidden)."""
+    return config['cats'].get(cat)
 
 
 def get_tooltip(config, item, tip_key, project_id=UNSCOPED):
@@ -104,7 +102,7 @@ def get_tooltip(config, item, tip_key, project_id=UNSCOPED):
     return tip
 
 
-def convert_db_to_display(s, sel_rel, project_id=UNSCOPED, config=None):
+def convert_db_to_display(s, sel_rel, config, project_id=UNSCOPED):
     """
     The string s is a text field read from the database. It
     contains markdown text and internal references in the form #iref:n. 
@@ -116,8 +114,8 @@ def convert_db_to_display(s, sel_rel, project_id=UNSCOPED, config=None):
     sel_rel.
     Invalid references (and references to items of another project than project_id)
     are replaced with: ERROR:n.
-    'config' is the project configuration: it gives the link tooltip (none without it), and a target in a category
-    which it does not define (hidden) is shown as plain <domain>:<name>, without link.
+    'config' is the project configuration: it gives the link tooltip, and a target in a category which it does
+    not define (hidden) is shown as plain <domain>:<name>, without link.
     Markdown text is converted to html.
     The output of this function is safe for display in an HTML page: the text read
     from the database is escaped (only &, < and >) BEFORE the references and the markdown
@@ -128,7 +126,7 @@ def convert_db_to_display(s, sel_rel, project_id=UNSCOPED, config=None):
         """ Function called by sub() to replace occurrences of the #iref:n regex pattern """
         try:
             item = get_ref_item(match.group(2), project_id)
-            if config is not None and get_cat_definition(config, item.cat) is None:
+            if get_cat_definition(config, item.cat) is None:
                 return escape(item.domain) + ':' + escape(item.name)
             item_project_id = str(item.project.id) if item.project != None else '0'
             sel_rel_id = sel_rel.id if sel_rel != None else 0
@@ -200,7 +198,7 @@ def conv_db_disp_ref_text(context, item, name, sel_rel):
     on the assumption that the attribute value contains internal references ('ref_text' content kind)
     """
     s = getattr(item, name)
-    return convert_db_to_display(s, sel_rel, item.project_id, context.get('project_config'))
+    return convert_db_to_display(s, sel_rel, context['project_config'], item.project_id)
     
     
 def conv_db_disp_table(context, item, name, sel_rel):
@@ -210,7 +208,7 @@ def conv_db_disp_table(context, item, name, sel_rel):
     TBD: the table is simply rendered as a json string with internal references and mark-up resolved.
     """
     s = getattr(item, name)     # 's' is a json object
-    return convert_db_to_display(str(s), sel_rel, item.project_id, context.get('project_config'))
+    return convert_db_to_display(str(s), sel_rel, context['project_config'], item.project_id)
     
     
 def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
@@ -226,14 +224,11 @@ def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
     if spec_item_link == None:
         return ''
     cat = spec_item_link.cat
-    config = context.get('project_config')
+    config = context['project_config']
     definition = get_cat_definition(config, cat)
-    if config is not None and definition is None:
+    if definition is None:
         return escape(spec_item_link.domain + ':' + spec_item_link.name)
-    if definition is not None:
-        application_id = context['application_id'] if definition.get('level') == 'application' else 0
-    else:
-        application_id = spec_item_link.application_id or 0       # no configuration: the item's own application
+    application_id = context['application_id'] if definition['level'] == 'application' else 0
     default_val_set_id = context['default_val_set_id']
     sel_rel_id = sel_rel.id if sel_rel != None else 0
     sel_val = context['sel_val']
@@ -258,11 +253,11 @@ def conv_db_disp_eval_ref(context, item, name, sel_rel):
     on the assumption that the attribute value is of 'eval_ref' kind)
     """
     s = getattr(item, name)
-    conv_s = convert_db_to_display(s, sel_rel, item.project_id, context.get('project_config'))
+    conv_s = convert_db_to_display(s, sel_rel, context['project_config'], item.project_id)
     # The expression is evaluated on the raw string; only the displayed text is escaped. The
     # comparison is made with the escaped input (convert_db_to_display escapes first).
     if conv_s != escape_text(s):
-        nval = eval_di_value(s, item.project_id, context.get('project_config'))
+        nval = eval_di_value(s, item.project_id, context['project_config'])
         return conv_s + ' = ' + escape_text(nval)
     else:
         return escape_text(s)

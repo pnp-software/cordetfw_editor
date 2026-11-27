@@ -446,8 +446,8 @@ class HiddenCategoryTests(ConfiguredTestCase):
 
     def test_references_in_text_show_the_plain_identifier(self):
         self.hide_service()
-        shown = convert.convert_db_to_display('see #iref:%d' % self.service.id, None, self.project.id,
-                                              get_project_config(self.project))
+        shown = convert.convert_db_to_display('see #iref:%d' % self.service.id, None,
+                                              get_project_config(self.project), self.project.id)
         self.assertEqual(shown, 'see D:svc')
 
     def test_a_hidden_category_does_not_break_other_pages(self):
@@ -532,7 +532,7 @@ class MissingDisplaySettingsTests(ConfiguredTestCase):
         self.target = self.make_item(self.project, 'Service', 'D', 'svc', title='T', value='v', status='CNF')
 
     def display(self, config):
-        return convert.convert_db_to_display('#iref:%d' % self.target.id, None, self.project.id, config)
+        return convert.convert_db_to_display('#iref:%d' % self.target.id, None, config, self.project.id)
 
     def test_a_category_without_short_descriptions_is_a_link_without_tooltip(self):
         config = template_config()
@@ -552,11 +552,6 @@ class MissingDisplaySettingsTests(ConfiguredTestCase):
         config = template_config()
         del config['cats']['Service']
         self.assertEqual(self.display(config), 'D:svc')
-
-    def test_without_a_configuration_a_link_is_shown_without_tooltip(self):
-        shown = convert.convert_db_to_display('#iref:%d' % self.target.id, None, self.project.id)
-        self.assertIn('href="/editor/Service/', shown)
-        self.assertNotIn('Title:', shown)
 
     def test_labels_in_tooltips_are_escaped(self):
         config = template_config()

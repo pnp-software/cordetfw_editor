@@ -175,7 +175,7 @@ def test_display_application_id_in_link(world):
 
 def test_display_html_special_chars_in_names_escaped_but_text_not(world):
     # FIXED: xss-display (was: '<script>x</script> & <b>' returned raw)
-    out = convert_db_to_display('<script>x</script> & <b>', None)
+    out = convert_db_to_display('<script>x</script> & <b>', None, config=configs)
     assert out == '&lt;script&gt;x&lt;/script&gt; &amp; &lt;b&gt;'
 
 
@@ -315,13 +315,13 @@ def test_conv_db_disp_date_returns_escaped_value(world):
 def test_conv_db_disp_ref_text(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'rt', p_link=world['etype'],
                           desc='see #iref:999 **b**')
-    assert conv_db_disp_ref_text({}, item, 'desc', None) == 'see ERROR:999 <b>b</b>'
+    assert conv_db_disp_ref_text({'project_config': configs}, item, 'desc', None) == 'see ERROR:999 <b>b</b>'
 
 
 def test_conv_db_disp_table(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'tb', p_link=world['etype'],
                           s_data={'a': 1})
-    assert conv_db_disp_table({}, item, 's_data', None) == "{'a': 1}"
+    assert conv_db_disp_table({'project_config': configs}, item, 's_data', None) == "{'a': 1}"
 
 
 def test_conv_db_disp_spec_item_ref_none(world):
@@ -361,9 +361,9 @@ def test_conv_db_disp_spec_item_ref_application_level_and_release(world):
 def test_conv_db_disp_eval_ref(world):
     x, y = world['x'], world['y']
     # no references: value returned unchanged (no evaluation)
-    assert conv_db_disp_eval_ref({}, x, 'value', None) == '2*3'
+    assert conv_db_disp_eval_ref({'project_config': configs}, x, 'value', None) == '2*3'
     # with references: display + ' = ' + evaluated value
-    out = conv_db_disp_eval_ref({}, y, 'value', None)
+    out = conv_db_disp_eval_ref({'project_config': configs}, y, 'value', None)
     assert out.endswith('</a>+1 = 7.0')
     assert out.startswith('<a href="/editor/DataItem/')
 
@@ -371,7 +371,7 @@ def test_conv_db_disp_eval_ref(world):
 def test_conv_db_disp_eval_ref_unevaluable(world):
     item = make_spec_item(world['project'], 'DataItem', 'D', 'bad', p_link=world['etype'],
                           value='#iref:%d+' % world['x'].id)
-    out = conv_db_disp_eval_ref({}, item, 'value', None)
+    out = conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None)
     assert out.endswith('</a>+ = #iref:%d+' % world['x'].id)
 
 

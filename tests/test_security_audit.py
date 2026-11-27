@@ -27,7 +27,7 @@ from django.test import Client
 
 from editor.models import Project, ProjectUser, SpecItem, ValSet
 from tests.factories import (FIXED_TIME, default_val_set, make_application, make_project,
-                             make_project_user, make_spec_item, make_user, make_val_set)
+                             make_project_user, make_spec_item, make_user, make_val_set, template_config)
 
 pytestmark = pytest.mark.django_db
 
@@ -550,9 +550,10 @@ def test_10_stored_foreign_iref_behaves_like_dangling_everywhere(w):
     missing = SpecItem.objects.order_by('-id').first().id + 1000
     foreign, dangling = '#iref:%d' % w.b_di.id, '#iref:%d' % missing
     # display, edit conversion, LaTeX and eval: same output as a non-existent id (up to the id itself)
-    assert convert_db_to_display(foreign, None, w.a.id) == convert_db_to_display(dangling, None, w.a.id).replace(
-        str(missing), str(w.b_di.id))
-    assert convert_db_to_display(foreign, None, w.a.id) == 'ERROR:%d' % w.b_di.id
+    config = template_config()
+    assert convert_db_to_display(foreign, None, config, w.a.id) == \
+        convert_db_to_display(dangling, None, config, w.a.id).replace(str(missing), str(w.b_di.id))
+    assert convert_db_to_display(foreign, None, config, w.a.id) == 'ERROR:%d' % w.b_di.id
     assert convert_db_to_edit(foreign, w.a.id) == 'ERROR:%d' % w.b_di.id
     assert convert_db_to_latex(foreign, w.a.id) == 'ERROR:%d' % w.b_di.id
     assert eval_di_value(foreign, w.a.id) == foreign

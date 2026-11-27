@@ -55,7 +55,7 @@ def test_escape_text_helper():
 ])
 def test_display_escapes_text(world, src, expected):
     # FIXED: xss-display (was: text outside references returned raw)
-    assert convert_db_to_display(src, None) == expected
+    assert convert_db_to_display(src, None, config=configs) == expected
 
 
 @pytest.mark.parametrize('src,expected', [
@@ -76,7 +76,7 @@ def test_display_escapes_text(world, src, expected):
 def test_display_markdown_with_escaped_text(world, src, expected):
     # md-no-escape, HTML part fixed in Task 6.6 (the id stays OPEN for the LaTeX part, track K):
     # the text is escaped before markdown is applied
-    assert convert_db_to_display(src, None) == expected
+    assert convert_db_to_display(src, None, config=configs) == expected
 
 
 def test_display_escaped_output_cannot_form_markers_or_irefs(world):
@@ -86,7 +86,7 @@ def test_display_escaped_output_cannot_form_markers_or_irefs(world):
     for marker in ('**', '++', '__', '``', '#iref', '\n-'):
         assert marker not in out
     # the literal text '&#13;' (an entity used in tooltips) cannot be injected either
-    assert convert_db_to_display('&#13;', None) == '&amp;#13;'
+    assert convert_db_to_display('&#13;', None, config=configs) == '&amp;#13;'
 
 
 def test_display_iref_next_to_escaped_text(world):
@@ -139,12 +139,12 @@ def test_tag_eval_ref_with_iref_and_special_chars(world):
     x = world['x']      # value '2*3'
     item = make_spec_item(world['project'], 'DataItem', 'D', 'ev', p_link=world['etype'],
                           value='#iref:%d+1' % x.id)
-    out = conv_db_disp_eval_ref({}, item, 'value', None)
+    out = conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None)
     assert out.endswith('</a>+1 = 7.0')
     # unevaluable raw input with special chars: displayed text escaped, '= <nval>' (the raw input) too
     item2 = make_spec_item(world['project'], 'DataItem', 'D', 'ev2', p_link=world['etype'],
                            value='#iref:%d < 1 & **b**' % x.id)
-    out2 = conv_db_disp_eval_ref({}, item2, 'value', None)
+    out2 = conv_db_disp_eval_ref({'project_config': configs}, item2, 'value', None)
     head, _, nval = out2.rpartition(' = ')
     assert ' &lt; 1 &amp; <b>b</b>' in head and '<a href=' in head
     assert nval == '#iref:%d &lt; 1 &amp; **b**' % x.id
@@ -154,9 +154,9 @@ def test_tag_eval_ref_with_iref_and_special_chars(world):
 def test_tag_eval_ref_plain_text_not_evaluated_twice(world):
     # no iref and no markdown: the text is returned (escaped) without ' = ...'
     item = make_spec_item(world['project'], 'DataItem', 'D', 'ev3', p_link=world['etype'], value='a < b')
-    assert conv_db_disp_eval_ref({}, item, 'value', None) == 'a &lt; b'
+    assert conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None) == 'a &lt; b'
     item = make_spec_item(world['project'], 'DataItem', 'D', 'ev4', p_link=world['etype'], value='1 < 2')
-    assert conv_db_disp_eval_ref({}, item, 'value', None) == '1 &lt; 2'
+    assert conv_db_disp_eval_ref({'project_config': configs}, item, 'value', None) == '1 &lt; 2'
 
 
 def test_tag_int_kind_unchanged(world):
