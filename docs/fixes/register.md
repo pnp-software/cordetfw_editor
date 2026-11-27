@@ -92,6 +92,7 @@ Status: OPEN, FIXED in <commit>, WONTFIX. Checked by `scripts/known_issue_check.
 | release-version-default-str | — | models-access-releases-query.md | tests/test_models.py | K | FIXED (Task 7.7) |  |
 | s-data-string | — | forms-convert-utilities.md | tests/test_forms.py | K | OPEN | Changes stored data/export of new items; awaiting operator approval: docs/fixes/tickets/s-data-string.md |
 | session-and-reset-hardening | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.8) | Operator 2026-10-24: optional config key SESSION_COOKIE_AGE (seconds, default unchanged = two weeks); HSTS + port 80 redirect by Apache; CSP not set (low) |
+| spec-item-level-mismatch | — | views.md | tests/test_views.py | K | FIXED (feature/project-configuration) | Found 2026-11-13: add/copy/split check the category level against the application (404); the application form offers only application-level categories (UI only, the posted value is not restricted) |
 | temp-dir-not-cleaned | — | import-export-auth.md | tests/test_import_export.py | K | FIXED (Task 7.2c) |  |
 | temp-files-world-readable | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) |  |
 | tracked-dev-secret-key | — | security-audit.md | tests/test_security_audit.py | K | FIXED (Task 7.2c) | Production uses a different SECURE_KEY (operator 2026-10-23): not exploitable. Cleanup: replace tracked file by an .example |

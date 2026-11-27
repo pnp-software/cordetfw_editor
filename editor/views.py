@@ -64,6 +64,16 @@ base_url = config['BASE_URL']
 logger = logging.getLogger(__name__)
 
 
+def check_cat_level_or_404(cat_config, application):
+    """
+    Items of a category of level 'project' have no application, items of level 'application' have one: a page
+    which would create an item at the other level (add, copy, split under a hand-written URL) is a 404.
+    """
+    level = cat_config.get('level')
+    if (level == 'project' and application is not None) or (level == 'application' and application is None):
+        raise Http404('Category not available at this level')
+
+
 def get_find_replace_updates(items, project_id, val_set_id, field, find_string, replace_string, removed=None):
     updates = []
     model_field = SpecItem._meta.get_field(field)
@@ -689,6 +699,7 @@ def add_spec_item(request, cat, project_id, application_id, sel_val, sel_rel_id)
         return redirect(base_url)
 
     application = get_application_in_project_or_404(project, application_id)
+    check_cat_level_or_404(configs['cats'][cat], application)
     if application is not None:
         title = 'Add '+configs['cats'][cat]['name']+' to Application '+application.name
     else:
@@ -830,6 +841,7 @@ def copy_spec_item(request, cat, project_id, application_id, item_id, sel_val, s
     spec_item.change_log = ''
     application = get_application_in_project_or_404(project, application_id)
     check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
+    check_cat_level_or_404(configs['cats'][cat], application)
     if application is not None:
         title = 'Copy '+configs['cats'][cat]['name']+' in Application '+application.name
     else:
@@ -875,6 +887,7 @@ def split_spec_item(request, cat, project_id, application_id, item_id, sel_val, 
     spec_item = get_spec_item_in_project_or_404(project, item_id)
     application = get_application_in_project_or_404(project, application_id)
     check_parents_in_project_or_404(project, s_parent_id, p_parent_id)
+    check_cat_level_or_404(configs['cats'][cat], application)
     if application is not None:
         title = 'Split '+configs['cats'][cat]['name']+' in Application '+application.name
     else:

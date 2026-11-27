@@ -925,6 +925,31 @@ def test_add_spec_item_post_in_application(client, owner, project, dvs):
     assert item.application == app and item.project == project and item.status == 'NEW'
 
 
+@pytest.mark.parametrize('cat,in_app', [('DataItem', True), ('InfoItem', False)])
+def test_add_spec_item_rejects_category_of_other_level(client, owner, project, dvs, dtype, cat, in_app):
+    # FIXED: spec-item-level-mismatch (was: a hand-written URL added a project-level DataItem to an
+    # application, or an application-level InfoItem to the project without an application)
+    app = make_application(project, 'App', cats='InfoItem')
+    url = add_url(cat, project, app=app.id if in_app else 0)
+    assert client.get(url).status_code == 404
+    data = post_data(p_link=dtype.id, p_kind='VAR', t2='m', t1='1')
+    assert client.post(url, data).status_code == 404
+    assert not SpecItem.objects.filter(name='New').exists()
+
+
+@pytest.mark.parametrize('view', ['copy_spec_item', 'split_spec_item'])
+def test_copy_split_spec_item_reject_category_of_other_level(client, owner, project, dvs, dtype, view):
+    # FIXED: spec-item-level-mismatch (was: copy/split of a project-level item under an application URL
+    # stored the new item in that application)
+    app = make_application(project, 'App', cats='InfoItem')
+    item = make_spec_item(project, domain='Dom', name='It', p_link=dtype, p_kind='VAR', value='1', status='CNF')
+    url = item_url(view, 'DataItem', project, item, app=app.id)
+    assert client.get(url).status_code == 404
+    data = post_data(domain='Dom', name='Copy', p_link=dtype.id, p_kind='VAR', value='1')
+    assert client.post(url, data).status_code == 404
+    assert SpecItem.objects.filter(cat='DataItem').count() == 1
+
+
 def test_add_spec_item_post_invalid_identifier(client, owner, project, dvs, dtype):
     resp = client.post(add_url('DataItem', project), post_data(p_link=dtype.id, name='bad name'))
     assert resp.status_code == 200
