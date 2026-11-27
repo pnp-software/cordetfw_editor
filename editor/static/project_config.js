@@ -18,7 +18,9 @@
     };
     const projectId = app.dataset.projectId;
     const meta = JSON.parse(document.getElementById('project-config-meta').textContent);
-    const csrfToken = app.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    const pageCsrfToken = app.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    // Read at every request: logging in again (e.g. in another tab) replaces the token in the cookie
+    const csrfToken = () => (/(?:^|;\s*)csrftoken=([^;]+)/.exec(document.cookie) || [])[1] || pageCsrfToken;
     const $ = (id) => document.getElementById(id);
 
     const LINKS = ['p_link', 's_link'];
@@ -229,7 +231,8 @@
     function actionButton(icon, tip, onClick, inertReason, extra) {
         const text = inertReason || tip;
         const el = h('button', Object.assign({
-            type: 'button', class: 'btn btn-outline-secondary config-action' + (inertReason ? ' disabled' : ''),
+            type: 'button',
+            class: 'btn btn-outline-secondary config-action' + (inertReason ? ' config-action-inert' : ''),
             title: text, 'aria-label': text, 'aria-disabled': inertReason ? 'true' : null,
             'data-bs-toggle': 'tooltip', 'data-bs-trigger': 'hover focus',
         }, extra || {}), h('i', {class: 'bi ' + icon, 'aria-hidden': 'true'}));
@@ -330,10 +333,11 @@
                     return;
                 }
             }
-            probe = probe.replace(/(\.[A-Za-z0-9_-]+|\[[^\]]*\])$/, '');
-            if (probe === path) {
+            const parent = probe.replace(/(\.[A-Za-z0-9_-]+|\[[^\]]*\])$/, '');
+            if (parent === probe) {
                 break;
             }
+            probe = parent;
         }
     }
 
@@ -398,7 +402,7 @@
     // ------------------------------------------------------------------ server requests
     async function request(url, options) {
         const settings = Object.assign({method: 'GET', credentials: 'same-origin', redirect: 'manual'}, options);
-        settings.headers = Object.assign({'X-CSRFToken': csrfToken, Accept: 'application/json'}, settings.headers);
+        settings.headers = Object.assign({'X-CSRFToken': csrfToken(), Accept: 'application/json'}, settings.headers);
         let response;
         try {
             response = await fetch(url, settings);
@@ -468,6 +472,40 @@
         box.classList.toggle('d-none', !message);
     }
 
+    // First key that occurs twice in one object of valid JSON text, or null. JSON.parse silently keeps the last
+    // one, so without this check the editor would drop a value which the server rejects for uploaded files.
+    function duplicateKey(text) {
+        const objects = [];                 // per open object a Set of its keys, per open array null
+        let expectKey = false;
+        for (let i = 0; i < text.length; i++) {
+            const c = text[i];
+            if (c === '"') {
+                let end = i + 1;
+                while (text[end] !== '"') {
+                    end += text[end] === '\\' ? 2 : 1;
+                }
+                const keys = objects[objects.length - 1];
+                if (expectKey && keys) {
+                    const key = JSON.parse(text.slice(i, end + 1));
+                    if (keys.has(key)) {
+                        return key;
+                    }
+                    keys.add(key);
+                }
+                expectKey = false;
+                i = end;
+            } else if (c === '{' || c === '[') {
+                objects.push(c === '{' ? new Set() : null);
+                expectKey = c === '{';
+            } else if (c === '}' || c === ']') {
+                objects.pop();
+            } else if (c === ',') {
+                expectKey = Boolean(objects[objects.length - 1]);
+            }
+        }
+        return null;
+    }
+
     // Parses the JSON text; on success it becomes the state, on failure the state is left alone.
     function commitJson() {
         const text = $('config-json').value;
@@ -483,6 +521,13 @@
         if (!isObj(parsed)) {
             state.jsonError = 'the configuration must be a JSON object';
             showJsonStatus('The configuration must be a JSON object.');
+            updateStatus();
+            return false;
+        }
+        const duplicate = duplicateKey(text);
+        if (duplicate !== null) {
+            state.jsonError = 'the key "' + duplicate + '" occurs twice in one object';
+            showJsonStatus('Error: ' + state.jsonError + '. Fix it to continue; nothing was lost.');
             updateStatus();
             return false;
         }
@@ -750,6 +795,7 @@
             }
         }
         initTooltips(box);
+        markErrors();
     }
 
     const col = (child) => h('div', {class: 'col-sm-6 col-xl-4'}, child);

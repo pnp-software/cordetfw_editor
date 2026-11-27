@@ -491,5 +491,6 @@ class ScriptGuardTests(UiCase):
     def test_the_script_uses_the_endpoints_of_the_page_and_the_csrf_token(self):
         for name in ('reloadUrl', 'validateUrl', 'saveUrl', 'uploadUrl', 'previewUrl', 'removeUrl'):
             self.assertIn('app.dataset.' + name, self.script)
-        self.assertIn("'X-CSRFToken': csrfToken", self.script)
+        self.assertIn("'X-CSRFToken': csrfToken()", self.script)
+        self.assertIn('document.cookie', self.script)
         self.assertIn("'X-Config-Token': state.token", self.script)
