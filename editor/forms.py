@@ -21,6 +21,39 @@ def validate_identifier(value):
     if not pattern_identifier.fullmatch(value):
         raise ValidationError(identifier_error)
 
+
+class CatPicker(forms.TextInput):
+    """
+    Comma-separated category list, shown as two lists (categories not added / added) with arrow buttons
+    (editor/static/cat_picker.js). The posted value stays the comma-separated text; without JavaScript the
+    plain text input is used.
+    """
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+        self.options = []
+
+    def set_options(self, cat_ids, config, level=None):
+        """
+        Categories offered, in this order, labelled with their name in the configuration 'config'. With 'level',
+        a category of another level is not offered: if it is already in the list it is shown with a note (it can
+        be removed, not added).
+        """
+        cats = config.get('cats', {}) if isinstance(config, dict) else {}
+        options = []
+        for cat_id in cat_ids:
+            cat_def = cats.get(cat_id)
+            name = cat_def.get('name') if isinstance(cat_def, dict) else None
+            option = {'id': cat_id, 'name': name if isinstance(name, str) and name else cat_id}
+            if level is not None and isinstance(cat_def, dict) and cat_def.get('level') != level:
+                option['note'] = '%s level' % cat_def.get('level')
+            options.append(option)
+        self.options = options
+
+    @property
+    def options_json(self):
+        return json.dumps(self.options)
+
+
 class ProjectForm(forms.Form):
     name = forms.CharField()
     owner = forms.ChoiceField(choices=())
@@ -37,6 +70,8 @@ class ProjectForm(forms.Form):
         self.fields['description'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + self.predefined_cats
+        self.fields['cats'].widget = CatPicker()
+        self.fields['cats'].widget.set_options(list(configs['cats'].keys()), configs)
 
     def clean_owner(self):
         owner_id = self.cleaned_data['owner']
@@ -78,6 +113,11 @@ class ApplicationForm(forms.Form):
         self.fields['cats'].widget.attrs.update(rows = 2)
         self.fields['cats'].label = 'Categories'
         self.fields['cats'].help_text = 'A subset of: ' + project.cats.replace(',', ', ')
+        self.fields['cats'].widget = CatPicker()
+        # Only categories of level 'application' are offered: items of a project-level category never belong to
+        # an application (an application listing one keeps it, shown as 'project level', until it is removed)
+        self.fields['cats'].widget.set_options([c.strip() for c in project.cats.split(',') if c.strip()],
+                                               configs, level='application')
 
     def clean_cats(self):
         cats = self.cleaned_data['cats'].replace(' ','')

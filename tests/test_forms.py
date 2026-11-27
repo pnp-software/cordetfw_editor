@@ -17,7 +17,7 @@ from django.contrib.messages.storage.cookie import CookieStorage
 from editor import ext_cats
 from editor.configs import configs, do_cat_specific_checks, get_p_link_choices, get_s_link_choices
 from editor.forms import (validate_identifier, identifier_error, ProjectForm, ApplicationForm,
-                          ValSetForm, ReleaseForm, FindReplaceForm, SpecItemForm)
+                          ValSetForm, ReleaseForm, FindReplaceForm, SpecItemForm, CatPicker)
 from editor.models import SpecItem, ValSet
 from editor.utilities import spec_item_to_edit
 from editor.views import get_find_replace_updates
@@ -187,7 +187,47 @@ def test_application_form_init(proj):
     assert form.fields['cats'].label == 'Categories'
     assert form.fields['cats'].help_text == 'A subset of: DataItem, EnumType, EnumValue, DataItemType'
     assert form.fields['description'].widget.attrs['rows'] == 2
-    assert form.fields['cats'].widget.attrs['rows'] == 2
+    # Feature (category picker): 'cats' was a two-row textarea; it is now the CatPicker widget (two lists with
+    # arrows, editor/static/cat_picker.js). The posted value is still the comma-separated text.
+    assert isinstance(form.fields['cats'].widget, CatPicker)
+    assert [o['id'] for o in form.fields['cats'].widget.options] == ['DataItem', 'EnumType', 'EnumValue',
+                                                                     'DataItemType']
+
+
+# =============================================================== CatPicker (category picker)
+def test_project_form_cat_picker_offers_all_configured_cats_with_names():
+    form = ProjectForm(None)
+    widget = form.fields['cats'].widget
+    assert isinstance(widget, CatPicker)
+    assert widget.options == [{'id': c, 'name': configs['cats'][c]['name']} for c in ALL_CATS]
+    assert json.loads(widget.options_json) == widget.options
+
+
+def test_application_form_cat_picker_offers_only_project_cats_of_application_level(proj):
+    proj.cats = 'InfoItem, DataItem, Unknown'
+    widget = ApplicationForm(proj).fields['cats'].widget
+    # a project-level category gets a note (cat_picker.js does not offer it, only lets it be removed);
+    # a category of Project.cats which the configuration does not define is labelled with its identifier
+    assert widget.options == [{'id': 'InfoItem', 'name': configs['cats']['InfoItem']['name']},
+                              {'id': 'DataItem', 'name': configs['cats']['DataItem']['name'],
+                               'note': 'project level'},
+                              {'id': 'Unknown', 'name': 'Unknown'}]
+
+
+def test_project_form_cat_picker_has_no_level_notes():
+    assert not [o for o in ProjectForm(None).fields['cats'].widget.options if 'note' in o]
+
+
+def test_cat_picker_renders_options_escaped_and_keeps_text_input(proj):
+    from django.template.loader import render_to_string
+    proj.cats = 'DataItem'
+    form = ApplicationForm(proj, initial={'cats': 'DataItem'})
+    form.fields['cats'].widget.options = [{'id': 'X', 'name': '<b>"x"</b>'}]
+    html = render_to_string('generic_form_field.html', {'field': form['cats']})
+    assert 'class="cat-picker" data-options="[{&quot;id&quot;: &quot;X&quot;, &quot;name&quot;: ' \
+           '&quot;&lt;b&gt;\\&quot;x\\&quot;&lt;/b&gt;&quot;}]"' in html
+    assert 'name="cats"' in html and 'value="DataItem"' in html
+    assert '<script src="/static/cat_picker.js" defer></script>' in html
 
 
 def test_application_form_valid(proj):

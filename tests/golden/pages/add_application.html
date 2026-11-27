@@ -145,27 +145,29 @@
                 
 
 
+
+
 <div class="mb-3 row">
     <label for="id_cats"
            class="col-form-label col-2">
         Categories*
     </label>
     <div class="col-10 col-lg-8">
-        <textarea type="text" id="id_cats"
-                  class="form-control  "
-                  name="cats"
-                  rows="2"
-                  
-                  required
-                  ></textarea>
-        
-        
-        <div class="form-text">A subset of: DataItem, EnumType, EnumValue, DataItemType, InfoItem, Model</div>
-        
+        <div class="cat-picker" data-options="[{&quot;id&quot;: &quot;DataItem&quot;, &quot;name&quot;: &quot;Data Item&quot;, &quot;note&quot;: &quot;project level&quot;}, {&quot;id&quot;: &quot;EnumType&quot;, &quot;name&quot;: &quot;Enumerated Type&quot;, &quot;note&quot;: &quot;project level&quot;}, {&quot;id&quot;: &quot;EnumValue&quot;, &quot;name&quot;: &quot;Enumerated Value&quot;, &quot;note&quot;: &quot;project level&quot;}, {&quot;id&quot;: &quot;DataItemType&quot;, &quot;name&quot;: &quot;Data Item Type&quot;, &quot;note&quot;: &quot;project level&quot;}, {&quot;id&quot;: &quot;InfoItem&quot;, &quot;name&quot;: &quot;Info Item&quot;}, {&quot;id&quot;: &quot;Model&quot;, &quot;name&quot;: &quot;Behavioural Model&quot;}]">
+            <input type="text" id="id_cats"
+                   class="form-control cat-picker-input "
+                   name="cats"
+                   
+                   required
+                   >
+            
+            
+            <div class="form-text cat-picker-help">A subset of: DataItem, EnumType, EnumValue, DataItemType, InfoItem, Model</div>
+            
+        </div>
     </div>
 </div>
-
-
+<script src="/static/cat_picker.js" defer></script>
 
 
                 
