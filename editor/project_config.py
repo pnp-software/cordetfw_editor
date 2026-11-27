@@ -9,13 +9,9 @@ import json
 
 from django.conf import settings
 
-from editor.cat_validators import prune_validators
 from editor.config_cleanup import has_hidden_attributes, remove_dangling_references, remove_hidden_attributes
-from editor.link_rules import prune_link_rules
 from editor.models import Application, Project, SpecItem
 
-# Relationship settings of every category definition (link_rules.py, cat_validators.py); older stored ones lack them.
-RELATIONSHIP_KEYS = ('links', 'validators')
 # Server settings which must never be part of a project configuration.
 SERVER_ONLY_GENERAL_KEYS = ('temp_dir',)
 
@@ -33,43 +29,12 @@ def load_template():
         return json.load(template_file)
 
 
-def add_missing_relationship_settings(config):
-    """
-    In place, give a category definition without `links` or `validators` (stored by an earlier version) the
-    template's value, restricted to the configuration's categories. Present keys, even empty, are never changed.
-    Returns True if anything was added; the template is read only when needed.
-    """
-    cats = config.get('cats') if isinstance(config, dict) else None
-    if not isinstance(cats, dict):
-        return False
-    lacking = [cat for cat, definition in cats.items()
-               if isinstance(definition, dict) and any(key not in definition for key in RELATIONSHIP_KEYS)]
-    if not lacking:
-        return False
-    template_cats = load_template()['cats']
-    added = False
-    for cat in lacking:
-        definition, template_definition = cats[cat], template_cats.get(cat)
-        if template_definition is None:
-            continue
-        if 'links' not in definition:
-            definition['links'] = prune_link_rules(template_definition['links'], cats)
-            added = True
-        if 'validators' not in definition:
-            definition['validators'] = prune_validators(template_definition['validators'], cats,
-                                                        definition.get('attrs', {}))
-            added = True
-    return added
-
-
 def resolve_config(stored):
     """
-    New, independent configuration from a stored Project.config value (the template if empty), completed in memory
-    by add_missing_relationship_settings and without SERVER_ONLY_GENERAL_KEYS.
+    New, independent configuration from a stored Project.config value (the template if empty), without
+    SERVER_ONLY_GENERAL_KEYS.
     """
     config = copy.deepcopy(stored) if stored else load_template()
-    if stored:
-        add_missing_relationship_settings(config)
     general = config.get('general')
     if isinstance(general, dict):
         for key in SERVER_ONLY_GENERAL_KEYS:

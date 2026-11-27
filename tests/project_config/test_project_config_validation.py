@@ -862,15 +862,6 @@ class InitializedConfigurationTests(Assertions, EditorTestCase):
                       'value "LEGACY" of 1 item(s) is not a choice' % project.id, stderr.getvalue())
         self.assertTrue(project.config)
 
-    def test_a_configuration_stored_before_phase_3_is_completed_before_it_is_valid(self):
-        legacy = base_config()
-        for definition in legacy['cats'].values():
-            del definition['links']
-            del definition['validators']
-        self.assert_error(legacy, 'cats.Packet.links', 'is required')
-        self.assert_error(legacy, 'cats.DataItem.validators', 'is required')
-        self.assert_valid(resolve_config(legacy))
-
     def test_a_filtered_configuration_uses_the_shared_cleanup(self):
         project, _ = self.make_project('Shared', owner=self.owner, cats=['Packet'])
         with mock.patch.object(project_config, 'remove_dangling_references', wraps=remove_dangling_references) as spy:

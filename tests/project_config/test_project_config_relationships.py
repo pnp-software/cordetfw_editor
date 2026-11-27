@@ -7,8 +7,6 @@ from types import SimpleNamespace
 from unittest import mock
 
 from django.core.management import call_command
-from django.db import connection
-from django.test.utils import CaptureQueriesContext
 
 import editor
 from editor.cat_validators import VALIDATORS, check_validator_specs, run_validators
@@ -16,8 +14,7 @@ from editor.configs import do_cat_specific_checks, get_p_link_choices, get_s_lin
 from editor.forms import SpecItemForm
 from editor.link_rules import check_link_rule, check_link_rules, check_trac_settings, get_link_choices
 from editor.models import Project, SpecItem, ValSet
-from editor.project_config import (add_missing_relationship_settings, filter_template_for_data, get_project_config,
-                                   load_template, resolve_config)
+from editor.project_config import filter_template_for_data, get_project_config, load_template
 from tests.project_config.base import ALL_CATS, EditorTestCase, TEMPLATE, now
 
 # A category not listed offers no choices.
@@ -503,110 +500,6 @@ class ValidatorRegistryTests(RelationshipTestCase):
             self.assertEqual(run_validators(None, {}, [{'name': 'probe', 'params': {'text': 'x'}}], 'v'), 'probe says no')
         self.assertEqual(called, [{'text': 'x'}])
         self.assertNotIn('probe', VALIDATORS)
-
-
-class LegacyConfigurationTests(RelationshipTestCase):
-    """A stored configuration without `links`/`validators` is completed, never overwritten."""
-
-    def legacy(self, cats=None):
-        """The template (or its form filtered for `cats`) without `links` and `validators`."""
-        if cats is None:
-            config = copy.deepcopy(TEMPLATE)
-        else:
-            project, _ = self.make_project('Legacy_' + '_'.join(cats), owner=self.owner, cats=cats)
-            config = filter_template_for_data(load_template(), project)
-        for definition in config['cats'].values():
-            del definition['links'], definition['validators']
-        return config
-
-    def test_missing_settings_are_added_in_memory_only(self):
-        stored = self.legacy()
-        snapshot = copy.deepcopy(stored)
-        self.project.config = stored
-        self.project.save(update_fields=['config'])
-        config = get_project_config(Project.objects.get(id=self.project.id))
-        for cat in ALL_CATS:
-            self.assertEqual(config['cats'][cat]['links'], TEMPLATE['cats'][cat]['links'], cat)
-            self.assertEqual(config['cats'][cat]['validators'], TEMPLATE['cats'][cat]['validators'], cat)
-        self.assertEqual(schema_errors(config), [])
-        self.assertEqual(Project.objects.get(id=self.project.id).config, snapshot)
-        self.assertEqual(stored, snapshot)
-
-    def test_legacy_projects_keep_their_choices(self):
-        self.project.config = self.legacy()
-        self.project.save(update_fields=['config'])
-        service = self.make(self.project, 'Service', 'svc')
-        self.assertEqual(list(get_p_link_choices('Packet', self.project, None, None, None, get_project_config(self.project))), [service])
-
-    def test_owner_managed_settings_are_never_overwritten(self):
-        stored = self.legacy(['Packet', 'Service', 'EnumType', 'DataItem'])
-        stored['cats']['Packet']['links'] = {}                                        # the owner removed the rules
-        stored['cats']['DataItem']['validators'] = []                                 # ... and a validator
-        stored['cats']['Service']['links'] = {'s_link': {'targets': ['EnumType']}}
-        config = resolve_config(stored)
-        self.assertEqual(config['cats']['Packet']['links'], {})
-        self.assertEqual(config['cats']['DataItem']['validators'], [])
-        self.assertEqual(config['cats']['Service']['links'], {'s_link': {'targets': ['EnumType']}})
-        self.assertEqual(config['cats']['DataItem']['links'], {'p_link': {'targets': ['EnumType']}})     # missing: added
-        self.assertEqual(config['cats']['Service']['validators'], [])
-
-    def test_added_settings_refer_only_to_categories_of_the_configuration(self):
-        config = resolve_config(self.legacy(['Packet', 'DataItem']))
-        self.assertEqual(config['cats']['Packet']['links'], {})                       # Service, EnumType not configured
-        self.assertEqual(config['cats']['DataItem']['links'], {})
-        self.assertEqual(config['cats']['DataItem']['validators'], [])               # EnumType, EnumValue not configured
-        self.assertEqual(schema_errors(config), [])
-
-    def test_categories_unknown_to_the_template_are_left_alone(self):
-        stored = self.legacy(['Packet'])
-        stored['cats']['Widget'] = {'name': 'Widget', 'attrs': {}}
-        config = resolve_config(stored)
-        self.assertEqual(config['cats']['Widget'], {'name': 'Widget', 'attrs': {}})
-
-    def test_current_configurations_are_not_touched_and_the_template_is_not_read(self):
-        stored = copy.deepcopy(TEMPLATE)
-        with mock.patch('editor.project_config.load_template', side_effect=AssertionError):
-            self.assertFalse(add_missing_relationship_settings(stored))
-            resolve_config(stored)
-        self.assertEqual(stored, TEMPLATE)
-
-    def test_malformed_configurations_do_not_raise(self):
-        for stored in ({'cats': []}, {'cats': {'A': 'x'}}, {'general': {}}, {'cats': None}):
-            self.assertFalse(add_missing_relationship_settings(copy.deepcopy(stored)))
-            resolve_config(stored)
-        self.assertFalse(add_missing_relationship_settings([]))
-
-    def run_command(self, *args):
-        call_command('init_project_configs', *args, stdout=mock.MagicMock(), stderr=mock.MagicMock())
-
-    def test_the_command_persists_the_upgrade_only_when_asked(self):
-        stored = self.legacy(['Packet', 'Service', 'EnumType', 'DataItem', 'EnumValue'])
-        stored['cats']['Packet']['links'] = {}
-        self.project.config = stored
-        self.project.save(update_fields=['config'])
-        updated_at = Project.objects.get(id=self.project.id).updated_at
-        item = self.make(self.project, 'Service', 'svc')
-
-        self.run_command()
-        self.assertEqual(Project.objects.get(id=self.project.id).config, stored)       # skipped as before
-        self.run_command('--upgrade-format', '--dry-run')
-        self.assertEqual(Project.objects.get(id=self.project.id).config, stored)
-        self.run_command('--upgrade-format')
-
-        project = Project.objects.get(id=self.project.id)
-        self.assertEqual(project.updated_at, updated_at)
-        self.assertEqual(project.config['cats']['Packet']['links'], {})               # owner's choice kept
-        self.assertEqual(project.config['cats']['DataItem']['validators'], TEMPLATE['cats']['DataItem']['validators'])
-        self.assertEqual(project.config['cats']['EnumValue']['links'], TEMPLATE['cats']['EnumValue']['links'])
-        self.assertEqual(schema_errors(project.config), [])
-        for cat, definition in stored['cats'].items():                                  # nothing else changed
-            self.assertEqual({k: v for k, v in project.config['cats'][cat].items() if k not in ('links', 'validators')},
-                             {k: v for k, v in definition.items() if k not in ('links', 'validators')})
-        self.assertEqual(SpecItem.objects.get(id=item.id).name, 'svc')
-
-        with CaptureQueriesContext(connection) as queries:
-            self.run_command('--upgrade-format')
-        self.assertEqual([q['sql'] for q in queries.captured_queries if re.match(r'\s*(UPDATE|INSERT|DELETE)', q['sql'])], [])
 
 
 class InitializedConfigurationTests(RelationshipTestCase):
