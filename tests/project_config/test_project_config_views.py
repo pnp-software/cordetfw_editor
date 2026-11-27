@@ -1,9 +1,4 @@
-"""Phase 5: every read of the configuration is the configuration of the project of the request.
-
-Two projects with different settings for the same category, a category outside the template, hidden fields and
-categories (data, relationships, history, releases and exports unchanged), one configuration read per project and
-request, and no global configuration left in the production code.
-"""
+"""Every read of the configuration is the configuration of the project of the request."""
 import copy
 import csv
 import io
@@ -34,8 +29,6 @@ PRODUCTION_DIR = pathlib.Path(__file__).resolve().parents[2] / 'editor'
 
 
 class ConfiguredTestCase(EditorTestCase):
-    """EditorTestCase with helpers which store a project's own configuration."""
-
     def configure(self, project, transform=None):
         """Store the template, changed by transform(config) (which mutates or returns a new configuration)."""
         config = template_config()
@@ -273,11 +266,8 @@ class NewCategoryTests(ConfiguredTestCase):
 
 
 class HiddenFieldTests(ConfiguredTestCase):
-    """
-    Acceptance criterion 6: a field which the configuration does not define keeps its values, also when the item
-    is edited, copied or split. Here the fields are removed from the configuration; test_project_config_hidden.py
-    runs the same tests with fields hidden by their `hidden` setting (hide_attrs, assert_archived_definitions).
-    """
+    """Acceptance criterion 6, with the fields removed from the configuration. test_project_config_hidden.py reruns
+    these tests with fields hidden by `"hidden": true` (hooks hide_attrs, assert_archived_definitions)."""
 
     HIDDEN = ('rationale', 'remarks')
 
@@ -650,7 +640,7 @@ class ServerSettingTests(ConfiguredTestCase):
 
 
 class NoGlobalConfigurationTests(ConfiguredTestCase):
-    """Acceptance criterion 10 and the Phase 5 removal list: nothing global is left."""
+    """Acceptance criterion 10: nothing global is left."""
 
     def production_sources(self):
         for path in sorted(PRODUCTION_DIR.rglob('*.py')):

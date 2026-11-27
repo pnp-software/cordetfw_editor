@@ -16,8 +16,11 @@
   .venv/bin/pip install -r requirements.txt -c requirements-lock.txt
   ```
 - Configuration is read from `/etc/dj_cordetfw_config.json` (override the path with `CORDETFW_CONFIG_PATH`)
-  - Optional keys: `CSRF_TRUSTED_ORIGINS`, `AXES_LOCKOUT_PARAMETERS` (see `docs/migration/ROLLOUT.md`)
-- Set up a MySQL server (8.0.11 or later; tested with 8.0 and 8.4)
+  - Optional keys: `CSRF_TRUSTED_ORIGINS`, `AXES_LOCKOUT_PARAMETERS` (see `docs/migration/ROLLOUT.md`),
+    `TEMP_DIR` (directory for project export/import files, default `/tmp`; a server setting that is never
+    part of a project configuration)
+- Set up a MySQL server (8.0.11 or later; from 8.0.16 MySQL also enforces the `JSON_VALID` check of the project
+  configuration column; tested with 8.0 and 8.4)
 - If no database is available for import:
   - Create database cordetfw
   - In cordetfw_editor directory, run: `python3 manage.py createsuperuser` and create the `admin` user with superuser rights
@@ -32,9 +35,16 @@
 - STATICFILES_DIRS in `settings.py` contains an absolute path!
 - For the customization of the auto-completion list (e.g. changing number of entries): see issue #6
 
+### Project Configuration
+The configuration of each project is stored in the `config` column of `editor_project`;
+`editor/static/json/configs.json` is only the template. Usage: online help (`/editor/help/`, section
+*Project Configuration*).
+
 ### Tests
 See `CLAUDE.md` ("Tests"): `.venv/bin/python -m pytest -q`, the MySQL run, and `scripts/migration_gate.sh`.
 Install the test tools with `pip install -r requirements-test.txt`.
+The project configuration tests are in `tests/project_config/`; `test_project_config_acceptance.py` has one test
+per acceptance criterion (`test_criterion_NN_...`).
 
 ### Deployment
 `requirements.txt` lists the direct dependencies with exact versions; `requirements-lock.txt` pins the
@@ -52,9 +62,27 @@ For the Django 5.2 upgrade itself follow `docs/migration/ROLLOUT.md`.
   - `source python-app-venv/bin/activate`
   - `pip install -r requirements.txt -c requirements-lock.txt`
   - `python3 manage.py migrate --plan` (review), then `python3 manage.py migrate`
+    (first deployment of the project configuration: see the next section)
   - `python3 manage.py collectstatic`
   - `deactivate`
 5. `sudo systemctl reload apache2.service`
+
+#### First Deployment of the Project Configuration
+Back up the database before `migrate` (see below); migration `0014_project_config` adds the column. After `migrate`
+run `python3 manage.py init_project_configs --dry-run`, check its output, then `python3 manage.py init_project_configs`
+(it initializes the projects without a configuration; idempotent, project data is not changed).
+
+#### Backups and Restore Verification
+The new column must be part of the database backup. After the migration, verify once on the target server and with
+the operators' own backup and restore procedure (this is not verified by the test suite or by a local copy):
+1. Run the regular backup (or `mysqldump --single-transaction cordetfw > check.sql`); ``grep -c '`config` longtext' check.sql``
+   must be 1 and the `editor_project` rows must contain the configuration JSON.
+2. Restore it into a scratch database (`mysql cordetfw_restore_check < check.sql`) and compare
+   `SELECT id, name, JSON_VALID(config), JSON_LENGTH(config, '$.cats') FROM editor_project;` with the live database.
+3. Point a copy of the application at the scratch database and run `python3 manage.py init_project_configs --dry-run`
+   (every project must be reported as skipped) and open a project and its Configuration tab as owner.
+4. Drop the scratch database. Migration rollback: `migrate editor 0013` drops the column (the configuration is lost,
+   project data is not); the previous release ignores `config.json` in archives.
 
 #### Update `css`
 The CSS for the editor is created in an external tool and is tailored for the editor. 

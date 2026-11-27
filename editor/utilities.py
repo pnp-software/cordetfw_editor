@@ -58,7 +58,7 @@ def spec_item_to_edit(spec_item, config):
     
 def spec_item_to_latex(spec_item, config):
     """ 
-    The arguments are a specification item and the configuration of its project; the output is a dictionary as follows: 
+    The arguments are a specification item and its project configuration; the output is a dictionary as follows:
     - Key: label of the fields to be exported to latex format
     - Value: value of field in latex representation
     The field label is the label as given in the project configuration without spaces.  
@@ -94,7 +94,7 @@ def spec_item_to_latex(spec_item, config):
 
 def spec_item_to_export(spec_item, config):
     """ 
-    The arguments are a specification item and the configuration of its project; the output is a dictionary as follows: 
+    The arguments are a specification item and its project configuration; the output is a dictionary as follows:
     - Key: label of the fields to be exported
     - Value: value of field in export representation
     The field label is the label as given in the project configuration.  
@@ -212,7 +212,7 @@ def get_expand_items(config, cat, project_id, val_set_id, expand_id, expand_link
     If the expand_link is 'p_link', the expand_items the spec_items whose
     p_link points to expand_id (i.e. they are the children of expand_id 
     according to p_link).
-    The information in config['cats'][cat]['expand'] (config is the configuration of the project) determines whether or not
+    The information in config['cats'][cat]['expand'] determines whether or not
     a given spec_item has s_link or p_link children. 
     """
     expand_cat = config['cats'][cat]['expand'][expand_link]
@@ -378,7 +378,7 @@ def get_default_val_set_id(request, project):
 def del_release(request, release, n, config):
     """ 
         Recursively delete a release and its previous releases. If the depth of recursion 
-        exceeds general.max_depth of the project configuration 'config', an error is declared and False is returned.
+        exceeds config['general']['max_depth'], an error is declared and False is returned.
     """
     if n > config['general']['max_depth']:
         messages.error(request, 'Attempt to delete a release has reached the limit '+\
@@ -510,8 +510,7 @@ _EXTRA_ORDER_BY_FIELDS = ('domain', 'name', 'title')
 
 
 def _ui_order_by_fields(config):
-    """The sort fields the list templates offer: every 'order_by' key of the column definitions of the
-    project configuration (only names of SpecItem fields)."""
+    """The sort fields the list templates offer: every 'order_by' key (a SpecItem field) of the columns of 'config'."""
     fields = set(_EXTRA_ORDER_BY_FIELDS)
     model_fields = {field.name for field in SpecItem._meta.get_fields()}
     for cat_config in config['cats'].values():
@@ -524,9 +523,8 @@ def _ui_order_by_fields(config):
 
 
 def sanitize_order_by(order_by, config):
-    """Return order_by if it is a permitted sort field of the project configuration 'config', optionally
-    descending ('-field', accepted before the fix and kept for old bookmarks), else None (= default
-    domain:name order)."""
+    """Return order_by if it is a permitted sort field of 'config', optionally descending ('-field', accepted
+    before the fix and kept for old bookmarks), else None (= default domain:name order)."""
     if isinstance(order_by, str) and order_by.removeprefix('-') in _ui_order_by_fields(config):
         return order_by
     return None

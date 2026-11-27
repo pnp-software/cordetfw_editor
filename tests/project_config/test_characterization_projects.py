@@ -1,4 +1,3 @@
-"""Phase 0 characterization: project, application and ValSet administration (category rules of the forms)."""
 from django.contrib.messages import get_messages
 
 from editor.models import Application, Project, ProjectUser, Release, SpecItem, ValSet

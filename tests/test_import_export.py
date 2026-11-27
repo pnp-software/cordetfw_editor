@@ -31,8 +31,7 @@ D_FIXED = datetime(2024, 1, 15).date()
 
 PROJECT_MEMBERS = ['project.csv', 'applications.csv', 'val_sets.csv',
                    'project_users.csv', 'releases.csv', 'spec_items.csv']
-# Phase 7 of the project configuration feature: exports carry the configuration as a last, separate member;
-# the six csv members (names, content, order) are unchanged.
+# Project configuration feature: exports add config.json as the last member; the six csv members are unchanged.
 ARCHIVE_MEMBERS = PROJECT_MEMBERS + ['config.json']
 
 

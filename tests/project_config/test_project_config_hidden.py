@@ -1,10 +1,7 @@
-"""Hiding a field with the `hidden` setting of its definition, as opposed to deleting the definition (trash icon,
-config/remove).
+"""The `hidden` setting of an attribute, as opposed to deleting its definition (trash icon, config/remove).
 
-A hidden attribute stays in the stored configuration with its settings and the references to it (table columns,
-short descriptions, validators, ext_attrs). The item pages (forms, lists, references, item CSV import/export,
-Find & Replace, validators) use the configuration without it (`shown_config`), so for them a hidden field is a
-removed one: its values are kept. Clearing the setting shows the field again with everything it had. The
+A hidden attribute stays in the stored configuration with its settings and the references to it. The item pages use
+the configuration without it (`shown_config`), so for them it is a removed field whose values are kept. The
 configuration editor, the download and the project archive keep the setting.
 """
 import copy
@@ -125,8 +122,7 @@ class HiddenCleanupTests(SimpleTestCase):
 
 
 class HiddenSettingFieldTests(views_tests.HiddenFieldTests):
-    """The tests of a field which the configuration does not define, with the fields hidden by `"hidden": true`:
-    for the item pages a hidden field is a removed one (form, list, editing, copy, split, CSV, project export)."""
+    """Reruns HiddenFieldTests (fields removed from the configuration) with fields hidden by `"hidden": true`."""
 
     def hide_attrs(self, config, cat, attrs):
         return hide(config, cat, *attrs)
@@ -151,7 +147,6 @@ class HiddenSettingFieldTests(views_tests.HiddenFieldTests):
         self.assertIs(resolve_config(stored)['cats']['Service']['attrs']['rationale']['hidden'], True)
 
     def test_showing_the_field_again_restores_its_column_and_values(self):
-        # The reported case: hide, save, reload the page, show the field again -> it is back in forms and lists
         stored = self.stored()
         for attr in self.HIDDEN:
             del stored['cats']['Service']['attrs'][attr]['hidden']
@@ -195,7 +190,7 @@ class HiddenSettingFieldTests(views_tests.HiddenFieldTests):
 
 
 class HiddenSettingEditorTests(EndpointCase):
-    """The configuration editor works on the stored configuration: the setting is saved, reloaded and downloaded."""
+    """The configuration editor works on the stored configuration, not on the shown one."""
 
     def test_the_setting_is_saved_reloaded_and_downloaded(self):
         config = hide(self.valid_config(), 'Service', 'rationale')

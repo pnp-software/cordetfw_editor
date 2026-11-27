@@ -1,9 +1,8 @@
 """Validation of a project configuration (the JSON stored in Project.config).
 
-One function, `validate_config(config, project)`, is the single validator. It is used for a structured payload
-(the state of the editor forms), for raw JSON text (`validate_config_json`) and for an uploaded file
-(`validate_config_file`); the last two only parse their input and call it. It never raises for a malformed
-configuration, never modifies its argument and only reads the database (when `project` is given).
+`validate_config(config, project)` is the single validator, also behind `validate_config_json` (raw JSON text)
+and `validate_config_file` (an upload). It never raises for a malformed configuration, never modifies its argument
+and only reads the database (when `project` is given).
 
 Error contract: a list of `ConfigError(path, message)`; empty means valid. `path` is the JSON path of the
 offending setting, e.g. `cats.Packet.attrs.t1.label`, `cats.Packet.disp_def[2].attrs[0]`, `general.max_depth`;
@@ -165,10 +164,7 @@ def _tuples(problems, errors):
 
 
 def validate_config(config, project=None):
-    """
-    List of ConfigError for `config` (see the module docstring); empty if valid. With `project` the
-    configuration is also checked against the project's stored data (read only).
-    """
+    """List of ConfigError (see the module docstring); with `project` also checks the stored data."""
     errors = []
     if not isinstance(config, dict):
         return [ConfigError('', 'the configuration must be a JSON object')]
@@ -365,7 +361,6 @@ def _check_attrs(attrs, path, errors):
 
 
 def _check_name_list(names, path, attr_names, errors):
-    """A list of attribute names of the category."""
     if not isinstance(names, list):
         errors.append(ConfigError(path, 'must be a list'))
         return
@@ -551,9 +546,8 @@ def _reject_constant(name):
 
 def validate_config_json(text, project=None):
     """
-    Parse raw JSON text (str or UTF-8 bytes) and validate it with `validate_config`. Returns (config, errors);
-    config is None if the text cannot be parsed. Text over MAX_JSON_BYTES, a syntax error, NaN/Infinity,
-    very deep nesting and duplicate keys are reported as errors with the path of the setting.
+    Parse JSON text (str or UTF-8 bytes) and validate it. Returns (config, errors); config is None if unparsable.
+    Size over MAX_JSON_BYTES, syntax errors, NaN/Infinity, deep nesting and duplicate keys are errors.
     """
     if isinstance(text, bytes):
         if len(text) > MAX_JSON_BYTES:
@@ -582,10 +576,7 @@ def validate_config_json(text, project=None):
 
 
 def validate_config_file(uploaded, project=None):
-    """
-    Validate an uploaded configuration file (a Django UploadedFile or any binary file object). Returns
-    (config, errors) like `validate_config_json`. At most MAX_JSON_BYTES + 1 bytes are read.
-    """
+    """Like `validate_config_json` for an uploaded (binary) file; reads at most MAX_JSON_BYTES + 1 bytes."""
     try:
         data = uploaded.read(MAX_JSON_BYTES + 1)
     except (OSError, ValueError):

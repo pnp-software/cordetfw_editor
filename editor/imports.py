@@ -27,8 +27,7 @@ IMPORT_MAX_MEMBER_BYTES = 200 * 1024 * 1024         # uncompressed size of one e
 IMPORT_MAX_TOTAL_BYTES = 200 * 1024 * 1024          # uncompressed size of all entries
 IMPORT_MEMBERS = ('project.csv', 'applications.csv', 'val_sets.csv', 'project_users.csv',
                   'releases.csv', 'spec_items.csv')
-# Optional member (archives written before the project configuration existed lack it): the JSON of the
-# project configuration, at most MAX_JSON_BYTES.
+# Optional member (older archives lack it): the JSON of the project configuration, at most MAX_JSON_BYTES.
 CONFIG_MEMBER = 'config.json'
 IMPORT_MAX_CONFIG_ERRORS_SHOWN = 10
 
@@ -224,9 +223,8 @@ def config_rejection(errors):
 
 def value_is_image(cat, template_cats, config):
     """
-    Whether the value of items of this category is an SVG image which must pass check_svg_value. The template
-    (template_cats, its `cats`) decides as well as the archive's configuration: hiding a category or changing its
-    value kind in an archive must not skip the check for the stored data.
+    Whether the value of items of `cat` is an SVG image which must pass check_svg_value: per the template or the
+    archive's configuration, so an archive cannot skip the check by hiding a category or changing its value kind.
     """
     for cats in (template_cats, (config or {}).get('cats', {})):
         if cats.get(cat, {}).get('attrs', {}).get('value', {}).get('kind') == 'image':
@@ -236,13 +234,10 @@ def value_is_image(cat, template_cats, config):
 
 def store_project_config(project, archive_config_text):
     """
-    Give the imported project its configuration; called when all items are saved and linked, inside the
-    import transaction, so any ImportAborted raised here undoes the whole import.
-    With a configuration in the archive: it is validated against the imported data and stored by the shared
-    save_project_config (the same path as the owner's Save; the project is new, its stored value is {}).
-    Without: the shared filter_template_for_data of the data actually imported; problems of that proposal
-    are logged but do not reject the archive or add a message (init_project_configs also stores its proposal);
-    the owner sees them when validating the configuration.
+    Give the imported project its configuration, inside the import transaction (ImportAborted undoes the import).
+    An archive configuration is validated against the imported data and stored by save_project_config (as the
+    owner's Save; the new project's stored value is {}). Without one, filter_template_for_data of the imported data
+    is stored; its problems are only logged (as by init_project_configs) and shown when the owner validates.
     """
     if archive_config_text is not None:
         try:
@@ -297,9 +292,8 @@ def _import_project_tables(imp_dir, notes):
     template_cats = load_template()['cats']
 
     def cat_is_defined(cat):
-        # The template is the authority; an archive configuration may define further categories. A category
-        # defined by neither is rejected: an archive does not say which categories the owner has hidden, so the
-        # items of a hidden owner-defined category cannot be told from forged ones (open item, see the report).
+        # An archive configuration may add categories to the template's. Others are rejected: an archive does not
+        # say which categories the owner has hidden, so their items cannot be told from forged ones.
         return cat in template_cats or (has_config and cat in config['cats'])
 
     for cat in project_dict['cats'].split(','):

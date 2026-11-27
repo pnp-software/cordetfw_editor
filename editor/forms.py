@@ -25,9 +25,8 @@ def validate_identifier(value):
 
 class CatPicker(forms.TextInput):
     """
-    Comma-separated category list, shown as two lists (categories not added / added) with arrow buttons
-    (editor/static/cat_picker.js). The posted value stays the comma-separated text; without JavaScript the
-    plain text input is used.
+    Comma-separated category list shown as two lists (not added / added) with arrow buttons (static/cat_picker.js).
+    The posted value stays the text, which is also the input without JavaScript.
     """
     def __init__(self, attrs=None):
         super().__init__(attrs)
@@ -35,9 +34,8 @@ class CatPicker(forms.TextInput):
 
     def set_options(self, cat_ids, config, level=None):
         """
-        Categories offered, in this order, labelled with their name in the configuration 'config'. With 'level',
-        a category of another level is not offered: if it is already in the list it is shown with a note (it can
-        be removed, not added).
+        Categories offered, in this order, labelled with their name in 'config'. With 'level', a category of another
+        level is not offered; if already listed it is shown with a note (it can be removed, not added).
         """
         cats = config.get('cats', {}) if isinstance(config, dict) else {}
         options = []
@@ -62,10 +60,7 @@ class ProjectForm(forms.Form):
     description = forms.CharField(widget=forms.Textarea)
 
     def __init__(self, project, *args, config=None, **kwargs):
-        """
-        The categories which the project may use are the ones defined by its configuration 'config' (default:
-        the configuration of 'project'; the template for a new project, which has none yet).
-        """
+        """Allowed categories are those of 'config' (default: the project's configuration, the template if new)."""
         super(ProjectForm, self).__init__(*args, **kwargs)
         if config is None:
             config = get_project_config(project) if project is not None else load_template()
@@ -192,10 +187,7 @@ class SpecItemForm(forms.Form):
     cancel = forms.CharField(label='Cancel')
 
     def __init__(self, mode, request, cat, project, application, config, s_parent_id, p_parent_id, *args, item_id=None, **kwargs):
-        """
-        'config' is the configuration of the project (one read per request, see get_request_config); the
-        category 'cat' must be defined in it. Its definition is self.config.
-        """
+        """'config': the project configuration (see get_request_config), which must define 'cat' (self.config)."""
         super(SpecItemForm, self).__init__(*args, **kwargs)
         self.project = project
         self.application = application
@@ -231,7 +223,6 @@ class SpecItemForm(forms.Form):
         self.fields['t5'].widget.attrs.update(rows = 1)
         self.fields['p_kind'].choices = get_p_kind_choices(self.project_config, cat)
         self.fields['s_kind'].choices = get_s_kind_choices(self.project_config, cat)
-        # Relationship rules and category validators come from the configuration of the project
         self.fields['p_link'].queryset = get_p_link_choices(cat, self.project, self.application, p_parent_id,
                                                             s_parent_id, self.project_config)
         self.fields['s_link'].queryset = get_s_link_choices(cat, self.project, self.application, s_parent_id,

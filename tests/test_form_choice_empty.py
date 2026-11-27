@@ -9,7 +9,7 @@ from tests.test_forms import build, world, ALL_CATS  # noqa: F401  (world is a f
 
 pytestmark = pytest.mark.django_db
 
-configs = template_config()       # the configuration of a project which has none of its own (read-only here)
+configs = template_config()
 
 BLANK = ('', '---------')
 

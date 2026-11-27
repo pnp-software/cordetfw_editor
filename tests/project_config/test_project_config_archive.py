@@ -1,4 +1,3 @@
-"""Phase 7: the project archive carries the project configuration (config.json) and import restores it."""
 import copy
 import csv
 import io
@@ -25,8 +24,6 @@ UNSAFE_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><
 
 
 class ArchiveTestCase(EditorTestCase):
-    """Helpers: export, archive surgery, import as staff user, row counts."""
-
     def setUp(self):
         super().setUp()
         self.boss = self.make_user('boss', is_staff=True)

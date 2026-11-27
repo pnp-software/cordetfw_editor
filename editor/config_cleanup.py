@@ -1,24 +1,13 @@
 """Reference cleanup for a project configuration after a category or an attribute definition is removed.
 
-Removing a definition deletes it from the configuration (its stored data is never touched: the values stay
-with the items and in the project export). The configuration must not keep references to it, so before saving
-the references are removed from everything that can name a category or an attribute: `expand`, `tracs`,
-`links` (targets/all_except), `validators`, `short_desc`, `ext_attrs` and the `disp_*` table layouts. The
-removed settings are not kept anywhere: defining it again starts from new settings. Every function returns a
-new configuration and leaves its argument untouched; nothing here reads or writes the database. Malformed parts
-are left as they are (reporting them is the job of `editor.config_validation.validate_config`), so the functions
-can be applied to unvalidated input.
+Removing a definition never touches its stored data (the values stay with the items and in the project export),
+but the configuration must not keep references to it in `expand`, `tracs`, `links`, `validators`, `short_desc`,
+`ext_attrs` or the `disp_*` layouts. Every function returns a new configuration and leaves its argument untouched;
+nothing here uses the database. Malformed parts are left as they are (validate_config reports them), so the
+functions can be applied to unvalidated input.
 
-An attribute definition with `"hidden": true` is kept in the stored configuration together with the references
-to it; the item pages use the configuration without it (`remove_hidden_attributes`), so for them a hidden
-attribute is exactly a removed one, and clearing the flag shows it again with all its settings.
-
-* `remove_category(config, cat)` / `remove_attribute(config, cat, attr)`: delete the definition and the
-  references to it; no other part of any category changes.
-* `remove_dangling_references(config)`: remove every reference to a category or attribute which is not
-  defined (the owner deleted definitions by hand in the JSON editor, or a template was filtered for data).
-* `hidden_attributes(definition)`, `remove_hidden_attributes(config)`, `shown_columns(columns, hidden)`: the
-  hidden attributes of a category definition, the configuration without them, a layout without them.
+An attribute definition with `"hidden": true` stays in the stored configuration with the references to it; the
+item pages use the configuration without it (`remove_hidden_attributes`), so for them it is exactly a removed one.
 """
 import copy
 
@@ -43,10 +32,7 @@ def _is_name(value):
 
 
 def _clean_definition(definition, cats, attrs):
-    """
-    Remove from one category definition the references to categories not `in cats` and to attributes of this
-    category not `in attrs` (membership containers).
-    """
+    """In place: drop references to categories not `in cats` and attributes not `in attrs` (membership tests)."""
     if not isinstance(definition, dict):
         return
     if isinstance(definition.get('ext_attrs'), list):
@@ -144,10 +130,7 @@ def has_hidden_attributes(config):
 
 
 def remove_hidden_attributes(config):
-    """
-    Copy of `config` without the hidden attribute definitions and without the references to them in their
-    category (as `remove_attribute` for each of them): the configuration as the item pages use it.
-    """
+    """Copy of `config` without the hidden attribute definitions and the references to them (as remove_attribute)."""
     config = copy.deepcopy(config)
     cats = _cats_of(config)
     if cats is not None:

@@ -7,11 +7,9 @@ from editor.link_rules import get_link_choices
 #-------------------------------------------------------------------------------------------------
 # Accessors which take the configuration explicitly (from get_project_config / get_request_config)
 def has_cat(config, cat):
-    """True if the configuration defines the category."""
     return cat in config['cats']
 
 def get_cat_config(config, cat):
-    """Definition of a category; KeyError if the configuration does not define it."""
     return config['cats'][cat]
 
 def get_attr_config(config, cat, attr):
@@ -24,8 +22,7 @@ def get_general_setting(config, key):
 
 #-------------------------------------------------------------------------------------------------
 # Relationship choices and category-specific checks, driven by the `links` and `validators` settings of the
-# category in the project configuration (see editor/link_rules.py and editor/cat_validators.py).
-# `config` is the full configuration of the project (get_request_config in a view).
+# category (editor/link_rules.py, editor/cat_validators.py); `config` is the full project configuration.
 
 def get_p_link_choices(cat, project, application, p_parent_id, s_parent_id, config):
     """ 

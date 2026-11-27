@@ -1,4 +1,3 @@
-"""Phase 0 characterization: link/kind choices, category-specific checks and validation rules."""
 from editor.configs import get_p_link_choices, get_s_link_choices
 from editor.forms import identifier_error
 from editor.models import SpecItem, ValSet
@@ -6,7 +5,7 @@ from tests.project_config.base import ALL_CATS, EditorTestCase, TEMPLATE
 from editor.utilities import get_p_kind_choices, get_s_kind_choices
 from editor.project_config import get_project_config
 
-# Rules currently hardcoded in editor/configs.py (see project_config_phase0_inventory.md)
+# Rules editor/configs.py hardcoded before the project configuration (now the `links` settings of the template)
 P_LINK_TARGETS = {
     'DataItem': ['DataItemType', 'EnumType'],
     'RiskScenario': ['OpContext'],
@@ -37,8 +36,6 @@ KIND_LITERALS = {
 
 
 class LinkChoicesTests(EditorTestCase):
-    """get_p_link_choices / get_s_link_choices for every category."""
-
     def setUp(self):
         super().setUp()
         self.other, _ = self.make_project('Other', cats=ALL_CATS)
@@ -242,8 +239,6 @@ class CategorySpecificCheckTests(EditorTestCase):
 
 
 class ValidationRuleTests(EditorTestCase):
-    """Identifier, uniqueness and alias (ValSet) rules of the item forms."""
-
     def setUp(self):
         super().setUp()
         self.service = self.make_item(self.project, 'Service', 'S', 'svc')

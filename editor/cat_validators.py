@@ -1,10 +1,9 @@
 """Registry of the category validators a project configuration can select (`cats.<Cat>.validators`).
 
-A configuration lists validators as {"name": NAME, "params": {...}}. NAME must be a key of VALIDATORS and the
-params must match its declaration; the registry maps names to functions defined in this module. Nothing is
-imported, evaluated or executed on the basis of a configuration value, and an unknown name or a malformed entry
-is a validation error (`check_validator_specs`, reusable by the configuration validator) and, if it reaches a
-form anyway, an error message which rejects the item (`run_validators`).
+A configuration lists validators as {"name": NAME, "params": {...}}. NAME must be a key of VALIDATORS (functions
+of this module) and the params must match its declaration. Nothing is imported, evaluated or executed on the basis
+of a configuration value; an unknown name or a malformed entry is a validation error (`check_validator_specs`) and,
+if it reaches a form anyway, an error message which rejects the item (`run_validators`).
 
 Supported validators:
 

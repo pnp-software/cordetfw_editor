@@ -1,7 +1,5 @@
-"""Phase 8: configuration UI. Server side of the editor page (rendering, permissions, preview, remove/cleanup
-endpoint, escaping) and static guards for the script. The behavior of the script itself (dialogs, tooltips, reload,
-conflicts, layouts) was verified in a browser; the scenarios are listed in the report
-(project_config_implementation_progress.md, "Phase 8 Report")."""
+"""Server side of the configuration editor page and static guards for its script. The script's behaviour (dialogs,
+tooltips, reload, conflicts, layouts) is not automated here; it is checked manually in a browser."""
 import copy
 import json
 import re
@@ -335,7 +333,7 @@ class RemoveTests(UiCase):
         self.assertEqual(export.status_code, 200)
 
     def test_manual_json_and_uploads_cannot_bypass_the_removal_rules(self):
-        # A configuration with a dangling reference (hand-edited) is refused by all three entry points
+        # Deleting VerLink by hand leaves dangling references, which every entry point refuses
         config = self.valid_config()
         del config['cats']['VerLink']
         errors = {}
@@ -384,8 +382,7 @@ class RemoveTests(UiCase):
 
 
 class SharedValidatorIntegrationTests(UiCase):
-    """Forms (structured payload), the JSON editor and an uploaded file reach the same validator with the
-    project: the three ways in which the UI produces a configuration."""
+    """The three ways the UI produces a configuration (forms, JSON editor, uploaded file) use the same validator."""
 
     def calls(self, action):
         with mock.patch.object(config_validation, 'validate_config', wraps=validate_config) as spy, \
@@ -427,8 +424,6 @@ class SharedValidatorIntegrationTests(UiCase):
 
 
 class ScriptGuardTests(UiCase):
-    """Static guards for the browser script (see the module docstring for what was verified in a browser)."""
-
     def setUp(self):
         super().setUp()
         self.script = SCRIPT.read_text(encoding='utf-8')
@@ -454,7 +449,6 @@ class ScriptGuardTests(UiCase):
         self.assertIn('the category is no longer shown in the menus, lists and forms of this project', text)
         self.assertIn('it is no longer shown in its forms, lists and CSV exports', text)
         self.assertIn("confirmDialog(title, body, 'Delete', 'bi-trash-fill')", self.script)
-        # the dialog says what is lost and points to hiding, which keeps it
         self.assertIn('its settings and the references to it have to be set up again', text)
         self.assertIn('its settings, table columns and short descriptions have to be set up again', text)
         self.assertIn('To keep them, hide the field instead', text)

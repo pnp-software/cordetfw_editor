@@ -20,7 +20,7 @@ from editor.project_config import get_project_config
 
 pytestmark = pytest.mark.django_db
 
-configs = template_config()       # the configuration of a project which has none of its own (read-only here)
+configs = template_config()
 
 CATS = 'DataItem,EnumType,EnumValue,DataItemType'
 

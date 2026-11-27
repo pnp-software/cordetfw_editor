@@ -1,8 +1,4 @@
-"""Phase 0 characterization: add/edit/copy/split/delete of items for every template category.
-
-The tests capture the behavior of the editor before the configuration refactoring and must keep passing
-afterwards. Test methods are generated per category so that a failure names the category.
-"""
+"""Item add/edit/copy/split/delete: the test methods are generated per category so that a failure names it."""
 from editor.models import SpecItem, ValSet
 from tests.project_config.base import (ALL_CATS, EditorTestCase, PARENT_PARAM_CATS, REQUIRED_LINKS, SVG, TEMPLATE, now)
 
@@ -18,8 +14,6 @@ DATA_ATTRS = ('domain', 'name', 'title', 'desc', 'value', 'rationale', 'remarks'
 
 
 class CrudMixin:
-    """Helpers shared by the generated CRUD tests."""
-
     def parent_query(self, parents):
         if not parents:
             return ''
@@ -74,7 +68,6 @@ def make_add_test(cat):
                 self.assertEqual(getattr(item, attr + '_id'), value, attr)
             else:
                 self.assertEqual(getattr(item, attr), value, attr)
-        # Attributes that are not configured for the category keep their defaults
         for attr in ('rationale', 'remarks', 'implementation', 't1', 't2', 't3', 't4', 't5', 'desc', 'value'):
             if attr not in TEMPLATE['cats'][cat]['attrs']:
                 self.assertEqual(getattr(item, attr), '', attr)
@@ -154,7 +147,7 @@ def make_copy_test(cat):
             self.assertEqual(SpecItem.objects.filter(project=self.project, cat=cat).count(), 1)
             return
         self.assertEqual(response.status_code, 302, getattr(response, 'context', None) and response.context['form'].errors)
-        self.assertEqual(self.snapshot(item), before)       # the original is untouched
+        self.assertEqual(self.snapshot(item), before)
         copy = SpecItem.objects.get(project=self.project, cat=cat, name='Copy1')
         self.assertNotEqual(copy.id, item.id)
         self.assertEqual(self.snapshot(copy), dict(before, name='Copy1'))

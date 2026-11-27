@@ -1,10 +1,5 @@
-"""Phase 9: one end-to-end test per acceptance criterion 1-14 of project_config_concept.md.
-
-Every test is named `test_criterion_NN_...` and drives the real endpoints/views (the owner saves a configuration with
-the save endpoint, then item pages, exports and imports are requested), asserting behavior and stored data. Finer
-grained tests of each mechanism live in the other modules of this package; the table in
-project_config_implementation_progress.md maps each criterion to both.
-"""
+"""One end-to-end test per acceptance criterion (1-14), through the real endpoints and views; finer grained tests
+live in the other modules of this package."""
 import copy
 import csv
 import io
@@ -38,7 +33,6 @@ class AcceptanceTests(EndpointCase):
         self.login(self.owner)                          # self.client acts as the owner of self.project
         self.other_val_set = ValSet.objects.get(project=self.other_project, name='Default')
 
-    # ------------------------------------------------------------------ helpers
     def cfg(self, project=None):
         return copy.deepcopy(get_project_config(Project.objects.get(id=(project or self.project).id)))
 
@@ -95,7 +89,6 @@ class AcceptanceTests(EndpointCase):
         self.assertEqual(response.status_code, 200, response.content)
         return response.json()['config']
 
-    # ------------------------------------------------------------------ 1
     def test_criterion_01_two_projects_have_the_same_category_with_different_settings(self):
         first, second = self.cfg(), self.cfg(self.other_project)
         first['cats']['Service'].update(name='Alpha Service', page_size=2)
@@ -119,12 +112,10 @@ class AcceptanceTests(EndpointCase):
         other_form = self.other_owner_client.get(
             self.url('add_spec_item', 'Service', self.other_project.id, 0, 'Sel_All', 0)).context['form']
         self.assertEqual((form.fields['title'].label, other_form.fields['title'].label), ('Alpha Title', 'Beta Title'))
-        # the stored settings are the ones saved, project by project
         self.assertEqual(self.stored()['cats']['Service']['name'], 'Alpha Service')
         self.assertEqual(self.stored(self.other_project)['cats']['Service']['abbr'], 'BSvc')
         self.assertNotEqual(self.stored()['cats']['Service']['abbr'], 'BSvc')
 
-    # ------------------------------------------------------------------ 2
     def test_criterion_02_the_owner_adds_a_category_saves_and_creates_an_item_without_code(self):
         self.assertFalse(self.owner.is_staff)               # the owner needs no staff status
         config = self.widget(self.cfg(), page_size=5)
@@ -142,13 +133,11 @@ class AcceptanceTests(EndpointCase):
         self.assertContains(listed, 'First widget')
         self.assertEqual(listed.context['config']['name'], 'Widget')
 
-        # Menus follow Project.cats (changed by staff through "edit project", see the Phase 5 report): once the
-        # category is listed there the project's menu offers it.
+        # Menus also need the category in Project.cats (changed by staff through "edit project").
         self.assertNotContains(self.client.get('/editor/'), 'Manage Widgets')
         self.add_to_project_cats('Widget')
         self.assertContains(self.client.get('/editor/'), 'Manage Widgets')
 
-    # ------------------------------------------------------------------ 3
     def test_criterion_03_validation_checks_structure_types_limits_references_and_data(self):
         self.make_item(self.project, 'Requirement', 'R', 'req', p_kind='STD', title='t')
         invalid = {}
@@ -187,7 +176,7 @@ class AcceptanceTests(EndpointCase):
                 self.assertEqual(response.status_code, 422, name)
                 self.assertTrue(any(e['path'].startswith(path) for e in response.json()['errors']),
                                 (path, response.json()['errors']))
-                self.assertEqual(self.stored(), stored)         # nothing was stored
+                self.assertEqual(self.stored(), stored)
 
         # Removing definitions is allowed with data when the remaining JSON is consistent; no data is deleted.
         before = self.snapshot()
@@ -198,7 +187,6 @@ class AcceptanceTests(EndpointCase):
         self.assertEqual(self.snapshot(), before)
         self.assertTrue(SpecItem.objects.filter(cat='Requirement', name='req', p_kind='STD').exists())
 
-    # ------------------------------------------------------------------ 4
     def test_criterion_04_a_saved_configuration_applies_to_the_next_request_without_restart(self):
         self.make_item(self.project, 'Service', 'D', 'svc', title='T')
         url = self.list_url('Service')
@@ -213,24 +201,20 @@ class AcceptanceTests(EndpointCase):
         # the same request path in a fresh Client: no per-process or shared state needed
         self.assertEqual(self.client_for(self.rw_user).get(url).context['config']['name'], 'Renamed Service')
 
-    # ------------------------------------------------------------------ 5
     def test_criterion_05_preview_failed_saves_reload_and_stale_saves(self):
         stored = self.stored()
         draft = self.cfg()
         draft['cats']['Service']['name'] = 'Draft Service'
-        # Preview renders the unsaved configuration and stores nothing
         response = self.post_json(self.owner_client, 'project_config_preview', draft)
         self.assertEqual(response.status_code, 200)
         self.assertIn('Draft Service', response.json()['html'])
         self.assertEqual(self.stored(), stored)
-        # A failed validation leaves the stored configuration unchanged (and renders no preview)
         broken = copy.deepcopy(draft)
         broken['cats']['Service']['page_size'] = 0
         response = self.save(self.owner_client, broken)
         self.assertEqual(response.status_code, 422)
         self.assertEqual(self.stored(), stored)
         self.assertNotIn('html', self.post_json(self.owner_client, 'project_config_preview', broken).json())
-        # Reload returns the stored configuration and writes nothing
         reloaded = self.owner_client.get(self.curl('project_config_reload')).json()
         self.assertEqual(reloaded['config'], get_project_config(self.project))
         self.assertEqual(reloaded['token'], config_token(self.stored()))
@@ -254,7 +238,6 @@ class AcceptanceTests(EndpointCase):
         self.assertIn('Discard unsaved changes?', script)
         self.assertIn('state.conflict = true', script)
 
-    # ------------------------------------------------------------------ 6
     def test_criterion_06_removing_a_field_does_not_delete_its_values_also_after_editing(self):
         item = self.make_item(self.project, 'Requirement', 'R', 'req', title='Req', value='v', p_kind='STD',
                               s_kind='TST', rationale='keep this rationale', remarks='keep these remarks')
@@ -274,13 +257,11 @@ class AcceptanceTests(EndpointCase):
         item = self.refresh(item)
         self.assertEqual((item.title, item.rationale, item.remarks, item.p_kind, item.s_kind),
                          ('Edited', 'keep this rationale', 'keep these remarks', 'STD', 'TST'))
-        # restoring the definition shows the stored value again
         restored = self.cfg()
         restored['cats']['Requirement']['attrs']['rationale'] = load_template()['cats']['Requirement']['attrs']['rationale']
         self.save_ok(restored)
         self.assertContains(self.client.get(edit_url), 'keep this rationale')
 
-    # ------------------------------------------------------------------ 7
     def test_criterion_07_a_category_can_be_hidden_without_touching_items_history_releases_or_assignments(self):
         project = self.project
         info = self.make_item(project, 'InfoItem', 'I', 'info', title='Info', value='iv')
@@ -299,7 +280,6 @@ class AcceptanceTests(EndpointCase):
         self.assertEqual(self.refresh(info2).previous_id, info.id)
         self.assertEqual(self.client.get(self.list_url('Packet')).status_code, 200)
 
-    # ------------------------------------------------------------------ 8
     def test_criterion_08_restoring_a_category_shows_its_items_hidden_ones_do_not_break_references_and_export_keeps_them(self):
         svc = self.make_item(self.project, 'Service', 'S', 'svc', title='Svc', status='CNF')
         pkt = self.make_item(self.project, 'Packet', 'P', 'pkt', title='Pkt', p_link=svc, status='CNF')
@@ -312,16 +292,13 @@ class AcceptanceTests(EndpointCase):
         self.assertContains(listed, 'S:svc')
         self.assertEqual(self.client.get('/editor/').status_code, 200)
         self.assertEqual(self.client.get(self.item_url('edit_spec_item', pkt)).status_code, 200)
-        # project export keeps the hidden items
         rows = self.spec_item_rows(self.export_bytes(self.project))
         self.assertIn(('Service', 'svc'), [(r['cat'], r['name']) for r in rows])
-        # restoring the definition makes the items visible again
         self.save_ok(full)
         restored = self.client.get(self.list_url('Service'))
         self.assertEqual(restored.status_code, 200)
         self.assertEqual([i.name for i in restored.context['page_items']], ['svc'])
 
-    # ------------------------------------------------------------------ 9
     def test_criterion_09_only_the_project_owner_can_access_or_modify_the_configuration(self):
         stored = self.stored()
         valid = self.cfg()
@@ -362,11 +339,9 @@ class AcceptanceTests(EndpointCase):
                                   content_type='application/json', headers={'X-Config-Token': token})
         self.assertEqual(response.status_code, 403)
         self.assertEqual(self.stored(), stored)
-        # the link to the tab is shown to the owner only
         self.assertIn(self.curl('project_config'), self.owner_client.get('/editor/').content.decode())
         self.assertNotIn(self.curl('project_config'), self.client_for(self.rw_user).get('/editor/').content.decode())
 
-    # ------------------------------------------------------------------ 10
     def test_criterion_10_forms_lists_references_import_export_and_history_use_the_projects_configuration(self):
         first, second = self.cfg(), self.cfg(self.other_project)
         first['cats']['Service']['name'] = 'Alpha Service'
@@ -377,7 +352,6 @@ class AcceptanceTests(EndpointCase):
         a = self.make_item(self.project, 'Service', 'D', 'svc', title='Svc A', status='CNF')
         b = self.make_item(self.other_project, 'Service', 'D', 'svc', title='Svc B', status='CNF')
         self.make_item(self.project, 'Packet', 'P', 'pkt', title='Pkt', p_link=a, status='CNF')
-        # lists, forms, history, references
         self.assertContains(self.owner_client.get(self.list_url('Service')), 'Alpha Service')
         self.assertContains(self.other_owner_client.get(
             self.list_url('Service', project=self.other_project, val_set=self.other_val_set)), 'Beta Service')
@@ -390,7 +364,6 @@ class AcceptanceTests(EndpointCase):
                              'Sel_All', 0)
         self.assertIn(';', self.owner_client.get(csv_url).content.decode().splitlines()[0])
         self.assertIn('|', self.other_owner_client.get(other_csv).content.decode().splitlines()[0])
-        # project archive: the configuration of the project and of no other
         archive = self.export_bytes(self.project)
         members = {n: zipfile.ZipFile(io.BytesIO(archive)).read(n) for n in zipfile.ZipFile(io.BytesIO(archive)).namelist()}
         self.assertEqual(json.loads(members['config.json']), self.cfg())
@@ -423,7 +396,6 @@ class AcceptanceTests(EndpointCase):
         archive = self.export_bytes(project, self.other_owner_client if project == self.other_project else None)
         return zipfile.ZipFile(io.BytesIO(archive)).read('config.json').decode()
 
-    # ------------------------------------------------------------------ 11
     def test_criterion_11_the_configuration_is_one_json_column_without_history_status_or_files(self):
         from django.apps import apps
         from django.db import models as dj_models, connection
@@ -455,20 +427,17 @@ class AcceptanceTests(EndpointCase):
             tables = {t for t in connection.introspection.table_names(cursor) if t.startswith('editor_')}
         self.assertFalse([t for t in tables if 'config' in t])
 
-    # ------------------------------------------------------------------ 12
     def test_criterion_12_existing_and_new_categories_use_the_same_relationship_rules_and_validators(self):
         service = self.make_item(self.project, 'Service', 'D', 'svc', title='Svc')
         enum_type = self.make_item(self.project, 'EnumType', 'D', 'et', title='ET')
         config = self.widget(self.cfg(), source='Packet')                  # a new category with Packet's rules
         config['cats']['Widget']['links'] = copy.deepcopy(config['cats']['Packet']['links'])
         self.save_ok(config)
-        # the same choices for the new and the existing category
         def p_link_choices(cat):
             form = self.client.get(self.add_url(cat)).context['form']
             return [c[0] for c in form.fields['p_link'].choices if c[0]]
         self.assertEqual(p_link_choices('Widget'), p_link_choices('Packet'))
         self.assertEqual(p_link_choices('Packet'), [service.id])
-        # the same acceptance and rejection when an item is added
         for cat in ('Packet', 'Widget'):
             url = self.add_url(cat)
             payload = self.add_payload('Packet', {'p_link': service}, name=cat.lower() + '1')
@@ -497,10 +466,8 @@ class AcceptanceTests(EndpointCase):
                     offenders.append('%s:%d' % (path.relative_to(PRODUCTION), number))
         self.assertEqual(offenders, [])
 
-    # ------------------------------------------------------------------ 13
     def test_criterion_13_removing_a_definition_asks_for_confirmation_naming_it_and_promising_the_data_is_kept(self):
         script = (PRODUCTION / 'static' / 'project_config.js').read_text(encoding='utf-8')
-        # the dialog names the definition, says it will no longer be shown and that saved data is not deleted
         text = re.sub(r"'\s*\+\s*'", '', script)                  # the texts as the dialog shows them
         self.assertEqual(text.count('Its saved data will not be deleted'), 2)
         self.assertIn('will be deleted from the configuration: the category is no longer shown in the menus, lists '
@@ -523,7 +490,6 @@ class AcceptanceTests(EndpointCase):
         self.assertEqual(self.refresh(item).rationale, 'kept')
         self.assertEqual(self.stored(), {})
 
-    # ------------------------------------------------------------------ 14
     def test_criterion_14_existing_projects_are_initialized_from_the_template_filtered_to_their_data(self):
         legacy, _ = self.make_project('Legacy', owner=self.owner, cats=['Service', 'Packet'])
         app = self.make_application(legacy, 'LApp', cats=[])
@@ -542,7 +508,6 @@ class AcceptanceTests(EndpointCase):
         self.assertEqual(self.snapshot(legacy), before)                         # data untouched
         # the other projects, which are also configured by the command, are independent of this one
         self.assertEqual(set(self.stored(self.project)['cats']), set(load_template()['cats']))
-        # idempotent: a second run changes nothing
         call_command('init_project_configs', stdout=io.StringIO(), stderr=io.StringIO())
         self.assertEqual(self.stored(legacy), stored)
         # the owner reviews (download) and adjusts (save) the result

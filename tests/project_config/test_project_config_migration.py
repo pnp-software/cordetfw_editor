@@ -1,4 +1,3 @@
-"""Phase 1: migration 0012 (Project.config) applies forward and backward without touching existing data."""
 from datetime import datetime, timezone
 
 from django.db import connection
@@ -64,7 +63,7 @@ class ProjectConfigMigrationTests(TransactionTestCase):
         self.assertNotIn('config', project_columns())
         self.assertEqual(self.snapshot(back_apps), before)
 
-        again = self.migrate(AFTER)                                        # and forward once more
+        again = self.migrate(AFTER)
         self.assertEqual(again.get_model('editor', 'Project').objects.get().config, {})
         self.assertEqual(self.snapshot(again), before)
 

@@ -687,7 +687,6 @@
         editor.focus();
     }
 
-    // Hide or show a field: only its `hidden` setting changes, so showing it again restores everything.
     function toggleHidden(catId, attrId) {
         const attr = attrsOf(cats()[catId])[attrId];
         if (!isObj(attr)) {
@@ -934,7 +933,6 @@
             choiceEditor(id, def, 'p_kind'), choiceEditor(id, def, 's_kind')]);
     }
 
-    // A small icon button for the entries of a list (move, remove); `light` for use on a dark chip.
     function miniButton(icon, label, onClick, disabled, light) {
         return h('button', {
             type: 'button', class: 'btn btn-sm config-mini' + (light ? ' text-white' : ''), title: label,
@@ -942,10 +940,9 @@
         }, h('i', {class: 'bi ' + icon, 'aria-hidden': 'true'}));
     }
 
-    // A list of attribute names, in order, with buttons to move and remove each one and a picker for the unused
-    // ones. The order is the order of the JSON list. `read` is the object holding the list (possibly a stand-in),
-    // `write()` returns the real object, created only when edited. `vertical`: one entry per line (a table cell),
-    // otherwise chips in a row.
+    // Ordered list of attribute names with move/remove buttons and a picker for the unused ones. `read` holds the
+    // list (possibly a stand-in), `write()` returns the real object, created only when edited. `vertical`: one
+    // entry per line (a table cell), otherwise chips in a row.
     function attrListEditor(path, read, write, key, attrIds, def, vertical) {
         const names = asArr(read[key]);
         const edit = (change) => {
@@ -1228,7 +1225,6 @@
         return section('validators', 'Validators', asArr(def.validators).length + ' defined', validatorEditor(id, def));
     }
 
-    // Focus the control with the JSON path `path` after the editor was drawn again.
     function focusPath(path) {
         const el = Array.from($('category-editor').querySelectorAll('[data-path]')).find((e) => e.dataset.path === path);
         if (el) {
@@ -1240,10 +1236,8 @@
         }
     }
 
-    // A table layout drawn as the list it produces: one table column per layout column. Above the header row are
-    // the column tools (move, remove), the header row holds the column headers as in the list, the body the
-    // attributes of each column in the order the list shows them (or the link of a traceability column), the last
-    // row the sorting. The buttons next to the title add columns at the end.
+    // A table layout drawn as the list it produces, one table column per layout column: column tools (move,
+    // remove), headers, the attributes of each column (or the link of a traceability column) and the sorting.
     function layoutEditor(id, def, key, title) {
         const base = keyPath(keyPath('cats', id), key);
         const columns = asArr(def[key]);

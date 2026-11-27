@@ -18,7 +18,7 @@ from tests.factories import (FIXED_TIME, default_val_set, make_application, make
 
 pytestmark = pytest.mark.django_db
 
-configs = template_config()       # the configuration of a project which has none of its own (read-only here)
+configs = template_config()
 
 
 def make_request(user):

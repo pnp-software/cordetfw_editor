@@ -1,4 +1,4 @@
-"""Owner-only endpoints for the project configuration. The Configuration page (project_config.html, project_config.js) is built on them.
+"""Owner-only endpoints of the project configuration, used by the Configuration page (project_config.html/.js).
 
 All endpoints are below `<project_id>/config`. Access: anonymous users are redirected to the login page; every
 other user who is not the project's owner (RO/RW members, staff, owners of other projects) gets 403, also for a
@@ -13,8 +13,7 @@ method, so a non-owner never learns anything from a 405.
   POST config/save       body as validate, header `X-Config-Token`; validates and stores
   POST config/preview    body as validate; returns the rendered preview (HTML fragment) of a valid configuration
   POST config/remove     body {"config": ..., "cat": ..., "attr": ... (optional)}; returns the configuration without
-                         that definition and without the references to it; stores nothing (the trash icon;
-                         hiding a field is the `hidden` setting of its definition and needs no request)
+                         that definition and the references to it; stores nothing
 
 Responses are JSON: {"valid": bool, "errors": [{"path", "message"}], "config": parsed config or null} for
 validate/upload, {"valid": true, "html": ...} for preview, {"config": ..., "errors": [...]} for remove,

@@ -1,10 +1,5 @@
-"""Phase 4: validate_config, the reference cleanup and the shared validation of form, JSON and file input.
-
-Every rule has an invalid case (asserting the exact JSON path of the error) and a valid case. The template and the
-configurations produced by `init_project_configs` are validated with the same function. The HTTP endpoints and the
-configuration UI do not exist yet: the integration tests listed in project_config_implementation_progress.md
-("Outstanding integration tests") are due in Phases 6 and 8 and are deliberately not simulated here.
-"""
+"""Every rule has an invalid case (asserting the exact JSON path of the error) and a valid case. Validation through
+the HTTP endpoints, the UI and the archive import is tested in test_project_config_{endpoints,ui,archive}.py."""
 import copy
 import json
 import random

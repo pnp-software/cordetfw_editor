@@ -1,4 +1,3 @@
-"""Phase 1: Project.config, template filtering and the init_project_configs command."""
 import copy
 import csv
 import io
@@ -30,7 +29,6 @@ def assert_consistent(test, config):
                 test.assertIn(definition['expand'][link], ('None', *cats))
             for trac in definition['tracs']:
                 test.assertIn(trac['trac_cat'], cats)
-            # Phase 3 schema (editor/link_rules.py, editor/cat_validators.py)
             test.assertEqual(check_link_rules(definition['links'], 'links', set(cats)), [])
             test.assertEqual(check_trac_settings(definition['tracs'], 'tracs', set(cats)), [])
             test.assertEqual(check_validator_specs(definition['validators'], 'validators', config, cat), [])
@@ -92,7 +90,7 @@ class FilterTemplateTests(EditorTestCase):
         config = filter_template_for_data(load_template(), project)
         self.assertEqual(list(config['cats']), ['VerLink', 'Requirement', 'InfoItem'])
         for cat in config['cats']:                      # listed categories keep every definition
-            # Phase 3: except that relationship targets which are not in the configuration are removed
+            # Except that relationship targets which are not in the configuration are removed
             self.assertEqual({k: v for k, v in config['cats'][cat].items() if k != 'links'},
                              {k: v for k, v in TEMPLATE['cats'][cat].items() if k != 'links'})
         self.assertEqual(config['cats']['VerLink']['links'],
@@ -122,7 +120,6 @@ class FilterTemplateTests(EditorTestCase):
         for name, definition in requirement['attrs'].items():                          # definitions are unchanged
             self.assertEqual(definition, TEMPLATE['cats']['Requirement']['attrs'][name])
         self.assertEqual(set(config['cats']['DataItemType']['attrs']), {'domain', 'name', 'n1', 'val_set', 'owner'})
-        # Layouts and short descriptions no longer name the removed fields
         names = {a for layout in ('disp_def', 'disp_short', 'disp_trac') for c in requirement[layout] for a in c.get('attrs', [])}
         self.assertTrue(names <= set(requirement['attrs']))
         self.assertTrue(set(requirement['short_desc']['expand_text']) <= set(requirement['attrs']))
@@ -280,14 +277,14 @@ class InitProjectConfigsTests(EditorTestCase):
         self.assertEqual(sorted(Project.objects.get(id=self.p2.id).config['cats']), ['InfoItem', 'Requirement'])
 
     def test_the_global_configs_dictionary_no_longer_exists(self):
-        # Phase 5: the command (like everything else) works from the template file and the projects' data
+        # The command (like everything else) works from the template file and the projects' data
         import editor.configs
         self.assertFalse(hasattr(editor.configs, 'configs'))
         self.run_command()
         self.assertEqual(len(Project.objects.get(id=self.project.id).config['cats']), 30)
 
     def test_archive_project_csv_keeps_its_columns(self):
-        # Phase 7: the configuration travels in config.json, so project.csv is unchanged
+        # The configuration travels in config.json, so project.csv is unchanged
         self.run_command()
         with tempfile.TemporaryDirectory() as tmp, override_settings(TEMP_DIR=tmp):
             response = self.client.get(self.url('export_project', self.project.id))

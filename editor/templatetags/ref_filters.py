@@ -141,8 +141,7 @@ def disp_trac(context, spec_item, trac_cat, trac_link, sel_rel):
 @register.filter(is_safe=True)
 def filter_expand_tip(spec_item, project_config):
     """
-    The argument is a spec_item which appears in an "expand" list; project_config is the configuration of
-    its project.
+    The argument is a spec_item which appears in an "expand" list.
     The function returns the hovering tip for the spec_item.
     The tip is used inside a title="..." attribute: the stored values are escaped with escape()
     (the '&#13;' line separators are added afterwards).
@@ -171,9 +170,8 @@ def get_label(config, attr):
 @register.filter(is_safe=True)
 def get_short_desc(spec_item, project_config):
     """
-    Return a short description of the specification item according to the configuration of its project.
-    If the configuration does not define the category of the item (hidden) or its short description,
-    the description is the basic identifier <domain>:<name>.
+    Short description of the specification item per its project configuration; <domain>:<name> if the
+    configuration does not define the category (hidden) or its short description.
     """
     definition = get_cat_definition(project_config, spec_item.cat)
     if definition is None or 'expand_text' not in definition.get('short_desc', {}):

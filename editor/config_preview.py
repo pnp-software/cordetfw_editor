@@ -1,11 +1,9 @@
 """Preview of an unsaved project configuration.
 
-`build_preview(config, project)` turns a validated configuration into the data of the preview fragment
-(`project_config_preview.html`): index menus, and for each category its add/edit form, table layouts, short
-descriptions and relationships as the settings define them. Forms, layouts and short descriptions are shown as the
-item pages will show them (without hidden attributes); the hidden attributes of a category are listed separately.
-It only reads (item counts of the project) and never stores anything. The template escapes every value, so names,
-labels and choices taken from the configuration cannot inject markup.
+`build_preview(config, project)` turns a validated configuration into the context of `project_config_preview.html`:
+index menus and, per category, its form, table layouts, short descriptions and relationships as the item pages will
+show them (hidden attributes are listed separately). It only reads item counts and never stores anything. The
+template escapes every value, so names, labels and choices taken from the configuration cannot inject markup.
 """
 from django.db.models import Count
 

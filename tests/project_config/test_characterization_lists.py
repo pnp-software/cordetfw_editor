@@ -1,4 +1,3 @@
-"""Phase 0 characterization: lists, pagination, navigation, references, search/replace, history, releases."""
 from datetime import timedelta
 
 from django.utils import timezone

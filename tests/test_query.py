@@ -19,7 +19,7 @@ from tests.factories import (default_val_set, make_application, make_project, ma
 
 pytestmark = pytest.mark.django_db
 
-configs = template_config()       # the configuration of a project which has none of its own (read-only here)
+configs = template_config()
 
 
 def utc(*args):

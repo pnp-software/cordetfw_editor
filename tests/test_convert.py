@@ -22,7 +22,7 @@ from tests.factories import make_user, make_project, make_spec_item, make_releas
 
 pytestmark = pytest.mark.django_db
 
-configs = template_config()       # the configuration of a project which has none of its own (read-only here)
+configs = template_config()
 
 CATS = 'DataItem,EnumType,EnumValue,DataItemType,VerLink,Packet,DerPacket,PacketPar,Service'
 

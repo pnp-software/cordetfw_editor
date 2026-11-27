@@ -67,10 +67,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_cat_config_or_404(project_config, cat):
-    """
-    Definition of the category 'cat' in the configuration of the project. A category which the configuration
-    does not define (unknown, or hidden by the owner) has no pages: 404.
-    """
+    """Definition of 'cat' in the project configuration; 404 if it is not defined (unknown or hidden)."""
     try:
         return project_config['cats'][cat]
     except KeyError:
@@ -1085,7 +1082,6 @@ def import_spec_item_row(request, project, application, val_set, default_val_set
     Import one row (a dict read by csv.DictReader) of a spec item CSV file. Returns (reason, warnings):
     reason is None if the row was imported, otherwise the text why it was rejected (nothing saved);
     warnings is a list of texts about an imported row. The caller wraps the call in a transaction.
-    The attributes of the row are those which the configuration of the project defines for the category.
     """
     attrs = project_config['cats'][cat]['attrs']
     csv_domain = attrs['domain']['label']
@@ -1272,7 +1268,7 @@ def import_project(request):
                            str(IMPORT_MAX_UPLOAD_BYTES//(1024*1024))+' MB')
             return redirect(base_url)
 
-        # Create directory where import file is unzipped (a server setting, not part of a project configuration)
+        # Create directory where import file is unzipped
         imp_dir = make_temp_dir(settings.TEMP_DIR, 'cordetfw_editor_', request)
         if imp_dir == '':
             return redirect(base_url)
@@ -1358,9 +1354,8 @@ def export_project(request, project_id):
         zip_obj.write(os.path.join(exp_dir,'project_users.csv'), 'project_users.csv')
         zip_obj.write(os.path.join(exp_dir,'releases.csv'), 'releases.csv')
         zip_obj.write(os.path.join(exp_dir,'spec_items.csv'), 'spec_items.csv')
-        # The stored configuration (template fallback if unconfigured, no server settings) with its hidden
-        # attribute definitions, so that the import restores them; last: the six csv members keep their names,
-        # content and order
+        # Last, so the six csv members keep their names, content and order: the stored configuration (template if
+        # unconfigured, no server settings) with its hidden attribute definitions, which the import restores
         with open(os.path.join(exp_dir, CONFIG_MEMBER), 'w', encoding='utf-8') as fd:
             json.dump(resolve_config(read_stored_config(project.id)), fd, indent=2, ensure_ascii=False)
             fd.write('\n')

@@ -1,11 +1,8 @@
 """Helpers for the per-project configuration stored in Project.config.
 
-Template and filtering: reading the shared template and filtering it for the data stored for a project
-(shared by the `init_project_configs` command and, later, by the import of archives without a configuration).
-Access: `resolve_config` (the stored configuration, as the configuration editor and the project export use it),
-`get_project_config` (pure, from a Project instance) and `get_request_config` (one database read per project and
-request); the last two give the configuration as the item pages use it, without the attribute definitions marked
-hidden (`shown_config`). Nothing here is cached beyond the lifetime of a request object.
+`resolve_config` gives the stored configuration (configuration editor, project export); `get_project_config` and
+`get_request_config` give it as the item pages use it, without hidden attributes. Nothing here is cached beyond the
+lifetime of a request object.
 """
 import copy
 import json
@@ -17,8 +14,7 @@ from editor.config_cleanup import has_hidden_attributes, remove_dangling_referen
 from editor.link_rules import prune_link_rules
 from editor.models import Application, Project, SpecItem
 
-# Relationship settings which every category definition has (an older stored one lacks them; see editor/link_rules.py and
-# editor/cat_validators.py). A stored definition without the key predates them.
+# Relationship settings of every category definition (link_rules.py, cat_validators.py); older stored ones lack them.
 RELATIONSHIP_KEYS = ('links', 'validators')
 # Server settings which must never be part of a project configuration.
 SERVER_ONLY_GENERAL_KEYS = ('temp_dir',)
@@ -39,10 +35,9 @@ def load_template():
 
 def add_missing_relationship_settings(config):
     """
-    Complete, in place, a configuration stored by an earlier development version: a category definition which has no `links` or
-    no `validators` key gets the template's value for it (restricted to the categories of the configuration).
-    Keys which are present, even empty, belong to the owner and are never changed. Returns True if anything
-    was added. The template file is read only when a definition lacks a key.
+    In place, give a category definition without `links` or `validators` (stored by an earlier version) the
+    template's value, restricted to the configuration's categories. Present keys, even empty, are never changed.
+    Returns True if anything was added; the template is read only when needed.
     """
     cats = config.get('cats') if isinstance(config, dict) else None
     if not isinstance(cats, dict):
@@ -69,10 +64,8 @@ def add_missing_relationship_settings(config):
 
 def resolve_config(stored):
     """
-    Return a new, independent configuration from a stored Project.config value: a deep copy of it, or the
-    template if it is empty. An older stored value gets the template's `links`/`validators` for
-    definitions which lack them (add_missing_relationship_settings; in memory only, the stored value is not
-    changed). Server settings (SERVER_ONLY_GENERAL_KEYS) are never part of the result.
+    New, independent configuration from a stored Project.config value (the template if empty), completed in memory
+    by add_missing_relationship_settings and without SERVER_ONLY_GENERAL_KEYS.
     """
     config = copy.deepcopy(stored) if stored else load_template()
     if stored:
@@ -86,29 +79,21 @@ def resolve_config(stored):
 
 def shown_config(config):
     """
-    The configuration as the forms, lists, references, item imports/exports and Find & Replace use it: `config`
-    itself if no attribute definition is hidden, otherwise a copy without the hidden attributes and the references
-    to them (remove_hidden_attributes). For these pages a hidden attribute is a removed one: its values are kept.
+    `config` as forms, lists, references, item imports/exports and Find & Replace use it: a copy without hidden
+    attributes and the references to them if any is hidden (their stored values are kept), else `config` itself.
     """
     return remove_hidden_attributes(config) if has_hidden_attributes(config) else config
 
 
 def get_project_config(project):
-    """
-    Configuration of the project as held by the given instance (template if empty) as the item pages use it
-    (shown_config: without hidden attributes); always a new copy.
-    """
+    """Configuration held by the `project` instance as the item pages use it (shown_config); always a new copy."""
     return shown_config(resolve_config(project.config))
 
 
 def get_request_config(request, project):
     """
-    Configuration of the project for the whole request: the stored value is read from the database once per
-    project and request (a fresh single-column query, so a stale instance is not used) and the same object is
-    returned for later calls with the same request and project. Callers must treat it as read-only.
-    The store lives on the request object only; no module-level or per-process state.
-    It is the configuration as the item pages use it (shown_config: without hidden attributes); the configuration
-    editor and the project export read the stored value with resolve_config.
+    Like get_project_config, but read once per project and request (a fresh single-column query, so a stale instance
+    is not used) and kept on the request object only. Callers must treat it as read-only.
     """
     configs_by_project = request.__dict__.setdefault('_project_configs', {})
     if project.id not in configs_by_project:
@@ -131,10 +116,7 @@ def get_listed_cats(project):
 
 
 def get_data_usage(project):
-    """
-    Return {category: set of attribute names with stored data} for all items of the project
-    (all statuses, ValSets and applications).
-    """
+    """{category: set of attribute names with stored data} over all items of the project (any status or ValSet)."""
     usage = {}
     items = SpecItem.objects.filter(project_id=project.id).values('cat', *DATA_COLUMNS).iterator()
     for item in items:
@@ -153,13 +135,9 @@ def get_unknown_cats(template, project):
 
 def filter_template_for_data(template, project):
     """
-    Return a new configuration for the project derived from the template (the template is not modified).
-
-    Categories kept: those listed in Project.cats or in the cats of the project's applications (with all their
-    definitions) and those of which the project has items (with only the field definitions with stored data).
-    All other categories are removed. References to removed categories and fields (expand, traceability,
-    table layouts and short descriptions) are removed too, so that the result is self-consistent.
-    Project data is only read. Server settings (SERVER_ONLY_GENERAL_KEYS) are not copied.
+    New configuration for the project derived from the template (not modified). Categories listed in Project.cats or
+    the applications' cats keep all definitions, categories with items only the field definitions with stored data;
+    the others, and references to removed categories and fields, are removed. Server settings are not copied.
     """
     listed = get_listed_cats(project)
     usage = get_data_usage(project)

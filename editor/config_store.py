@@ -29,7 +29,6 @@ class InvalidConfigError(Exception):
 
 
 def config_token(stored):
-    """Token of a stored Project.config value."""
     canonical = json.dumps(stored, sort_keys=True, separators=(',', ':'))
     return TOKEN_PREFIX + hashlib.sha256(canonical.encode('utf-8')).hexdigest()
 

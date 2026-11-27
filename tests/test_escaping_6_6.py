@@ -27,7 +27,7 @@ from editor.models import Project, SpecItem
 
 pytestmark = pytest.mark.django_db
 
-configs = template_config()       # the configuration of a project which has none of its own (read-only here)
+configs = template_config()
 
 SCRIPT = '<script>alert(1)</script>'
 SCRIPT_ESC = '&lt;script&gt;alert(1)&lt;/script&gt;'

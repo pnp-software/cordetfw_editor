@@ -28,7 +28,7 @@ from editor.project_config import get_project_config
 
 pytestmark = pytest.mark.django_db
 
-configs = template_config()       # the configuration of a project which has none of its own (read-only here)
+configs = template_config()
 ALL_CATS = list(configs['cats'].keys())
 EXT_CATS = [c for c in ALL_CATS if configs['cats'][c]['ext_attrs']]
 IDENT_ERR = 'Error: Only alphanumeric characters, underscores and dashes allowed; dots must be internal'
@@ -189,8 +189,7 @@ def test_application_form_init(proj):
     assert form.fields['cats'].label == 'Categories'
     assert form.fields['cats'].help_text == 'A subset of: DataItem, EnumType, EnumValue, DataItemType'
     assert form.fields['description'].widget.attrs['rows'] == 2
-    # Feature (category picker): 'cats' was a two-row textarea; it is now the CatPicker widget (two lists with
-    # arrows, editor/static/cat_picker.js). The posted value is still the comma-separated text.
+    # Category picker feature: 'cats' was a two-row textarea, now CatPicker; it still posts comma-separated text
     assert isinstance(form.fields['cats'].widget, CatPicker)
     assert [o['id'] for o in form.fields['cats'].widget.options] == ['DataItem', 'EnumType', 'EnumValue',
                                                                      'DataItemType']

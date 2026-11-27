@@ -81,10 +81,7 @@ def frmt_string(s):
 
 
 def get_cat_definition(config, cat):
-    """
-    Definition of category 'cat' in the project configuration 'config', or None if the configuration does not
-    define it (a hidden category) or is not given.
-    """
+    """Definition of 'cat' in the project configuration 'config', or None (no config, or a hidden category)."""
     cats = config.get('cats') if isinstance(config, dict) else None
     definition = cats.get(cat) if isinstance(cats, dict) else None
     return definition if isinstance(definition, dict) else None
@@ -92,9 +89,8 @@ def get_cat_definition(config, cat):
 
 def get_tooltip(config, item, tip_key, project_id=UNSCOPED):
     """
-    Text for a title="..." attribute: one line 'label: value' (lines end with '&#13;') for each attribute listed
-    in short_desc[tip_key] of the category of 'item' in the project configuration. Labels and values are escaped.
-    Empty if the configuration does not define the category or its display settings.
+    Text for a title="..." attribute: 'label: value&#13;' (both escaped) for each attribute in short_desc[tip_key]
+    of the category of 'item' in 'config'; empty if the configuration does not define them.
     """
     definition = get_cat_definition(config, item.cat)
     if definition is None:
@@ -120,9 +116,8 @@ def convert_db_to_display(s, sel_rel, project_id=UNSCOPED, config=None):
     sel_rel.
     Invalid references (and references to items of another project than project_id)
     are replaced with: ERROR:n.
-    'config' is the project configuration. The tooltip of a link comes from the display settings of the category
-    of the target (none if 'config' is None or lacks them). A target in a category which 'config' does not
-    define (hidden) is shown as its plain identifier <domain>:<name>, without link.
+    'config' is the project configuration: it gives the link tooltip (none without it), and a target in a category
+    which it does not define (hidden) is shown as plain <domain>:<name>, without link.
     Markdown text is converted to html.
     The output of this function is safe for display in an HTML page: the text read
     from the database is escaped (only &, < and >) BEFORE the references and the markdown
@@ -223,8 +218,7 @@ def conv_db_disp_spec_item_ref(context, spec_item, name, sel_rel):
     Convert attribute 'name' of spec_item 'item' from database to display representation
     on the assumption that the attribute is a link to another spec_item ('spec_item_ref' content kind).
     If the target spec_item is MODified or DELeted, then its hyperlink is in red.
-    The project configuration is context['project_config']. A target in a category which it does not
-    define (hidden) is shown as its plain identifier, without link.
+    A target in a category which context['project_config'] does not define (hidden) is shown without link.
     The output of this function is guaranteed to be safe for displat in an
     HTML page because the text read from the database is escaped.
     """
@@ -426,8 +420,7 @@ def render_for_eval(s, n, project_id=UNSCOPED, _state=None, config=None):
     assumes that all such references are pointing to data items and 
     replaces these references with the numerical values of the data items.
     This function is called recursively to handle all references in string s.
-    The argument n is the depth of recursion. This is limited to EVAL_MAX_DEPTH and, if the project
-    configuration 'config' is given, to its general.max_depth.
+    The argument n is the depth of recursion. This is limited to EVAL_MAX_DEPTH and general.max_depth of 'config'.
     If the function finds an invalid reference (or a reference to an item of another project
     than project_id) or a reference to a specification item which is not a data item, it returns
     the string unchanged. Raises EvalLimitExceeded if the number of substitutions or the length

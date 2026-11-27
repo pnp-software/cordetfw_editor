@@ -1,5 +1,3 @@
-"""Phase 6: owner-only configuration endpoints (editor/config_views.py) and the conflict-safe save
-(editor/config_store.py)."""
 import copy
 import json
 import threading
@@ -274,7 +272,7 @@ class ReadEndpointTests(EndpointCase):
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertNotIn('<script>alert(1)', content)
-        # Phase 8: the configuration is embedded with json_script (escaped for a <script> element)
+        # The configuration is embedded with json_script (escaped for a <script> element)
         self.assertIn('\\u003Cscript\\u003Ealert(1)\\u003C/script\\u003E', content)
         self.assertIn('data-token="%s"' % config_token(config), content)
         self.assertIn(self.curl('project_config_save'), content)

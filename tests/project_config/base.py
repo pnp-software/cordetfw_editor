@@ -1,4 +1,3 @@
-"""Shared fixtures for the editor tests. Every test builds its own isolated projects."""
 import copy
 import json
 from unittest import mock
@@ -11,7 +10,7 @@ from django.utils import timezone
 from editor.models import Application, Project, ProjectUser, Release, SpecItem, ValSet
 from editor.project_config import load_template
 
-# Read-only snapshot of the shared template as it is today (tests must never mutate it).
+# Snapshot of the shared template; tests must never mutate it.
 TEMPLATE = load_template()
 ALL_CATS = list(TEMPLATE['cats'].keys())
 APP_CATS = [c for c in ALL_CATS if TEMPLATE['cats'][c]['level'] == 'application']

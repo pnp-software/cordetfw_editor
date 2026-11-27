@@ -1,4 +1,3 @@
-"""Phase 0 characterization: item export/import (CSV) and project export/import (zip)."""
 import csv
 import io
 import tempfile
@@ -192,8 +191,6 @@ class SpecItemImportTests(EditorTestCase):
 
 
 class ProjectArchiveTests(EditorTestCase):
-    """Project export to zip and import from zip (staff only)."""
-
     CSV_NAMES = ['project.csv', 'applications.csv', 'val_sets.csv', 'project_users.csv', 'releases.csv', 'spec_items.csv']
 
     def setUp(self):
@@ -249,7 +246,7 @@ class ProjectArchiveTests(EditorTestCase):
     # ---------------------------------------------------------------- export
     def test_export_contains_the_six_tables(self):
         archive = self.export_zip()
-        # Phase 7: the configuration is a seventh member (see test_project_config_archive.py); the tables are unchanged
+        # The configuration is a seventh member (see test_project_config_archive.py); the tables are unchanged
         self.assertEqual(sorted(archive.namelist()), sorted(self.CSV_NAMES + ['config.json']))
         project = self.read_csv(archive, 'project.csv')
         self.assertEqual(len(project), 1)
@@ -305,7 +302,7 @@ class ProjectArchiveTests(EditorTestCase):
                 'users': sorted(u.user.username for u in ProjectUser.objects.filter(project=project))}
 
     def test_round_trip_recreates_the_project(self):
-        # Phase 7: the archive carries the configuration, which must allow the stored Service -> Service link of
+        # The archive carries the configuration, which must allow the stored Service -> Service link of
         # the alias item (the template has no such rule); the owner would have added it.
         config = load_template()
         config['general'].pop('temp_dir')
@@ -327,7 +324,6 @@ class ProjectArchiveTests(EditorTestCase):
         self.assertEqual(copy['items'], original['items'])
         self.assertEqual(len(copy['items']), 13)
         self.assertEqual(SpecItem.objects.filter(project=imported).count(), 13)
-        # Items are copies: no database row is shared with the original project
         self.assertFalse(set(SpecItem.objects.filter(project=imported).values_list('id', flat=True)) &
                          set(SpecItem.objects.filter(project=self.project).values_list('id', flat=True)))
 

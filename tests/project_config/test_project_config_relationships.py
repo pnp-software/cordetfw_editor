@@ -1,8 +1,5 @@
-"""Phase 3: declarative relationship rules (`links`), traceability settings (`tracs`) and category validators.
-
-The expected values below come from the Phase 0 inventory (project_config_phase0_inventory.md, section B), not
-from the template, so that the template is checked against the behavior that existed before the migration.
-"""
+"""The expected values below (the inventory) are the rules which editor/configs.py hardcoded before the project
+configuration, not values read from the template, so that the template is checked against the previous behavior."""
 import copy
 import re
 from pathlib import Path
@@ -23,7 +20,7 @@ from editor.project_config import (add_missing_relationship_settings, filter_tem
                                    load_template, resolve_config)
 from tests.project_config.base import ALL_CATS, EditorTestCase, TEMPLATE, now
 
-# Inventory B1: link target categories per category (a category not listed offers no choices).
+# A category not listed offers no choices.
 P_LINK_TARGETS = {
     'DataItem': {'DataItemType', 'EnumType'}, 'RiskScenario': {'OpContext'}, 'VerLink': {'VerItem'},
     'Packet': {'Service'}, 'InCommand': {'Packet', 'DerPacket'}, 'OutComponent': {'Packet', 'DerPacket'},
@@ -33,7 +30,6 @@ S_LINK_TARGETS = {
     'RiskScenario': {'DisrEvt'}, 'EnumValue': {'EnumType'}, 'PacketPar': {'DataItem'}, 'DerPacket': {'Packet'},
     'Packet': {'EnumType'}, 'VerStep': {'VerItem'}, 'VerLink': set(ALL_CATS) - {'VerItem', 'VerLink'},
 }
-# Inventory B3: traceability settings per category.
 TRACS = {
     'ParReq': [('TracLink', 's_link'), ('VerLink', 's_link')], 'DerReq': [('TracLink', 'p_link'), ('VerLink', 's_link')],
     'VerItem': [('VerLink', 'p_link')], 'OpContext': [('RiskScenario', 'p_link')], 'DisrEvt': [('RiskScenario', 's_link')],
@@ -46,7 +42,7 @@ SOURCE_FILES = {name: Path(editor.__file__).parent / name for name in (
 
 
 def schema_errors(config):
-    """All Phase 3 schema errors of a complete configuration."""
+    """All relationship schema errors of a complete configuration."""
     cats, errors = set(config['cats']), []
     for cat, definition in config['cats'].items():
         errors += check_link_rules(definition['links'], 'cats.%s.links' % cat, cats)
@@ -141,8 +137,6 @@ class TemplateRulesTests(RelationshipTestCase):
 
 
 class MigratedRuleTests(RelationshipTestCase):
-    """Every inventoried rule, evaluated against one item of every template category."""
-
     def setUp(self):
         super().setUp()
         self.items = {}
@@ -249,8 +243,6 @@ class MigratedRuleTests(RelationshipTestCase):
 
 
 class ProjectSpecificRulesTests(RelationshipTestCase):
-    """Rules come from the project's configuration: other settings give other choices, no code change."""
-
     def test_two_projects_have_different_rules_for_the_same_category(self):
         other, _ = self.make_project('Other', owner=self.owner)
         for project in (self.project, other):
@@ -514,10 +506,10 @@ class ValidatorRegistryTests(RelationshipTestCase):
 
 
 class LegacyConfigurationTests(RelationshipTestCase):
-    """A configuration stored before Phase 3 has no `links`/`validators`: it is completed, never overwritten."""
+    """A stored configuration without `links`/`validators` is completed, never overwritten."""
 
     def legacy(self, cats=None):
-        """What Phase 1 stored: the template (or its filtered form for some categories) without the new keys."""
+        """The template (or its form filtered for `cats`) without `links` and `validators`."""
         if cats is None:
             config = copy.deepcopy(TEMPLATE)
         else:
@@ -618,7 +610,7 @@ class LegacyConfigurationTests(RelationshipTestCase):
 
 
 class InitializedConfigurationTests(RelationshipTestCase):
-    """Configurations initialized in Phase 1 satisfy the Phase 3 schema without any format change."""
+    """Configurations initialized by init_project_configs satisfy the relationship schema without any format change."""
 
     def test_every_single_category_filter_output_satisfies_the_schema(self):
         for cat in ALL_CATS:
@@ -674,8 +666,6 @@ class InitializedConfigurationTests(RelationshipTestCase):
 
 
 class NoCategoryLiteralsTests(RelationshipTestCase):
-    """Phase 3: no category name is hardcoded in the relationship and validation code."""
-
     def test_no_category_name_literals_in_the_code(self):
         for name, path in SOURCE_FILES.items():
             source = path.read_text()

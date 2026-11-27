@@ -1,4 +1,3 @@
-"""Phase 2: access layer (get_project_config, get_request_config) and the explicit-configuration accessors."""
 import copy
 import io
 import re
@@ -129,7 +128,6 @@ class GetProjectConfigTests(AccessTestCase):
         self.assertEqual(load_template(), TEMPLATE)
 
     def test_filter_for_data_is_the_function_used_by_initialization(self):
-        # Shared function: its output for a project is what init_project_configs stores.
         from django.core.management import call_command
         call_command('init_project_configs', stdout=io.StringIO())
         self.project.refresh_from_db()

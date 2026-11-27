@@ -41,7 +41,7 @@ ALLOWED_HOSTS = config['ALLOWED_HOSTS']
 CSRF_TRUSTED_ORIGINS = config.get('CSRF_TRUSTED_ORIGINS', [])
 
 # Directory for the temporary files of project exports and imports: a server setting, never part of the
-# project configuration. Optional config key TEMP_DIR; absent = /tmp (the value of the former configs.json).
+# project configuration. Optional config key; default /tmp.
 TEMP_DIR = config.get('TEMP_DIR', '/tmp')
 
 INTERNAL_IPS = [

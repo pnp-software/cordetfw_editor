@@ -21,7 +21,7 @@ Schema of `cats.<Cat>.tracs` (traceability): a list of {"trac_cat": Cat, "trac_l
 to the item being listed, the other endpoint is the referenced item.
 
 Configuration is data: nothing here evaluates or imports anything named in it. The `check_*` functions return
-a list of (json_path, message) tuples and are meant to be reused by the configuration validator.
+a list of (json_path, message) tuples.
 """
 from editor.models import SpecItem
 
@@ -49,8 +49,7 @@ def get_link_rule(config, cat, link):
 def get_link_choices(config, link, cat, project, application, parent_id, other_parent_id):
     """
     Queryset of the items which can be chosen for `link` ('p_link' or 's_link') of an item of category `cat`
-    in `project`, as defined by `config` (see the module docstring). A rule which does not satisfy the schema
-    offers nothing.
+    in `project`, as defined by `config` (see the module docstring). A malformed rule offers nothing.
     """
     if parent_id is not None:
         return SpecItem.objects.filter(id=int(parent_id), project_id=project.id)
@@ -151,9 +150,8 @@ def rule_allows(rule, cat):
 
 def prune_link_rules(links, cats):
     """
-    Return a copy of a `links` object without references to categories not in `cats`: such names are removed
-    from "targets"/"all_except" and a rule left without any target is removed. Malformed parts are kept as
-    they are (reporting them is the job of check_link_rules).
+    Copy of a `links` object without names of categories not in `cats` in "targets"/"all_except"; a rule left
+    without targets is removed. Malformed parts are kept (check_link_rules reports them).
     """
     if not isinstance(links, dict):
         return links
