@@ -205,6 +205,15 @@ def test_project_form_cat_picker_offers_all_configured_cats_with_names():
     assert json.loads(widget.options_json) == widget.options
 
 
+def test_project_form_cat_picker_includes_category_added_in_configuration():
+    owner = make_user()
+    project = make_project(owner, cats='DataItem')
+    config = get_project_config(project)
+    config['cats']['MyCat'] = dict(config['cats']['DataItem'], name='My Category')
+    form = ProjectForm(project, config=config)
+    assert form.fields['cats'].widget.options[-1] == {'id': 'MyCat', 'name': 'My Category'}
+
+
 def test_application_form_cat_picker_offers_only_project_cats_of_application_level(proj):
     proj.cats = 'InfoItem, DataItem, Unknown'
     widget = ApplicationForm(proj).fields['cats'].widget
